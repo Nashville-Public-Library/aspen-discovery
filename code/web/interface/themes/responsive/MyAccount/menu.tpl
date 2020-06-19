@@ -401,8 +401,7 @@
 									<div class="adminMenuLink"><a href="/Admin/Placards">{translate text="Placards"}</a></div>
 								{/if}
 								<hr class="menu"/>
-								<div class="adminMenuLink"><a href="/Admin/AuthorEnrichment">{translate text="Author Enrichment"}</a></div>
-								{if array_key_exists('opacAdmin', $userRoles)}
+ 								{if array_key_exists('opacAdmin', $userRoles)}
 									<div class="adminMenuLink"><a href="/RenaissanceLearning/ARSettings">{translate text="Accelerated Reader Settings"}</a></div>
 								{/if}
 								{if (array_key_exists('opacAdmin', $userRoles) || array_key_exists('libraryAdmin', $userRoles))}
@@ -432,6 +431,9 @@
 								{if (array_key_exists('opacAdmin', $userRoles) || array_key_exists('libraryAdmin', $userRoles))}
 									<div class="adminMenuLink"><a href="/Enrichment/SyndeticsSettings">{translate text="Syndetics Settings"}</a></div>
 								{/if}
+                {if array_key_exists('opacAdmin', $userRoles)}
+                  <div class="adminMenuLink"><a href="/Admin/AuthorEnrichment">{translate text="Wikipedia Settings"}</a></div>
+                {/if}
 							</div>
 						</div>
 					</div>
