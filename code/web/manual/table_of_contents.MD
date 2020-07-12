@@ -95,6 +95,7 @@
 - Citations
 - Collection Spotlights
 - Covers
+- [Development Environment](/Admin/HelpManual?page=Development-Environment)
 - [eCommerce](/Admin/HelpManual?page=eCommerce)
 - [eContent Integrations](/Admin/HelpManual?page=eContent-Integrations)
   - CloudLibrary
