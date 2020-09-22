@@ -29,7 +29,7 @@
 					</a>
 				</div>
 				{if $showFines}
-					<div class="header-menu-option" >
+        <div class="header-menu-option" >
 						<a href="/MyAccount/Fines">{translate text='Fines and Messages'}</a>
 					</div>
 				{/if}

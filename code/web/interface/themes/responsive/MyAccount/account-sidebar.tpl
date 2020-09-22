@@ -125,6 +125,16 @@
 										{translate text="Reading History"} {if !$offline}<span class="badge"><span class="readingHistory-placeholder">??</span></span>{/if}
 									</a>
 								</div>
+                <div class="myAccountLink">
+									<a href="https://nashvillepl.libanswers.com/form?queue_id=4528">
+										{translate text="Library Concierge"} {if !$offline}<span class="badge"></span>{/if}
+									</a>
+								</div>
+                <div class="myAccountLink">
+									<a href="https://library.nashville.org/about/policies/loan-rules">
+										{translate text="Loan Rules"} {if !$offline}<span class="badge"></span>{/if}
+									</a>
+								</div>
 								{if $showFines}
 									<hr class="menu">
 									<div class="myAccountLink" title="Fines and account messages">
