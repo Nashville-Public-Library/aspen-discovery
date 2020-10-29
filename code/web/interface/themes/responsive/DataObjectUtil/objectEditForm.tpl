@@ -12,12 +12,12 @@
 	{literal}
 
 	<script type="text/javascript">
-	let savingForm = false;
+	var savingForm = false;
 	function setFormSubmitting(){
 		savingForm = true;
 	}
 	$(document).ready(function(){
-		let objectEditorObject = $('#objectEditor');
+		var objectEditorObject = $('#objectEditor');
 
 		objectEditorObject.validate();
 		objectEditorObject.data('serialize',objectEditorObject.serialize()); // On load save form current state
@@ -30,7 +30,7 @@
 		$(window).bind('beforeunload', function(e){
 			if (!savingForm) {
 				// if form state change show warning box, else don't show it.
-				let objectEditorObject = $('#objectEditor');
+				var objectEditorObject = $('#objectEditor');
 				if (objectEditorObject.serialize() !== objectEditorObject.data('serialize')) {
 					return 'You have made changes to the configuration, would you like to save them before continuing?';
 				} else {
@@ -50,7 +50,7 @@
 	<div class='editor'>
 		<input type='hidden' name='objectAction' value='save' />
 		{if !empty($id)}
-		<input type='hidden' name='id' value='{$id}' />
+		<input type='hidden' name='id' value='{$id}' id="id" />
 		{/if}
 
 		{foreach from=$structure item=property}
