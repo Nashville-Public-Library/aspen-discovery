@@ -37,14 +37,6 @@ function getLibraryLocationUpdates(){
 			),
 		),
 
-		'library_5' => array(
-			'title' => 'Library 5',
-			'description' => 'Set up a link to boopsie in mobile',
-			'sql' => array(
-				"ALTER TABLE `library` ADD `boopsieLink` VARCHAR(150) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;",
-			),
-		),
-
 		'library_6' => array(
 			'title' => 'Library 6',
 			'description' => 'Add fields originally defined for Marmot',
@@ -2182,6 +2174,15 @@ function getLibraryLocationUpdates(){
 			'description' => 'Update libraries to allow While You Wait functionality to be disabled',
 			'sql' => [
 				'ALTER TABLE library add COLUMN showWhileYouWait TINYINT(1) DEFAULT 1',
+			]
+		],
+
+
+		'library_enable_web_builder' => [
+			'title' => 'Library enable web builder',
+			'description' => 'Add a flag for whether or not web builder is active',
+			'sql' => [
+				'ALTER TABLE library ADD COLUMN enableWebBuilder TINYINT(1) DEFAULT 0',
 			]
 		],
 

@@ -65,7 +65,7 @@ try {
 		}
 	}
 }catch (Exception $e){
-	//Google Analytics not installed yet
+	//This happens when Google analytics settings aren't setup yet
 }
 
 global $library;
@@ -821,6 +821,20 @@ function loadModuleActionId(){
 	//This ensures that we don't have to change the http.conf file when new types are added.
 	//Deal with old path based urls by removing the leading path.
 	$requestURI = $_SERVER['REQUEST_URI'];
+	if (empty($requestURI) || $requestURI == '/'){
+		//Check to see if we have a default path for the server name
+		try {
+			$host = $_SERVER['HTTP_HOST'];
+			require_once ROOT_DIR . '/sys/LibraryLocation/HostInformation.php';
+			$hostInfo = new HostInformation();
+			$hostInfo->host = $host;
+			if ($hostInfo->find(true)){
+				$requestURI = $hostInfo->defaultPath;
+			}
+		}catch (Exception $e){
+			//This happens before the table is added, just ignore it.
+		}
+	}
 	/** IndexingProfile[] $indexingProfiles */
 	global $indexingProfiles;
 	/** SideLoad[] $sideLoadSettings */
@@ -832,6 +846,7 @@ function loadModuleActionId(){
 	foreach ($sideLoadSettings as $profile){
 		$allRecordModules .= '|' . $profile->recordUrlComponent;
 	}
+	$checkWebBuilderAliases = false;
 	if (preg_match("~(MyAccount)/([^/?]+)/([^/?]+)(\?.+)?~", $requestURI, $matches)){
 		$_GET['module'] = $matches[1];
 		$_GET['id'] = $matches[3];
@@ -895,6 +910,52 @@ function loadModuleActionId(){
 		$_GET['action'] = $matches[2];
 		$_REQUEST['module'] = $matches[1];
 		$_REQUEST['action'] = $matches[2];
+		$checkWebBuilderAliases = true;
+	}else{
+		$checkWebBuilderAliases = true;
+	}
+
+	global $enabledModules;
+	try {
+		if ($checkWebBuilderAliases && array_key_exists('Web Builder', $enabledModules)) {
+			require_once ROOT_DIR . '/sys/WebBuilder/BasicPage.php';
+			$basicPage = new BasicPage();
+			$basicPage->urlAlias = $requestURI;
+			if ($basicPage->find(true)) {
+				$_GET['module'] = 'WebBuilder';
+				$_GET['action'] = 'BasicPage';
+				$_GET['id'] = $basicPage->id;
+				$_REQUEST['module'] = 'WebBuilder';
+				$_REQUEST['action'] = 'BasicPage';
+				$_REQUEST['id'] = $basicPage->id;
+			} else {
+				require_once ROOT_DIR . '/sys/WebBuilder/PortalPage.php';
+				$portalPage = new PortalPage();
+				$portalPage->urlAlias = $requestURI;
+				if ($portalPage->find(true)) {
+					$_GET['module'] = 'WebBuilder';
+					$_GET['action'] = 'PortalPage';
+					$_GET['id'] = $portalPage->id;
+					$_REQUEST['module'] = 'WebBuilder';
+					$_REQUEST['action'] = 'PortalPage';
+					$_REQUEST['id'] = $portalPage->id;
+				} else {
+					require_once ROOT_DIR . '/sys/WebBuilder/CustomForm.php';
+					$form = new CustomForm();
+					$form->urlAlias = $requestURI;
+					if ($form->find(true)) {
+						$_GET['module'] = 'WebBuilder';
+						$_GET['action'] = 'Form';
+						$_GET['id'] = $form->id;
+						$_REQUEST['module'] = 'WebBuilder';
+						$_REQUEST['action'] = 'Form';
+						$_REQUEST['id'] = $form->id;
+					}
+				}
+			}
+		}
+	}catch (Exception $e) {
+		//This happens if web builder is not fully installed, ignore the error.
 	}
 	//Correct some old actions
 	if (isset($_GET['action'])) {

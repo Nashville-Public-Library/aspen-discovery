@@ -53,7 +53,6 @@ class MaterialsRequest extends DataObject
 
 	static function getFormats(){
 		require_once ROOT_DIR . '/sys/MaterialsRequestFormats.php';
-		$availableFormats = array();
 		$customFormats = new MaterialsRequestFormats();
 		global $library;
 		$requestLibrary = $library;
@@ -77,9 +76,7 @@ class MaterialsRequest extends DataObject
 			global $configArray;
 			foreach ($defaultFormats as $index => $materialRequestFormat){
 				$format = $materialRequestFormat->format;
-				if (isset($configArray['MaterialsRequestFormats'][$format]) && $configArray['MaterialsRequestFormats'][$format] == false){
-					// dont add this format
-				} else {
+				if (!isset($configArray['MaterialsRequestFormats'][$format]) || $configArray['MaterialsRequestFormats'][$format] != false) {
 					$availableFormats[$format] = $materialRequestFormat->formatLabel;
 				}
 			}
@@ -147,6 +144,7 @@ class MaterialsRequest extends DataObject
 		return $enableAspenMaterialsRequest;
 	}
 
+	/** @noinspection PhpUnused */
 	function getHoldLocationName($locationId) {
 		$holdLocation = new Location();
 		if ($holdLocation->get($locationId)) {
