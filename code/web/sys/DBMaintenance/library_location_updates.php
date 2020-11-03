@@ -2203,6 +2203,14 @@ function getLibraryLocationUpdates(){
 			]
 		],
 
+		'selfRegistrationZipCodeValidation' => [
+			'title' => 'Self Registration Zip Code Validation',
+			'description' => 'Allow customization of how Zip Codes are validated',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN validSelfRegistrationZipCodes VARCHAR(255) DEFAULT ''",
+			]
+		],
+
 		'libraryAlternateCardSetup' => [
 			'title' => 'Library Alternate Card Setup',
 			'description' => 'Add fields to allow definition of alternate library cards',
@@ -2273,6 +2281,15 @@ function getLibraryLocationUpdates(){
 				"UPDATE library set allowPatronPhoneNumberUpdates = allowPatronAddressUpdates"
 			),
 		),
+
+		'location_tty_description' => [
+			'title' => 'Location TTY & Description Fields',
+			'description' => 'Add TTY and Description fields to location table',
+			'sql' => [
+				'ALTER TABLE location ADD COLUMN tty VARCHAR(25)',
+				'ALTER TABLE location ADD COLUMN description MEDIUMTEXT'
+			]
+		]
 	);
 }
 
