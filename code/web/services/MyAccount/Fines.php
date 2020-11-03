@@ -20,6 +20,13 @@ class MyAccount_Fines extends MyAccount
 		if (UserAccount::isLoggedIn()) {
 			global $offlineMode;
 			if (!$offlineMode) {
+				$currencyCode = 'USD';
+				$variables = new SystemVariables();
+				if ($variables->find(true)){
+					$currencyCode = $variables->currencyCode;
+				}
+				$interface->assign('currencyCode', $currencyCode);
+
 				// Get My Fines
 				$user = UserAccount::getLoggedInUser();
 				$interface->assign('profile', $user);
@@ -38,41 +45,31 @@ class MyAccount_Fines extends MyAccount
 				$interface->assign('userFines', $fines);
 
 				$userAccountLabel = [];
-				$fineTotalsFormatted = [];
 				$fineTotalsVal = [];
-				$outstandingTotal = [];
 				$outstandingTotalVal = [];
 				// Get Account Labels, Add Up Totals
 				foreach ($fines as $userId => $finesDetails) {
 					$userAccountLabel[$userId] = $user->getUserReferredTo($userId)->getNameAndLibraryLabel();
 					$total = $totalOutstanding = 0;
 					foreach ($finesDetails as $fine) {
-						if (!empty($fine['amount']) && $fine['amount'][0] == '-') {
-							$amount = -ltrim($fine['amount'], '-' . $this->currency_symbol);
-						} else {
-							$amount = ltrim($fine['amount'], $this->currency_symbol);
-						}
+						$amount = $fine['amountVal'];
 						if (is_numeric($amount)) $total += $amount;
-						if ($useOutstanding && $fine['amountOutstanding']) {
-							$outstanding = ltrim($fine['amountOutstanding'], $this->currency_symbol);
+						if ($useOutstanding && $fine['amountOutstandingVal']) {
+							$outstanding = $fine['amountOutstandingVal'];
 							if (is_numeric($outstanding)) $totalOutstanding += $outstanding;
 						}
 					}
 
 					$fineTotalsVal[$userId] = $total;
-					$fineTotalsFormatted[$userId] = $this->currency_symbol . number_format($total, 2);
 
 					if ($useOutstanding) {
 						$outstandingTotalVal[$userId] = $totalOutstanding;
-						$outstandingTotal[$userId] = $this->currency_symbol . number_format($totalOutstanding, 2);
 					}
 				}
 
 				$interface->assign('userAccountLabel', $userAccountLabel);
-				$interface->assign('fineTotalsFormatted', $fineTotalsFormatted);
 				$interface->assign('fineTotalsVal', $fineTotalsVal);
 				if ($useOutstanding) {
-					$interface->assign('outstandingTotal', $outstandingTotal);
 					$interface->assign('outstandingTotalVal', $outstandingTotalVal);
 				}
 			}

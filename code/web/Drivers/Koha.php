@@ -1404,6 +1404,16 @@ class Koha extends AbstractIlsDriver
 	{
 		require_once ROOT_DIR . '/sys/Utils/StringUtils.php';
 
+		global $activeLanguage;
+
+		$currencyCode = 'USD';
+		$variables = new SystemVariables();
+		if ($variables->find(true)){
+			$currencyCode = $variables->currencyCode;
+		}
+
+		$currencyFormatter = new NumberFormatter( $activeLanguage->locale . '@currency=' . $currencyCode, NumberFormatter::CURRENCY );
+
 		$this->initDatabaseConnection();
 
 		//Get a list of outstanding fees
@@ -1434,8 +1444,8 @@ class Koha extends AbstractIlsDriver
 					'message' => $allFeesRow['description'],
 					'amountVal' => $allFeesRow['amount'],
 					'amountOutstandingVal' => $allFeesRow['amountoutstanding'],
-					'amount' => StringUtils::formatMoney('%.2n', $allFeesRow['amount']),
-					'amountOutstanding' => StringUtils::formatMoney('%.2n', $allFeesRow['amountoutstanding']),
+					'amount' => $currencyFormatter->formatCurrency($allFeesRow['amount'], $currencyCode),
+					'amountOutstanding' => $currencyFormatter->formatCurrency($allFeesRow['amountoutstanding'], $currencyCode),
 				];
 				$fines[] = $curFine;
 			}
@@ -1875,6 +1885,7 @@ class Koha extends AbstractIlsDriver
 			$validStates = array_combine($validStates, $validStates);
 			$borrowerStateField = array('property' => 'borrower_state', 'type' => 'enum', 'values' => $validStates, 'label' => 'State', 'description' => 'State', 'maxLength' => 32, 'required' => true);
 		}
+
 		//Main Address
 		$fields['mainAddressSection'] = array('property' => 'mainAddressSection', 'type' => 'section', 'label' => 'Main Address', 'hideInLists' => true, 'expandByDefault' => true, 'properties' => [
 			'borrower_address' => array('property' => 'borrower_address', 'type' => 'text', 'label' => 'Address', 'description' => 'Address', 'maxLength' => 128, 'required' => true),
@@ -1884,6 +1895,9 @@ class Koha extends AbstractIlsDriver
 			'borrower_zipcode' => array('property' => 'borrower_zipcode', 'type' => 'text', 'label' => 'Zip Code', 'description' => 'Zip Code', 'maxLength' => 32, 'required' => true),
 			'borrower_country' => array('property' => 'borrower_country', 'type' => 'text', 'label' => 'Country', 'description' => 'Country', 'maxLength' => 32, 'required' => false),
 		]);
+		if (!empty($library->validSelfRegistrationZipCodes)){
+			$fields['mainAddressSection']['properties']['borrower_zipcode']['validationPattern'] = $library->validSelfRegistrationZipCodes;
+		}
 		//Contact information
 		$fields['contactInformationSection'] = array('property' => 'contactInformationSection', 'type' => 'section', 'label' => 'Contact Information', 'hideInLists' => true, 'expandByDefault' => true, 'properties' => [
 			'borrower_phone' => array('property' => 'borrower_phone', 'type' => 'text', 'label' => 'Primary Phone' . $phoneFormat, 'description' => 'Phone', 'maxLength' => 128, 'required' => false),
