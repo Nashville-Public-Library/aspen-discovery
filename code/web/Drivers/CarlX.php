@@ -11,7 +11,7 @@ class CarlX extends AbstractIlsDriver{
 	private $dbConnection;
 
 	public function __construct($accountProfile) {
-	    parent::__construct($accountProfile);
+		parent::__construct($accountProfile);
 		$this->patronWsdl = $this->accountProfile->patronApiUrl . '/CarlXAPI/PatronAPI.wsdl';
 		$this->catalogWsdl = $this->accountProfile->patronApiUrl . '/CarlXAPI/CatalogAPI.wsdl';
 	}
@@ -29,7 +29,7 @@ class CarlX extends AbstractIlsDriver{
 		if (!isset($this->dbConnection)) {
 			$port = empty($this->accountProfile->databasePort) ? '1521' : $this->accountProfile->databasePort;
 			$ociConnection = $this->accountProfile->databaseHost . ':' . $port . '/' . $this->accountProfile->databaseName;
-			$this->dbConnection = oci_connect($this->accountProfile->databaseUser, $this->accountProfile->databasePassword, $ociConnection);
+			$this->dbConnection = oci_connect($this->accountProfile->databaseUser, $this->accountProfile->databasePassword, $ociConnection, 'AL32UTF8');
 			if (!$this->dbConnection || oci_error($this->dbConnection) != 0) {
 				global $logger;
 				$logger->log("Error connecting to CARL.X database " . oci_error($this->dbConnection), Logger::LOG_ERROR);
@@ -592,7 +592,7 @@ class CarlX extends AbstractIlsDriver{
 		return array($fullName, $lastName, $firstName);
 	}
 
-	public function getCheckouts($user) {
+	public function getCheckouts(User $user) {
 		$checkedOutTitles = array();
 
 		//Search for the patron in the database
@@ -658,7 +658,7 @@ class CarlX extends AbstractIlsDriver{
 		return $checkedOutTitles;
 	}
 
-	function updatePin($user, $oldPin, $newPin) {
+	function updatePin(User $user, string $oldPin, string $newPin) {
 		$request = $this->getSearchbyPatronIdRequest($user);
 		$request->Patron = new stdClass();
 		$request->Patron->PatronPIN = $newPin;
@@ -677,6 +677,42 @@ class CarlX extends AbstractIlsDriver{
 			$logger->log('CarlX ILS gave no response when attempting to update Patron PIN.', Logger::LOG_ERROR);
 			return ['success' => false, 'message' => translate(['text' => 'update_pin_failed', 'defaultText' => 'Failed to update your PIN.'])];
 		}
+	}
+
+	public function updateHomeLibrary(User $patron, string $homeLibraryCode) {
+		$result = [
+			'success' => false,
+			'messages' => []
+		];
+
+		$request = $this->getSearchbyPatronIdRequest($patron);
+		if (!isset($request->Patron)){
+			$request->Patron = new stdClass();
+		}
+
+		$request->Patron->DefaultBranch = strtoupper($homeLibraryCode);
+
+		$soapResult = $this->doSoapRequest('updatePatron', $request, $this->patronWsdl, $this->genericResponseSOAPCallOptions);
+
+		if ($soapResult) {
+			$success = stripos($soapResult->ResponseStatuses->ResponseStatus->ShortMessage, 'Success') !== false;
+			if (!$success) {
+				$errorMessage = $soapResult->ResponseStatuses->ResponseStatus->LongMessage;
+				$result['messages'][] = 'Failed to update your pickup location '. ($errorMessage ? ' : ' .$errorMessage : '');
+			}else{
+				$result['success'] = true;
+				$result['messages'][] = 'Your pickup location was updated successfully.';
+			}
+
+		} else {
+			$result['messages'][] = 'Unable to update your pickup location.';
+			global $logger;
+			$logger->log('Unable to read XML from CarlX response when attempting to update pickup location.', Logger::LOG_ERROR);
+		}
+		if ($result['success'] == false && empty($result['messages'])){
+			$result['messages'][] = 'Unknown error updating your pickup location';
+		}
+		return $result;
 	}
 
 	public function updatePatronInfo($user, $canUpdateContactInfo) {
@@ -1134,11 +1170,7 @@ class CarlX extends AbstractIlsDriver{
 				if ($fine->Branch == 0) {
 					$fine->Branch = $fine->TransactionBranch;
 				}
-				if ($fine->Branch >= 30 && $fine->Branch <= 178 && $fine->Branch != 42 && $fine->Branch != 171) {
-					$fine->System = "MNPS";
-				} else {
-					$fine->System = "NPL";
-				}
+				$fine->System = $this->getFineSystem($fine->Branch);
 
 				if ($fine->FineAmountPaid > 0) {
 					$fine->FineAmount -= $fine->FineAmountPaid;
@@ -1146,6 +1178,7 @@ class CarlX extends AbstractIlsDriver{
 				$myFines[] = array(
 					'reason'  => $fine->FeeNotes,
 					'amount'  => $fine->FineAmount,
+					'amountVal' => $fine->FineAmount,
 					'message' => $fine->Title,
 					'date'    => date('M j, Y', strtotime($fine->FineAssessedDate)),
 					'system'  => $fine->System,
@@ -1169,16 +1202,12 @@ class CarlX extends AbstractIlsDriver{
 				if ($fine->Branch == 0) {
 					$fine->Branch = $fine->TransactionBranch;
 				}
-				if ($fine->Branch >= 30 && $fine->Branch <= 178 && $fine->Branch != 42 && $fine->Branch != 171) {
-					$fine->System = "MNPS";
-				} else {
-					$fine->System = "NPL";
-				}
+				$fine->System = $this->getFineSystem($fine->Branch);
 
 				$myFines[] = array(
 					'reason'  => $fine->FeeNotes,
-//					'amount'  => $fine->FineAmount, // TODO: There is no corresponding amount
 					'amount'  => $fine->FeeAmount,
+					'amountVal'  => $fine->FeeAmount,
 					'message' => $fine->Title,
 					'date'    => date('M j, Y', strtotime($fine->TransactionDate)),
 					'system'  => $fine->System,
@@ -1189,34 +1218,9 @@ class CarlX extends AbstractIlsDriver{
 		return $myFines;
 	}
 
-//	public function getFines($user) {
-//		$myFines = array();
-//
-//		$request = $this->getSearchbyPatronIdRequest($user);
-////		$request->CirculationFilter = false; //TODO: not sure what this filters, might be needed in actual system
-//		$request->CirculationFilter = true;
-//		$result = $this->doSoapRequest('getPatronFiscalHistory', $request);
-//		if ($result && !empty($result->FiscalHistoryItem)) {
-//			foreach($result->FiscalHistoryItem as $fine) {
-//				if ($fine->FiscalType == 'Credit') {
-//					$amount = $fine->Amount > 0 ? '-$' . sprintf('%0.2f', $fine->Amount / 100) : ''; // amounts are in cents
-//				} else {
-//					$amount = $fine->Amount > 0 ? '$' . sprintf('%0.2f', $fine->Amount / 100) : ''; // amounts are in cents
-//				}
-//				$myFines[] = array(
-//					'reason'  => $fine->Notes,
-//					'amount'  => $amount,
-//					'message' => $fine->Title,
-////					'date'    => $this->extractDateFromCarlXDateField($fine->TransDate), //TODO: set as datetime?
-//					'date'    => date('M j, Y', strtotime($fine->TransDate)), //TODO: set as datetime?
-//				);
-//			}
-//
-//			//TODO: Look At Page Result if additional Calls need to be made.
-//		}
-//
-//		return $myFines;
-//	}
+	public function getFineSystem($branchId){
+		return '';
+	}
 
 	/**
 	 * Get Patron Transactions
