@@ -34,10 +34,6 @@
 							<div class="col-xs-8">{$profile->_fullname|escape}</div>
 						</div>
 						{if !$offline}
-							<div class="form-group">
-								<div class="col-xs-4"><strong>{translate text='Fines'}</strong></div>
-								<div class="col-xs-8">{$profile->_fines|escape}</div>
-							</div>
 							{if $barcodePin}
 							{* Only Display Barcode when the barcode is used as a username and not a password *}
 							<div class="form-group">
@@ -50,10 +46,6 @@
 								<div class="col-xs-8">{$profile->_expires|escape}</div>
 							</div>
 						{/if}
-						<div class="form-group">
-							<div class="col-xs-4"><strong>{translate text='Home Library'}</strong></div>
-							<div class="col-xs-8">{$profile->_homeLocation|escape}</div>
-						</div>
 						{if !$offline}
 							{* Don't show inputs for the Horizon ILS as updating those account settings has not been implemented in the Horizon Driver. *}
 							<div class="form-group">
@@ -145,7 +137,7 @@
 									{/if}
 								</div>
 							</div>
-						{/if}
+						 {/if}
 
 						{if $showNoticeTypeInProfile}
 							<p class="alert alert-info">
