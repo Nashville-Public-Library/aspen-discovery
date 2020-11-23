@@ -298,7 +298,8 @@ class CarlX extends AbstractIlsDriver{
 					$shortMessages = $lastResponse->xpath('//ns2:ShortMessage');
 					$result->ResponseStatuses->ResponseStatus->ShortMessage = implode('; ', $shortMessages);
 					$longMessages = $lastResponse->xpath('//ns2:LongMessage');
-					$result->ResponseStatuses->ResponseStatus->LongMessage = implode('; ', $longMessages) ;
+					// TODO make empty
+					$result->ResponseStatuses->ResponseStatus->LongMessage = implode('; ', array_filter($longMessages));
 				}
 			} catch (SoapFault $e) {
 				if ($numTries == 2) {
@@ -817,20 +818,20 @@ class CarlX extends AbstractIlsDriver{
 	public function getSelfRegistrationFields() {
 		global $library;
 		$fields = array();
-		$fields[] = array('property'=>'firstName', 'type'=>'text', 'label'=>translate(['text'=>'first_name', 'defaultText'=>'First Name']), 'maxLength' => 40, 'required' => true);
-		$fields[] = array('property'=>'middleName', 'type'=>'text', 'label'=>translate(['text'=>'middle_name', 'defaultText'=>'Middle Name']), 'maxLength' => 40, 'required' => false);
-		$fields[] = array('property'=>'lastName', 'type'=>'text', 'label'=>translate(['text'=>'last_name', 'defaultText'=>'Last Name']), 'maxLength' => 40, 'required' => true);
+		$fields[] = array('property'=>'firstName', 'type'=>'text', 'label'=>'First Name', 'maxLength' => 40, 'required' => true);
+		$fields[] = array('property'=>'middleName', 'type'=>'text', 'label'=>'Middle Name', 'maxLength' => 40, 'required' => false);
+		$fields[] = array('property'=>'lastName', 'type'=>'text', 'label'=>'Last Name', 'maxLength' => 40, 'required' => true);
 		if ($library && $library->promptForBirthDateInSelfReg){
 			$birthDateMin = date('Y-m-d', strtotime('-113 years'));
 			$birthDateMax = date('Y-m-d', strtotime('-13 years'));
-			$fields[] = array('property'=>'birthDate', 'type'=>'date', 'label'=>translate(['text'=>'date_of_birth', 'defaultText'=>'Date of Birth (MM-DD-YYYY)']), 'min'=>$birthDateMin, 'max'=>$birthDateMax, 'maxLength' => 10, 'required' => true);
+			$fields[] = array('property'=>'birthDate', 'type'=>'date', 'label'=>'Date of Birth (MM-DD-YYYY)', 'min'=>$birthDateMin, 'max'=>$birthDateMax, 'maxLength' => 10, 'required' => true);
 		}
-		$fields[] = array('property'=>'address', 'type'=>'text', 'label'=>translate(['text'=>'mailing_address', 'defaultText'=>'Mailing Address']), 'maxLength' => 128, 'required' => true);
-		$fields[] = array('property'=>'city', 'type'=>'text', 'label'=>translate(['text'=>'city', 'defaultText'=>'City']), 'maxLength' => 48, 'required' => true);
-		$fields[] = array('default'=>'TN','property'=>'state', 'type'=>'text', 'label'=>translate(['text'=>'state', 'defaultText'=>'State']), 'maxLength' => 2, 'required' => true);
-		$fields[] = array('property'=>'zip', 'type'=>'text', 'label'=>translate(['text'=>'zip_code', 'defaultText'=>'Zip Code']), 'maxLength' => 32, 'required' => true);
-		$fields[] = array('property'=>'phone', 'type'=>'text',  'label'=>translate(['text'=>'phone', 'defaultText'=>'Primary Phone']), 'maxLength'=>15, 'required'=>true);
-		$fields[] = array('property'=>'email',  'type'=>'email', 'label'=>translate(['text'=>'email', 'defaultText'=>'Email']), 'maxLength' => 128, 'required' => true);
+		$fields[] = array('property'=>'address', 'type'=>'text', 'label'=>'Mailing Address', 'maxLength' => 128, 'required' => true);
+		$fields[] = array('property'=>'city', 'type'=>'text', 'label'=>'City', 'maxLength' => 48, 'required' => true);
+		$fields[] = array('default'=>'TN','property'=>'state', 'type'=>'text', 'label'=>'State', 'maxLength' => 2, 'required' => true);
+		$fields[] = array('property'=>'zip', 'type'=>'text', 'label'=>'Zip Code', 'maxLength' => 32, 'required' => true);
+		$fields[] = array('property'=>'phone', 'type'=>'text',  'label'=>'Primary Phone', 'maxLength'=>15, 'required'=>true);
+		$fields[] = array('property'=>'email',  'type'=>'email', 'label'=>'Email', 'maxLength' => 128, 'required' => true);
 		return $fields;
 	}
 
@@ -1013,9 +1014,11 @@ class CarlX extends AbstractIlsDriver{
 			if ($result) {
 				$success = stripos($result->ResponseStatuses->ResponseStatus->ShortMessage, 'Success') !== false;
 				if (!$success) {
-					$errorMessage = array();
-					$errorMessage[] = $result->ResponseStatuses->ResponseStatus->LongMessage;
-					if (in_array('A patron with that id already exists', $errorMessage)) {
+					$errorMessage = $result->ResponseStatuses->ResponseStatus->ShortMessage;
+					if (!empty($result->ResponseStatuses->ResponseStatus->LongMessage)) {
+						$errorMessage .= "... " . $result->ResponseStatuses->ResponseStatus->LongMessage;
+					}
+					if (strpos($errorMessage, 'A patron with that id already exists') !== false) {
 						global $logger;
 						$logger->log('While self-registering user for CarlX, temp id number was reported in use. Increasing internal counter', Logger::LOG_ERROR);
 						// Increment the temp patron id number.
@@ -1024,6 +1027,10 @@ class CarlX extends AbstractIlsDriver{
 							$logger->log('Failed to update Variables table with new value ' . $currentPatronIDNumber . ' for "last_selfreg_patron_id" in CarlX Driver', Logger::LOG_ERROR);
 						}
 					}
+					return array(
+						'success' => false,
+						'message' => $errorMessage
+					);
 				} else {
 					$lastPatronID->value = $currentPatronIDNumber;
 					if (!$lastPatronID->update()) {
@@ -1630,7 +1637,7 @@ class CarlX extends AbstractIlsDriver{
 				'title'   => $title,
 				'bib'     => $recordId,
 				'success' => $success,
-				'message' => $message
+				'message' => translate($message)
 		);
 	}
 
