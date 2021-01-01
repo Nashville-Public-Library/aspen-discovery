@@ -54,6 +54,7 @@ Include "c:/web/aspen-discovery/sites/nashville.aspenlocal/httpd-nashville.aspen
 ### php.ini
 Edit php.ini `C:\Bitnami\wampstack-{version}\php\php.ini`  
 Enable php SOAP extension: remove semicolon comment at line 946 in front of `extension=soap`  
+Enable php sockets extension to allow SIP connections: remove semicolon at line 947 in front of `extension=sockets`
 Turn off Opcache so php changes to code are quickly reflected ~l.1774 `opcache.enable=0`  
 
 ### Aspen Database
