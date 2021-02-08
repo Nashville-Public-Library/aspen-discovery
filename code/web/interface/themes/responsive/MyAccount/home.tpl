@@ -18,8 +18,8 @@
 
 						{translate text='You currently have'}
 						<ul>
-							<li><strong><span class="checkouts-placeholder"><img src="/images/loading.gif" alt="loading"></span></strong> titles <a href="/MyAccount/CheckedOut">checked out</a></li>
-							<li><strong><span class="holds-placeholder"><img src="/images/loading.gif" alt="loading"></span></strong> titles on <a href="/MyAccount/Holds">hold</a></li>
+							<li><strong><span class="checkouts-placeholder"><img src="/images/loading.gif" alt="loading"></span></strong> {translate text='titles <a href="/MyAccount/CheckedOut">checked out</a>'}</li>
+							<li><strong><span class="holds-placeholder"><img src="/images/loading.gif" alt="loading"></span></strong> {translate text='titles on <a href="/MyAccount/Holds">hold</a>'}</li>
 						</ul>
 						{* TODO: Show an alert if any titles are expired or are going to expire *}
 						{* TODO: Show an alert if any titles ready for pickup *}
@@ -36,11 +36,11 @@
 						{translate text ='If you rate titles, we can provide you with suggestions for titles you might like to read. Suggestions are based on titles you like and information within the catalog. Library staff does not have access to your suggestions.'}
 					</p>
 				{else}
-					<p>Based on the titles you have <a href="/MyAccount/MyRatings">rated</a>, we have <a href="/MyAccount/SuggestedTitles">suggestions for you</a>.  To improve your suggestions keep rating more titles.</p>
+					<p>{translate text='Based on the titles you have <a href="/MyAccount/MyRatings">rated</a>, we have <a href="/MyAccount/SuggestedTitles">suggestions for you</a>.  To improve your suggestions keep rating more titles.'}</p>
 				{/if}
 			{/if}
 		{else}
-			You must sign in to view this information. Click <a href="/MyAccount/Login">here</a> to sign in.
+			{translate text='You must sign in to view this information. Click <a href="/MyAccount/Login">here</a> to sign in.'}
 		{/if}
 	</div>
 {/strip}
