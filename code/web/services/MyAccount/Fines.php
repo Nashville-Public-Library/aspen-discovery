@@ -34,6 +34,7 @@ class MyAccount_Fines extends MyAccount
 				$interface->assign('profile', $user);
 				$userLibrary = $user->getHomeLibrary();
 				$fines = $user->getFines();
+
 				$useOutstanding = $user->getCatalogDriver()->showOutstandingFines();
 				$interface->assign('showOutstanding', $useOutstanding);
 
@@ -67,35 +68,75 @@ class MyAccount_Fines extends MyAccount
 						$interface->assign('finePaymentResult', $finePaymentResult);
 					}
 				}
-				$interface->assign('finesToPay', $userLibrary->finesToPay);
-				$interface->assign('userFines', $fines);
+
+				$separateFinesBySystem = $user->getCatalogDriver()->separateFinesBySystem();
 
 				$userAccountLabel = [];
 				$fineTotalsVal = [];
 				$outstandingTotalVal = [];
 				// Get Account Labels, Add Up Totals
-				foreach ($fines as $userId => $finesDetails) {
-					$userAccountLabel[$userId] = $user->getUserReferredTo($userId)->getNameAndLibraryLabel();
-					$total = $totalOutstanding = 0;
-					foreach ($finesDetails as $fine) {
-						$amount = $fine['amountVal'];
-						if (is_numeric($amount)) $total += $amount;
-						if ($useOutstanding && $fine['amountOutstandingVal']) {
-							$outstanding = $fine['amountOutstandingVal'];
-							if (is_numeric($outstanding)) $totalOutstanding += $outstanding;
+				if ($separateFinesBySystem !== true) {
+					foreach ($fines as $userId => $finesDetails) {
+						$userAccountLabel[$userId] = $user->getUserReferredTo($userId)->getNameAndLibraryLabel();
+						$total = $totalOutstanding = 0;
+						foreach ($finesDetails as $fine) {
+							$amount = $fine['amountVal'];
+							if (is_numeric($amount)) $total += $amount;
+							if ($useOutstanding && $fine['amountOutstandingVal']) {
+								$outstanding = $fine['amountOutstandingVal'];
+								if (is_numeric($outstanding)) $totalOutstanding += $outstanding;
+							}
+							if (!empty($fine['system'])){
+								$showSystem = true;
+							}
 						}
-						if (!empty($fine['system'])){
-							$showSystem = true;
+						$fineTotalsVal[$userId] = $total;
+						if ($useOutstanding) {
+							$outstandingTotalVal[$userId] = $totalOutstanding;
 						}
 					}
+				} else {
+					$userXSystem = [];
+					foreach ($fines as $userId => $finesDetails) {
+						foreach ($finesDetails as $k => $v) {
+							if (!empty($finesDetails[$k]['system'])){
+								$showSystem = true;
+							}
+							$finesDetails[$k]['userId'] = $userId;
+							$userXSystem_key = $finesDetails[$k]['system'] . '-' . $userId;
+							$userXSystem[$userXSystem_key][] = $finesDetails[$k];
+						}
+					}
+					$fines = $userXSystem;
+					foreach ($fines as $userXSystemId => $finesDetails) {
+						$total = $totalOutstanding = 0;
+						$fineTotalsVal[$userXSystemId] = $total;
+						if ($useOutstanding) {
+							$outstandingTotalVal[$userId] = $totalOutstanding;
+						}
+						foreach ($finesDetails as $fine) {
+							$amount = $finesDetails[$k]['amountVal'];
+							if (is_numeric($amount)) $total += $amount;
+							if ($useOutstanding && $finesDetails[$k]['amountOutstandingVal']) {
+								$outstanding = $fine['amountOutstandingVal'];
+								if (is_numeric($outstanding)) $totalOutstanding += $outstanding;
+							}
+						}
 
-					$fineTotalsVal[$userId] = $total;
+						preg_match('/^(.*)-(\d+$)/', $userXSystemId, $matches);
+						$system = $matches[1];
+						$userId = $matches[2];
+						$userAccountLabel[$userXSystemId] = $user->getUserReferredTo($userId)->displayName . ' : ' . $system;
 
-					if ($useOutstanding) {
-						$outstandingTotalVal[$userId] = $totalOutstanding;
+						$fineTotalsVal[$userXSystemId] = $total;
+						if ($useOutstanding) {
+							$outstandingTotalVal[$userXSystemId] = $totalOutstanding;
+						}
 					}
 				}
 
+				$interface->assign('finesToPay', $userLibrary->finesToPay);
+				$interface->assign('userXSystemFines', $fines);
 				$interface->assign('userAccountLabel', $userAccountLabel);
 				$interface->assign('fineTotalsVal', $fineTotalsVal);
 				if ($useOutstanding) {

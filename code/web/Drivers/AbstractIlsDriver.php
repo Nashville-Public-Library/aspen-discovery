@@ -371,4 +371,9 @@ abstract class AbstractIlsDriver extends AbstractDriver
 	{
 		return;
 	}
+
+	public function separateFinesBySystem(): bool
+	{
+		return false;
+	}
 }

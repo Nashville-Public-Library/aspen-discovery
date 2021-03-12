@@ -1199,4 +1199,9 @@ class CatalogConnection
 	{
 		return $this->driver->loadContactInformation($user);
 	}
+
+	public function separateFinesBySystem(): bool
+	{
+		return $this->driver->separateFinesBySystem();
+	}
 }

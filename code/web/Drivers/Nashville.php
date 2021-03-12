@@ -368,4 +368,8 @@ class Nashville extends CarlX {
 		}
 	}
 
+	public function separateFinesBySystem() : bool
+	{
+		return true;
+	}
 }
