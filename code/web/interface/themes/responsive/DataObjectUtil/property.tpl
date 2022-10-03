@@ -295,7 +295,7 @@
 				</div>
 				<div class="col-sm-5">
 					<div id="{$propName}-sample-text" style="font-family: {$propValue},arial; font-size: {if $property.previewFontSize}{$property.previewFontSize}{else}12px{/if}">
-						English, Español, 中文(简体), עברית
+						English, Español, 中文(简体), العربیة , עברית
 					</div>
 				</div>
 				<script type="text/javascript">
@@ -334,7 +334,7 @@
 				</div>
 				<div class="col-sm-5">
 					<div id="{$propName}-sample-text" style="font-family: {$propValue},arial; font-size: {if $property.previewFontSize}{$property.previewFontSize}{else}12px{/if}">
-						English, Español, 中文(简体), עברית
+						English, Español, 中文(简体), العربیة , עברית
 					</div>
 				</div>
 			</div>

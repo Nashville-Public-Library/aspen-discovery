@@ -27,12 +27,12 @@
 {if $headingFont}
 h1, h2, h3, h4, h5, .menu-bar-label, .panel-title, label,.browse-category,#browse-sub-category-menu,button,
 .btn,.myAccountLink,.adminMenuLink,.selected-browse-label-search,.result-label,.result-title,.label,#remove-search-label,#narrow-search-label,#library-name-header{ldelim}
-    font-family: "{$headingFont}", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "{$headingFont}";
 {rdelim}
 {/if}
 {if $bodyFont}
 body{ldelim}
-    font-family: "{$bodyFont}", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "{$bodyFont}";
 {rdelim}
 {/if}
 h1 small, h2 small, h3 small, h4 small, h5 small{ldelim}
