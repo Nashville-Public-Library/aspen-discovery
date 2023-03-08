@@ -2057,7 +2057,7 @@ class Library extends DataObject {
 									3 => 'Self Registration Locations for the library',
 								],
 								'label' => 'Valid Self Registration Locations',
-								'description' => 'Indicates which locations are valid pickup locations',
+								'description' => 'Indicates which locations are valid self registration locations',
 								'hideInLists' => true,
 							],
 							'selfRegistrationPasswordNotes' => [
