@@ -838,7 +838,7 @@ class CarlX extends AbstractIlsDriver {
 		];
 		if ($library && $library->promptForBirthDateInSelfReg) {
 			$birthDateMin = date('Y-m-d', strtotime('-113 years'));
-			$birthDateMax = date('Y-m-d', strtotime('-13 years'));
+			$birthDateMax = date('Y-m-d');
 			$fields[] = [
 				'property' => 'birthDate',
 				'type' => 'date',
@@ -1057,20 +1057,20 @@ class CarlX extends AbstractIlsDriver {
 			$request->Patron->RegisteredBy = $configArray['Catalog']['selfRegRegisteredBy'];
 
 			// VALIDATE BIRTH DATE.
-			// DENY REGISTRATION IF REGISTRANT IS NOT 13 - 113 YEARS OLD
+			// DENY REGISTRATION IF REGISTRANT IS NOT 0 - 113 YEARS OLD
 			if ($library && $library->promptForBirthDateInSelfReg) {
 				$birthDate = trim($_REQUEST['birthDate']);
 				$date = strtotime(str_replace('-', '/', $birthDate));
 				$birthDateMin = strtotime('-113 years');
-				$birthDateMax = strtotime('-13 years');
+				$birthDateMax = strtotime('now');
 				if ($date >= $birthDateMin && $date <= $birthDateMax) {
 					$request->Patron->BirthDate = date('Y-m-d', $date);
 				} else {
 					global $logger;
-					$logger->log('Online Registrant is too young : birth date : ' . date('Y-m-d', $date), Logger::LOG_WARNING);
+					$logger->log('SelfReg : birth date out of range' . date('Y-m-d', $date), Logger::LOG_WARNING);
 					return [
 						'success' => false,
-						'message' => 'You must be 13 years old to register.',
+						'message' => 'Your birth date, ' . date('Y-m-d', $date) . ', is out of range.',
 					];
 				}
 			}
