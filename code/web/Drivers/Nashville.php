@@ -79,7 +79,7 @@ class Nashville extends CarlX {
 				} else {
 					$logger->log("MSB Payment CarlX update succeeded on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'], Logger::LOG_DEBUG);
                     if ($feeType == 'NR') {
-                        $this->updateNonResident($patronId);
+                        $this->updateNonResident($user);
                     }
 				}
 			}
@@ -122,12 +122,9 @@ class Nashville extends CarlX {
 	}
 
     // Following successful online payment, update Patron with new Expiration Date
-    protected function updateNonResident($patronId): array {
+    protected function updateNonResident($user): array {
         global $logger;
-        $request = new stdClass();
-		$request->SearchType = 'Patron ID';
-		$request->SearchID = $patronId;
-		$request->Modifiers = '';
+        $request = $this->getSearchbyPatronIdRequest($user);
         $request->Patron = new stdClass();
         $request->Patron->PatronExpirationDate = date('c', strtotime('+1 year'));
         $result = $this->doSoapRequest('UpdatePatron', $request);
@@ -135,16 +132,16 @@ class Nashville extends CarlX {
             $success = stripos($result->ResponseStatuses->ResponseStatus->ShortMessage, 'Success') !== false;
             if (!$success) {
                 $success = false;
-                $message = "Failed to update Non Resident Patron in CarlX for $patronId .";
+                $message = "Failed to update Non Resident Patron in CarlX for $user->cat_username .";
                 $level = Logger::LOG_ERROR;
             } else {
                 $success = true;
-                $message = "Non Resident Patron updated successfully in CarlX for $patronId .";
+                $message = "Non Resident Patron updated successfully in CarlX for $user->cat_username .";
                 $level = Logger::LOG_NOTICE;
             }
         } else {
             $success = false;
-            $message = "CarlX ILS gave no response when attempting to update Non Resident Patron $patronId .";
+            $message = "CarlX ILS gave no response when attempting to update Non Resident Patron $user->cat_username .";
             $level = Logger::LOG_ERROR;
         }
         $logger->log($message, $level);
