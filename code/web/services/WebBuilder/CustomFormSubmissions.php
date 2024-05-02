@@ -29,7 +29,7 @@ class WebBuilder_CustomFormSubmissions extends ObjectEditor {
 		}
 		$this->applyFilters($object);
 		$object->orderBy($this->getSort());
-//		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
+//		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage); // commented out to get all records
 		$object->find();
 		$objectList = [];
 		while ($object->fetch()) {
@@ -129,5 +129,17 @@ class WebBuilder_CustomFormSubmissions extends ObjectEditor {
 
     protected function showQuickFilterOnPropertiesList() {
         return true;
+    }
+
+    protected function supportsPagination() {
+        return false;
+    }
+
+    public function canBatchDelete() {
+        return false;
+    }
+
+    public function canBatchEdit() {
+        return false;
     }
 }
