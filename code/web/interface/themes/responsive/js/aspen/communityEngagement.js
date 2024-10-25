@@ -42,5 +42,57 @@ AspenDiscovery.CommunityEngagement = function() {
                     alert('An error occurred while updating the reward status for this milestone.' + textStatus + ', ' + errorThrown);
                 });
         },
+        filterDropdownOptions: function(filterType) {
+            var selectedId = ' ';
+            if (filterType === 'campaign') {
+                selectedId = document.getElementById('campaign_id').value;
+            } else if (filterType === 'user') {
+                selectedId = document.getElementById('user_id').value;
+            }
+           
+            var url = Globals.path + "/Community/AJAX?method=filterCampaignsAndUsers";
+            var params = {
+                filterType: filterType,
+                id: selectedId
+            };
+
+            $.getJSON(url, params, function(data) {
+                if (data.success) {
+                    console.log(data.items);
+                   
+
+                    var campaignDiv = document.createElement('div');
+
+                    if (filterType === 'campaign') {
+                        document.getElementById('filteredCampaignList').innerHTML = '';
+
+                        data.items.forEach(function(campaign) {
+                            // var campaignDiv = document.createElement('div');
+                            campaignDiv.innerText = campaign.name;
+
+                            document.getElementById('filteredCampaignList').appendChild(campaignDiv);
+                        }) 
+
+                    } else if (filterType === 'user') {
+                        document.getElementById('filteredCampaignsHeader').innerHTML = 'Campaigns for User';
+
+                        data.items.forEach(function(campaign) {
+                            campaignDiv.innerHTML = user;
+                        })
+                        // $('#userDropdown').empty().append('<option value="">All Users</option>');
+                        // $.each(data.items, function(index, user) {
+                        //     $('#userDropdown').append('<option value=" ' + user.id + '">' + user.username + '</option>');
+                        // });
+                    }
+                } else {
+                    alert("Error: " + data.message);
+                }
+                console.log(data);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("AJAX Error: " + textStatus +", " + errorThrown);
+                alert('An error occurred while fetching filter options.' + textStatus + ', ' + errorThrown);
+            });
+        }
     }
 }(AspenDiscovery.CommunityEngagement || {});
