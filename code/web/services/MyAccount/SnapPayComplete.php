@@ -23,7 +23,7 @@ class MyAccount_SnapPayComplete extends MyAccount {
 			} else {
 				require_once ROOT_DIR . '/sys/Account/UserPayment.php';
 				$result = UserPayment::completeSnapPayPayment();
-				if ($result['success']) {
+				if (!empty($result['success'])) {
 					$message = $result['message'];
 				} else {
 					$error = $result['message'];
