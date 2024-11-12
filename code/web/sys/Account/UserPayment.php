@@ -1148,8 +1148,8 @@ class UserPayment extends DataObject {
 							[
 								'text' => 'Donation payment completed, TransactionId = %1%, TotalAmount = %2%.',
 								'isPublicFacing' => true,
-								1 => $payload['transaction_id'],
-								2 => $payload['total_amount'],
+								1 => $payload['paymenttransactionid'],
+								2 => $payload['totaltransactionamount'],
 							]
 						);
 						$userPayment->update();
@@ -1172,8 +1172,8 @@ class UserPayment extends DataObject {
 								[
 									'text' => 'Payment completed, TransactionId = %1%, TotalAmount = %2%.',
 									'isPublicFacing' => true,
-									1 => $payload['transaction_id'],
-									2 => $payload['total_amount'],
+									1 => $payload['paymenttransactionid'],
+									2 => $payload['totaltransactionamount'],
 								]
 							);
 						} else {
