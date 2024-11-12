@@ -1151,13 +1151,6 @@ class UserPayment extends DataObject {
 							]
 						);
 						$userPayment->message .= $payload['paymenttransactionid'];
-						$userPayment->message .= translate(
-							[
-								'text' => ', Total Amount: ',
-								'isPublicFacing' => true,
-							]
-						);
-						$userPayment->message .= $payload['totaltransactionamount'];
 						$userPayment->update();
 						$donation->sendReceiptEmail();
 					} else {
@@ -1189,13 +1182,6 @@ class UserPayment extends DataObject {
 								]
 							);
 							$userPayment->message .= $payload['paymenttransactionid'];
-							$userPayment->message .= translate(
-								[
-									'text' => ', Total Amount: ',
-									'isPublicFacing' => true,
-								]
-							);
-							$userPayment->message .= $payload['totaltransactionamount'];
 						} else {
 							$userPayment->error = true;
 							$userPayment->message .= translate(
