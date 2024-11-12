@@ -1146,20 +1146,28 @@ class UserPayment extends DataObject {
 						]);
 						$userPayment->message .= translate(
 							[
-								'text' => 'Donation payment completed, TransactionId = %1%, TotalAmount = %2%.',
+								'text' => 'Transaction Id: ',
 								'isPublicFacing' => true,
-								1 => $payload['paymenttransactionid'],
-								2 => $payload['totaltransactionamount'],
 							]
 						);
+						$userPayment->message .= $payload['paymenttransactionid'];
+						$userPayment->message .= translate(
+							[
+								'text' => ', Total Amount: ',
+								'isPublicFacing' => true,
+							]
+						);
+						$userPayment->message .= $payload['totaltransactionamount'];
 						$userPayment->update();
 						$donation->sendReceiptEmail();
 					} else {
-						$userPayment->message = translate([
-							'text' => 'Unable to locate donation with given payment id %1%',
-							'isPublicFacing' => true,
-							1 => $userPayment->id,
-						]);
+						$userPayment->message = translate(
+							[
+								'text' => 'Unable to locate donation with given payment id ',
+								'isPublicFacing' => true,
+							]
+						);
+						$userPayment->message .= $userPayment->id;
 					}
 				} else { // Complete fee/fine payment (i.e., not a donation)
 					$user = new User();
@@ -1170,12 +1178,24 @@ class UserPayment extends DataObject {
 						if ($completePayment['success']) {
 							$userPayment->message .= translate(
 								[
-									'text' => 'Payment completed, TransactionId = %1%, TotalAmount = %2%.',
+									'text' => 'Your payment has been completed. ',
 									'isPublicFacing' => true,
-									1 => $payload['paymenttransactionid'],
-									2 => $payload['totaltransactionamount'],
 								]
 							);
+							$userPayment->message .= translate(
+								[
+									'text' => 'Transaction Id: ',
+									'isPublicFacing' => true,
+								]
+							);
+							$userPayment->message .= $payload['paymenttransactionid'];
+							$userPayment->message .= translate(
+								[
+									'text' => ', Total Amount: ',
+									'isPublicFacing' => true,
+								]
+							);
+							$userPayment->message .= $payload['totaltransactionamount'];
 						} else {
 							$userPayment->error = true;
 							$userPayment->message .= translate(
