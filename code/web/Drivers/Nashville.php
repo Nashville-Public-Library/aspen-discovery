@@ -93,7 +93,7 @@ class Nashville extends CarlX {
 			$payment->completed = 1;
 		}
 		$payment->update();
-		$this->createPatronPaymentNote($patronId, $payment->id, $feeId);
+		$this->createPatronPaymentNote($patronId, $payment->id); // TODO: add $feeId when turning on SnapPay
 		$logger->log($message, $level);
 		if ($level == Logger::LOG_ERROR) {
 			if (!empty($systemVariables->errorEmail)) {
@@ -193,24 +193,65 @@ class Nashville extends CarlX {
 		];
 	}
 
-	protected function createPatronPaymentNote($patron, $payment, $receiptNumber): void {
+	protected function createPatronPaymentNote($patronId, $paymentId): array {
 		global $logger;
-		$paymentNote = new stdClass();
-		$paymentNote->Note = new stdClass();
-		$paymentNote->Note->PatronID = $patron->ils_barcode;
-		$paymentNote->Note->NoteType = 2;
-		$paymentNote->Note->NoteText = "$payment->paymentType Aspen Payment: $payment->id; CarlX Receipt: $receiptNumber";
-		$paymentNote->Modifiers = '';
-		$addPaymentNoteResult = $this->doSoapRequest('addPatronNote', $paymentNote, $this->patronWsdl, $this->genericResponseSOAPCallOptions, []);
-		if ($addPaymentNoteResult) {
-			$success = stripos($addPaymentNoteResult->ResponseStatuses->ResponseStatus[0]->ShortMessage, 'Success') !== false;
+		global $serverName;
+		require_once ROOT_DIR . '/sys/Email/Mailer.php';
+		$mailer = new Mailer();
+		$systemVariables = SystemVariables::getSystemVariables();
+		$request = new stdClass();
+		$request->Note = new stdClass();
+		$request->Note->PatronID = $patronId;
+		$request->Note->NoteType = 2;
+		$request->Note->NoteText = "Nexus Transaction Reference: $paymentId";
+		$request->Modifiers = '';
+		$result = $this->doSoapRequest('addPatronNote', $request);
+		if ($result) {
+			$success = stripos($result->ResponseStatuses->ResponseStatus->ShortMessage, 'Success') !== false;
 			if (!$success) {
-				$logger->log("Failed to add patron note for payment in CarlX for Reference ID $payment->id", Logger::LOG_ERROR);
+				$success = false;
+				$message = "Failed to add patron note for payment in CarlX for Reference ID $paymentId .";
+				$level = Logger::LOG_ERROR;
+			} else {
+				$success = true;
+				$message = "Patron note for payment added successfully in CarlX for Reference ID $paymentId .";
+				$level = Logger::LOG_NOTICE;
 			}
 		} else {
-			$logger->log("CarlX gave no response when attempting to add patron note for payment Reference ID $payment->id", Logger::LOG_ERROR);
+			$success = false;
+			$message = "CarlX ILS gave no response when attempting to add patron note for payment Reference ID $paymentId .";
+			$level = Logger::LOG_ERROR;
 		}
+		$logger->log($message, $level);
+		if ($level == Logger::LOG_ERROR) {
+			if (!empty($systemVariables->errorEmail)) {
+				$mailer->send($systemVariables->errorEmail, "$serverName Error with MSB Payment", $message);
+			}
+		}
+		return [
+			'success' => $success,
+			'message' => $message,
+		];
 	}
+
+//	protected function createPatronPaymentNote($patron, $payment, $receiptNumber): void {
+//		global $logger;
+//		$paymentNote = new stdClass();
+//		$paymentNote->Note = new stdClass();
+//		$paymentNote->Note->PatronID = $patron->ils_barcode;
+//		$paymentNote->Note->NoteType = 2;
+//		$paymentNote->Note->NoteText = "$payment->paymentType Aspen Payment: $payment->id; CarlX Receipt: $receiptNumber";
+//		$paymentNote->Modifiers = '';
+//		$addPaymentNoteResult = $this->doSoapRequest('addPatronNote', $paymentNote, $this->patronWsdl, $this->genericResponseSOAPCallOptions, []);
+//		if ($addPaymentNoteResult) {
+//			$success = stripos($addPaymentNoteResult->ResponseStatuses->ResponseStatus[0]->ShortMessage, 'Success') !== false;
+//			if (!$success) {
+//				$logger->log("Failed to add patron note for payment in CarlX for Reference ID $payment->id", Logger::LOG_ERROR);
+//			}
+//		} else {
+//			$logger->log("CarlX gave no response when attempting to add patron note for payment Reference ID $payment->id", Logger::LOG_ERROR);
+//		}
+//	}
 
 	protected function feePaidViaSIP($SIP2FeeType = '01', $pmtType = '02', $pmtAmount, $curType = 'USD', $feeId = '', $transId = '', $patronId = ''): array {
 		$mySip = $this->initSIPConnection();
@@ -386,7 +427,7 @@ class Nashville extends CarlX {
 		uasort($myFines, $sorter);
 		return $myFines;
 	}
-	
+
 //	public function getFines(User $patron, $includeMessages = false): array {
 //		$myFines = parent::getFines($patron, $includeMessages);
 //		foreach ($myFines as &$fine) {
