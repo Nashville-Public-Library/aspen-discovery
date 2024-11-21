@@ -228,10 +228,10 @@ class Nashville extends CarlX {
 				$mailer->send($systemVariables->errorEmail, "$serverName Error with MSB Payment", $message);
 			}
 		}
-		return [
-			'success' => $success,
-			'message' => $message,
-		];
+//		return [
+//			'success' => $success,
+//			'message' => $message,
+//		];
 	}
 
 //	protected function createPatronPaymentNote($patron, $payment, $receiptNumber): void {
