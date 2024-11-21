@@ -193,7 +193,7 @@ class Nashville extends CarlX {
 		];
 	}
 
-	protected function createPatronPaymentNote($patronId, $paymentId, $feeId): array {
+	protected function createPatronPaymentNote($patronId, $paymentId, $receiptNumber): void {
 		global $logger;
 		global $serverName;
 		require_once ROOT_DIR . '/sys/Email/Mailer.php';
