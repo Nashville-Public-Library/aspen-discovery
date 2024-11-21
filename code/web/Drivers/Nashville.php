@@ -93,7 +93,7 @@ class Nashville extends CarlX {
 			$payment->completed = 1;
 		}
 		$payment->update();
-		$this->createPatronPaymentNote($patronId, $payment->id); // TODO: add $feeId when turning on SnapPay
+		$this->createPatronPaymentNote($patronId, $payment->id, $feeId); // TODO: add $feeId when turning on SnapPay
 		$logger->log($message, $level);
 		if ($level == Logger::LOG_ERROR) {
 			if (!empty($systemVariables->errorEmail)) {
@@ -193,7 +193,7 @@ class Nashville extends CarlX {
 		];
 	}
 
-	protected function createPatronPaymentNote($patronId, $paymentId): array {
+	protected function createPatronPaymentNote($patronId, $paymentId, $feeId): array {
 		global $logger;
 		global $serverName;
 		require_once ROOT_DIR . '/sys/Email/Mailer.php';
