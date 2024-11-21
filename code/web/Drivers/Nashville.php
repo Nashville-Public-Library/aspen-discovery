@@ -8,6 +8,22 @@ class Nashville extends CarlX {
 		parent::__construct($accountProfile);
 	}
 
+	static $fineTypeTranslations = [
+		'F' => 'Fine',
+		'F2' => 'Processing',
+		'FS' => 'Manual',
+		'L' => 'Lost',
+		'NR' => 'Manual', // NR = Non Resident, a juke to identify Nashville non resident account fees
+	];
+
+	static $fineTypeSIP2Translations = [
+		'F' => '04',
+		'F2' => '05',
+		'FS' => '01',
+		'L' => '07',
+		'NR' => '01', // NR = Non Resident, a juke to identify Nashville non resident account fees
+	];
+
 	public function completeFinePayment(User $patron, UserPayment $payment): array {
 		global $logger;
 		global $serverName;
@@ -15,44 +31,125 @@ class Nashville extends CarlX {
 		$mailer = new Mailer();
 		require_once ROOT_DIR . '/sys/SystemVariables.php';
 		$systemVariables = SystemVariables::getSystemVariables();
-
-		// Nashville Non-Resident processing:
-		// Look for Non-Resident Fee associated with patron's account and whether it is included in this payment
-		// If so, update the patron's expiration date
 		$accountLinesPaid = explode(',', $payment->finesPaid);
-		$allFines = $this->getFines($patron);
+		$patron->id = $payment->userId;
+		$patronId = $patron->ils_barcode;
+		$allPaymentsSucceed = true;
 		foreach ($accountLinesPaid as $line) {
-			[$feeId, $pmtAmount] = explode('|', $line);
-			foreach ($allFines as $fine) {
-				if ($fine['fineId'] == $feeId) {
-					if ($fine['type'] == 'NON-RESIDENT FEE') {
-						$this->updateNonResident($patron);
-						break;
+			// MSB Payments are in the form of fineId|paymentAmount
+			[
+				$feeId,
+				$pmtAmount,
+			] = explode('|', $line);
+			[
+				$feeId,
+				$feeType,
+			] = explode('-', $feeId);
+			$feeTypeSIP = Nashville::$fineTypeSIP2Translations[$feeType];
+			if (strlen($feeId) == 13 && strpos($feeId, '1700') === 0) { // we stripped out leading octothorpes (#) from CarlX manual fines in CarlX.php getFines() which take the form "#".INSTBIT (Institution; Nashville = 1700) in order to sidestep CSS/javascript selector "#" problems; need to add them back for updating CarlX via SIP2 Fee Paid
+				$feeId = '#' . $feeId;
+			}
+			$response = $this->feePaidViaSIP($feeTypeSIP, '02', $pmtAmount, 'USD', $feeId, '', $patronId); // As of CarlX 9.6, SIP2 37/38 BK transaction id is written by CarlX as a receipt number; CarlX will not keep information passed through 37 BK; hence transId should be empty instead of, e.g., MSB's Transaction ID at $payment->orderId
+			// If failed with 'Invalid patron ID', check for changed patron ID
+			if ($response['success'] === false && $response['message'] == 'Invalid patron ID.') {
+				$newPatronIds = $this->getPatronIDChanges($patronId);
+				if ($newPatronIds) {
+					foreach ($newPatronIds as $newPatronId) {
+						$logger->log("MSB Payment CarlX update failed on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'] . ". Trying patron id change lookup on $patronId, found " . $newPatronId['NEWPATRONID'], Logger::LOG_ERROR);
+						$response = $this->feePaidViaSIP($feeTypeSIP, '02', $pmtAmount, 'USD', $feeId, '', $newPatronId['NEWPATRONID']);
+						if ($response['success'] === false) {
+							$logger->log("MSB Payment CarlX update failed on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'], Logger::LOG_ERROR);
+							$allPaymentsSucceed = false;
+						} else {
+							$logger->log("MSB Payment CarlX update succeeded on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'], Logger::LOG_DEBUG);
+							$allPaymentsSucceed = true;
+							break;
+						}
 					}
+				} else {
+					$logger->log("MSB Payment CarlX update failed on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'] . ". Trying patron id change lookup... failed to find patron id change for $patronId", Logger::LOG_ERROR);
+				}
+			}
+			if ($response['success'] === false) {
+				$logger->log("MSB Payment CarlX update failed on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'], Logger::LOG_ERROR);
+				$allPaymentsSucceed = false;
+			} else {
+				$logger->log("MSB Payment CarlX update succeeded on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'], Logger::LOG_DEBUG);
+				if ($feeType == 'NR') {
+					$this->updateNonResident($patron);
 				}
 			}
 		}
-
-		$result = parent::completeFinePayment($patron, $payment);
-		if ($result['success'] === false) {
-			$message = "Online payment CarlX update failed for Payment Reference ID $payment->id. See messages.log for details on individual items.";
+		if ($allPaymentsSucceed === false) {
+			$success = false;
+			$message = "MSB Payment CarlX update failed for Payment Reference ID $payment->id . See messages.log for details on individual items.";
 			$level = Logger::LOG_ERROR;
+			$payment->completed = 9;
 		} else {
-			$message = "Online payment successfully recorded in CarlX for Payment Reference ID $payment->id.";
-			$level = Logger::LOG_DEBUG;
+			$success = true;
+			$message = "MSB payment successfully recorded in CarlX for Payment Reference ID $payment->id .";
+			$level = Logger::LOG_NOTICE;
+			$payment->completed = 1;
 		}
+		$payment->update();
+		$this->createPatronPaymentNote($patronId, $payment->id);
 		$logger->log($message, $level);
-
 		if ($level == Logger::LOG_ERROR) {
 			if (!empty($systemVariables->errorEmail)) {
-				$mailer->send($systemVariables->errorEmail, "$serverName Error with online payment", $message);
+				$mailer->send($systemVariables->errorEmail, "$serverName Error with MSB Payment", $message);
 			}
 		}
 		return [
-			'success' => $result['success'],
+			'success' => $success,
 			'message' => $message,
 		];
 	}
+
+//	public function completeFinePayment(User $patron, UserPayment $payment): array {
+//		global $logger;
+//		global $serverName;
+//		require_once ROOT_DIR . '/sys/Email/Mailer.php';
+//		$mailer = new Mailer();
+//		require_once ROOT_DIR . '/sys/SystemVariables.php';
+//		$systemVariables = SystemVariables::getSystemVariables();
+//
+//		// Nashville Non-Resident processing:
+//		// Look for Non-Resident Fee associated with patron's account and whether it is included in this payment
+//		// If so, update the patron's expiration date
+//		$accountLinesPaid = explode(',', $payment->finesPaid);
+//		$allFines = $this->getFines($patron);
+//		foreach ($accountLinesPaid as $line) {
+//			[$feeId, $pmtAmount] = explode('|', $line);
+//			foreach ($allFines as $fine) {
+//				if ($fine['fineId'] == $feeId) {
+//					if ($fine['type'] == 'NON-RESIDENT FEE') {
+//						$this->updateNonResident($patron);
+//						break;
+//					}
+//				}
+//			}
+//		}
+//
+//		$result = parent::completeFinePayment($patron, $payment);
+//		if ($result['success'] === false) {
+//			$message = "Online payment CarlX update failed for Payment Reference ID $payment->id. See messages.log for details on individual items.";
+//			$level = Logger::LOG_ERROR;
+//		} else {
+//			$message = "Online payment successfully recorded in CarlX for Payment Reference ID $payment->id.";
+//			$level = Logger::LOG_DEBUG;
+//		}
+//		$logger->log($message, $level);
+//
+//		if ($level == Logger::LOG_ERROR) {
+//			if (!empty($systemVariables->errorEmail)) {
+//				$mailer->send($systemVariables->errorEmail, "$serverName Error with online payment", $message);
+//			}
+//		}
+//		return [
+//			'success' => $result['success'],
+//			'message' => $message,
+//		];
+//	}
 
 	public function canPayFine($system): bool {
 		$canPayFine = false;
@@ -94,7 +191,7 @@ class Nashville extends CarlX {
 			'message' => $message,
 		];
 	}
-	
+
 	protected function createPatronPaymentNote($patron, $payment, $receiptNumber): void {
 		global $logger;
 		$paymentNote = new stdClass();
@@ -266,7 +363,7 @@ class Nashville extends CarlX {
 				from ir
 				left join bbibmap_v2 b on ir.bid = b.bid
 			), ix as (
-				select 
+				select
                     distinct irb.item as Barcode
 					, irb.title as Title
 					, irb.author as Author
@@ -334,21 +431,21 @@ EOT;
 				-- and t.pickupbranch = ob.branchnumber -- commented out in 23.08.01 to include MNPS Exploratorium holds; originally meant to ensure a lock between school collection and pickup branch ; pickup branch field changed from t.renew to t.pickupbranch in CarlX 9.6.8.0
 				and t.transcode = 'R*'
 				and i.status = 'S'
-				order by 
+				order by
 					t.bid
 					, t.occur
-			), 
+			),
 			fillable as (
-				select 
+				select
 					h.*
 				from holds_vs_items h
 				where h.occur_dense_rank = h.nth_item_on_shelf
-				order by 
+				order by
 					h.SHELF_LOCATION
 					, h.CALL_NUMBER
 					, h.TITLE
 					, h.occur_dense_rank
-			), 
+			),
             bib_level_holds as (
                 select
                     PATRON_NAME
@@ -383,7 +480,7 @@ EOT;
                 left join branch_v2 pb on t.pickupbranch = pb.branchnumber -- Pickup Branch
             	where ob.branchcode = '$location'
                 and t.transcode = 'R*'
-                order by 
+                order by
                     i.bid
             )
             , holds as (
@@ -396,7 +493,7 @@ EOT;
                 from item_level_holds
             )
             select * from holds
-            order by 
+            order by
                 SHELF_LOCATION
                 , CALL_NUMBER
                 , TITLE
@@ -512,13 +609,13 @@ EOT;
 						when p.bty = 25 then '3rd'
 						else p.bty-22 || 'th'
 					end as grade
-				     , case 
+				     , case
 							when (p.bty = 13 OR p.bty = 40 OR p.bty = 51)
 							then 'HR: ' || initcap(p.name)
 							else 'HR: ' || initcap(p.sponsor)
 						end as homeroom
-					, case 
-							when (p.bty = 13 OR p.bty = 40 OR p.bty = 51) 
+					, case
+							when (p.bty = 13 OR p.bty = 40 OR p.bty = 51)
 							then p.patronid
 							else p.street2
 						end as homeroomid
@@ -573,7 +670,7 @@ EOT;
         /** @noinspection SqlResolve */
         /** @noinspection SqlConstantExpression */
         $sql = <<<EOT
-			select 
+			select
 			  branchcode
               , min(grade) as bty
 			  , homeroomid
@@ -676,7 +773,7 @@ EOT;
 					, to_char(transitem_v2.duedate,'MM/DD/YYYY') AS Due_Date_Dup
 					, item_v2.item AS Item
 					, item_v2.bid AS recordId
-				from 
+				from
 					bbibmap_v2
 					, branch_v2 patronbranch
 					, branch_v2 itembranch
@@ -701,7 +798,7 @@ EOT;
 					and patronbranchgroup.branchgroup = patronbranch.branchgroup
 					and bty in ('13','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','40','42','46','47','51')
 					and patronbranch.branchcode = '$location'
-				order by 
+				order by
 					patronbranch.branchcode
 					, patron_v2.bty
 					, patron_v2.sponsor
@@ -742,18 +839,18 @@ EOT;
 						, to_char(r.duedate,'MM/DD/YYYY') as due
 						, to_char(r.amountowed / 100, 'fm999D00') as owed
 						, r.item
-					from p 
+					from p
 					left join report3fines_v2 r on p.patronid = r.patronid
 					where r.patronid is not null
 						and r.amountowed > 0
-					order by 
+					order by
 						p.branchcode
 						, p.bty
 						, p.sponsor
 						, p.name
 						, r.callnumber
 						, r.title
-				) 
+				)
 				select
 					 r.branchcode AS Home_Lib_Code
 					, r.branchname AS Home_Lib
@@ -773,7 +870,7 @@ EOT;
 				from r
 				left join item_v2 i on r.item = i.item
 				left join branch_v2 itembranch on i.owningbranch = itembranch.branchnumber
-				order by 
+				order by
 					r.branchcode
 					, r.bty
 					, r.sponsor
@@ -812,7 +909,7 @@ EOT;
         /** @noinspection SqlResolve */
         $sql = <<<EOT
             -- Weeding Report 2024 05 05 by James Staub. This query is NOT efficient and often takes more than 1 minute to run.
-            with 
+            with
             i as (
                 select
                     m.medname
@@ -837,7 +934,7 @@ EOT;
                     , to_char(max(r.returndate),'MM/DD/YYYY') as returndate
                 from itemnotewhohadit_v2 r
                 group by r.refid
-            ), 
+            ),
             ir as (
                 select
                     i.*
@@ -1460,7 +1557,7 @@ EOT;
                 select '1027','periodical','1000','-1000' from dual union all -- loccode ~ .PER
                 select '1076','technology/computers','1000','-1000' from dual union all -- loccode ~ .TECH
                 select '1106','textured bags','1000','-1000' from dual -- loccode ~ .TEXT
-            ), 
+            ),
             drange as ( -- "deranged" because James thinks he's funny
                 select
                     d.*
@@ -1469,7 +1566,7 @@ EOT;
                         when dewey_number = '000'
                             then 100
                         when dewey_number < 1000
-                            then (dewey_number/1000 + power(10,-length(to_char(dewey_number/1000))+1))*1000 
+                            then (dewey_number/1000 + power(10,-length(to_char(dewey_number/1000))+1))*1000
                         when dewey_number > 1000
                             then to_number(dewey_number)+1
                         else -9 -- this value was picked out of a hat to be out of other ranges. THere should be ZERO calculations that end with this value
@@ -1477,11 +1574,11 @@ EOT;
                 from d
             ),
             id as (
-                select 
+                select
                     bd.*
                     , case
                         when drange.drange_start >= -1 and drange.drange_stop <= 1000
-                            then drange.dewey_number 
+                            then drange.dewey_number
                         when drange.drange_start > 1000
                             then regexp_replace(bd.locname, '(adult |everyone |kids |teen )','')
                         else 'OOPS SOMETHING WENT WRONG'
@@ -1491,9 +1588,9 @@ EOT;
                     , drange.keep as keepyear
                     , drange.discard as discardyear
                 from bd
-                left join drange 
-                    on 
-                        to_number(bd.dewey_number) >= drange.drange_start 
+                left join drange
+                    on
+                        to_number(bd.dewey_number) >= drange.drange_start
                     and
                         to_number(bd.dewey_number) < drange.drange_stop
                 where bd.dewey_number >= -1
@@ -1509,10 +1606,10 @@ EOT;
                 from id
             ),
             x as (
-                select 
+                select
                     dranked.*
                 from dranked
-                where rn = 1 
+                where rn = 1
                 order by locname, item_callnumber, author, title, item
             )
             select
