@@ -231,7 +231,7 @@ class Nashville extends CarlX {
 				return [
 					'success' => false,
 					'message' => [
-						'text' => 'Unknown problem with circulation server, please try again later.',
+						'text' => 'Unknown problem with circulation server, please try again later.' . "\nIN: " . $in . "\nMSG_RESULT: " . $msg_result,
 						'isPublicFacing' => true,
 					],
 				];
