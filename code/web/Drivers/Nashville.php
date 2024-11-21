@@ -71,7 +71,8 @@ class Nashville extends CarlX {
 				}
 			}
 			if ($response['success'] === false) {
-				$logger->log("MSB Payment CarlX update failed on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'], Logger::LOG_ERROR);
+				$message = is_array($response['message']) ? implode(', ', $response['message']) : (string)$response['message'];
+				$logger->log("MSB Payment CarlX update failed on Payment Reference ID $payment->id on FeeID $feeId : " . $message, Logger::LOG_ERROR);
 				$allPaymentsSucceed = false;
 			} else {
 				$logger->log("MSB Payment CarlX update succeeded on Payment Reference ID $payment->id on FeeID $feeId : " . $response['message'], Logger::LOG_DEBUG);
@@ -92,7 +93,7 @@ class Nashville extends CarlX {
 			$payment->completed = 1;
 		}
 		$payment->update();
-		$this->createPatronPaymentNote($patronId, $payment->id);
+		$this->createPatronPaymentNote($patronId, $payment->id, $feeId);
 		$logger->log($message, $level);
 		if ($level == Logger::LOG_ERROR) {
 			if (!empty($systemVariables->errorEmail)) {
