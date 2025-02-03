@@ -861,18 +861,22 @@ class SearchObject_SummonSearcher extends SearchObject_BaseSearcher{
 	}
 
 	public function setSearchTerm() {
-		if (strpos($this->searchTerms, ':') !== false) {
-			[
-				$searchIndex,
-				$term,
-			] = explode(':', $this->searchTerms, 2);
-			$this->setSearchTerms([
-				'lookfor' => $term,
-				'index' => $searchIndex,
-			]);
+		if (is_array($this->searchTerms) && count($this->searchTerms) > 0) {
+			if (strpos($this->searchTerms[0], ':') !== false) {
+				[$searchIndex, $term] = explode(':', $this->searchTerms[0], 2);
+				$this->setSearchTerms([
+					'lookfor' => $term,
+					'index' => $searchIndex,
+				]);
+			} else {
+				$this->setSearchTerms([
+					'lookfor' => $this->searchTerms[0],
+					'index' => $this->getDefaultIndex(),
+				]);
+			}
 		} else {
 			$this->setSearchTerms([
-				'lookfor' => $this->searchTerms,
+				'lookfor' => '',
 				'index' => $this->getDefaultIndex(),
 			]);
 		}
