@@ -3678,22 +3678,12 @@ class MyAccount_AJAX extends JSON_Action {
 			} else {
 				$selectedUser = $this->setFilterLinkedUser();
 				$selectedHolds = $this->setFilterSelectedHolds();
-
-				$interface->assign('currentUserId', $user->id);
-				$interface->assign('currentUserName', $user->displayName);
-				if ($user->getHomeLibrary() != null) {
-					$allowFilteringOfLinkedAccountsInHolds = $user->getHomeLibrary()->allowFilteringOfLinkedAccountsInHolds;
-				} else {
-					$allowFilteringOfLinkedAccountsInHolds = $library->allowFilteringOfLinkedAccountsInHolds;
-				}
-
 				if ($user->getHomeLibrary() != null) {
 					$allowSelectingHoldsToDisplay = $user->getHomeLibrary()->allowSelectingHoldsToDisplay;
 				} else {
 					$allowSelectingHoldsToDisplay = $library->allowSelectingHoldsToDisplay;
 				}
-				$interface->assign('selectedUser', $selectedUser);
-				$interface->assign('allowFilteringOfLinkedAccountsInHolds', $allowFilteringOfLinkedAccountsInHolds);
+
 				$interface->assign('allowSelectingHoldsToDisplay', $allowSelectingHoldsToDisplay);
 
 
@@ -3752,12 +3742,10 @@ class MyAccount_AJAX extends JSON_Action {
 					$availableHoldSortOptions['location'] = 'Pickup Location';
 				}
 
-				$linkedUsers = $user->getLinkedUsers();
-				if (count($linkedUsers) > 0) {
+				if (count($user->getlinkedUsers()) > 0) {
 					$unavailableHoldSortOptions['libraryAccount'] = 'Library Account';
 					$availableHoldSortOptions['libraryAccount'] = 'Library Account';
 				}
-				$interface->assign('linkedUsers', $linkedUsers);
 
 				$interface->assign('sortOptions', [
 					'available' => $availableHoldSortOptions,

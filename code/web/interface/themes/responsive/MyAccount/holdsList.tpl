@@ -1,22 +1,4 @@
 {assign var="hideCoversFormDisplayed" value=false}
-{if count($linkedUsers) > 0 && $allowFilteringOfLinkedAccountsInHolds}
-	<div class="row">
-		<div class="col-tn-12">
-			<div id="linkedUserOptions" class="form-group">
-				<label class="control-label" for="linkedUsersDropdown">{translate text="Linked Users" isPublicFacing=true}&nbsp;</label>
-				<select name="selectedUser" id="linkedUsersDropdown" class="form-control" onchange="AspenDiscovery.Account.filterOutLinkedUsers();">
-					<option value="" {if $selectedUser == ""}selected{/if}>All</option>
-					<option value="{$currentUserId}" {if $selectedUser == $currentUserId} selected="selected"{/if}>
-						{$currentUserName}
-					</option>
-					{foreach from=$linkedUsers item=user}
-						<option value="{$user->id}"{if $selectedUser == $user->id} selected="selected"{/if}>{$user->displayName}</option>
-					{/foreach}
-				</select>
-			</div>
-		</div>
-	</div>
-{/if}
 {foreach from=$recordList item=sectionData key=sectionKey}
 	<h2>{if $sectionKey == 'available'}{translate text="Holds Ready For Pickup" isPublicFacing=true}{else}{if $source=='interlibrary_loan'}{translate text="Pending Requests" isPublicFacing=true}{else}{translate text="Pending Holds" isPublicFacing=true}{/if}{/if}</h2>
 	<p class="alert alert-info">
