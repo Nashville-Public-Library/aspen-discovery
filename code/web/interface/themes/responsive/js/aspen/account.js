@@ -311,6 +311,7 @@ AspenDiscovery.Account = (function () {
 				if (data.success) {
 					$('#accountLoadTime').html(data.holdInfoLastLoaded);
 					$("#" + source + "HoldsPlaceholder").html(data.holds);
+					AspenDiscovery.Account.loadMenuData();
 				} else {
 					$("#" + source + "HoldsPlaceholder").html(data.message);
 				}

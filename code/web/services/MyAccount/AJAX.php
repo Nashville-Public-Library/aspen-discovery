@@ -2563,8 +2563,6 @@ class MyAccount_AJAX extends JSON_Action {
 						$ilsSummary->totalFines += $linkedUserSummary->totalFines;
 						$ilsSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
 						$ilsSummary->numOverdue += $linkedUserSummary->numOverdue;
-						$ilsSummary->numAvailableHolds += $linkedUserSummary->numAvailableHolds;
-						$ilsSummary->numUnavailableHolds += $linkedUserSummary->numUnavailableHolds;
 						$ilsSummary->setMaterialsRequests($ilsSummary->getMaterialsRequests() + $linkedUser->getNumMaterialsRequests());
 					}
 				}
@@ -2583,6 +2581,20 @@ class MyAccount_AJAX extends JSON_Action {
 				//Expiration and fines
 				$interface->assign('ilsSummary', $ilsSummary);
 				$interface->setFinesRelatedTemplateVariables();
+				
+				$result = $this->getHolds();
+
+				if ($result['success'] === true) {
+					$allHolds = $interface->getVariable('recordList');
+					if (isset($allHolds['available']) && isset($allHolds['unavailable'])) {
+						$numAvailableHolds = count($allHolds['available']);
+						$numUnavailableHolds = count($allHolds['unavailable']);
+
+						$ilsSummary->numAvailableHolds = $numAvailableHolds;
+						$ilsSummary->numUnavailableHolds = $numUnavailableHolds;
+					}
+				}
+
 				if ($interface->getVariable('expiredMessage')) {
 					$interface->assign('expiredMessage', str_replace('%date%', date('M j, Y', $ilsSummary->expirationDate), $interface->getVariable('expiredMessage')));
 				}
@@ -3797,7 +3809,6 @@ class MyAccount_AJAX extends JSON_Action {
 				'isPublicFacing' => true,
 			]);
 		}
-
 		return $result;
 	}
 
