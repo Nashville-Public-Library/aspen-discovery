@@ -3081,7 +3081,10 @@ class MyAccount_AJAX extends JSON_Action {
 			$selectedUnavailableSortOption = ($showPosition ? 'position' : 'title');
 		}
 
-		$allHolds = $user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source);
+		$selectedHolds = $this->setFilterSelectedHolds();
+		$selectedUser = $this->setFilterLinkedUser();
+
+		$allHolds = $this->filterHolds($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source),$selectedUser, $selectedHolds);
 
 		$showDateWhenSuspending = $user->showDateWhenSuspending();
 
