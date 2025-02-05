@@ -6847,7 +6847,7 @@ AspenDiscovery.Account = (function () {
 			var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
 			var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
 			var showCovers = $('#showCovers').prop('checked');
-			AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, undefined);
+			AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, []);
 		},
 		displayOnlySelectedHolds: function () {
 			var selectedTitles = AspenDiscovery.getSelectedTitles();
