@@ -287,6 +287,13 @@ function getUpdates25_02_00(): array {
 				'ALTER TABLE library ADD COLUMN allowFilteringOfLinkedAccountsInHolds TINYINT(1) DEFAULT 0',
 			]
 		],
+		'allow_selecting_holds_to_display' => [
+			'title' => 'Allow Selecting Holds to Display',
+			'description' => 'Allow libraries the option of allowing users to display only selected holds',
+			'sql' => [
+				'ALTER TABLE library ADD COLUMN allowSelectingHoldsToDisplay TINYINT(1) DEFAULT 0',
+			]
+		],
 
 		//chloe - PTFS-Europe
 		'save_library_ils_consent_feature_toggle_value' => [

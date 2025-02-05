@@ -102,6 +102,10 @@
 			<a href="#" onclick="AspenDiscovery.Account.confirmThawHoldSelected()" class="btn btn-sm btn-default">{translate text="Thaw Selected" isPublicFacing=true}</a>
 			<a href="#" onclick="AspenDiscovery.Account.confirmThawHoldAll('{$userId}')" class="btn btn-sm btn-default">{translate text="Thaw All" isPublicFacing=true}</a>
 			{/if}
+			{if $allowSelectingHoldsToDisplay}
+				<a href="#" onclick="AspenDiscovery.Account.displayOnlySelectedHolds()" class="btn btn-sm btn-default">{translate text="Display Selected" isPublicFacing=true}</a>
+				<a href="#" onclick="AspenDiscovery.Account.clearDisplayOnlySelectedHolds()" class="btn btn-sm btn-default">{translate text="Display All" isPublicFacing=true}</a>
+			{/if}
 		</div>
 		<div class="btn-group">
 			<input type="hidden" name="withSelectedAction" value="">

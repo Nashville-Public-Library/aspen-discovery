@@ -331,6 +331,8 @@ class Library extends DataObject {
 
 	public $allowLinkedAccounts;
 	public $allowFilteringOfLinkedAccountsInHolds;
+	public $allowSelectingHoldsToDisplay;
+
 
 	public $maxFinesToAllowAccountUpdates;
 
@@ -1317,6 +1319,14 @@ class Library extends DataObject {
 						'type' => 'checkbox',
 						'label' => 'Allow Filtering of Linked Accounts in Holds',
 						'description' => 'Whether or not users can filter their holds by linked accounts.',
+						'hideInLists' => true,
+						'default' => 0,
+						'permissions' => ['Library ILS Options'],
+					],
+					'allowSelectingHoldsToDisplay' => [
+						'property' => 'allowSelectingHoldsToDisplay',
+						'type' => 'checkbox',
+						'label' => 'Allow Ability To Display Only Selected Holds.',
 						'hideInLists' => true,
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],

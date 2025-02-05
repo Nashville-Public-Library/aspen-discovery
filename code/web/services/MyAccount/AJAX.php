@@ -3550,27 +3550,58 @@ class MyAccount_AJAX extends JSON_Action {
 		return $result;
 	}
 
-	public function filterHoldsByUser (array $allHolds, $selectedUser): array {
+	public function filterHolds(array $allHolds, string $selectedUser, $selectedHolds): array {
+
+		if (!empty($selectedHolds) && !is_array($selectedHolds)) {
+			$selectedHoldsArray = [];
+			parse_str($selectedHolds, $parsedHolds);
+
+			if (isset($parsedHolds['selected'])) {
+				foreach ($parsedHolds['selected'] as $holdKey => $value) {
+					if (preg_match('/(\d+)\|(\d+)\|/', $holdKey, $matches)) {
+						$selectedHoldsArray[] = [
+							'userId' => (int)$matches[1],
+							'recordId' => (int)$matches[2],
+						];
+					}
+				}
+			}
+			$selectedHolds = $selectedHoldsArray;
+		}
 
 		$filteredHolds = [
 			'available' => [],
 			'unavailable' => [],
 		];
 
-		$includeAllUsers = empty($selectedUser) || $selectedUser == "";
+		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" || $selectedUser === '[""]');
 
 		foreach ($allHolds['available'] as $key => $hold) {
-			if ($includeAllUsers || $hold->userId == $selectedUser) {
+			if ($allUsersSelected || strval($hold->userId) === strval($selectedUser)) {
 				$filteredHolds['available'][$key] = $hold;
 			}
 		}
 
 		foreach ($allHolds['unavailable'] as $key => $hold) {
-			if ($includeAllUsers || $hold->userId == $selectedUser) {
+			if ($allUsersSelected || strval($hold->userId) === strval($selectedUser)) {
+				if (!empty($selectedHolds)) {
+					$matchFound = false;
+					foreach ($selectedHolds as $selectedHold) {
+						if (
+							intval($hold->recordId) === intval($selectedHold['recordId']) &&
+							intval($hold->userId) === intval($selectedHold['userId'])
+						) {
+							$matchFound = true;
+							break;
+						}
+					}
+					if (!$matchFound) {
+						continue;
+					}
+				}
 				$filteredHolds['unavailable'][$key] = $hold;
 			}
 		}
-
 		return $filteredHolds;
 	}
 
@@ -3589,6 +3620,28 @@ class MyAccount_AJAX extends JSON_Action {
 			$selectedUser = $_SESSION['selectedUser'];
 		}
 		return (string)$selectedUser;
+	}
+
+	function setFilterSelectedHolds() {
+		global $interface;
+		$selectedHolds = [];
+
+		if (isset($_REQUEST['selectedHolds'])) {
+			$selectedHolds = json_decode($_REQUEST['selectedHolds'], true);
+
+			if (isset($_SESSION)) {
+				if (empty($selectedHolds)) {
+					unset($_SESSION['selectedHolds']);
+				} else {
+					$_SESSION['selectedHolds'] = $selectedHolds;
+				}
+			}
+		} elseif (isset($_SESSION['selectedHolds'])) {
+			$selectedHolds = $_SESSION['selectedHolds'];
+		}
+		$interface->assign('selectedHolds', $selectedHolds);
+
+		return $selectedHolds;
 	}
 
 	/** @noinspection PhpUnused */
@@ -3621,6 +3674,8 @@ class MyAccount_AJAX extends JSON_Action {
 				]);
 			} else {
 				$selectedUser = $this->setFilterLinkedUser();
+				$selectedHolds = $this->setFilterSelectedHolds();
+
 				$interface->assign('currentUserId', $user->id);
 				$interface->assign('currentUserName', $user->displayName);
 				if ($user->getHomeLibrary() != null) {
@@ -3628,8 +3683,16 @@ class MyAccount_AJAX extends JSON_Action {
 				} else {
 					$allowFilteringOfLinkedAccountsInHolds = $library->allowFilteringOfLinkedAccountsInHolds;
 				}
+
+				if ($user->getHomeLibrary() != null) {
+					$allowSelectingHoldsToDisplay = $user->getHomeLibrary()->allowSelectingHoldsToDisplay;
+				} else {
+					$allowSelectingHoldsToDisplay = $library->allowSelectingHoldsToDisplay;
+				}
 				$interface->assign('selectedUser', $selectedUser);
 				$interface->assign('allowFilteringOfLinkedAccountsInHolds', $allowFilteringOfLinkedAccountsInHolds);
+				$interface->assign('allowSelectingHoldsToDisplay', $allowSelectingHoldsToDisplay);
+
 
 				if ($source != 'interlibrary_loan') {
 					if ($user->getHomeLibrary() != null) {
@@ -3718,7 +3781,7 @@ class MyAccount_AJAX extends JSON_Action {
 				global $offlineMode;
 				if (!$offlineMode) {
 					if ($user) {
-						$allHolds = $this->filterHoldsByUser($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source), $selectedUser);
+						$allHolds = $this->filterHolds($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source), $selectedUser, $selectedHolds);
 						$interface->assign('recordList', $allHolds);
 					}
 				}
