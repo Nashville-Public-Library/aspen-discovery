@@ -280,6 +280,13 @@ function getUpdates25_02_00(): array {
 		//kodi
 
 		//alexander - PTFS-Europe
+		'allow_filtering_of_linked_users_in_holds' => [
+			'title' => 'Allow Filtering of Linked Users in Holds',
+			'description' => 'Allow libraries the option of allowing users to filter their holds by linked user',
+			'sql' => [
+				'ALTER TABLE library ADD COLUMN allowFilteringOfLinkedAccountsInHolds TINYINT(1) DEFAULT 0',
+			]
+		],
 
 		//chloe - PTFS-Europe
 		'save_library_ils_consent_feature_toggle_value' => [

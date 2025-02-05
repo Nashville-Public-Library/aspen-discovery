@@ -256,9 +256,14 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
-		loadHolds: function (source, availableHoldSort, unavailableHoldSort, showCovers) {
+		loadHolds: function (source, availableHoldSort, unavailableHoldSort, showCovers, selectedUser) {
 			AspenDiscovery.Account.currentHoldSource = source;
 			var url = Globals.path + "/MyAccount/AJAX?method=getHolds&source=" + source;
+
+			if (selectedUser || selectedUser == "") {
+				url += "&selectedUser=" + selectedUser;
+			}
+
 			if (availableHoldSort !== undefined) {
 				url += "&availableHoldSort=" + availableHoldSort;
 			}
@@ -273,7 +278,8 @@ AspenDiscovery.Account = (function () {
 				source: source,
 				availableHoldSort: availableHoldSort,
 				unavailableHoldSort: unavailableHoldSort,
-				showCovers: showCovers
+				showCovers: showCovers,
+				selectedUser: selectedUser
 			};
 			var newUrl = AspenDiscovery.buildUrl(document.location.origin + document.location.pathname, 'source', source);
 			if (document.location.href) {
@@ -1309,6 +1315,15 @@ AspenDiscovery.Account = (function () {
 			}).get().join("&");
 
 			return queryString;
+		},
+
+		filterOutLinkedUsers: function () {
+			var selectedUser = $('#linkedUsersDropdown').val();
+			sessionStorage.setItem('selectedUser', selectedUser);
+			var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+			var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+			var showCovers = $('#showCovers').prop('checked');
+			AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser);
 		},
 
 		saveSearch: function (searchId) {
