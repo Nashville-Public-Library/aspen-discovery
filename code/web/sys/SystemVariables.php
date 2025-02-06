@@ -32,7 +32,6 @@ class SystemVariables extends DataObject {
 	public $offlineMessage;
 	public $appScheme;
 	public $enableBrandedApp;
-	public $enableAspenEvents;
 	public $supportingCompany;
 	public $googleBucket;
 	public $trackIpAddresses;
@@ -40,6 +39,7 @@ class SystemVariables extends DataObject {
 	public $allowScheduledUpdates;
 	public $doQuickUpdates;
 	public $monitorAntivirus;
+	public $useOriginalCoverUrls;
 
 
 	static function getObjectStructure($context = ''): array {
@@ -329,13 +329,6 @@ class SystemVariables extends DataObject {
 				'description' => 'Whether or not the library can configure branded Aspen LiDA',
 				'default' => false,
 			],
-			'enableAspenEvents' => [
-				'property' => 'enableAspenEvents',
-				'type' => 'checkbox',
-				'label' => 'Enable Aspen Events',
-				'description' => 'Whether or not the library can configure Aspen Events',
-				'default' => false,
-			],
 			'supportingCompany' => [
 				'property' => 'supportingCompany',
 				'type' => 'text',
@@ -372,7 +365,15 @@ class SystemVariables extends DataObject {
 				'label' => 'Monitor Antivirus',
 				'description' => 'Determine whether or not Antivirus logs should be monitored',
 				'default' => true,
-			]
+			],
+			'useOriginalCoverUrls' => [
+				'property' => 'useOriginalCoverUrls',
+				'type' => 'checkbox',
+				'label' => 'Use Original Cover URLs',
+				'description' => 'Determine whether or not original cover URLs should be used.',
+				'note' => "After changing this setting, users should clear their browser's cache to ensure updated cover URLs take effect immediately. Existing cached covers may otherwise remain visible until the cache expires.",
+				'default' => false,
+			],
 		];
 
 		if (!UserAccount::getActiveUserObj()->isAspenAdminUser()) {
@@ -381,7 +382,6 @@ class SystemVariables extends DataObject {
 			$objectStructure['indexingSection']['properties']['indexVersion']['type'] = 'hidden';
 			$objectStructure['indexingSection']['properties']['searchVersion']['type'] = 'hidden';
 			$objectStructure['enableBrandedApp']['type'] = 'hidden';
-			$objectStructure['enableAspenEvents']['type'] = 'hidden';
 		}
 
 		return $objectStructure;

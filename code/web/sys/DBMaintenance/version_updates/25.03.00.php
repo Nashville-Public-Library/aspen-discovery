@@ -19,6 +19,14 @@ function getUpdates25_03_00(): array {
 		//kirstien - Grove
 
 		// Leo Stoyanov - BWS
+		'useOriginalCoverUrls' => [
+			'title' => 'Add Option to Use Original Cover URLs',
+			'description' => 'Add an option to allow the use of original cover URLs rather than cached images in the file system.',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE system_variables ADD COLUMN useOriginalCoverUrls TINYINT(1) DEFAULT 0'
+			]
+		],
 
 		//alexander - PTFS-Europe
 
