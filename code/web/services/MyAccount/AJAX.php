@@ -2563,8 +2563,6 @@ class MyAccount_AJAX extends JSON_Action {
 						$ilsSummary->totalFines += $linkedUserSummary->totalFines;
 						$ilsSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
 						$ilsSummary->numOverdue += $linkedUserSummary->numOverdue;
-						$ilsSummary->numAvailableHolds += $linkedUserSummary->numAvailableHolds;
-						$ilsSummary->numUnavailableHolds += $linkedUserSummary->numUnavailableHolds;
 						$ilsSummary->setMaterialsRequests($ilsSummary->getMaterialsRequests() + $linkedUser->getNumMaterialsRequests());
 					}
 				}
@@ -2583,6 +2581,20 @@ class MyAccount_AJAX extends JSON_Action {
 				//Expiration and fines
 				$interface->assign('ilsSummary', $ilsSummary);
 				$interface->setFinesRelatedTemplateVariables();
+				
+				$result = $this->getHolds();
+
+				if ($result['success'] === true) {
+					$allHolds = $interface->getVariable('recordList');
+					if (isset($allHolds['available']) && isset($allHolds['unavailable'])) {
+						$numAvailableHolds = count($allHolds['available']);
+						$numUnavailableHolds = count($allHolds['unavailable']);
+
+						$ilsSummary->numAvailableHolds = $numAvailableHolds;
+						$ilsSummary->numUnavailableHolds = $numUnavailableHolds;
+					}
+				}
+
 				if ($interface->getVariable('expiredMessage')) {
 					$interface->assign('expiredMessage', str_replace('%date%', date('M j, Y', $ilsSummary->expirationDate), $interface->getVariable('expiredMessage')));
 				}
@@ -3081,7 +3093,10 @@ class MyAccount_AJAX extends JSON_Action {
 			$selectedUnavailableSortOption = ($showPosition ? 'position' : 'title');
 		}
 
-		$allHolds = $user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source);
+		$selectedHolds = $this->setFilterSelectedHolds();
+		$selectedUser = $this->setFilterLinkedUser();
+
+		$allHolds = $this->filterHolds($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source),$selectedUser, $selectedHolds);
 
 		$showDateWhenSuspending = $user->showDateWhenSuspending();
 
@@ -3550,6 +3565,100 @@ class MyAccount_AJAX extends JSON_Action {
 		return $result;
 	}
 
+	public function filterHolds(array $allHolds, string $selectedUser, $selectedHolds): array {
+
+		if (!empty($selectedHolds) && !is_array($selectedHolds)) {
+			$selectedHoldsArray = [];
+			parse_str($selectedHolds, $parsedHolds);
+
+			if (isset($parsedHolds['selected'])) {
+				foreach ($parsedHolds['selected'] as $holdKey => $value) {
+					if (preg_match('/(\d+)\|(\d+)\|/', $holdKey, $matches)) {
+						$selectedHoldsArray[] = [
+							'userId' => (int)$matches[1],
+							'recordId' => (int)$matches[2],
+						];
+					}
+				}
+			}
+			$selectedHolds = $selectedHoldsArray;
+		}
+
+		$filteredHolds = [
+			'available' => [],
+			'unavailable' => [],
+		];
+
+		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" || $selectedUser === '[""]');
+
+		foreach ($allHolds['available'] as $key => $hold) {
+			if ($allUsersSelected || strval($hold->userId) === strval($selectedUser)) {
+				$filteredHolds['available'][$key] = $hold;
+			}
+		}
+
+		foreach ($allHolds['unavailable'] as $key => $hold) {
+			if ($allUsersSelected || strval($hold->userId) === strval($selectedUser)) {
+				if (!empty($selectedHolds)) {
+					$matchFound = false;
+					foreach ($selectedHolds as $selectedHold) {
+						if (
+							intval($hold->recordId) === intval($selectedHold['recordId']) &&
+							intval($hold->userId) === intval($selectedHold['userId'])
+						) {
+							$matchFound = true;
+							break;
+						}
+					}
+					if (!$matchFound) {
+						continue;
+					}
+				}
+				$filteredHolds['unavailable'][$key] = $hold;
+			}
+		}
+		return $filteredHolds;
+	}
+
+	public function setFilterLinkedUser() : string {
+
+		$selectedUser = '';
+		if (isset($_REQUEST['selectedUser'])) {
+			$selectedUser = $_REQUEST['selectedUser'];
+			if ($selectedUser == "") {
+				$_SESSION['selectedUser'] = '';
+			} else {
+				$_SESSION['selectedUser'] = $selectedUser;
+			}
+	
+		} elseif (isset($_SESSION['selectedUser'])) {
+			$selectedUser = $_SESSION['selectedUser'];
+		}
+		return (string)$selectedUser;
+	}
+
+	function setFilterSelectedHolds() {
+		global $interface;
+		$selectedHolds = [];
+
+		if (isset($_REQUEST['selectedHolds'])) {
+			$selectedHolds = json_decode($_REQUEST['selectedHolds'], true);
+
+			if (isset($_SESSION)) {
+				if (empty($selectedHolds)) {
+					unset($_SESSION['selectedHolds']);
+				} else {
+					$_SESSION['selectedHolds'] = $selectedHolds;
+				}
+			}
+		} elseif (isset($_SESSION['selectedHolds'])) {
+			$selectedHolds = $_SESSION['selectedHolds'];
+		}
+		$interface->assign('selectedHolds', $selectedHolds);
+
+		return $selectedHolds;
+	}
+
 	/** @noinspection PhpUnused */
 	public function getHolds(): array {
 		global $interface;
@@ -3579,6 +3688,17 @@ class MyAccount_AJAX extends JSON_Action {
 					'isPublicFacing' => true,
 				]);
 			} else {
+				$selectedUser = $this->setFilterLinkedUser();
+				$selectedHolds = $this->setFilterSelectedHolds();
+				if ($user->getHomeLibrary() != null) {
+					$allowSelectingHoldsToDisplay = $user->getHomeLibrary()->allowSelectingHoldsToDisplay;
+				} else {
+					$allowSelectingHoldsToDisplay = $library->allowSelectingHoldsToDisplay;
+				}
+
+				$interface->assign('allowSelectingHoldsToDisplay', $allowSelectingHoldsToDisplay);
+
+
 				if ($source != 'interlibrary_loan') {
 					if ($user->getHomeLibrary() != null) {
 						$allowFreezeHolds = $user->getHomeLibrary()->allowFreezeHolds;
@@ -3634,7 +3754,7 @@ class MyAccount_AJAX extends JSON_Action {
 					$availableHoldSortOptions['location'] = 'Pickup Location';
 				}
 
-				if (count($user->getLinkedUsers()) > 0) {
+				if (count($user->getlinkedUsers()) > 0) {
 					$unavailableHoldSortOptions['libraryAccount'] = 'Library Account';
 					$availableHoldSortOptions['libraryAccount'] = 'Library Account';
 				}
@@ -3664,7 +3784,7 @@ class MyAccount_AJAX extends JSON_Action {
 				global $offlineMode;
 				if (!$offlineMode) {
 					if ($user) {
-						$allHolds = $user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source);
+						$allHolds = $this->filterHolds($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source), $selectedUser, $selectedHolds);
 						$interface->assign('recordList', $allHolds);
 					}
 				}
@@ -3689,7 +3809,6 @@ class MyAccount_AJAX extends JSON_Action {
 				'isPublicFacing' => true,
 			]);
 		}
-
 		return $result;
 	}
 

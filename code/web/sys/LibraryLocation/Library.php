@@ -330,6 +330,9 @@ class Library extends DataObject {
 	public $addSMSIndicatorToPhone;
 
 	public $allowLinkedAccounts;
+	public $allowFilteringOfLinkedAccountsInHolds;
+	public $allowSelectingHoldsToDisplay;
+
 
 	public $maxFinesToAllowAccountUpdates;
 
@@ -1309,6 +1312,23 @@ class Library extends DataObject {
 						'description' => 'Whether or not users can link multiple library cards under a single Aspen Discovery account.',
 						'hideInLists' => true,
 						'default' => 1,
+						'permissions' => ['Library ILS Options'],
+					],
+					'allowFilteringOfLinkedAccountsInHolds' => [
+						'property' => 'allowFilteringOfLinkedAccountsInHolds',
+						'type' => 'checkbox',
+						'label' => 'Allow Filtering of Linked Accounts in Holds',
+						'description' => 'Whether or not users can filter their holds by linked accounts.',
+						'hideInLists' => true,
+						'default' => 0,
+						'permissions' => ['Library ILS Options'],
+					],
+					'allowSelectingHoldsToDisplay' => [
+						'property' => 'allowSelectingHoldsToDisplay',
+						'type' => 'checkbox',
+						'label' => 'Allow Ability To Display Only Selected Holds.',
+						'hideInLists' => true,
+						'default' => 0,
 						'permissions' => ['Library ILS Options'],
 					],
 					'showLibraryHoursNoticeOnAccountPages' => [
