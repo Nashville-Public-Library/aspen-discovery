@@ -32,6 +32,7 @@ class SystemVariables extends DataObject {
 	public $offlineMessage;
 	public $appScheme;
 	public $enableBrandedApp;
+	public $enableAspenEvents;
 	public $supportingCompany;
 	public $googleBucket;
 	public $trackIpAddresses;
@@ -329,6 +330,13 @@ class SystemVariables extends DataObject {
 				'description' => 'Whether or not the library can configure branded Aspen LiDA',
 				'default' => false,
 			],
+			'enableAspenEvents' => [
+				'property' => 'enableAspenEvents',
+				'type' => 'checkbox',
+				'label' => 'Enable Aspen Events',
+				'description' => 'Whether or not the library can configure Aspen Events',
+				'default' => false,
+			],
 			'supportingCompany' => [
 				'property' => 'supportingCompany',
 				'type' => 'text',
@@ -382,6 +390,7 @@ class SystemVariables extends DataObject {
 			$objectStructure['indexingSection']['properties']['indexVersion']['type'] = 'hidden';
 			$objectStructure['indexingSection']['properties']['searchVersion']['type'] = 'hidden';
 			$objectStructure['enableBrandedApp']['type'] = 'hidden';
+			$objectStructure['enableAspenEvents']['type'] = 'hidden';
 		}
 
 		return $objectStructure;
