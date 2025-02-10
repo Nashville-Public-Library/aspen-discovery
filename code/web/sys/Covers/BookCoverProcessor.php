@@ -29,6 +29,7 @@ class BookCoverProcessor {
 	/** @var  Timer $timer */
 	private $timer;
 	private $doTimings;
+	private string $urlCacheFile;
 
 	public function loadCover($configArray, $timer, $logger) {
 		$this->configArray = $configArray;
@@ -42,6 +43,9 @@ class BookCoverProcessor {
 		if (!$this->loadParameters()) {
 			return true;
 		}
+
+		// Initialize the URL cache file based on the current cacheName.
+		$this->initUrlCache();
 
 		if (!$this->reload) {
 			$this->log("Looking for Cached cover", Logger::LOG_NOTICE);
@@ -738,17 +742,7 @@ class BookCoverProcessor {
 	}
 
 	function processImageURL($source, $url, $attemptRefetch = true) {
-		if (SystemVariables::getSystemVariables()->useOriginalCoverUrls &&
-			$source !== 'upload' &&
-			preg_match('/^https?:\/\//i', $url)) {
-			// Use a 301 redirect if the remote image URL is stable.
-			header("HTTP/1.1 301 Moved Permanently");
-			header("Location: $url");
-			// Tell browsers and proxies to cache this redirect for 24 hours (or adjust as needed)
-			header("Cache-Control: public, max-age=86400");
-			header("Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT");
-			exit;
-		}
+		$url = $this->handleOriginalCoverUrl($source, $url);
 
 		$this->log("Processing $url", Logger::LOG_NOTICE);
 		$context = stream_context_create([
@@ -2069,5 +2063,48 @@ class BookCoverProcessor {
 			}
 		}
 		return $foundTitle;
+	}
+
+	/**
+	 * Initialize the file system cache for cover URLs.
+	 */
+	private function initUrlCache(): void
+	{
+		// Create a subdirectory "urlCache" under the main cover path.
+		$urlCachePath = $this->bookCoverPath . '/urlCache';
+		if (!is_dir($urlCachePath)) {
+			mkdir($urlCachePath, 0777, true);
+		}
+		// Use a hashed key for the file name so that the file system has fewer characters to work with.
+		$this->urlCacheFile = $urlCachePath . '/' . md5($this->cacheName) . '.txt';
+	}
+	/**
+	 * If the system is configured to use the original cover URLs and the source is not an upload,
+	 * check for a cached URL in the file system (using the cache file initialized by initUrlCache()),
+	 * write it if not present, and then immediately issue a 301 redirect.
+	 *
+	 * @param string $source The source label.
+	 * @param string $url The URL to process.
+	 * @return string Returns the (possibly unmodified) URL.
+	 */
+	private function handleOriginalCoverUrl(string $source, string $url): string {
+		if (SystemVariables::getSystemVariables()->useOriginalCoverUrls &&
+			$source !== 'upload' &&
+			preg_match('/^https?:\/\//i', $url)
+		) {
+			if (file_exists($this->urlCacheFile)) {
+				$cachedUrl = trim(file_get_contents($this->urlCacheFile));
+				if (!empty($cachedUrl)) {
+					$url = $cachedUrl;
+				}
+			} else {
+				file_put_contents($this->urlCacheFile, $url);
+			}
+			header("HTTP/1.1 301 Moved Permanently");
+			header("Location: $url");
+			$this->addCachingHeader();
+			exit;
+		}
+		return $url;
 	}
 }
