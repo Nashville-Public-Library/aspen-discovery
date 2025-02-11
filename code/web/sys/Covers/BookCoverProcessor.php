@@ -2081,7 +2081,7 @@ class BookCoverProcessor {
 	/**
 	 * If the system is configured to use the original cover URLs and the source is not an upload,
 	 * check for a cached URL in the file system (using the cache file initialized by initUrlCache()),
-	 * write it if not present, and then immediately issue a 301 redirect.
+	 * write it if not present, and then (if the URL appears to be valid and not a dummy) immediately issue a 301 redirect.
 	 *
 	 * @param string $source The source label.
 	 * @param string $url The URL to process.
@@ -2092,6 +2092,7 @@ class BookCoverProcessor {
 			$source !== 'upload' &&
 			preg_match('/^https?:\/\//i', $url)
 		) {
+			// Use cached URL if available.
 			if (file_exists($this->urlCacheFile)) {
 				$cachedUrl = trim(file_get_contents($this->urlCacheFile));
 				if (!empty($cachedUrl)) {
@@ -2100,10 +2101,63 @@ class BookCoverProcessor {
 			} else {
 				file_put_contents($this->urlCacheFile, $url);
 			}
-			header("HTTP/1.1 301 Moved Permanently");
-			header("Location: $url");
-			$this->addCachingHeader();
-			exit;
+			// Check HTTP headers.
+			$headers = @get_headers($url);
+			if ($headers && preg_match('/^HTTP\/\d+\.\d+\s+(200|30[1-9])/', $headers[0])) {
+				// Fetch the image content (in memory) to perform additional checks.
+				$context = stream_context_create([
+					'http' => [
+						'header' => "User-Agent: {$this->configArray['Catalog']['catalogUserAgent']}\r\n",
+					],
+				]);
+				$image = @file_get_contents($url, false, $context);
+				if ($image !== false) {
+					// Check against known dummy image MD5 checksums.
+					$imageChecksum = md5($image);
+					$dummyChecksums = [
+						'e89e0e364e83c0ecfba5da41007c9a2c',
+						'f017f94ed618a86d0fa7cecd7112ab7e',
+						'798f904eabf783405079eaf699414801',
+						'dadde13fdb5f3775cdbdd25f34c0389b',
+						'b13e33c0262a3a1f21dd20b826710cbc',
+						'c6ddaf338cf667df0bf60045f05146db',
+						'821d0d442dbee0f51f4c803e8e9fc87a'
+					];
+					if (in_array($imageChecksum, $dummyChecksums)) {
+						$this->log("Original cover URL $url returned a known dummy image (checksum: $imageChecksum); falling back.", Logger::LOG_NOTICE);
+					} else {
+						// Verify that the image is not too small.
+						$imageInfo = @getimagesizefromstring($image);
+						if ($imageInfo === false || ($imageInfo[0] < 2 && $imageInfo[1] < 2)) {
+							$this->log("Original cover URL $url returned an image that is too small; falling back.", Logger::LOG_NOTICE);
+						} else {
+							// Check the color of the bottom left and bottom right corners.
+							if ($imageResource = @imagecreatefromstring($image)) {
+								$width = $imageInfo[0];
+								$height = $imageInfo[1];
+								$rgbLeft = imagecolorat($imageResource, 0, $height - 1);
+								$rgbRight = imagecolorat($imageResource, $width - 1, $height - 1);
+								imagedestroy($imageResource);
+								if ($rgbLeft == 8421504 && $rgbRight == 8421504) {
+									$this->log("Original cover URL $url returned an image with partial gray at the bottom; falling back.", Logger::LOG_NOTICE);
+								} else {
+									// All checks passed; issue the redirect.
+									header("HTTP/1.1 301 Moved Permanently");
+									header("Location: $url");
+									$this->addCachingHeader();
+									exit;
+								}
+							} else {
+								$this->log("Original cover URL $url returned invalid image data; falling back.", Logger::LOG_NOTICE);
+							}
+						}
+					}
+				} else {
+					$this->log("Could not retrieve image content from original cover URL $url; falling back.", Logger::LOG_NOTICE);
+				}
+			} else {
+				$this->log("Original cover URL $url did not return a valid HTTP response; falling back.", Logger::LOG_NOTICE);
+			}
 		}
 		return $url;
 	}
