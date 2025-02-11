@@ -454,6 +454,8 @@ class Library extends DataObject {
 
 	public $allowUpdatingHolidaysFromILS;
 
+	public $useSeriesSearchIndex;
+
 	private $_cloudLibraryScope;
 
 	/** @var MaterialsRequestFormFields[] */
@@ -2923,6 +2925,20 @@ class Library extends DataObject {
 						],
 					],
 				],
+			],
+
+			// Series Search
+			'useSeriesSearchIndex' => [
+				'property' => 'useSeriesSearchIndex',
+				'type' => 'enum',
+				'values' => [
+					'0' => 'Grouped Work Based Series Search',
+					'1' => 'Aspen Series Search',
+				],
+				'label' => 'Series Search Mode',
+				'hideInLists' => false,
+				'default' => '0',
+				'forcesReindex' => true,
 			],
 
 			'combinedResultsSection' => [
