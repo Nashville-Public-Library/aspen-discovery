@@ -48,7 +48,6 @@ class Nashville extends CarlX {
 					foreach ($nonResidentFeeIds as $nonResidentFeeId) {
 						if ($nonResidentFeeId == $feeId) {
 							$this->updateNonResident($patron);
-							break; // even if there are multiple non-resident fees, only update once for a max one-year extension
 						}
 					}
 				}
