@@ -48,6 +48,7 @@ class Nashville extends CarlX {
 					foreach ($nonResidentFeeIds as $nonResidentFeeId) {
 						if ($nonResidentFeeId == $feeId) {
 							$this->updateNonResident($patron);
+							break; // even if there are multiple non-resident fees, only update once for a max one-year extension
 						}
 					}
 				}
@@ -80,6 +81,14 @@ class Nashville extends CarlX {
 		$patronId = $user->ils_barcode;
 		$request = $this->getSearchbyPatronIdRequest($user);
 		$request->Patron = new stdClass();
+		// If patron expiration date is one year or more in the future, do not update
+		if (strtotime($request->Patron->ExpirationDate) > strtotime('+1 year')) {
+			$logger->log("Non Resident Patron $patronId has an expiration date more than one year in the future. No update needed.", Logger::LOG_DEBUG);
+			return [
+				'success' => true,
+				'message' => "Non Resident Patron $patronId has an expiration date more than one year in the future. No update needed.",
+			];
+		}
 		$request->Patron->ExpirationDate = date('c', strtotime('+1 year'));
 		//$logger->log("Request updatePatron\r\n" . print_r($request, true), Logger::LOG_DEBUG);
 		$result = $this->doSoapRequest('updatePatron', $request, $this->patronWsdl, $this->genericResponseSOAPCallOptions);
