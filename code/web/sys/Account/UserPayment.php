@@ -1150,17 +1150,17 @@ class UserPayment extends DataObject {
 						]);
 						$userPayment->message .= translate(
 							[
-								'text' => 'Transaction Id: ',
+								'text' => 'Payment Reference ID: ',
 								'isPublicFacing' => true,
 							]
 						);
-						$userPayment->message .= $payload['paymenttransactionid'];
+						$userPayment->message .= $userPayment->id;
 						$userPayment->update();
 						$donation->sendReceiptEmail();
 					} else {
 						$userPayment->message = translate(
 							[
-								'text' => 'Unable to locate donation with given payment id ',
+								'text' => 'Unable to locate donation with Payment Reference ID ',
 								'isPublicFacing' => true,
 							]
 						);
@@ -1180,11 +1180,11 @@ class UserPayment extends DataObject {
 							);
 							$userPayment->message .= translate(
 								[
-									'text' => 'Transaction Id: ',
+									'text' => 'Payment Reference ID: ',
 									'isPublicFacing' => true,
 								]
 							);
-							$userPayment->message .= $payload['paymenttransactionid'];
+							$userPayment->message .= $userPayment->id;
 						} else {
 							$userPayment->error = true;
 							$userPayment->message .= translate(
