@@ -20,7 +20,7 @@ class MyAccount_SnapPayComplete extends MyAccount {
 			global $serverName;
 			require_once ROOT_DIR . '/sys/Email/Mailer.php';
 			$mailer = new Mailer();
-			$emailNotificationsAddresses = $snapPaySetting->emailNotificationAddresses;
+			$emailNotificationsAddresses = $snapPaySetting->emailNotificationsAddresses;
 		}
 		if (empty($_REQUEST['udf1'])) {
 			$error = true;
