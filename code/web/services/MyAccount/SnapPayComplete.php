@@ -51,9 +51,9 @@ class MyAccount_SnapPayComplete extends MyAccount {
 		}
 		if ($error === true) {
 			$interface->assign('error', $message);
-			$logger->log($error, Logger::LOG_ERROR);
+			$logger->log($message, Logger::LOG_ERROR);
 			if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $error);
+				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
 			}
 		} else {
 			if (empty($message)) {
