@@ -4,8 +4,14 @@ require_once ROOT_DIR . '/services/MyAccount/MyAccount.php';
 class MyAccount_SnapPayComplete extends MyAccount {
 	public function launch() {
 		global $interface;
+		global $logger;
+		global $serverName;
 		$error = '';
 		$message = '';
+		require_once ROOT_DIR . '/sys/Email/Mailer.php';
+		$mailer = new Mailer();
+		require_once ROOT_DIR . '/sys/SystemVariables.php';
+		$systemVariables = SystemVariables::getSystemVariables();
 		if (empty($_REQUEST['udf1'])) {
 			$error = 'No Transaction ID was provided';
 		} else {
@@ -25,8 +31,13 @@ class MyAccount_SnapPayComplete extends MyAccount {
 				$result = UserPayment::completeSnapPayPayment();
 				if ($result['error'] === true) {
 					$error = $result['message'];
+					$logger->log($error, Logger::LOG_ERROR);
+					if (!empty($systemVariables->errorEmail)) {
+						$mailer->send($systemVariables->errorEmail, "$serverName Error with online payment", $error);
+					}
 				} else {
 					$message = $result['message'];
+					$logger->log($message, Logger::LOG_DEBUG);
 				}
 			}
 		}
