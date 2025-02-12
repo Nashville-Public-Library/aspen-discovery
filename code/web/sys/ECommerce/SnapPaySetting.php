@@ -9,7 +9,7 @@ class SnapPaySetting extends DataObject {
 	public $merchantId;
 	public $apiAuthenticationCode;
 	public $emailNotifications;
-	public $emailNotificationAddresses;
+	public $emailNotificationsAddresses;
 
 	private $_libraries;
 
@@ -78,8 +78,8 @@ class SnapPaySetting extends DataObject {
 				'hideInLists' => false,
 				'default' => 0,
 			],
-			'emailNotificationAddresses' => [
-				'property' => 'emailNotificationAddresses',
+			'emailNotificationsAddresses' => [
+				'property' => 'emailNotificationsAddresses',
 				'type' => 'text',
 				'label' => 'Email Notification Addresses',
 				'description' => 'Semicolon-separated list of email addresses to send notifications to',

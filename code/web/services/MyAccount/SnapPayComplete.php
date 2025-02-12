@@ -20,7 +20,7 @@ class MyAccount_SnapPayComplete extends MyAccount {
 			global $serverName;
 			require_once ROOT_DIR . '/sys/Email/Mailer.php';
 			$mailer = new Mailer();
-			$emailNotificationAddresses = $snapPaySetting->emailNotificationAddresses;
+			$emailNotificationsAddresses = $snapPaySetting->emailNotificationAddresses;
 		}
 		if (empty($_REQUEST['udf1'])) {
 			$error = true;
@@ -53,7 +53,7 @@ class MyAccount_SnapPayComplete extends MyAccount {
 			$interface->assign('error', $message);
 			$logger->log($error, Logger::LOG_ERROR);
 			if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-				$mailer->send($emailNotificationAddresses, "$serverName Error with SnapPay Payment", $error);
+				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $error);
 			}
 		} else {
 			if (empty($message)) {
@@ -62,7 +62,7 @@ class MyAccount_SnapPayComplete extends MyAccount {
 			$interface->assign('message', $message);
 			$logger->log($message, Logger::LOG_DEBUG);
 			if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-				$mailer->send($emailNotificationAddresses, "$serverName SnapPay Payment", $message);
+				$mailer->send($emailNotificationsAddresses, "$serverName SnapPay Payment", $message);
 			}
 		}
 		$this->display('paymentCompleted.tpl');
