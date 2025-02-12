@@ -82,7 +82,7 @@ class SnapPaySetting extends DataObject {
 				'property' => 'emailNotificationAddresses',
 				'type' => 'text',
 				'label' => 'Email Notification Addresses',
-				'description' => 'Comma separated list of email addresses to send notifications to',
+				'description' => 'Semicolon-separated list of email addresses to send notifications to',
 				'hideInLists' => false,
 				'default' => '',
 				'size' => 255,
