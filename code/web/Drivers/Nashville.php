@@ -16,23 +16,6 @@ class Nashville extends CarlX {
 		require_once ROOT_DIR . '/sys/SystemVariables.php';
 		$systemVariables = SystemVariables::getSystemVariables();
 
-		// Nashville Non-Resident processing:
-		// Look for Non-Resident Fee associated with patron's account and whether it is included in this payment
-		// If so, update the patron's expiration date
-		$accountLinesPaid = explode(',', $payment->finesPaid);
-		$allFines = $this->getFines($patron);
-		foreach ($accountLinesPaid as $line) {
-			[$feeId, $pmtAmount] = explode('|', $line);
-			foreach ($allFines as $fine) {
-				if ($fine['fineId'] == $feeId) {
-					if ($fine['type'] == 'NON-RESIDENT FEE') {
-						$this->updateNonResident($patron);
-						break;
-					}
-				}
-			}
-		}
-
 		$result = parent::completeFinePayment($patron, $payment);
 		if ($result['success'] === false) {
 			$message = "Online payment CarlX update failed for Payment Reference ID $payment->id. See messages.log for details on individual items.";
@@ -40,6 +23,23 @@ class Nashville extends CarlX {
 		} else {
 			$message = "Online payment successfully recorded in CarlX for Payment Reference ID $payment->id.";
 			$level = Logger::LOG_DEBUG;
+
+			// Nashville Non-Resident processing:
+			// Look for Non-Resident Fee associated with patron's account and whether it is included in this payment
+			// If so, update the patron's expiration date
+			$accountLinesPaid = explode(',', $payment->finesPaid);
+			$allFines = $this->getFines($patron);
+			foreach ($accountLinesPaid as $line) {
+				[$feeId, $pmtAmount] = explode('|', $line);
+				foreach ($allFines as $fine) {
+					if ($fine['fineId'] == $feeId) {
+						if ($fine['type'] == 'NON-RESIDENT FEE') {
+							$this->updateNonResident($patron);
+							break;
+						}
+					}
+				}
+			}
 		}
 		$logger->log($message, $level);
 
