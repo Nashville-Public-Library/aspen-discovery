@@ -74,7 +74,7 @@ class Nashville extends CarlX {
 		return $canPayFine;
 	}
 
-	// Following successful online payment, update Patron with new Expiration Date
+	// Following successful online payment, update Patron with new Expiration Date = today + 1 year
 	protected function updateNonResident(User $user): array {
 		global $logger;
 		$patronId = $user->ils_barcode;
