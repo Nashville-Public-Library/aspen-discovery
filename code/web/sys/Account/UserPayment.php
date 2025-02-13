@@ -1116,7 +1116,6 @@ class UserPayment extends DataObject {
 					]
 				);
 				$userPayment->message .= $userPayment->id;
-				$userPayment->update();
 			} elseif ($userPayment->completed != 0) { // Check to see whether the payment was already processed (whether this is a double-payment that requires staff review)
 				$userPayment->error = true;
 				$userPayment->message = translate(
@@ -1202,8 +1201,8 @@ class UserPayment extends DataObject {
 						);
 					}
 				}
-				$userPayment->update();
 			}
+			$userPayment->update();
 		}
 		return $userPayment->toArray();
 	}
