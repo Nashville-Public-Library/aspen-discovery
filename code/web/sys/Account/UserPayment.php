@@ -1136,9 +1136,8 @@ class UserPayment extends DataObject {
 				);
 				$userPayment->message .= $userPayment->id . " : " . $payload['transactionamount'] . " != " . $userPayment->totalPaid;
 			} else {
-				$userPayment->completed = true;
+				$userPayment->completed = true; //  Payment was processed successfully at SnapPay
 				$userPayment->totalPaid = $payload['transactionamount'];
-				$userPayment->update();
 				if ($userPayment->transactionType == 'donation') { //Check to see if we have a donation for this payment
 					require_once ROOT_DIR . '/sys/Donations/Donation.php';
 					$donation = new Donation();
@@ -1155,7 +1154,6 @@ class UserPayment extends DataObject {
 							]
 						);
 						$userPayment->message .= $userPayment->id;
-						$userPayment->update();
 						$donation->sendReceiptEmail();
 					} else {
 						$userPayment->message = translate(
@@ -1204,6 +1202,7 @@ class UserPayment extends DataObject {
 						);
 					}
 				}
+				$userPayment->update();
 			}
 		}
 		return $userPayment->toArray();
