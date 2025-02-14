@@ -39,14 +39,15 @@ function getUpdates25_03_00(): array {
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
 				"CREATE TABLE series_member (
     				id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    				seriesId INT NOT NULL,
     				isPlaceholder TINYINT(1) DEFAULT 0,
-					groupedWorkId CHAR(40),
+					groupedWorkPermanentId CHAR(40),
 					displayName VARCHAR(500),
 					author VARCHAR(200),
 					description TEXT,
 					cover VARCHAR(50),
 					volume VARCHAR(50),
-					pubDate Date,
+					pubDate INT,
 					weight INT NOT NULL DEFAULT 0
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
 			]

@@ -155,6 +155,11 @@ public class GroupedWorkIndexer {
 	private PreparedStatement removeVariationsForWorkStmt;
 	private PreparedStatement removeRecordsForWorkStmt;
 
+	private PreparedStatement getSeriesStmt;
+	private PreparedStatement getSeriesMemberStmt;
+	private PreparedStatement addSeriesMemberStmt;
+	private PreparedStatement addSeriesStmt;
+
 	private final CRC32 checksumCalculator = new CRC32();
 
 	private boolean storeRecordDetailsInSolr = false;
@@ -322,6 +327,11 @@ public class GroupedWorkIndexer {
 			removeItemsForWorkStmt = dbConn.prepareStatement("DELETE grouped_work_record_items FROM grouped_work_records LEFT JOIN grouped_work_record_items ON ( grouped_work_record_items.groupedWorkRecordId = grouped_work_records.id ) WHERE groupedWorkId = ?");
 			removeVariationsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_variation where groupedWorkId = ?");
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
+
+			getSeriesMemberStmt = dbConn.prepareStatement("SELECT * FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
+			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE displayName = ?");
+			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience) VALUES (?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
+			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesID, isPlaceholder, groupedWorkPermanentId, volume, pubDate) VALUES (?, 0, ?, ?, ?)");
 		} catch (Exception e){
 			logEntry.incErrors("Could not load statements to get identifiers ", e);
 			this.okToIndex = false;
@@ -1170,6 +1180,10 @@ public class GroupedWorkIndexer {
 			loadLexileDataForWork(groupedWork);
 			//Load accelerated reader data for the work
 			loadAcceleratedDataForWork(groupedWork);
+			//Update Series index data
+			// if using series index
+			updateSeriesDataForWork(groupedWork);
+			// else use Novelist the old way
 			//Load Novelist data
 			loadNovelistInfo(groupedWork);
 			//Load Display Info
@@ -1377,6 +1391,49 @@ public class GroupedWorkIndexer {
 			} catch (Exception e) {
 				logEntry.incErrors("Unable to load novelist data", e);
 			}
+		}
+	}
+
+	private void updateSeriesDataForWork(AbstractGroupedWorkSolr groupedWork) {
+		try {
+			getSeriesMemberStmt.setString(1, groupedWork.getId());
+			ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
+			ArrayList<Object> seriesInDb = new ArrayList<>();
+			while (seriesMemberRS.next()) {
+				seriesInDb.add(seriesMemberRS.getString("displayName"));
+			}
+			for (String seriesNameWithVolume : groupedWork.seriesWithVolume.values()) {
+				String[] series = seriesNameWithVolume.split("\\|");
+				if (!seriesInDb.contains(series[0])) {
+					// Check if series exists
+					getSeriesStmt.setString(1, series[0]);
+					ResultSet seriesRS = getSeriesStmt.executeQuery();
+					if (seriesRS.next()) { // Need to add handling for more than one match
+						addSeriesMemberStmt.setLong(1, seriesRS.getLong("id"));
+
+					} else {
+						// Add the series first
+						addSeriesStmt.setString(1, series[0]);
+						addSeriesStmt.setString(2, groupedWork.description.toString()); // Should actually be series description, not title description
+						addSeriesStmt.setString(3, groupedWork.getTargetAudiencesAsString());
+						addSeriesStmt.executeUpdate();
+						ResultSet generatedKeys = addSeriesStmt.getGeneratedKeys();
+						if (generatedKeys.next()) {
+							addSeriesMemberStmt.setLong(1, generatedKeys.getLong(1));
+						}
+					}
+					addSeriesMemberStmt.setString(2, groupedWork.getId());
+					if (series.length == 2) {
+						addSeriesMemberStmt.setString(3, series[1]);
+					} else {
+						addSeriesMemberStmt.setString(3, "");
+					}
+					addSeriesMemberStmt.setLong(4, groupedWork.earliestPublicationDate != null ? groupedWork.earliestPublicationDate : 0);
+					addSeriesMemberStmt.executeUpdate();
+				}
+			}
+		} catch(Exception e) {
+			logEntry.incErrors("Unable to update series data", e);
 		}
 	}
 
@@ -1987,7 +2044,7 @@ public class GroupedWorkIndexer {
 		return id;
 	}
 
-	
+
 	private final MaxSizeHashMap<String, Long> physicalDescriptionIds = new MaxSizeHashMap<>(1000);
 	private long getPhysicalDescriptionId(String physicalDescription, int numTries) {
 		if (physicalDescription == null){
