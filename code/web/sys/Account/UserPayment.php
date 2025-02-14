@@ -1092,7 +1092,6 @@ class UserPayment extends DataObject {
 		$payload = $_REQUEST;
 		$userPayment->id = $payload['udf1'];
 		if($userPayment->find(true)) {
-			$userPayment->error = false;
 			$userPayment->message = '';
 			$userPayment->transactionId = $payload['paymenttransactionid'];
 			if ($payload['transactionstatus'] != 'Y') { // SnapPay payment transaction failed
