@@ -1396,6 +1396,23 @@ public class GroupedWorkIndexer {
 		}
 	}
 
+	private String getNovelistDescription(AbstractGroupedWorkSolr groupedWork) {
+		String description = "";
+		if (enableNovelistSeriesIntegration) {
+			try {
+				getNovelistStmt.setString(1, groupedWork.getId());
+				ResultSet novelistRS = getNovelistStmt.executeQuery();
+				if (novelistRS.next()) {
+					description = novelistRS.getString("seriesNote");
+				}
+				novelistRS.close();
+			} catch (Exception e) {
+				logEntry.incErrors("Unable to load novelist data", e);
+			}
+		}
+		return description;
+	}
+
 	private void updateSeriesDataForWork(AbstractGroupedWorkSolr groupedWork) {
 		try {
 			getSeriesMemberStmt.setString(1, groupedWork.getId());
@@ -1419,7 +1436,8 @@ public class GroupedWorkIndexer {
 					} else {
 						// Add the series first
 						addSeriesStmt.setString(1, series[0]);
-						addSeriesStmt.setString(2, groupedWork.description.toString()); // Should actually be series description, not title description
+						String novelistDescription = this.getNovelistDescription(groupedWork);
+						addSeriesStmt.setString(2, !novelistDescription.isBlank() ? novelistDescription : "");
 						addSeriesStmt.setString(3, groupedWork.getTargetAudiencesAsString());
 						addSeriesStmt.setLong(4, timeNow);
 						addSeriesStmt.setLong(5, timeNow);
