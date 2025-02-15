@@ -159,6 +159,7 @@ public class GroupedWorkIndexer {
 	private PreparedStatement getSeriesMemberStmt;
 	private PreparedStatement addSeriesMemberStmt;
 	private PreparedStatement addSeriesStmt;
+	private PreparedStatement setSeriesDateUpdated;
 
 	private final CRC32 checksumCalculator = new CRC32();
 
@@ -330,8 +331,9 @@ public class GroupedWorkIndexer {
 
 			getSeriesMemberStmt = dbConn.prepareStatement("SELECT * FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE displayName = ?");
-			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience) VALUES (?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
+			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience, created, dateUpdated) VALUES (?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
 			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesID, isPlaceholder, groupedWorkPermanentId, volume, pubDate) VALUES (?, 0, ?, ?, ?)");
+			setSeriesDateUpdated = dbConn.prepareStatement("UPDATE series SET dateUpdated = ? WHERE id = ?;");
 		} catch (Exception e){
 			logEntry.incErrors("Could not load statements to get identifiers ", e);
 			this.okToIndex = false;
@@ -1408,18 +1410,26 @@ public class GroupedWorkIndexer {
 					// Check if series exists
 					getSeriesStmt.setString(1, series[0]);
 					ResultSet seriesRS = getSeriesStmt.executeQuery();
+					long timeNow = new Date().getTime() / 1000;
+					long seriesId;
 					if (seriesRS.next()) { // Need to add handling for more than one match
-						addSeriesMemberStmt.setLong(1, seriesRS.getLong("id"));
+						seriesId = seriesRS.getLong("id");
+						addSeriesMemberStmt.setLong(1, seriesId);
 
 					} else {
 						// Add the series first
 						addSeriesStmt.setString(1, series[0]);
 						addSeriesStmt.setString(2, groupedWork.description.toString()); // Should actually be series description, not title description
 						addSeriesStmt.setString(3, groupedWork.getTargetAudiencesAsString());
+						addSeriesStmt.setLong(4, timeNow);
+						addSeriesStmt.setLong(5, timeNow);
 						addSeriesStmt.executeUpdate();
 						ResultSet generatedKeys = addSeriesStmt.getGeneratedKeys();
 						if (generatedKeys.next()) {
-							addSeriesMemberStmt.setLong(1, generatedKeys.getLong(1));
+							seriesId = generatedKeys.getLong(1);
+							addSeriesMemberStmt.setLong(1, seriesId);
+						} else {
+							seriesId = -1;
 						}
 					}
 					addSeriesMemberStmt.setString(2, groupedWork.getId());
@@ -1430,6 +1440,11 @@ public class GroupedWorkIndexer {
 					}
 					addSeriesMemberStmt.setLong(4, groupedWork.earliestPublicationDate != null ? groupedWork.earliestPublicationDate : 0);
 					addSeriesMemberStmt.executeUpdate();
+					if (seriesId >= 0) {
+						setSeriesDateUpdated.setLong(1, timeNow);
+						setSeriesDateUpdated.setLong(2, seriesId);
+						setSeriesDateUpdated.executeUpdate();
+					}
 				}
 			}
 		} catch(Exception e) {
