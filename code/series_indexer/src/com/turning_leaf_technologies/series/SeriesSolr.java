@@ -40,7 +40,11 @@ class SeriesSolr {
 		doc.addField("title_sort", AspenStringUtils.makeValueSortable(title));
 
 		doc.addField("author", authors);
-		doc.addField("author_display", authors);
+		if (authors.size() > 3) {
+			doc.addField("author_display", "various");
+		} else {
+			doc.addField("author_display", authors);
+		}
 
 		doc.addField("table_of_contents", contents);
 		doc.addField("description", description);
