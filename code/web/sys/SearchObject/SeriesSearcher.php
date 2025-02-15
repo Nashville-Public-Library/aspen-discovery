@@ -168,7 +168,7 @@ class SearchObject_SeriesSearcher extends SearchObject_SolrSearcher {
 			header('Content-Disposition: attachment;filename="SearchResults.csv"');
 			$fp = fopen('php://output', 'w');
 
-			$fields = array('Link', 'List Title', 'Created By', 'Number of Titles', 'Description');
+			$fields = array('Link', 'Series Title', 'Author', 'Number of Titles', 'Description');
 			fputcsv($fp, $fields);
 
 			$docs = $result['response']['docs'];
@@ -206,13 +206,13 @@ class SearchObject_SeriesSearcher extends SearchObject_SolrSearcher {
 		return 'id';
 	}
 
-	public function getRecordDriverForResult($record) : ListsRecordDriver {
-		require_once ROOT_DIR . '/RecordDrivers/ListsRecordDriver.php';
-		return new ListsRecordDriver($record);
+	public function getRecordDriverForResult($record) : SeriesRecordDriver {
+		require_once ROOT_DIR . '/RecordDrivers/SeriesRecordDriver.php';
+		return new SeriesRecordDriver($record);
 	}
 
 	public function getSearchesFile() : string {
-		return 'listsSearches';
+		return 'seriesSearches';
 	}
 
 	public function supportsSuggestions() : bool {
@@ -243,7 +243,7 @@ class SearchObject_SeriesSearcher extends SearchObject_SolrSearcher {
 			$author->id = 1;
 			$author->multiSelect = true;
 			$author->facetName = "author_display";
-			$author->displayName = "Created By";
+			$author->displayName = "Author";
 			$author->numEntriesToShowByDefault = 5;
 			$author->translate = true;
 			$author->collapseByDefault = false;

@@ -27,19 +27,40 @@
 		</div>
 		{if !empty($summAuthor)}
 			<div class="row">
-				<div class="result-label col-tn-3">{translate text="Created By" isPublicFacing=true} </div>
+				<div class="result-label col-tn-3">{if is_array($summAuthor) && count($summAuthor) > 1}{translate text="Authors" isPublicFacing=true}{else}{translate text="Author" isPublicFacing=true}{/if} </div>
 				<div class="result-value col-tn-9 notranslate">
 					{if is_array($summAuthor)}
 						{foreach from=$summAuthor item=author}
-							{$author|highlight}
+							{if $author == "Various"}
+								{translate text="Various" isPublicFacing=true}
+							{else}
+								<a href='/Author/Home?author="{$author|escape:"url"}"'>{$author|highlight}</a> <br/>
+							{/if}
 						{/foreach}
 					{else}
-						{$summAuthor|highlight}
+						{if $author == "Various"}
+							{translate text="Various" isPublicFacing=true}
+						{else}
+							<a href='/Author/Home?author="{$summAuthor|escape:"url"}"'>{$summAuthor|highlight}</a>
+						{/if}
 					{/if}
 				</div>
 			</div>
 		{/if}
- 
+
+		{if !empty($summAudience)}
+			<div class="row">
+				<div class="result-label col-tn-3">{translate text="Audience" isPublicFacing=true} </div>
+				<div class="result-value col-sm-8 col-xs-12">
+					{if is_array($summAudience)}
+						{implode subject=$summAudience glue=', ' translate=true isPublicFacing=true isMetadata=true}
+					{else}
+						{translate text=$summAudience isPublicFacing=true isMetadata=true}
+					{/if}
+				</div>
+			</div>
+		{/if}
+
 		{if !empty($summNumTitles)}
 			<div class="row">
 				<div class="result-label col-tn-3">{translate text="Number of Titles" isPublicFacing=true} </div>

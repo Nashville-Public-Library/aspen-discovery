@@ -31,17 +31,25 @@
 					{/if}
 				</div>
 			</div>
-
+*/
 			{if !empty($summAuthor)}
 				<div class="row">
-					<div class="result-label col-tn-3">{translate text="Created By" isPublicFacing=true} </div>
+					<div class="result-label col-tn-3">{if is_array($summAuthor) && count($summAuthor) > 1}{translate text="Authors" isPublicFacing=true}{else}{translate text="Author" isPublicFacing=true}{/if} </div>
 					<div class="result-value col-tn-9 notranslate">
 						{if is_array($summAuthor)}
 							{foreach from=$summAuthor item=author}
-								{$author|highlight}
+								{if $author == "Various"}
+									{translate text="Various" isPublicFacing=true}
+								{else}
+									<a href='/Author/Home?author="{$author|escape:"url"}"'>{$author|highlight}</a> <br/>
+								{/if}
 							{/foreach}
 						{else}
-							{$summAuthor|highlight}
+							{if $author == "Various"}
+								{translate text="Various" isPublicFacing=true}
+							{else}
+								<a href='/Author/Home?author="{$summAuthor|escape:"url"}"'>{$summAuthor|highlight}</a>
+							{/if}
 						{/if}
 					</div>
 				</div>

@@ -17,7 +17,7 @@ class Series_Results extends ResultsAction {
 		$timer->logTime('Include search engine');
 
 		// Initialise from the current search globals
-		/** @var SearchObject_ListsSearcher $searchObject */
+		/** @var SearchObject_SeriesSearcher $searchObject */
 		$searchObject = SearchObjectFactory::initSearchObject('Series');
 		$searchObject->init();
 		$searchObject->setPrimarySearch(true);
@@ -75,7 +75,7 @@ class Series_Results extends ResultsAction {
 					$mailer = new Mailer();
 					$emailErrorDetails = $_SERVER['REQUEST_URI'] . "\n" . $result['error']['msg'];
 
-					$mailer->send($systemVariables->searchErrorEmail, "$serverName Error processing lists search", $emailErrorDetails);
+					$mailer->send($systemVariables->searchErrorEmail, "$serverName Error processing series search", $emailErrorDetails);
 				}
 			} catch (Exception $e) {
 				//This happens when the table has not been created
@@ -114,8 +114,8 @@ class Series_Results extends ResultsAction {
 
 		if ($searchObject->getResultTotal() == 0) {
 			// No record found
-			$interface->assign('subpage', 'Series/list-none.tpl');
-			$interface->setTemplate('list.tpl');
+			$interface->assign('subpage', 'Series/series-none.tpl');
+			$interface->setTemplate('series.tpl');
 			$interface->assign('recordCount', 0);
 
 			// Was the empty result set due to an error?
@@ -158,9 +158,9 @@ class Series_Results extends ResultsAction {
 
 			// Setup Display
 			if ($displayMode == 'covers') {
-				$displayTemplate = 'Series/covers-list.tpl'; // structure for bookcover tiles
+				$displayTemplate = 'Series/covers-series.tpl'; // structure for bookcover tiles
 			} else {
-				$displayTemplate = 'Series/list-list.tpl'; // structure for regular results
+				$displayTemplate = 'Series/series-list.tpl'; // structure for regular results
 				$displayMode = 'list'; // In case the view is not explicitly set, do so now for display & clients-side functions
 				// Process Paging
 				$link = $searchObject->renderLinkPageTemplate();
@@ -192,21 +192,21 @@ class Series_Results extends ResultsAction {
 		}
 		$exploreMore = new ExploreMore();
 		$exploreMoreSearchTerm = $exploreMore->getExploreMoreQuery();
-		$interface->assign('exploreMoreSection', 'lists');
+		$interface->assign('exploreMoreSection', 'series');
 		$interface->assign('showExploreMoreBar', $showExploreMoreBar);
 		$interface->assign('exploreMoreSearchTerm', $exploreMoreSearchTerm);
 
 		// Done, display the page
 		$interface->assign('sectionLabel', 'Series Results');
 		$sidebar = $searchObject->getResultTotal() > 0 ? 'Search/results-sidebar.tpl' : '';
-		$this->display($searchObject->getResultTotal() ? 'list.tpl' : 'list-none.tpl', 'List Search Results', $sidebar);
+		$this->display($searchObject->getResultTotal() ? 'series.tpl' : 'series-none.tpl', 'Series Search Results', $sidebar);
 	} // End launch()
 
 	/**
-	 * @param SearchObject_ListsSearcher $searchObject
+	 * @param SearchObject_Seriesearcher $searchObject
 	 * @param UInterface $interface
 	 */
-	private function getKeywordSearchResults(SearchObject_ListsSearcher $searchObject, UInterface $interface): void {
+	private function getKeywordSearchResults(SearchObject_SeriesSearcher $searchObject, UInterface $interface): void {
 		//Check to see if we are not using a Keyword search and the Keyword search would provide results
 		if (!$searchObject->isAdvanced()) {
 			$searchTerms = $searchObject->getSearchTerms();
@@ -227,6 +227,6 @@ class Series_Results extends ResultsAction {
 	}
 
 	function getBreadcrumbs(): array {
-		return parent::getResultsBreadcrumbs('User Lists Search');
+		return parent::getResultsBreadcrumbs('Series Search');
 	}
 }
