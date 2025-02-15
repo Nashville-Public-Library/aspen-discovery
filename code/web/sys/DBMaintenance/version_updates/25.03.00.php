@@ -35,7 +35,10 @@ function getUpdates25_03_00(): array {
 					description TEXT,
 					cover VARCHAR(50),
 					audience VARCHAR(25),
-					isIndexed TINYINT(1) DEFAULT 0
+					isIndexed TINYINT(1) DEFAULT 1,
+					deleted TINYINT(1) DEFAULT 0,
+					dateUpdated INT(11),
+					created INT(11)
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
 				"CREATE TABLE series_member (
     				id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -50,6 +53,26 @@ function getUpdates25_03_00(): array {
 					pubDate INT,
 					weight INT NOT NULL DEFAULT 0
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
+				"CREATE TABLE series_indexing_log (
+					id int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					startTime INT(11) NOT NULL,
+					endTime INT(11) DEFAULT NULL,
+					lastUpdate INT(11) DEFAULT NULL,
+					notes MEDIUMTEXT DEFAULT NULL,
+					numSeries INT(11) DEFAULT 0,
+					numAdded INT(11) DEFAULT 0,
+					numDeleted INT(11) DEFAULT 0,
+					numUpdated INT(11) DEFAULT 0,
+					numSkipped INT(11) DEFAULT 0,
+					numErrors INT(11) DEFAULT 0
+				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
+				"CREATE TABLE series_indexing_settings (
+					id int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					runFullUpdate TINYINT(1) DEFAULT 1,
+					lastUpdateOfChangedSeries INT(11) DEFAULT 0,
+					lastUpdateOfAllSeries INT(11) DEFAULT 0
+    			) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
+				"INSERT INTO series_indexing_settings VALUES (1,1,0,0);",
 			]
 		], //add_series_tables
 
