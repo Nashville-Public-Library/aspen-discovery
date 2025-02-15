@@ -185,6 +185,7 @@ class SeriesIndexer {
 			seriesSolr.setId(seriesId);
 			seriesSolr.setTitle(allSeriesRS.getString("displayName"));
 			seriesSolr.setDescription(allSeriesRS.getString("description"));
+			seriesSolr.setAudience(allSeriesRS.getString("audience"));
 			long created = allSeriesRS.getLong("created");
 			long dateUpdated = allSeriesRS.getLong("dateUpdated");
 			seriesSolr.setCreated(created);

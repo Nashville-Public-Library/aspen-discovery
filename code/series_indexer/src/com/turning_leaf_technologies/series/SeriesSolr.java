@@ -16,6 +16,7 @@ class SeriesSolr {
 	private String title;
 	private final HashSet<String> contents = new HashSet<>(); //A list of the titles and authors for the list
 	private String description;
+	private String audience;
 	private long numTitles = 0;
 	private long created;
 //	private long owningLibrary;
@@ -41,10 +42,12 @@ class SeriesSolr {
 
 		doc.addField("author", authors);
 		if (authors.size() > 3) {
-			doc.addField("author_display", "various");
+			doc.addField("author_display", "Various");
 		} else {
 			doc.addField("author_display", authors);
 		}
+
+		doc.addField("audience", audience);
 
 		doc.addField("table_of_contents", contents);
 		doc.addField("description", description);
@@ -102,6 +105,10 @@ class SeriesSolr {
 
 	void setDescription(String description) {
 		this.description = description;
+	}
+
+	void setAudience(String audience) {
+		this.audience = audience;
 	}
 
 	void setAuthor(String author) {
