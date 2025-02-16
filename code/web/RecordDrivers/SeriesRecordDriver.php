@@ -39,7 +39,7 @@ class SeriesRecordDriver extends IndexRecordDriver {
 			$bookCoverUrl = '';
 		}
 		$id = $this->getId();
-		$bookCoverUrl = $bookCoverUrl . "/bookcover.php?type=list&amp;id={$id}&amp;size={$size}";
+		$bookCoverUrl = $bookCoverUrl . "/bookcover.php?type=series&amp;id={$id}&amp;size={$size}";
 		return $bookCoverUrl;
 	}
 

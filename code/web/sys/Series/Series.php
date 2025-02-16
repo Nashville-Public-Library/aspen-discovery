@@ -24,7 +24,7 @@ class Series extends DataObject {
 	/**
 	 * @return array      of list entries
 	 */
-	function getTitles($sortName) {
+	function getTitles($sortName = "volume") {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
@@ -59,6 +59,24 @@ class Series extends DataObject {
 			'seriesMembers' => $seriesMembers,
 			'idsBySource' => $idsBySource,
 		];
+	}
+
+	/**
+	 * @return array      of series members
+	 */
+	function getSeriesMembers() {
+		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
+		$seriesMember = new SeriesMember();
+		$seriesMember->seriesId = $this->id;
+		$seriesMember->orderBy('pubDate');
+		$seriesMembers = [];
+		$seriesMember->find();
+		while ($seriesMember->fetch()) {
+			$seriesMembers[] = clone($seriesMember);
+		}
+		$seriesMember->__destruct();
+		$seriesMember = null;
+		return $seriesMembers;
 	}
 
 	/**
