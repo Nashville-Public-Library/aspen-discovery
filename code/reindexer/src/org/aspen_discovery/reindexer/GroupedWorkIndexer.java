@@ -332,7 +332,7 @@ public class GroupedWorkIndexer {
 			getSeriesMemberStmt = dbConn.prepareStatement("SELECT * FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE displayName = ?");
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience, created, dateUpdated) VALUES (?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
-			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesID, isPlaceholder, groupedWorkPermanentId, volume, pubDate) VALUES (?, 0, ?, ?, ?)");
+			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesID, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName) VALUES (?, 0, ?, ?, ?, ?)");
 			setSeriesDateUpdated = dbConn.prepareStatement("UPDATE series SET dateUpdated = ? WHERE id = ?;");
 		} catch (Exception e){
 			logEntry.incErrors("Could not load statements to get identifiers ", e);
@@ -1457,6 +1457,7 @@ public class GroupedWorkIndexer {
 						addSeriesMemberStmt.setString(3, "");
 					}
 					addSeriesMemberStmt.setLong(4, groupedWork.earliestPublicationDate != null ? groupedWork.earliestPublicationDate : 0);
+					addSeriesMemberStmt.setString(5, groupedWork.displayTitle);
 					addSeriesMemberStmt.executeUpdate();
 					if (seriesId >= 0) {
 						setSeriesDateUpdated.setLong(1, timeNow);

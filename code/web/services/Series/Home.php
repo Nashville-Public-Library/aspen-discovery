@@ -43,11 +43,20 @@ class Series_Home extends Action {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$series = new Series();
 		$series->id = $listId;
+
+		//Determine the sort options
+		if (isset($_REQUEST['sort'])) {
+			$activeSort = $_REQUEST['sort'];
+		}
+		if (empty($activeSort)) {
+			$activeSort = 'volume';
+		}
+
 		if ($series->find(true)) {
 			// Send list to template so title/description can be displayed:
 			$interface->assign('series', $series);
 
-			$this->buildListForDisplay($series);
+			$this->buildListForDisplay($series, $activeSort);
 
 			$template = 'seriesMembers.tpl';
 
@@ -56,7 +65,7 @@ class Series_Home extends Action {
 		}
 
 		$this->display($template, isset($series->title) ? $series->title : translate([
-			'text' => 'Course Reserve',
+			'text' => 'Series',
 			'isPublicFacing' => true,
 		]), '', false);
 	}
@@ -67,7 +76,7 @@ class Series_Home extends Action {
 	 * @access  public
 	 * @param Series $list
 	 */
-	public function buildListForDisplay(Series $list) {
+	public function buildListForDisplay(Series $list, $sortName = "volume") {
 		global $interface;
 
 		$queryParams = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
@@ -102,7 +111,7 @@ class Series_Home extends Action {
 			'endRecord' => $endRecord,
 			'perPage' => $recordsPerPage,
 		];
-		$resourceList = $list->getSeriesRecords($startRecord, $recordsPerPage, 'html');
+		$resourceList = $list->getSeriesRecords($startRecord, $recordsPerPage, 'html', $sortName);
 		$interface->assign('resourceList', $resourceList);
 
 		// Set up paging of list contents:
@@ -119,6 +128,27 @@ class Series_Home extends Action {
 		} else {
 			$link .= "?page=%d";
 		}
+
+		$sortOptions = [
+			'displayName' => [
+				'desc' => 'Title',
+				'selected' => $sortName == 'displayName',
+				'sortUrl' => "/Series/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'displayName'])),
+			],
+			'pubDate' => [
+				'desc' => 'Publication Date',
+				'selected' => $sortName == 'pubDate',
+				'sortUrl' => "/Series/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'pubDate'])),
+			],
+			'volume' => [
+				'desc' => 'Volume Number',
+				'selected' => $sortName == 'volume',
+				'sortUrl' => "/Series/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'volume'])),
+			],
+		];
+
+		$interface->assign('sortList', $sortOptions);
+
 		$options = [
 			'totalItems' => $pageInfo['resultTotal'],
 			'perPage' => $pageInfo['perPage'],

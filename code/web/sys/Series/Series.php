@@ -24,11 +24,11 @@ class Series extends DataObject {
 	/**
 	 * @return array      of list entries
 	 */
-	function getTitles() {
+	function getTitles($sortName) {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
-		$seriesMember->orderBy('pubDate');
+		$seriesMember->orderBy($sortName);
 
 		$seriesMembers = [];
 		$idsBySource = [];
@@ -43,11 +43,15 @@ class Series extends DataObject {
 				'source' => $source,
 				'sourceId' => $seriesMember->groupedWorkPermanentId,
 				'title' => $seriesMember->displayName,
+				'volume' => $seriesMember->volume,
 				'seriesMemberId' => $seriesMember->id,
 				'seriesMember' => clone($seriesMember),
 			];
 
 			$seriesMembers[] = $tmpListEntry;
+		}
+		if ($sortName == "volume") {
+			array_multisort(array_column($seriesMembers, 'volume'), SORT_NATURAL, $seriesMembers);
 		}
 		$seriesMember->__destruct();
 		$seriesMember = null;
@@ -63,9 +67,9 @@ class Series extends DataObject {
 	 * @param string $format The format of the records, valid values are html, summary, recordDrivers, citation
 	 * @return array     Array of HTML to display to the user
 	 */
-	public function getSeriesRecords($start, $numItems, $format) {
+	public function getSeriesRecords($start, $numItems, $format, $sortName) {
 		//Get all entries for the list
-		$seriesMemberInfo = $this->getTitles();
+		$seriesMemberInfo = $this->getTitles($sortName);
 
 		//Trim to the number of records we want to return
 		if ($numItems > 0) {
@@ -122,7 +126,6 @@ class Series extends DataObject {
 		}
 
 		ksort($listResults);
-		krsort($listResults, SORT_NATURAL);
 		return $listResults;
 	}
 

@@ -35,6 +35,20 @@
 								<button value="emailList" id="CourseReserveEmail" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.CourseReserves.emailAction("{$series->id}")'>{translate text='Email' isPublicFacing=true}</button>
 								<button value="printList" id="CourseReservePrint" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.CourseReserves.printAction()'>{translate text='Print' isPublicFacing=true}</button>
 							</div>
+
+							<div class="btn-group" role="group">
+								<button type="button" class="btn btn-sm btn-default btn-info dropdown-toggle listViewButton" data-toggle="dropdown" aria-expanded="false">{translate text='Sort by' isPublicFacing=true}&nbsp;<span class="caret"></span></button>
+								<ul class="dropdown-menu dropdown-menu-right" role="menu">
+									{foreach from=$sortList item=sortData}
+										<li>
+											<a{if empty($sortData.selected)} href="{$sortData.sortUrl|escape}"{/if}> {* only add link on un-selected options *}
+												{translate text=$sortData.desc isPublicFacing=true}
+												{if !empty($sortData.selected)} <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>{/if}
+											</a>
+										</li>
+									{/foreach}
+								</ul>
+							</div>
 						</div>
 					{/if}
 				</div>
