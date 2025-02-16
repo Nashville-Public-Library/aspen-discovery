@@ -179,7 +179,7 @@ class SearchObject_SeriesSearcher extends SearchObject_SolrSearcher {
 				//Output the row to csv
 				$link = '';
 				if ($curDoc['id']) {
-					$link = $configArray['Site']['url'] . '/MyAccount/MyList/' . $curDoc['id'];
+					$link = $configArray['Site']['url'] . '/Series/' . $curDoc['id'];
 				}
 
 				$title = $curDoc['title_display'];

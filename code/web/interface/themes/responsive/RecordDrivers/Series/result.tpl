@@ -3,7 +3,7 @@
 	{if !empty($showCovers)}
 		<div class="coversColumn col-xs-3 col-sm-3 col-md-3 col-lg-2 text-center" aria-hidden="true" role="presentation">
 			{if $disableCoverArt != 1}
-				<a href="/MyAccount/MyList/{$summShortId}" class="alignleft listResultImage" tabindex="-1">
+				<a href="/Series/{$summShortId}" class="alignleft listResultImage" tabindex="-1">
 					<img src="{$bookCoverUrl}" class="listResultImage img-thumbnail {$coverStyle}" alt="{$summTitle|removeTrailingPunctuation|highlight|escapeCSS|truncate:180:"..."}">
 				</a>
 			{/if}
@@ -17,7 +17,7 @@
 		<div class="row">
 			<div class="col-xs-12">
 	<span class="result-index">{$resultIndex})</span>&nbsp;
-				<a href="/MyAccount/MyList/{$summShortId}" class="result-title notranslate">
+				<a href="/Series/{$summShortId}" class="result-title notranslate">
 					{if !$summTitle|removeTrailingPunctuation} {translate text='Title not available' isPublicFacing=true}{else}{$summTitle|removeTrailingPunctuation|highlight|truncate:180:"..."}{/if}
 				</a>
 				{if isset($summScore)}
@@ -65,7 +65,7 @@
 			<div class="row">
 				<div class="result-label col-tn-3">{translate text="Number of Titles" isPublicFacing=true} </div>
 				<div class="result-value col-tn-9 notranslate">
-					{translate text="%1% titles are in this list." 1=$summNumTitles isPublicFacing=true}
+					{translate text="%1% titles are in this series." 1=$summNumTitles isPublicFacing=true}
 				</div>
 			</div>
 		{/if}

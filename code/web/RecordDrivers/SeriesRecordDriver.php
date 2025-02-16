@@ -104,7 +104,7 @@ class SeriesRecordDriver extends IndexRecordDriver {
 		$id = $this->getUniqueID();
 		$interface->assign('summId', $id);
 
-		$url = '/MyAccount/MyList/' . $id;
+		$url = '/Series/' . $id;
 
 		$interface->assign('summUrl', $url);
 		$interface->assign('summTitle', $this->getTitle());
