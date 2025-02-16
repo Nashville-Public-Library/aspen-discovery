@@ -1027,15 +1027,9 @@ try {
 		$aspenUsage->insert();
 	}
 
-	if (SystemVariables::getSystemVariables()->trackIpAddresses) {
-		if ($usageByIPAddress->id) {
-			$usageByIPAddress->update();
-		} else {
-			$usageByIPAddress->insert();
-		}
-	}
+	//Do not need to update IP address here because we are doing it atomically as values update
 } catch (Exception $e) {
-	//Table not created yet, ignore
+	//The table is not created yet, ignore
 	global $logger;
 	$logger->log("Exception updating aspen usage/slow pages/usage by IP: " . $e, Logger::LOG_DEBUG);
 }
@@ -1570,11 +1564,11 @@ function checkForTooManyFailedLogins(){
 	}
 }
 
-function trackSpammyRequest() {
+function trackSpammyRequest() : void {
 	global $usageByIPAddress;
-	$usageByIPAddress->numSpammyRequests++;
-	if ($usageByIPAddress->id) {
-		if ($usageByIPAddress->numSpammyRequests > 10) {
+	$usageByIPAddress->incrementNumSpammyRequests();
+	if ($usageByIPAddress->getId()) {
+		if ($usageByIPAddress->getNumSpammyRequests() > 10) {
 			//Automatically block the IP address
 			require_once ROOT_DIR . '/sys/IP/IPAddress.php';
 			$ipAddress = new IPAddress();
@@ -1592,8 +1586,5 @@ function trackSpammyRequest() {
 				$ipAddress->update();
 			}
 		}
-		$usageByIPAddress->update();
-	} else {
-		$usageByIPAddress->insert();
 	}
 }
