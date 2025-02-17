@@ -11,8 +11,108 @@ class Series extends DataObject {
 	public $audience;
 	public $author;
 	public $isIndexed;
+	public $dateUpdated;
 
 	public $_seriesMembers; // grouped works and placeholders
+
+	public static function getObjectStructure($context = ''): array {
+		$structure = [
+			'id' => [
+				'property' => 'id',
+				'type' => 'label',
+				'label' => 'Id',
+				'description' => 'The unique id',
+			],
+			'displayName' => [
+				'property' => 'displayName',
+				'type' => 'text',
+				'label' => 'Series Title',
+				'description' => 'The title of the series',
+			],
+			'author' => [
+				'property' => 'author',
+				'type' => 'text',
+				'label' => 'Author',
+				'description' => 'Up to three authors with titles in this series',
+				'readOnly' => true,
+				'note' => "This field can't be edited because it gets overwritten during indexing"
+			],
+			'audience' => [
+				'property' => 'audience',
+				'type' => 'text',
+				'label' => 'Audience',
+				'description' => 'The target audience for the series',
+			],
+			'description' => [
+				'property' => 'description',
+				'type' => 'text',
+				'label' => 'Description',
+				'description' => 'Series description',
+				'note' => 'This is automatically imported from Novelist if available but can be edited',
+				'hideInLists' => true,
+			],
+			'created' => [
+				'property' => 'created',
+				'type' => 'timestamp',
+				'label' => 'Date Created',
+				'readOnly' => true,
+			],
+			'dateUpdated' => [
+				'property' => 'dateUpdated',
+				'type' => 'timestamp',
+				'label' => 'Date Updated',
+				'readOnly' => true,
+			],
+			'isIndexed' => [
+				'property' => 'isIndexed',
+				'type' => 'checkbox',
+				'label' => 'Include in search',
+				'default' => true,
+				'description' => 'Uncheck to exclude from series searches'
+			]
+		];
+		return $structure;
+	}
+
+	public function update($context = '') {
+		$this->dateUpdated = time();
+		$ret = parent::update();
+//		if ($ret !== FALSE) {
+//			$this->saveSeriesMembers();
+//		}
+		return $ret;
+	}
+
+	public function insert($context = '') {
+		if (empty($this->dateUpdated)) {
+			$this->dateUpdated = time();
+		}
+		$ret = parent::insert();
+		if ($ret !== FALSE) {
+			$this->saveSeriesMembers();
+		}
+		return $ret;
+	}
+
+	function delete($useWhere = false) : int {
+		return false; // Placeholder till Delete is removed as an option
+	}
+
+	public function __set($name, $value) {
+		if ($name == 'seriesMembers') {
+			// $this->setSeriesMembers($value);
+		} else {
+			parent::__set($name, $value);
+		}
+	}
+
+	public function __get($name) {
+		if ($name == 'seriesMembers') {
+			// return $this->getSeriesMembers();
+		} else {
+			return parent::__get($name);
+		}
+	}
 
 	function numTitlesInSeries() {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
