@@ -1437,7 +1437,7 @@ public class GroupedWorkIndexer {
 						// Add the series first
 						addSeriesStmt.setString(1, series[0]);
 						String novelistDescription = this.getNovelistDescription(groupedWork);
-						addSeriesStmt.setString(2, !novelistDescription.isBlank() ? novelistDescription : "");
+						addSeriesStmt.setString(2, novelistDescription != null && !novelistDescription.isBlank() ? novelistDescription : "");
 						addSeriesStmt.setString(3, groupedWork.getTargetAudiencesAsString());
 						addSeriesStmt.setLong(4, timeNow);
 						addSeriesStmt.setLong(5, timeNow);
