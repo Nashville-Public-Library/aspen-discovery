@@ -6,10 +6,10 @@ class Series extends DataObject {
 	public $__table = 'series';
 	public $id;
 	public $displayName;
-	public $_authors; // Get all authors from series members
 	public $description;
 	public $cover;
 	public $audience;
+	public $author;
 	public $isIndexed;
 
 	public $_seriesMembers; // grouped works and placeholders

@@ -3,9 +3,49 @@
 	<div class="row">
 		<div class="col-xs-12">
 			<form action="/Series/{$series->id}" id="myListFormHead">
-				<div>
+				<div class="result">
 					<input type="hidden" name="myListActionHead" id="myListActionHead" class="form">
 					<h1 id="listTitle">{$series->displayName|escape:"html"}</h1>
+					<div class="row">
+{*						<div class="col-xs-3 col-sm-3 col-md-3 col-lg-2 text-center">*}
+{*							{$cover}*}
+{*						</div>*}
+						<div class="col-xs-9 col-sm-9 col-md-9 col-lg-10">
+							{if !empty($authors)}
+								<div class="row">
+									<div class="result-label col-tn-3 col-xs-3">{translate text="Author" isPublicFacing=true}</div>
+									<div class="result-value col-tn-9 col-xs-9 notranslate">
+										{if is_array($authors)}
+											{foreach from=$authors item=author}
+												{if $author == "Various"}
+													{translate text="Various" isPublicFacing=true}
+												{else}
+													<a href='/Author/Home?author="{$author|escape:"url"}"'>{$author|highlight}</a> <br/>
+												{/if}
+											{/foreach}
+										{else}
+											{$authors|escape:"html"}
+										{/if}
+									</div>
+								</div>
+							{/if}
+							{if !empty($series->audience)}
+								<div class="row">
+									<div class="result-label col-tn-3 col-xs-3">{translate text="Audience" isPublicFacing=true}</div>
+									<div class="result-value col-tn-9 col-xs-9">
+										{$series->audience|escape:"html"}
+									</div>
+								</div>
+							{/if}
+							{if !empty($series->description)}
+								<br/>
+								<div class="row">
+									<div class="result-value col-sm-12">{$series->description|escape:"html"}</div>
+								</div>
+							{/if}
+						</div>
+					</div>
+					<hr/>
 
 					{if $series->deleted == 1}
 						<p class="alert alert-danger">{translate text='Sorry, this series has been deleted.' isPublicFacing=true}</p>

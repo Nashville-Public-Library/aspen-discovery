@@ -12,14 +12,14 @@ class Series_Home extends Action {
 
 	/** @noinspection PhpUnused */
 	function reloadCover() {
-		$courseReserveId = $_REQUEST['id'];
-		$courseReserve = new CourseReserve();
-		$courseReserve->id = $courseReserveId;
+		$seriesId = $_REQUEST['id'];
+		$series = new Series();
+		$series->id = $seriesId;
 
 		require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
 		$bookCoverInfo = new BookCoverInfo();
-		$bookCoverInfo->recordType = 'course_reserve';
-		$bookCoverInfo->recordId = $courseReserve->id;
+		$bookCoverInfo->recordType = 'series';
+		$bookCoverInfo->recordId = $series->id;
 		if ($bookCoverInfo->find(true)) {
 			$bookCoverInfo->imageSource = '';
 			$bookCoverInfo->thumbnailLoaded = 0;
@@ -55,6 +55,8 @@ class Series_Home extends Action {
 		if ($series->find(true)) {
 			// Send list to template so title/description can be displayed:
 			$interface->assign('series', $series);
+			$authors = explode("|", $series->author);
+			$interface->assign('authors', $authors);
 
 			$this->buildListForDisplay($series, $activeSort);
 
