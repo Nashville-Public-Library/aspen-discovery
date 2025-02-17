@@ -6085,7 +6085,7 @@ class MyAccount_AJAX extends JSON_Action {
 			}
 			require_once ROOT_DIR . '/sys/ECommerce/SnapPaySetting.php';
 			$snapPaySetting = new SnapPaySetting();
-			$snapPaySetting->id = $userLibrary->snapSettingId;
+			$snapPaySetting->id = $userLibrary->snapPaySettingId;
 			if ($snapPaySetting->find(true)) {
 				$patron->loadContactInformation();
 				// hard coded SnapPay hosted payment page URL
