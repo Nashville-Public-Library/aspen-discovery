@@ -32,6 +32,7 @@ function getUpdates25_03_00(): array {
 				"CREATE TABLE series (
 					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
 					displayName VARCHAR(500),
+					author VARCHAR(500),
 					description TEXT,
 					cover VARCHAR(50),
 					audience VARCHAR(25),

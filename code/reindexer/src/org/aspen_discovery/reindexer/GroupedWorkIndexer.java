@@ -160,6 +160,7 @@ public class GroupedWorkIndexer {
 	private PreparedStatement addSeriesMemberStmt;
 	private PreparedStatement addSeriesStmt;
 	private PreparedStatement setSeriesDateUpdated;
+	private PreparedStatement updateSeriesAuthor;
 
 	private final CRC32 checksumCalculator = new CRC32();
 
@@ -331,8 +332,9 @@ public class GroupedWorkIndexer {
 
 			getSeriesMemberStmt = dbConn.prepareStatement("SELECT * FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE displayName = ?");
-			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience, created, dateUpdated) VALUES (?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
+			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience, created, dateUpdated, author) VALUES (?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
 			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesID, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName) VALUES (?, 0, ?, ?, ?, ?)");
+			updateSeriesAuthor = dbConn.prepareStatement("UPDATE series SET author = ? WHERE id = ?;");
 			setSeriesDateUpdated = dbConn.prepareStatement("UPDATE series SET dateUpdated = ? WHERE id = ?;");
 		} catch (Exception e){
 			logEntry.incErrors("Could not load statements to get identifiers ", e);
@@ -1431,8 +1433,26 @@ public class GroupedWorkIndexer {
 					long seriesId;
 					if (seriesRS.next()) { // Need to add handling for more than one match
 						seriesId = seriesRS.getLong("id");
+						// Check to see if we need to add additional authors
+						String authors = seriesRS.getString("author");
+						String newAuthor = groupedWork.getPrimaryAuthor();
+						if (newAuthor != null) {
+							updateSeriesAuthor.setLong(2, seriesId);
+							if (authors == null) {
+								updateSeriesAuthor.setString(1, newAuthor);
+								updateSeriesAuthor.executeUpdate();
+							} else if (!authors.equals("Various") && !authors.contains(newAuthor)) {
+								// If we already have three authors, change author to Various
+								if (authors.split("\\|").length == 3) {
+									authors = "Various";
+								} else {
+									authors = authors + "|" + newAuthor;
+								}
+								updateSeriesAuthor.setString(1, authors);
+								updateSeriesAuthor.executeUpdate();
+							}
+						}
 						addSeriesMemberStmt.setLong(1, seriesId);
-
 					} else {
 						// Add the series first
 						addSeriesStmt.setString(1, series[0]);
@@ -1441,6 +1461,7 @@ public class GroupedWorkIndexer {
 						addSeriesStmt.setString(3, groupedWork.getTargetAudiencesAsString());
 						addSeriesStmt.setLong(4, timeNow);
 						addSeriesStmt.setLong(5, timeNow);
+						addSeriesStmt.setString(6, groupedWork.getPrimaryAuthor());
 						addSeriesStmt.executeUpdate();
 						ResultSet generatedKeys = addSeriesStmt.getGeneratedKeys();
 						if (generatedKeys.next()) {
