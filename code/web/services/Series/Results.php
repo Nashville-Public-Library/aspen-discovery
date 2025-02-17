@@ -46,7 +46,7 @@ class Series_Results extends ResultsAction {
 		//   Those we can construct BEFORE the search is executed
 		$interface->assign('sortList', $searchObject->getSortList());
 		//$interface->assign('rssLink', $searchObject->getRSSUrl());
-		$interface->assign('excelLink', $searchObject->getExcelUrl());
+		//$interface->assign('excelLink', $searchObject->getExcelUrl());
 		//$interface->assign('risLink', $searchObject->getRisUrl());
 
 		// Hide Covers when the user has set that setting on the Search Results Page
@@ -159,6 +159,15 @@ class Series_Results extends ResultsAction {
 			// Setup Display
 			if ($displayMode == 'covers') {
 				$displayTemplate = 'Series/covers-series.tpl'; // structure for bookcover tiles
+				// Use a pager for now since otherwise the wrong results get loaded
+				$link = $searchObject->renderLinkPageTemplate();
+				$options = [
+					'totalItems' => $summary['resultTotal'],
+					'fileName' => $link,
+					'perPage' => $summary['perPage'],
+				];
+				$pager = new Pager($options);
+				$interface->assign('pageLinks', $pager->getLinks());
 			} else {
 				$displayTemplate = 'Series/series-list.tpl'; // structure for regular results
 				$displayMode = 'list'; // In case the view is not explicitly set, do so now for display & clients-side functions

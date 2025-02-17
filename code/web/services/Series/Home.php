@@ -163,7 +163,11 @@ class Series_Home extends Action {
 
 	function getBreadcrumbs(): array {
 		$breadcrumbs = [];
-		$breadcrumbs[] = new Breadcrumb('', 'Series');
+		if (!empty($this->lastSearch)) {
+			$breadcrumbs[] = new Breadcrumb($this->lastSearch, 'Series Search Results');
+		} else {
+			$breadcrumbs[] = new Breadcrumb('', 'Series');
+		}
 		return $breadcrumbs;
 	}
 }

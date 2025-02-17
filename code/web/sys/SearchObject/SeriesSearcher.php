@@ -3,6 +3,11 @@ require_once ROOT_DIR . '/sys/SearchObject/SolrSearcher.php';
 
 class SearchObject_SeriesSearcher extends SearchObject_SolrSearcher {
 
+	public $viewOptions = [
+		'list',
+		'covers',
+	];
+
 	public function __construct() {
 		parent::__construct();
 

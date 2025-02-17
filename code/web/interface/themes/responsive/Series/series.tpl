@@ -9,7 +9,6 @@
 
 	{* Information about the search *}
 	<div class="result-head">
-
 		{if !empty($replacementTerm)}
 			<div id="replacement-search-info-block">
 				<div id="replacement-search-info"><span class="replacement-search-info-text">{translate text="Showing Results for" isPublicFacing=true}</span> {$replacementTerm}</div>
@@ -40,9 +39,9 @@
 
 		{* User's viewing mode toggle switch *}
 		{if !empty($showSearchToolsAtTop)}
-			{include file="Search/search-toolbar-no-display-mode.tpl"}
+			{include file="Search/search-toolbar.tpl"}
 		{else}
-			{include file="Search/results-no-displayMode-toggle.tpl"}
+			{include file="Search/results-displayMode-toggle.tpl"}
 		{/if}
 
 		<div class="clearer"></div>
@@ -55,17 +54,17 @@
 		{$pageContent}
 	{/if}
 
-	{if $displayMode == 'covers'}
-		{if $recordEnd < $recordCount}
-			<a onclick="return AspenDiscovery.Searches.getMoreResults()" role="button" title="{translate text='Get More Results' inAttribute=true isPublicFacing=true}">
-				<div class="row" id="more-browse-results">
-					<span class="glyphicon glyphicon-chevron-down" aria-hidden="true" aria-label="{translate text='Get More Results' inAttribute=true isPublicFacing=true}" role="button"></span>
-				</div>
-			</a>
-		{/if}
-	{else}
+{*	{if $displayMode == 'covers'}*}
+{*		{if $recordEnd < $recordCount}*}
+{*			<a onclick="return AspenDiscovery.Searches.getMoreResults()" role="button" title="{translate text='Get More Results' inAttribute=true isPublicFacing=true}">*}
+{*				<div class="row" id="more-browse-results">*}
+{*					<span class="glyphicon glyphicon-chevron-down" aria-hidden="true" aria-label="{translate text='Get More Results' inAttribute=true isPublicFacing=true}" role="button"></span>*}
+{*				</div>*}
+{*			</a>*}
+{*		{/if}*}
+{*	{else}*}
 		{if !empty($pageLinks.all)}<div class="text-center">{$pageLinks.all}</div>{/if}
-	{/if}
+{*	{/if}*}
 
 	{*Additional Suggestions on the last page of search results or no results returned *}
 
@@ -73,7 +72,6 @@
 	<div class="search_tools well small">
 		<strong>{translate text='Search Tools' isPublicFacing=true} </strong>
 		{if !empty($showSearchTools)}
-			<a href="{$rssLink|escape}">{translate text='Get RSS Feed' isPublicFacing=true}</a>
 			{if empty($offline) || $enableEContentWhileOffline}
 				<a href="#" onclick="return AspenDiscovery.Account.ajaxLightbox('/Search/AJAX?method=getEmailForm', true);">{translate text='Email this Search' isPublicFacing=true}</a>
 				{if !empty($enableSavedSearches)}
