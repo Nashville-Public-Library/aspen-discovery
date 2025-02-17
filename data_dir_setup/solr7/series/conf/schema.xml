@@ -122,6 +122,12 @@
 		<field name="description" type="searchable_text" indexed="true" stored="true"/>
 		<field name="audience_facet" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
 		<field name="audience" type="searchable_text" indexed="true" stored="true" multiValued="true"/>
+		<field name="language" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
+		<field name="subject" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
+		<field name="literary_form" type="unchanged_string" indexed="true" stored="true" multiValued="false"/>
+		<dynamicField name="format_*" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
+		<dynamicField name="format_category_*" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
+		<dynamicField name="econtent_source_*" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
 		<field name="num_titles" type="integer" indexed="true" stored="true"/>
 		<field name="popularity" type="integer" indexed="true" stored="false" default="0"/>
 		<field name="date_added" type="date" indexed="true" stored="true" multiValued="false"/>

@@ -200,7 +200,7 @@ class SeriesIndexer {
 						if (!groupedWorkPermanentId.isEmpty()) {
 							SolrQuery query = new SolrQuery();
 							query.setQuery("id:" + groupedWorkPermanentId);
-							query.setFields("title_display", "author_display");
+							query.setFields("title_display", "author_display", "language", "subject", "literary_form", "format", "format_category", "econtent_source");
 
 							try {
 								QueryResponse response = groupedWorkServer.query(query);
@@ -208,7 +208,7 @@ class SeriesIndexer {
 								//Should only ever get one response
 								if (!results.isEmpty()) {
 									SolrDocument curWork = results.get(0);
-									seriesSolr.addListTitle("grouped_work", groupedWorkPermanentId, curWork.getFieldValue("title_display"), curWork.getFieldValue("author_display"));
+									seriesSolr.addListTitle("grouped_work", groupedWorkPermanentId, curWork.getFieldValue("title_display"), curWork.getFieldValue("author_display"), curWork);
 								}
 							} catch (Exception e) {
 								logger.error("Error loading information about title " + groupedWorkPermanentId);

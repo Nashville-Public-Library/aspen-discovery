@@ -3,6 +3,7 @@ package com.turning_leaf_technologies.series;
 import com.turning_leaf_technologies.dates.DateUtils;
 import com.turning_leaf_technologies.indexing.Scope;
 import com.turning_leaf_technologies.strings.AspenStringUtils;
+import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 
 import java.util.Date;
@@ -12,7 +13,15 @@ class SeriesSolr {
 	private final SeriesIndexer seriesIndexer;
 	private long id;
 	private final HashSet<String> relatedRecordIds = new HashSet<>();
-	private HashSet<String> authors = new HashSet<>();
+	private final HashSet<String> authors = new HashSet<>();
+	private final HashSet<String> formats = new HashSet<>();
+	private final HashSet<String> formatCategories = new HashSet<>();
+	private final HashSet<String> eContentSource = new HashSet<>();
+	private final HashSet<String> subjects = new HashSet<>();
+	private String literaryForm = "";
+	private int fiction = 0;
+	private int nonFiction = 0;
+	private final HashSet<String> languages = new HashSet<>();
 	private String title;
 	private final HashSet<String> contents = new HashSet<>(); //A list of the titles and authors for the list
 	private String description;
@@ -47,6 +56,13 @@ class SeriesSolr {
 			doc.addField("author_display", authors);
 		}
 
+		processScopedDynamicField(eContentSource, "econtent_source", doc);
+		processScopedDynamicField(formats, "format", doc);
+		processScopedDynamicField(formatCategories, "format_category", doc);
+
+		doc.addField("subject", subjects);
+		doc.addField("literary_form", fiction > nonFiction ? "Fiction" : "Non Fiction");
+		doc.addField("language", languages);
 		doc.addField("audience", audience);
 
 		doc.addField("table_of_contents", contents);
@@ -64,31 +80,13 @@ class SeriesSolr {
 		int numValidScopes = 0;
 		HashSet<String> relevantScopes = new HashSet<>();
 		for (Scope scope: seriesIndexer.getScopes()) {
-			boolean okToInclude = true;
-//			if (scope.isLibraryScope()) {
-//				okToInclude = (scope.getPublicListsToInclude() == 2) || //All public lists
-//					((scope.getPublicListsToInclude() == 1) && (scope.getLibraryId() == owningLibrary)) || //All lists for the current library
-//					((scope.getPublicListsToInclude() == 3) && ownerCanShareListsInSearchResults && (scope.getLibraryId() == owningLibrary || scope.getLibraryId() == -1 || owningLibrary == -1)) || //All lists for list publishers at the current library
-//					((scope.getPublicListsToInclude() == 4) && ownerCanShareListsInSearchResults) //All lists for list publishers
-//				;
-//			} else {
-//				okToInclude = (scope.getPublicListsToInclude() == 3) || //All public lists
-//					((scope.getPublicListsToInclude() == 1) && (scope.getLibraryId() == owningLibrary)) || //All lists for the current library
-//					((scope.getPublicListsToInclude() == 2) && scope.getScopeName().equals(owningLocation)) || //All lists for the current location
-//					((scope.getPublicListsToInclude() == 4) && ownerCanShareListsInSearchResults && (scope.getLibraryId() == owningLibrary || scope.getLibraryId() == -1 || owningLibrary == -1)) || //All lists for list publishers at the current library
-//					((scope.getPublicListsToInclude() == 5) && ownerCanShareListsInSearchResults && scope.getScopeName().equals(owningLocation)) || //All lists for list publishers the current location
-//					((scope.getPublicListsToInclude() == 6) && ownerCanShareListsInSearchResults) //All lists for list publishers
-//				;
-//			}
-			if (okToInclude) {
-				numValidScopes++;
-				doc.addField("local_time_since_added_" + scope.getScopeName(), DateUtils.getTimeSinceAddedForDate(dateAdded));
-				doc.addField("local_days_since_added_" + scope.getScopeName(), DateUtils.getDaysSinceAddedForDate(dateAdded));
+			numValidScopes++;
+			doc.addField("local_time_since_added_" + scope.getScopeName(), DateUtils.getTimeSinceAddedForDate(dateAdded));
+			doc.addField("local_days_since_added_" + scope.getScopeName(), DateUtils.getDaysSinceAddedForDate(dateAdded));
 
-				doc.addField("local_time_since_updated_" + scope.getScopeName(), DateUtils.getTimeSinceAddedForDate(dateUpdatedDate));
-				doc.addField("local_days_since_updated_" + scope.getScopeName(), DateUtils.getDaysSinceAddedForDate(dateUpdatedDate));
-				relevantScopes.add(scope.getScopeName());
-			}
+			doc.addField("local_time_since_updated_" + scope.getScopeName(), DateUtils.getTimeSinceAddedForDate(dateUpdatedDate));
+			doc.addField("local_days_since_updated_" + scope.getScopeName(), DateUtils.getDaysSinceAddedForDate(dateUpdatedDate));
+			relevantScopes.add(scope.getScopeName());
 		}
 
 		if (numValidScopes == 0){
@@ -96,6 +94,17 @@ class SeriesSolr {
 		}else{
 			doc.addField("scope_has_related_records", relevantScopes);
 			return doc;
+		}
+	}
+
+	void processScopedDynamicField(HashSet<String> field, String solrFieldName, SolrInputDocument doc) {
+		for (String value : field) {
+			if (value.contains("#")) {
+				String[] parts = value.split("#");
+				if (parts.length == 2) {
+					doc.addField(solrFieldName + "_" + parts[0], parts[1]);
+				}
+			}
 		}
 	}
 
@@ -115,10 +124,44 @@ class SeriesSolr {
 		this.authors.add(author);
 	}
 
-	void addListTitle(String source, String groupedWorkId, Object title, Object author) {
+	void addListTitle(String source, String groupedWorkId, Object title, Object author, SolrDocument work) {
 		relatedRecordIds.add(source + ":" + groupedWorkId);
 		contents.add(title + " - " + author);
 		authors.add(author.toString());
+		if (work.containsKey("format")) {
+			for (Object value : work.getFieldValues("format")) {
+				formats.add(value.toString());
+			}
+		}
+		if (work.containsKey("format_category")) {
+			for (Object value : work.getFieldValues("format_category")) {
+				formatCategories.add(value.toString());
+			}
+		}
+		if (work.containsKey("subject")) {
+			for (Object value : work.getFieldValues("subject")) {
+				subjects.add(value.toString());
+			}
+		}
+		if (work.containsKey("language")) {
+			for (Object value : work.getFieldValues("language")) {
+				languages.add(value.toString());
+			}
+		}
+		// Pick the one with the most results, fiction or nonfiction
+		if (work.containsKey("literary_form")) {
+			String literaryForm = work.getFieldValue("literary_form").toString();
+			if (literaryForm.equals("[Fiction]")) {
+				fiction++;
+			} else {
+				nonFiction++;
+			}
+		}
+		if (work.containsKey("econtent_source")) {
+			for (Object value : work.getFieldValues("econtent_source")) {
+				eContentSource.add(value.toString());
+			}
+		}
 		numTitles++;
 	}
 
