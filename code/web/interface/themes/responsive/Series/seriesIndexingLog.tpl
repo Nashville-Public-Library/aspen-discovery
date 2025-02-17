@@ -1,6 +1,6 @@
 {strip}
 	<div id="main-content" class="col-md-12">
-		<h1>{translate text="Course Reserves Indexing Log" isAdminFacing=true}</h1>
+		<h1>{translate text="Series Indexing Log" isAdminFacing=true}</h1>
 
 		{include file='Admin/exportLogFilters.tpl'}
 		<div class="adminTableRegion fixed-height-table">
@@ -12,7 +12,7 @@
 						<th>{translate text="Last Update" isAdminFacing=true}</th>
 						<th>{translate text="Finished" isAdminFacing=true}</th>
 						<th>{translate text="Elapsed" isAdminFacing=true}</th>
-						<th>{translate text="Total Courses" isAdminFacing=true}</th>
+						<th>{translate text="Total Series" isAdminFacing=true}</th>
 						<th>{translate text="Num Errors" isAdminFacing=true}</th>
 						<th>{translate text="Num Added" isAdminFacing=true}</th>
 						<th>{translate text="Num Deleted" isAdminFacing=true}</th>
