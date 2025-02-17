@@ -31,10 +31,10 @@ function getUpdates25_03_00(): array {
 			'sql' => [
 				"CREATE TABLE series (
 					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					groupedWorkSeriesTitle VARCHAR(500),
 					displayName VARCHAR(500),
 					author VARCHAR(500),
 					description TEXT,
-					cover VARCHAR(50),
 					audience VARCHAR(25),
 					isIndexed TINYINT(1) DEFAULT 1,
 					deleted TINYINT(1) DEFAULT 0,
