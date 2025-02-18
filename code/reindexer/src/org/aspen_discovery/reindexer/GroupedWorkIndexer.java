@@ -333,7 +333,7 @@ public class GroupedWorkIndexer {
 			getSeriesMemberStmt = dbConn.prepareStatement("SELECT * FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?");
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
-			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesID, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName) VALUES (?, 0, ?, ?, ?, ?)");
+			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesID, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description) VALUES (?, 0, ?, ?, ?, ?, ?, ?)");
 			updateSeriesAuthor = dbConn.prepareStatement("UPDATE series SET author = ? WHERE id = ?;");
 			setSeriesDateUpdated = dbConn.prepareStatement("UPDATE series SET dateUpdated = ? WHERE id = ?;");
 		} catch (Exception e){
@@ -1480,6 +1480,8 @@ public class GroupedWorkIndexer {
 					}
 					addSeriesMemberStmt.setLong(4, groupedWork.earliestPublicationDate != null ? groupedWork.earliestPublicationDate : 0);
 					addSeriesMemberStmt.setString(5, groupedWork.displayTitle);
+					addSeriesMemberStmt.setString(6, groupedWork.getPrimaryAuthor());
+					addSeriesMemberStmt.setString(7, groupedWork.displayDescription);
 					addSeriesMemberStmt.executeUpdate();
 					if (seriesId >= 0) {
 						setSeriesDateUpdated.setLong(1, timeNow);
