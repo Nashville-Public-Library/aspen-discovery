@@ -35,7 +35,7 @@ class Series_AdministerSeries extends ObjectEditor {
 	}
 
 	function getDefaultSort(): string {
-		return 'displayName asc';
+		return 'created desc';
 	}
 
 	function getObjectStructure($context = ''): array {

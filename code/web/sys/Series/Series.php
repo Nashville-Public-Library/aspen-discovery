@@ -1,6 +1,7 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
+require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 
 class Series extends DataObject {
 	public $__table = 'series';
@@ -16,6 +17,9 @@ class Series extends DataObject {
 	public $_seriesMembers; // grouped works and placeholders
 
 	public static function getObjectStructure($context = ''): array {
+
+		$seriesMemberStructure = SeriesMember::getObjectStructure($context);
+
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -69,7 +73,22 @@ class Series extends DataObject {
 				'label' => 'Include in search',
 				'default' => true,
 				'description' => 'Uncheck to exclude from series searches'
-			]
+			],
+			'seriesMembers' => [
+				'property' => 'seriesMembers',
+				'type' => 'oneToMany',
+				'label' => 'Titles in Series',
+				'description' => 'A list of all the titles in this series',
+				'keyThis' => 'seriesId',
+				'keyOther' => 'id',
+				'subObjectType' => 'SeriesMember',
+				'structure' => $seriesMemberStructure,
+				'sortable' => true,
+				'storeDb' => true,
+				'allowEdit' => true,
+				'hideInLists' => true,
+				'canAddNew' => true,
+			],
 		];
 		return $structure;
 	}
@@ -77,9 +96,9 @@ class Series extends DataObject {
 	public function update($context = '') {
 		$this->dateUpdated = time();
 		$ret = parent::update();
-//		if ($ret !== FALSE) {
-//			$this->saveSeriesMembers();
-//		}
+		if ($ret !== FALSE) {
+			$this->saveSeriesMembers();
+		}
 		return $ret;
 	}
 
@@ -100,7 +119,7 @@ class Series extends DataObject {
 
 	public function __set($name, $value) {
 		if ($name == 'seriesMembers') {
-			// $this->setSeriesMembers($value);
+			$this->setSeriesMembers($value);
 		} else {
 			parent::__set($name, $value);
 		}
@@ -108,9 +127,20 @@ class Series extends DataObject {
 
 	public function __get($name) {
 		if ($name == 'seriesMembers') {
-			// return $this->getSeriesMembers();
+			return $this->getSeriesMembers();
 		} else {
 			return parent::__get($name);
+		}
+	}
+
+	public function setSeriesMembers($value) {
+		$this->_seriesMembers = $value;
+	}
+
+	public function saveSeriesMembers() {
+		if (isset ($this->_seriesMembers) && is_array($this->_seriesMembers)) {
+			$this->saveOneToManyOptions($this->_seriesMembers, 'seriesId');
+			unset($this->_seriesMembers);
 		}
 	}
 
@@ -143,7 +173,10 @@ class Series extends DataObject {
 				'source' => $source,
 				'sourceId' => $seriesMember->groupedWorkPermanentId,
 				'title' => $seriesMember->displayName,
+				'author' => $seriesMember->author,
+				'description' => $seriesMember->description,
 				'volume' => $seriesMember->volume,
+				'pubDate' => $seriesMember->pubDate,
 				'seriesMemberId' => $seriesMember->id,
 				'seriesMember' => clone($seriesMember),
 			];
@@ -168,15 +201,15 @@ class Series extends DataObject {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
-		$seriesMember->orderBy('pubDate');
-		$seriesMembers = [];
+		$seriesMember->orderBy('weight');
+		$this->_seriesMembers = [];
 		$seriesMember->find();
 		while ($seriesMember->fetch()) {
-			$seriesMembers[] = clone($seriesMember);
+			$this->_seriesMembers[$seriesMember->id] = clone($seriesMember);
 		}
 		$seriesMember->__destruct();
 		$seriesMember = null;
-		return $seriesMembers;
+		return $this->_seriesMembers;
 	}
 
 	/**
@@ -202,7 +235,7 @@ class Series extends DataObject {
 			if (!array_key_exists($source, $filteredIdsBySource)) {
 				$filteredIdsBySource[$source] = [];
 			}
-			$filteredIdsBySource[$source][] = $seriesMember['sourceId'];
+			$filteredIdsBySource[$source][] = $seriesMember['sourceId'] != "" ? $seriesMember['sourceId'] : "noId";
 		}
 
 		//Load the actual items from each source
@@ -232,13 +265,10 @@ class Series extends DataObject {
 				if (!array_key_exists($listPosition, $listResults)) {
 					$interface->assign('recordIndex', $listPosition + 1);
 					$interface->assign('resultIndex', $listPosition + $start + 1);
-					$interface->assign('seriesMemberId', $seriesMemberInfo['seriesMemberId']);
-					if (!empty($seriesMemberInfo['title'])) {
-						$interface->assign('deletedEntryTitle', $seriesMemberInfo['title']);
-					} else {
-						$interface->assign('deletedEntryTitle', '');
-					}
-					$listResults[$listPosition] = $interface->fetch('MyAccount/deletedListEntry.tpl');
+					$interface->assign('listEntrySource', "Series");
+					$interface->assign('seriesMemberId',$seriesMemberInfo['seriesMemberId']);
+					$interface->assign('placeholder', $seriesMemberInfo);
+					$listResults[$listPosition] = $interface->fetch('Series/placeHolderListEntry.tpl');
 				}
 			}
 		}
