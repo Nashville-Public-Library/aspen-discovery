@@ -28,11 +28,13 @@ class SeriesMember extends DataObject {
 				'property' => 'displayName',
 				'type' => 'text',
 				'label' => 'Title',
+				'readOnly' => true,
 			],
 			'author' => [
 				'property' => 'author',
 				'type' => 'text',
 				'label' => 'Author',
+				'readOnly' => true,
 			],
 			'description' => [
 				'property' => 'description',
@@ -40,6 +42,7 @@ class SeriesMember extends DataObject {
 				'label' => 'Description',
 				'description' => 'Series description',
 				'note' => 'Title description',
+				'readOnly' => true,
 			],
 			'volume' => [
 				'property' => 'volume',
@@ -64,8 +67,8 @@ class SeriesMember extends DataObject {
 			],
 			'isPlaceholder' => [
 				'property' => 'isPlaceholder',
-				'type' => 'checkbox',
-				'label' => 'Library does not own',
+				'type' => 'hidden',
+				'label' => 'Placeholder',
 				'readOnly' => true,
 			],
 			'weight' => [
@@ -110,4 +113,5 @@ class SeriesMember extends DataObject {
 		}
 		return $recordDriver;
 	}
+	
 }
