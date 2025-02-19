@@ -3853,7 +3853,7 @@ class User extends DataObject {
 		}
 	}
 
-	function getPickupLocationCode() {
+	function getPickupLocation() {
 		//Always check if a preferred pickup location has been selected. If not, use the home location
 		if ($this->pickupLocationId > 0 && $this->pickupLocationId != $this->homeLocationId) {
 			$pickupBranch = $this->pickupLocationId;
@@ -3861,15 +3861,24 @@ class User extends DataObject {
 			$locationLookup->locationId = $pickupBranch;
 			//Make sure that the hold location is a valid pickup location just in case it's been hidden since
 			if ($locationLookup->find(true) && $locationLookup->validHoldPickupBranch != 2) {
-				$pickupBranch = $locationLookup->code;
+				$pickupBranch = $locationLookup;
 			} else {
-				$pickupBranch = $this->getHomeLocation()->code;
+				$pickupBranch = $this->getHomeLocation();
 			}
 		} else {
-			$pickupBranch = $this->getHomeLocation()->code;
+			$pickupBranch = $this->getHomeLocation();
 		}
 
 		return $pickupBranch;
+	}
+
+	function getPickupLocationCode() {
+		$pickupLocation = $this->getPickupLocation();
+		if ($pickupLocation != null) {
+			return $pickupLocation->code;
+		} else {
+			return null;
+		}
 	}
 
 	function getPickupSublocationCode() {
