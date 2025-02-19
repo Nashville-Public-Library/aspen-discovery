@@ -196,7 +196,7 @@ class SeriesRecordDriver extends IndexRecordDriver {
 	}
 
 	public function getModule(): string {
-		return 'MyAccount/MyList';
+		return 'Series';
 	}
 
 	/**
