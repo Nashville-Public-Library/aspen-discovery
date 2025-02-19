@@ -37,4 +37,11 @@ class Series_IndexingLog extends Admin_IndexingLog {
 	function getActiveAdminSection(): string {
 		return 'series';
 	}
+
+	function canView(): bool {
+		return UserAccount::userHasPermission([
+			'View System Reports',
+			'View Indexing Logs',
+		]);
+	}
 }

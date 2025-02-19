@@ -71,7 +71,7 @@ class Series_AdministerSeries extends ObjectEditor {
 	}
 
 	function canView(): bool {
-		return UserAccount::userHasPermission('Administer All Libraries');
+		return UserAccount::userHasPermission('Administer Series');
 	}
 
 	function canAddNew() {

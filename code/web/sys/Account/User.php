@@ -4637,14 +4637,15 @@ class User extends DataObject {
 			}
 			$sections['aspen_lida']->addAction(new AdminAction('Self-Check Settings', 'Define settings for self-check in Aspen LiDA.', '/AspenLiDA/SelfCheckSettings'), 'Administer Aspen LiDA Self-Check Settings');
 		}
-
-		$sections['series'] = new AdminSection("Series Search");
-		$sections['series']->addAction(new AdminAction('Administer Series', 'Edit series data for series search', '/Series/AdministerSeries'), 'Administer All Libraries');
-		$sections['series']->addAction(new AdminAction('Indexing Settings', 'Administer Series Indexing Settings', '/Series/Settings'), 'Administer All Libraries');
-		$sections['series']->addAction(new AdminAction('Indexing Log', 'View Series Indexing Log', '/Series/IndexingLog'), [
-			'View System Reports',
-			'View Indexing Logs',
-		]);
+		if (array_key_exists('Series', $enabledModules)) {
+			$sections['series'] = new AdminSection("Series Search");
+			$sections['series']->addAction(new AdminAction('Administer Series', 'Edit series data for series search', '/Series/AdministerSeries'), 'Administer Series');
+			$sections['series']->addAction(new AdminAction('Indexing Settings', 'Administer Series Indexing Settings', '/Series/Settings'), 'Administer Series');
+			$sections['series']->addAction(new AdminAction('Indexing Log', 'View Series Indexing Log', '/Series/IndexingLog'), [
+				'View System Reports',
+				'View Indexing Logs',
+			]);
+		}
 
 
 		$sections['support'] = new AdminSection('Aspen Discovery Support');

@@ -39,6 +39,15 @@ function getUpdates25_03_00(): array {
 				"INSERT INTO modules (name, indexName, backgroundProcess, logClassPath, logClassName, settingsClassPath, settingsClassName) VALUES ('Series', 'series', 'series_indexer', '/sys/Series/SeriesIndexingLogEntry.php', 'SeriesIndexingLog', '/sys/Series/SeriesIndexingSettings.php', 'SeriesIndexingSettings')",
 			],
 		], // add_series_module
+		'add_administer_series_permission' => [
+			'title' => 'Manage Series Permission',
+			'description' => 'Add new permission to manage series',
+			'continueOnError' => true,
+			'sql' => [
+				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES ('Local Enrichment', 'Administer Series', 'Series', 12, 'Allows an administrator to add and modify series.')",
+				"INSERT INTO role_permissions(roleId, permissionId) VALUES ((SELECT roleId from roles where name='opacAdmin'), (SELECT id from permissions where name='Administer Series'))",
+			],
+		], //add_administer_series
 		'add_series_search_tables' => [
 			'title' => 'Add Series Search tables',
 			'description' => 'Add Series Search tables',
