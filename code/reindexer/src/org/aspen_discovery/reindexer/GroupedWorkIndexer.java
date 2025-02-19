@@ -1421,6 +1421,7 @@ public class GroupedWorkIndexer {
 		try {
 			ResultSet enabledRS = seriesModuleEnabled.executeQuery();
 			if (enabledRS.next() && enabledRS.getBoolean("enabled")) {
+				enabledRS.close();
 				getSeriesMemberStmt.setString(1, groupedWork.getId());
 				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
 				ArrayList<Object> seriesInDb = new ArrayList<>();
@@ -1475,6 +1476,7 @@ public class GroupedWorkIndexer {
 							} else {
 								seriesId = -1;
 							}
+							generatedKeys.close();
 						}
 						addSeriesMemberStmt.setString(2, groupedWork.getId());
 						if (series.length == 2) {
@@ -1494,8 +1496,11 @@ public class GroupedWorkIndexer {
 							setSeriesDateUpdated.setLong(2, seriesId);
 							setSeriesDateUpdated.executeUpdate();
 						}
+						seriesRS.close();
+
 					}
 				}
+				seriesMemberRS.close();
 			}
 		} catch (Exception e) {
 			logEntry.incErrors("Unable to update series data", e);

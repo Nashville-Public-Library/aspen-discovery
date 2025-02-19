@@ -80,6 +80,7 @@ class SeriesIndexer {
 			if (searchVersionRS.next()){
 				searchVersion = searchVersionRS.getInt("searchVersion");
 			}
+			searchVersionRS.close();
 		}catch (Exception e){
 			logger.error("Error loading search version", e);
 		}
@@ -216,6 +217,8 @@ class SeriesIndexer {
 						}
 					}
 				}
+				allTitlesRS.close();
+				allSeriesRS.close();
 				// Index in the solr catalog
 				SolrInputDocument document = seriesSolr.getSolrDocument();
 				if (document != null) {
