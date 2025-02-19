@@ -332,6 +332,7 @@ class Series extends DataObject {
 			$interface->assign('recordIndex', $listPosition + 1);
 			$interface->assign('resultIndex', $listPosition + $startRecord + 1);
 
+
 			if (!empty($current)) {
 				//Get information from list entry
 				$interface->assign('seriesMemberId', $current->getListEntryId());

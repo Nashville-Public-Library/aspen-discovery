@@ -82,6 +82,13 @@ class SeriesRecordDriver extends IndexRecordDriver {
 		}
 		$interface->assign('summUrl', $this->getAbsoluteUrl());
 
+		global $solrScope;
+		if ($this->fields["local_time_since_added_$solrScope"]) {
+			$interface->assign('isNew', in_array('Week', $this->fields["local_time_since_added_$solrScope"]));
+		} else {
+			$interface->assign('isNew', false);
+		}
+
 		$listObject = $this->getSeriesObject();
 
 		if ($showListsAppearingOn) {
@@ -115,6 +122,13 @@ class SeriesRecordDriver extends IndexRecordDriver {
 		//Get cover image size
 		global $interface;
 		$appliedTheme = $interface->getAppliedTheme();
+
+		global $solrScope;
+		if ($this->fields["local_time_since_added_$solrScope"]) {
+			$interface->assign('isNew', in_array('Week', $this->fields["local_time_since_added_$solrScope"]));
+		} else {
+			$interface->assign('isNew', false);
+		}
 
 		$interface->assign('bookCoverUrl', $this->getBookcoverUrl('small'));
 

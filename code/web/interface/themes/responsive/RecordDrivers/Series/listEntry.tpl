@@ -10,6 +10,7 @@
 			<div class="col-xs-3 col-sm-3 col-md-3 col-lg-2 text-center">
 				{if $disableCoverArt != 1}
 					<a href="/MyAccount/MyList/{$summShortId}" class="alignleft listResultImage">
+						{if !empty($isNew)}<span class="list-cover-badge">{translate text="New!" isPublicFacing=true}</span> {/if}
 						<img src="{$bookCoverUrl}" class="listResultImage img-thumbnail {$coverStyle}" alt="{translate text='Cover Image' inAttribute=true isPublicFacing=true}">
 					</a>
 				{/if}

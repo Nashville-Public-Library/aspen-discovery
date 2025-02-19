@@ -4,7 +4,10 @@
 		<div class="coversColumn col-xs-3 col-sm-3 col-md-3 col-lg-2 text-center" aria-hidden="true" role="presentation">
 			{if $disableCoverArt != 1}
 				<a href="/Series/{$summShortId}" class="alignleft listResultImage" tabindex="-1">
-					<img src="{$bookCoverUrl}" class="listResultImage img-thumbnail {$coverStyle}" alt="{$summTitle|removeTrailingPunctuation|highlight|escapeCSS|truncate:180:"..."}">
+					<div class="listResultImage border">
+						{if !empty($isNew)}<span class="list-cover-badge">{translate text="New!" isPublicFacing=true}</span> {/if}
+						<img src="{$bookCoverUrl}" class="img-thumbnail {$coverStyle}" alt="{$summTitle|removeTrailingPunctuation|highlight|escapeCSS|truncate:180:"..."}">
+					</div>
 				</a>
 			{/if}
 		</div>
