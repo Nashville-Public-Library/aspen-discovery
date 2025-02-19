@@ -1566,7 +1566,7 @@ class BookCoverProcessor {
 		$series->id = $id;
 
 		if ($series->find(true)) {
-			if ($this->getUploadedSeriesCover($id)) {
+			if ($this->getUploadedSeriesCover($series->cover)) {
 				return true;
 			} else {
 				$title = $series->displayName;
@@ -1901,8 +1901,8 @@ class BookCoverProcessor {
 		return false;
 	}
 
-	private function getUploadedSeriesCover($id) {
-		$uploadedImage = $this->bookCoverPath . '/original/series_' . $id . '.png';
+	private function getUploadedSeriesCover($cover) {
+		$uploadedImage = $this->bookCoverPath . '/original/series/' . $cover;
 		if (file_exists($uploadedImage)) {
 			return $this->processImageURL('upload', $uploadedImage);
 		}

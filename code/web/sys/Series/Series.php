@@ -19,6 +19,8 @@ class Series extends DataObject {
 	public static function getObjectStructure($context = ''): array {
 
 		$seriesMemberStructure = SeriesMember::getObjectStructure($context);
+		global $configArray;
+		$coverPath = $configArray['Site']['coverPath'];
 
 		$structure = [
 			'id' => [
@@ -53,6 +55,16 @@ class Series extends DataObject {
 				'label' => 'Description',
 				'description' => 'Series description',
 				'note' => 'This is automatically imported from Novelist if available but can be edited',
+				'hideInLists' => true,
+			],
+			'cover' => [
+				'property' => 'cover',
+				'type' => 'image',
+				'label' => 'Cover',
+				'description' => 'Image to replace the automatically generated series cover',
+				'maxWidth' => 280,
+				'maxHeight' => 280,
+				'path' => "$coverPath/original/Series",
 				'hideInLists' => true,
 			],
 			'created' => [
@@ -98,6 +110,9 @@ class Series extends DataObject {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveSeriesMembers();
+			if (in_array('cover', $this->_changedFields)) {
+				$this->reloadCover();
+			}
 		}
 		return $ret;
 	}
@@ -375,6 +390,20 @@ class Series extends DataObject {
 			}
 		}
 		return $results;
+	}
+
+	private function reloadCover() {
+		require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
+		$bookCoverInfo = new BookCoverInfo();
+		$bookCoverInfo->recordType = 'series';
+		$bookCoverInfo->recordId = $this->id;
+		if ($bookCoverInfo->find(true)) {
+			$bookCoverInfo->imageSource = 'upload';
+			$bookCoverInfo->thumbnailLoaded = 0;
+			$bookCoverInfo->mediumLoaded = 0;
+			$bookCoverInfo->largeLoaded = 0;
+			$bookCoverInfo->update();
+		}
 	}
 
 

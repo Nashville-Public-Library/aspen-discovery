@@ -14,9 +14,11 @@ class SeriesMember extends DataObject {
 	public $volume;
 	public $pubDate;
 	public $weight;
+	public $cover;
 
 	public static function getObjectStructure($context = ''): array {
-
+		global $configArray;
+		$coverPath = $configArray['Site']['coverPath'];
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -64,6 +66,16 @@ class SeriesMember extends DataObject {
 				'type' => 'text',
 				'label' => 'Permanent Id',
 				'readOnly' => true,
+			],
+			'cover' => [
+				'property' => 'cover',
+				'type' => 'image',
+				'label' => 'Cover',
+				'description' => 'Replacement cover',
+				'maxWidth' => 280,
+				'maxHeight' => 280,
+				'path' => "$coverPath/original/seriesMember",
+				'hideInLists' => true,
 			],
 			'isPlaceholder' => [
 				'property' => 'isPlaceholder',
