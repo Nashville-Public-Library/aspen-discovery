@@ -66,9 +66,9 @@ function getUpdates25_03_00(): array {
 					created INT(11)
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
 				"CREATE TABLE series_member (
-    				id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    				seriesId INT NOT NULL,
-    				isPlaceholder TINYINT(1) DEFAULT 0,
+					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					seriesId INT NOT NULL,
+					isPlaceholder TINYINT(1) DEFAULT 0,
 					groupedWorkPermanentId CHAR(40),
 					displayName VARCHAR(500),
 					author VARCHAR(200),
@@ -96,8 +96,8 @@ function getUpdates25_03_00(): array {
 					runFullUpdate TINYINT(1) DEFAULT 1,
 					lastUpdateOfChangedSeries INT(11) DEFAULT 0,
 					lastUpdateOfAllSeries INT(11) DEFAULT 0
-    			) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
-				"INSERT INTO series_indexing_settings VALUES (1,1,0,0);",
+				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
+					"INSERT INTO series_indexing_settings VALUES (1,1,0,0);",
 			]
 		], //add_series_tables
 
