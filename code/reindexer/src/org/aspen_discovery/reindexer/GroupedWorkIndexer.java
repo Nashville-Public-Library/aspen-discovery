@@ -156,6 +156,7 @@ public class GroupedWorkIndexer {
 	private PreparedStatement removeVariationsForWorkStmt;
 	private PreparedStatement removeRecordsForWorkStmt;
 
+	private PreparedStatement seriesModuleEnabled;
 	private PreparedStatement getSeriesStmt;
 	private PreparedStatement getSeriesMemberStmt;
 	private PreparedStatement addSeriesMemberStmt;
@@ -331,6 +332,7 @@ public class GroupedWorkIndexer {
 			removeVariationsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_variation where groupedWorkId = ?");
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
 
+			seriesModuleEnabled = dbConn.prepareStatement("SELECT enabled FROM modules WHERE name = 'series'");
 			getSeriesMemberStmt = dbConn.prepareStatement("SELECT * FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?");
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
@@ -1186,7 +1188,6 @@ public class GroupedWorkIndexer {
 			//Load accelerated reader data for the work
 			loadAcceleratedDataForWork(groupedWork);
 			//Update Series index data
-			// if using series index
 			updateSeriesDataForWork(groupedWork);
 			// else use Novelist the old way
 			//Load Novelist data
@@ -1418,82 +1419,85 @@ public class GroupedWorkIndexer {
 
 	private void updateSeriesDataForWork(AbstractGroupedWorkSolr groupedWork) {
 		try {
-			getSeriesMemberStmt.setString(1, groupedWork.getId());
-			ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
-			ArrayList<Object> seriesInDb = new ArrayList<>();
-			while (seriesMemberRS.next()) {
-				seriesInDb.add(seriesMemberRS.getString("displayName"));
-			}
-			for (String seriesNameWithVolume : groupedWork.seriesWithVolume.values()) {
-				String[] series = seriesNameWithVolume.split("\\|");
-				if (!seriesInDb.contains(series[0])) {
-					// Check if series exists
-					getSeriesStmt.setString(1, series[0]);
-					ResultSet seriesRS = getSeriesStmt.executeQuery();
-					long timeNow = new Date().getTime() / 1000;
-					long seriesId;
-					if (seriesRS.next()) { // Need to add handling for more than one match
-						seriesId = seriesRS.getLong("id");
-						// Check to see if we need to add additional authors
-						String authors = seriesRS.getString("author");
-						String newAuthor = groupedWork.getPrimaryAuthor();
-						if (newAuthor != null) {
-							updateSeriesAuthor.setLong(2, seriesId);
-							if (authors == null) {
-								updateSeriesAuthor.setString(1, newAuthor);
-								updateSeriesAuthor.executeUpdate();
-							} else if (!authors.equals("Various") && !authors.contains(newAuthor)) {
-								// If we already have three authors, change author to Various
-								if (authors.split("\\|").length == 3) {
-									authors = "Various";
-								} else {
-									authors = authors + "|" + newAuthor;
+			ResultSet enabledRS = seriesModuleEnabled.executeQuery();
+			if (enabledRS.next() && enabledRS.getBoolean("enabled")) {
+				getSeriesMemberStmt.setString(1, groupedWork.getId());
+				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
+				ArrayList<Object> seriesInDb = new ArrayList<>();
+				while (seriesMemberRS.next()) {
+					seriesInDb.add(seriesMemberRS.getString("displayName"));
+				}
+				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.values()) {
+					String[] series = seriesNameWithVolume.split("\\|");
+					if (!seriesInDb.contains(series[0])) {
+						// Check if series exists
+						getSeriesStmt.setString(1, series[0]);
+						ResultSet seriesRS = getSeriesStmt.executeQuery();
+						long timeNow = new Date().getTime() / 1000;
+						long seriesId;
+						if (seriesRS.next()) { // Need to add handling for more than one match
+							seriesId = seriesRS.getLong("id");
+							// Check to see if we need to add additional authors
+							String authors = seriesRS.getString("author");
+							String newAuthor = groupedWork.getPrimaryAuthor();
+							if (newAuthor != null) {
+								updateSeriesAuthor.setLong(2, seriesId);
+								if (authors == null) {
+									updateSeriesAuthor.setString(1, newAuthor);
+									updateSeriesAuthor.executeUpdate();
+								} else if (!authors.equals("Various") && !authors.contains(newAuthor)) {
+									// If we already have three authors, change author to Various
+									if (authors.split("\\|").length == 3) {
+										authors = "Various";
+									} else {
+										authors = authors + "|" + newAuthor;
+									}
+									updateSeriesAuthor.setString(1, authors);
+									updateSeriesAuthor.executeUpdate();
 								}
-								updateSeriesAuthor.setString(1, authors);
-								updateSeriesAuthor.executeUpdate();
 							}
-						}
-						addSeriesMemberStmt.setLong(1, seriesId);
-					} else {
-						// Add the series first
-						addSeriesStmt.setString(1, series[0]); //displayTitle (user can edit)
-						addSeriesStmt.setString(7, series[0]); //groupedWorkSeriesTitle (to match on)
-						String novelistDescription = this.getNovelistDescription(groupedWork);
-						addSeriesStmt.setString(2, novelistDescription != null && !novelistDescription.isBlank() ? novelistDescription : "");
-						addSeriesStmt.setString(3, groupedWork.getTargetAudiencesAsString());
-						addSeriesStmt.setLong(4, timeNow);
-						addSeriesStmt.setLong(5, timeNow);
-						addSeriesStmt.setString(6, groupedWork.getPrimaryAuthor());
-						addSeriesStmt.executeUpdate();
-						ResultSet generatedKeys = addSeriesStmt.getGeneratedKeys();
-						if (generatedKeys.next()) {
-							seriesId = generatedKeys.getLong(1);
 							addSeriesMemberStmt.setLong(1, seriesId);
 						} else {
-							seriesId = -1;
+							// Add the series first
+							addSeriesStmt.setString(1, series[0]); //displayTitle (user can edit)
+							addSeriesStmt.setString(7, series[0]); //groupedWorkSeriesTitle (to match on)
+							String novelistDescription = this.getNovelistDescription(groupedWork);
+							addSeriesStmt.setString(2, novelistDescription != null && !novelistDescription.isBlank() ? novelistDescription : "");
+							addSeriesStmt.setString(3, groupedWork.getTargetAudiencesAsString());
+							addSeriesStmt.setLong(4, timeNow);
+							addSeriesStmt.setLong(5, timeNow);
+							addSeriesStmt.setString(6, groupedWork.getPrimaryAuthor());
+							addSeriesStmt.executeUpdate();
+							ResultSet generatedKeys = addSeriesStmt.getGeneratedKeys();
+							if (generatedKeys.next()) {
+								seriesId = generatedKeys.getLong(1);
+								addSeriesMemberStmt.setLong(1, seriesId);
+							} else {
+								seriesId = -1;
+							}
 						}
-					}
-					addSeriesMemberStmt.setString(2, groupedWork.getId());
-					if (series.length == 2) {
-						addSeriesMemberStmt.setString(3, series[1]); // Add volume
-						addSeriesMemberStmt.setLong(8, NumberUtils.toLong(series[1])); // Add volume as weight if it's an integer - 0 otherwise
-					} else {
-						addSeriesMemberStmt.setString(3, "");
-						addSeriesMemberStmt.setLong(8, 0);
-					}
-					addSeriesMemberStmt.setLong(4, groupedWork.earliestPublicationDate != null ? groupedWork.earliestPublicationDate : 0);
-					addSeriesMemberStmt.setString(5, groupedWork.displayTitle);
-					addSeriesMemberStmt.setString(6, groupedWork.getPrimaryAuthor());
-					addSeriesMemberStmt.setString(7, groupedWork.displayDescription);
-					addSeriesMemberStmt.executeUpdate();
-					if (seriesId >= 0) {
-						setSeriesDateUpdated.setLong(1, timeNow);
-						setSeriesDateUpdated.setLong(2, seriesId);
-						setSeriesDateUpdated.executeUpdate();
+						addSeriesMemberStmt.setString(2, groupedWork.getId());
+						if (series.length == 2) {
+							addSeriesMemberStmt.setString(3, series[1]); // Add volume
+							addSeriesMemberStmt.setLong(8, NumberUtils.toLong(series[1])); // Add volume as weight if it's an integer - 0 otherwise
+						} else {
+							addSeriesMemberStmt.setString(3, "");
+							addSeriesMemberStmt.setLong(8, 0);
+						}
+						addSeriesMemberStmt.setLong(4, groupedWork.earliestPublicationDate != null ? groupedWork.earliestPublicationDate : 0);
+						addSeriesMemberStmt.setString(5, groupedWork.displayTitle);
+						addSeriesMemberStmt.setString(6, groupedWork.getPrimaryAuthor());
+						addSeriesMemberStmt.setString(7, groupedWork.displayDescription);
+						addSeriesMemberStmt.executeUpdate();
+						if (seriesId >= 0) {
+							setSeriesDateUpdated.setLong(1, timeNow);
+							setSeriesDateUpdated.setLong(2, seriesId);
+							setSeriesDateUpdated.executeUpdate();
+						}
 					}
 				}
 			}
-		} catch(Exception e) {
+		} catch (Exception e) {
 			logEntry.incErrors("Unable to update series data", e);
 		}
 	}
