@@ -154,7 +154,7 @@ class Series extends DataObject {
 	/**
 	 * @return array      of list entries
 	 */
-	function getTitles($sortName = "volume") {
+	function getTitles($sortName = "volume asc") {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
@@ -178,13 +178,24 @@ class Series extends DataObject {
 				'volume' => $seriesMember->volume,
 				'pubDate' => $seriesMember->pubDate,
 				'seriesMemberId' => $seriesMember->id,
+				'weight' => $seriesMember->weight,
 				'seriesMember' => clone($seriesMember),
 			];
 
 			$seriesMembers[] = $tmpListEntry;
 		}
-		if ($sortName == "volume") {
-			array_multisort(array_column($seriesMembers, 'volume'), SORT_NATURAL, $seriesMembers);
+		if ($sortName == "volume asc" || $sortName == "volume desc") {
+			// If manually sorted, use weight instead
+			if (!in_array(0, array_column($seriesMembers, 'weight'))  && array_column($seriesMembers, 'weight') != array_column($seriesMembers, 'volume')) {
+				array_multisort(array_column($seriesMembers, 'weight'), SORT_ASC, $seriesMembers);
+
+			} else {
+				// Otherwise
+				array_multisort(array_column($seriesMembers, 'volume'), SORT_NATURAL, $seriesMembers);
+			}
+			if ($sortName == "volume desc") {
+				$seriesMembers = array_reverse($seriesMembers);
+			}
 		}
 		$seriesMember->__destruct();
 		$seriesMember = null;

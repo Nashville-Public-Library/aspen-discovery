@@ -49,7 +49,7 @@ class Series_Home extends Action {
 			$activeSort = $_REQUEST['sort'];
 		}
 		if (empty($activeSort)) {
-			$activeSort = 'volume';
+			$activeSort = 'volume asc';
 		}
 
 		if ($series->find(true)) {
@@ -78,7 +78,7 @@ class Series_Home extends Action {
 	 * @access  public
 	 * @param Series $list
 	 */
-	public function buildListForDisplay(Series $list, $sortName = "volume") {
+	public function buildListForDisplay(Series $list, $sortName = "volume asc") {
 		global $interface;
 
 		$queryParams = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
@@ -142,10 +142,15 @@ class Series_Home extends Action {
 				'selected' => $sortName == 'pubDate',
 				'sortUrl' => "/Series/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'pubDate'])),
 			],
-			'volume' => [
-				'desc' => 'Volume Number',
-				'selected' => $sortName == 'volume',
-				'sortUrl' => "/Series/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'volume'])),
+			'volumeAsc' => [
+				'desc' => 'Volume Number Ascending',
+				'selected' => $sortName == 'volume asc',
+				'sortUrl' => "/Series/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'volume asc'])),
+			],
+			'volumeDesc' => [
+				'desc' => 'Volume Number Descending',
+				'selected' => $sortName == 'volumed desc',
+				'sortUrl' => "/Series/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'volume desc'])),
 			],
 		];
 

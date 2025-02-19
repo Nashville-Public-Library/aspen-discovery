@@ -113,5 +113,5 @@ class SeriesMember extends DataObject {
 		}
 		return $recordDriver;
 	}
-	
+
 }
