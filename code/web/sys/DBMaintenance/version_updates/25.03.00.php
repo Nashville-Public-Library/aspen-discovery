@@ -32,6 +32,13 @@ function getUpdates25_03_00(): array {
 				"ALTER TABLE library ADD COLUMN useSeriesSearchIndex TINYINT(1) DEFAULT 0"
 			]
 		], //add_series_settings
+		'add_series_module' => [
+			'title' => 'Create Series module',
+			'description' => 'Setup modules for Series Search',
+			'sql' => [
+				"INSERT INTO modules (name, indexName, backgroundProcess, logClassPath, logClassName, settingsClassPath, settingsClassName) VALUES ('Series', 'series', 'series_indexer', '/sys/Series/SeriesIndexingLogEntry.php', 'SeriesIndexingLog', '/sys/Series/SeriesIndexingSettings.php', 'SeriesIndexingSettings')",
+			],
+		], // add_series_module
 		'add_series_search_tables' => [
 			'title' => 'Add Series Search tables',
 			'description' => 'Add Series Search tables',
