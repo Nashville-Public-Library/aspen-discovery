@@ -31,7 +31,6 @@
 					{/if}
 				</div>
 			</div>
-*/
 			{if !empty($summAuthor)}
 				<div class="row">
 					<div class="result-label col-tn-3">{if is_array($summAuthor) && count($summAuthor) > 1}{translate text="Authors" isPublicFacing=true}{else}{translate text="Author" isPublicFacing=true}{/if} </div>
@@ -90,7 +89,7 @@
 
 
 			<div class="resultActions row">
-				{include file='Lists/result-tools.tpl' id=$summId shortId=$shortId module=$summModule summTitle=$summTitle ratingData=$summRating recordUrl=$summUrl}
+				{include file='Series/result-tools.tpl' id=$summId summShortId=$summShortId summTitle=$summTitle ratingData=$summRating recordUrl=$summUrl}
 			</div>
 		</div>
 

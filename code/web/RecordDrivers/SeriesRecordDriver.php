@@ -39,7 +39,7 @@ class SeriesRecordDriver extends IndexRecordDriver {
 			$bookCoverUrl = '';
 		}
 		$id = $this->getId();
-		$bookCoverUrl = $bookCoverUrl . "/bookcover.php?type=series&amp;id={$id}&amp;size={$size}";
+		$bookCoverUrl = $bookCoverUrl . "/bookcover.php?type=series&id={$id}&size={$size}";
 		return $bookCoverUrl;
 	}
 
@@ -90,6 +90,8 @@ class SeriesRecordDriver extends IndexRecordDriver {
 			$appearsOnLists = UserList::getUserListsForRecord('Lists', $this->getId());
 			$interface->assign('appearsOnLists', $appearsOnLists);
 		}
+
+		$interface->assign('source', isset($this->fields['source']) ? $this->fields['source'] : '');
 
 		return 'RecordDrivers/Series/result.tpl';
 	}
