@@ -4556,7 +4556,11 @@ class User extends DataObject {
 			$sections['events'] = new AdminSection('Events');
 			if (SystemVariables::getSystemVariables()->enableAspenEvents) {
 				$aspenEventsAction = new AdminAction('Aspen Events - Manage Events', 'Add and manage Aspen Events.', '/Events/Events');
-				if ($sections['events']->addAction($aspenEventsAction, 'Administer Events for All Locations')) {
+				if ($sections['events']->addAction($aspenEventsAction, [
+					'Administer Events for All Locations',
+					'Administer Events for Home Library Locations',
+					'Administer Events for Home Location']
+				)) {
 					$aspenEventsAction->addSubAction(new AdminAction('Configure Event Fields', 'Define event fields for Aspen Events.', '/Events/EventFields'), 'Administer Field Sets');
 					$aspenEventsAction->addSubAction(new AdminAction('Configure Event Field Sets', 'Define sets of event fields to use for Aspen Events.', '/Events/EventFieldSets'), 'Administer Field Sets');
 					$aspenEventsAction->addSubAction(new AdminAction('Configure Event Types', 'Define event types to use for Aspen Events.', '/Events/EventTypes'), 'Administer Event Types');
@@ -6017,19 +6021,19 @@ class User extends DataObject {
 
 		if (!preg_match("/[A-Z]/", $this->password)){
 			$validationResults['validatedOk'] = false;
-			$validationResults['errors'][] = 'At least one upper case letter must be included';
+			$validationResults['errors'][] = 'At least one upper case letter must be included in the password.';
 		}
 		if (!preg_match("/[a-z]/", $this->password)){
 			$validationResults['validatedOk'] = false;
-			$validationResults['errors'][] = 'At least one lower case letter must be included';
+			$validationResults['errors'][] = 'At least one lower case letter must be included in the password.';
 		}
 		if (!preg_match("/[0-9]/", $this->password)){
 			$validationResults['validatedOk'] = false;
-			$validationResults['errors'][] = 'At least one number must be included';
+			$validationResults['errors'][] = 'At least one number must be included in the password.';
 		}
 		if (!preg_match("/[-_~!@#$%^&*.()+=]/", $this->password)){
 			$validationResults['validatedOk'] = false;
-			$validationResults['errors'][] = 'At least one special character (-_~!@#$%^&*.+=) must be included';
+			$validationResults['errors'][] = 'At least one special character (-_~!@#$%^&*.+=) must be included in the password.';
 		}
 
 		return $validationResults;

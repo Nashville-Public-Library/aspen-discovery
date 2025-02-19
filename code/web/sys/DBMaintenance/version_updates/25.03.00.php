@@ -13,6 +13,14 @@ function getUpdates25_03_00(): array {
 		 ], //name*/
 
 		//mark - Grove
+		'make_app_icons_os_specific' => [
+			'title' => 'Make App Icons OS Specific',
+			'description' => 'Update settings to store separate icons per OS',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE aspen_lida_branded_settings add COLUMN logoAppIconAndroid varchar(100) DEFAULT NULL'
+			]
+		], //make_app_icons_os_specific
 
 		//katherine - Grove
 
