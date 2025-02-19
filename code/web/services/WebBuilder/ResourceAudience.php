@@ -3,61 +3,61 @@
 class WebBuilder_ResourceAudience extends Action
 {
 
-    function launch()
-    {
-        global $interface;
+	function launch()
+	{
+		global $interface;
 
-        require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderAudience.php';
-        $audience = new WebBuilderAudience();
-        $audience->id = $_GET["id"];
-        if ($audience->find(true)) {
-            require_once ROOT_DIR . '/sys/WebBuilder/WebResource.php';
-            require_once ROOT_DIR . '/RecordDrivers/WebResourceRecordDriver.php';
-            $resourcesForAudience = new WebResourceAudience();
-            $resourcesForAudience->audienceId = $audience->id;
-            $resourcesForAudience->find();
-            $webResources = [];
-            $webResourceIds = [];
-            while ($resourcesForAudience->fetch()) {
-                if (!array_key_exists("WebResource:" . $resourcesForAudience->webResourceId, $webResourceIds)) {
-                    $webResourceIds["\"WebResource:" . $resourcesForAudience->webResourceId . "\""] = "WebResource:" . $resourcesForAudience->webResourceId;
-                }
-            }
-            /** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */
-            $searchObject = SearchObjectFactory::initSearchObject('Websites');
-            $resourcesToShow = $searchObject->getRecords(array_keys($webResourceIds));
+		require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderAudience.php';
+		$audience = new WebBuilderAudience();
+		$audience->id = $_GET["id"];
+		if ($audience->find(true)) {
+			require_once ROOT_DIR . '/sys/WebBuilder/WebResource.php';
+			require_once ROOT_DIR . '/RecordDrivers/WebResourceRecordDriver.php';
+			$resourcesForAudience = new WebResourceAudience();
+			$resourcesForAudience->audienceId = $audience->id;
+			$resourcesForAudience->find();
+			$webResources = [];
+			$webResourceIds = [];
+			while ($resourcesForAudience->fetch()) {
+				if (!array_key_exists("WebResource:" . $resourcesForAudience->webResourceId, $webResourceIds)) {
+					$webResourceIds["\"WebResource:" . $resourcesForAudience->webResourceId . "\""] = "WebResource:" . $resourcesForAudience->webResourceId;
+				}
+			}
+			/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */
+			$searchObject = SearchObjectFactory::initSearchObject('Websites');
+			$resourcesToShow = $searchObject->getRecords(array_keys($webResourceIds));
 
-            foreach ($resourcesToShow as $curResource) {
-                $webResourceRecordDriver = new WebResourceRecordDriver($curResource->getFields());
-                $webResources[$webResourceRecordDriver->getId()] = [
-                    'id' => $webResourceRecordDriver->getId(),
-                    'title' => $webResourceRecordDriver->getTitle(),
-                    'description' => $webResourceRecordDriver->getDescription(),
-                    'link' => $webResourceRecordDriver->getLinkUrl(),
-                    'bookCoverUrl' => $webResourceRecordDriver->getBookCoverUrl('medium'),
-                ];
-            }
+			foreach ($resourcesToShow as $curResource) {
+				$webResourceRecordDriver = new WebResourceRecordDriver($curResource->getFields());
+				$webResources[$webResourceRecordDriver->getId()] = [
+					'id' => $webResourceRecordDriver->getId(),
+					'title' => $webResourceRecordDriver->getTitle(),
+					'description' => $webResourceRecordDriver->getDescription(),
+					'link' => $webResourceRecordDriver->getLinkUrl(),
+					'bookCoverUrl' => $webResourceRecordDriver->getBookCoverUrl('medium'),
+				];
+			}
 
-            $interface->assign('webResources', $webResources);
-            $interface->assign('audience', $audience);
+			$interface->assign('webResources', $webResources);
+			$interface->assign('audience', $audience);
 
-            $this->display('resourcesFiltered.tpl', $audience->name, '', false);
+			$this->display('resourcesFiltered.tpl', $audience->name, '', false);
 
-        } else {
-            global $interface;
-            $interface->assign('module', 'Error');
-            $interface->assign('action', 'Handle404');
-            require_once ROOT_DIR . "/services/Error/Handle404.php";
-            $actionClass = new Error_Handle404();
-            $actionClass->launch();
-            die();
-        }
-    }
+		} else {
+			global $interface;
+			$interface->assign('module', 'Error');
+			$interface->assign('action', 'Handle404');
+			require_once ROOT_DIR . "/services/Error/Handle404.php";
+			$actionClass = new Error_Handle404();
+			$actionClass->launch();
+			die();
+		}
+	}
 
-    function getBreadcrumbs(): array
-    {
-        $breadcrumbs = [];
-        $breadcrumbs[] = new Breadcrumb('/Home', 'Home');
-        return $breadcrumbs;
-    }
+	function getBreadcrumbs(): array
+	{
+		$breadcrumbs = [];
+		$breadcrumbs[] = new Breadcrumb('/Home', 'Home');
+		return $breadcrumbs;
+	}
 }

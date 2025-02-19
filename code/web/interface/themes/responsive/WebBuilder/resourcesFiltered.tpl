@@ -1,24 +1,24 @@
 {strip}
-<div class="row">
-	<div class="col-xs-12">
-		<div class="row">
-			{if isset($audience)}
-				<h1>{$audience->name}</h1>
-			{/if}
-			{if isset($category)}
-				<h1>{$category->name}</h1>
-			{/if}
-		</div>
-		<div class="row">
-			{if isset($audience)}
-				<p>{$audience->description}</p>
-			{/if}
-			{if isset($category)}
-				<p>{$category->description}</p>
-			{/if}
+	<div class="row">
+		<div class="col-xs-12">
+			<div class="row">
+				{if isset($audience)}
+					<h1>{$audience->name}</h1>
+				{/if}
+				{if isset($category)}
+					<h1>{$category->name}</h1>
+				{/if}
+			</div>
+			<div class="row">
+				{if isset($audience)}
+					<p>{$audience->description}</p>
+				{/if}
+				{if isset($category)}
+					<p>{$category->description}</p>
+				{/if}
+			</div>
 		</div>
 	</div>
-</div>
 	{foreach from=$webResources item=curResource}
 		<div id="webPageResult" class="resultsList row">
 			<div class="coversColumn col-xs-3 col-sm-3 col-md-3 col-lg-2 text-center" aria-hidden="true" role="presentation">
@@ -30,9 +30,9 @@
 				<div class="row">
 					<div class="col-xs-12">
 						<span class="result-index"></span>&nbsp;
-							<a href="{$curResource.link}" class="result-title notranslate" onclick="AspenDiscovery.Websites.trackUsage('{$curResource.id}')">
-								{if !$curResource.title|removeTrailingPunctuation} {translate text='Title not available' isPublicFacing=true}{else}{$curResource.title|removeTrailingPunctuation|highlight|truncate:180:"..."}{/if}
-							</a>
+						<a href="{$curResource.link}" class="result-title notranslate" onclick="AspenDiscovery.Websites.trackUsage('{$curResource.id}')">
+							{if !$curResource.title|removeTrailingPunctuation} {translate text='Title not available' isPublicFacing=true}{else}{$curResource.title|removeTrailingPunctuation|highlight|truncate:180:"..."}{/if}
+						</a>
 					</div>
 				</div>
 			</div>
