@@ -6,6 +6,7 @@ class WebBuilderCategory extends DataObject {
 	public $__displayNameColumn = 'name';
 	public $id;
 	public $name;
+	public $description;
 
 	public function getUniquenessFields(): array {
 		return ['name'];
@@ -27,6 +28,14 @@ class WebBuilderCategory extends DataObject {
 				'required' => true,
 				'maxLength' => 100,
 			],
+			'description' => [
+				'property' => 'description',
+				'type' => 'text',
+				'label' => 'Description',
+				'description' => 'A description for the category',
+				'required' => false,
+				'maxLength' => 500,
+			]
 		];
 	}
 
