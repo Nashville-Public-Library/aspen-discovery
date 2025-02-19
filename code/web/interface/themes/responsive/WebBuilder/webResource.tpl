@@ -34,7 +34,7 @@
 			{if !empty($webResource->getAudiences())}
 				<div class="panel active">
 					<div class="panel-heading">
-						{translate text="WebResourcesFiltered" isPublicFacing=true}
+						{translate text="Audience" isPublicFacing=true}
 					</div>
 
 					<div class="panel-body">
