@@ -63,8 +63,9 @@ function getUpdates25_03_00(): array {
 					id INT(11) AUTO_INCREMENT PRIMARY KEY,
 					title VARCHAR(100),
 					urlAlias VARCHAR(100),
-					requireLogin tinyint(1) DEFAULT 0,
-					requireLoginUnlessInLibrary tinyint(1) DEFAULT 0,
+					addToIndex TINYINT(1) DEFAULT 0,
+					requireLogin TINYINT(1) DEFAULT 0,
+					requireLoginUnlessInLibrary TINYINT(1) DEFAULT 0,
 					lastUpdate INT(11) DEFAULT 0
 				) ENGINE=INNODB",
 			],
