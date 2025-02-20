@@ -1275,6 +1275,23 @@ function loadModuleActionId() {
 								$_REQUEST['action'] = 'GrapesPage';
 								$_REQUEST['id'] = $grapesPage->id;
 								$pageExists = true;
+							} else {
+								require_once ROOT_DIR . '/sys/WebBuilder/CustomWebResourcePage.php';
+								require_once ROOT_DIR . '/sys/WebBuilder/LibraryCustomWebResourcePage.php';
+								$customResourcePage = new CustomWebResourcePage();
+								$customResourcePage->urlAlias = $requestPath;
+								$customResourcePageLibrary = new LibraryCustomWebResourcePage();
+								$customResourcePageLibrary->libraryId = $library->libraryId;
+								$customResourcePage->joinAdd($customResourcePageLibrary, 'INNER', 'libraryFilter', 'id', 'grapesPageId');
+								if ($customResourcePage->find(true)) {
+									$_GET['module'] = 'WebBuilder';
+									$_GET['action'] = 'CustomWebResourcePage';
+									$_GET['id'] = $customResourcePage->id;
+									$_REQUEST['module'] = 'WebBuilder';
+									$_REQUEST['action'] = 'CustomWebResourcePage';
+									$_REQUEST['id'] = $customResourcePage->id;
+									$pageExists = true;
+								}
 							}
 						}
 					}
