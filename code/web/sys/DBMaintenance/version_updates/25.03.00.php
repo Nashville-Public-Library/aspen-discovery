@@ -77,10 +77,10 @@ function getUpdates25_03_00(): array {
 				"DROP TABLE IF EXISTS web_builder_custom_resource_page_access",
 				'CREATE TABLE `web_builder_custom_resource_page_access` (
     				id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  					customResourcePageId INT(11) NOT NULL,
-  					patronTypeId int(11) NOT NULL,
-  					UNIQUE KEY `customResourcePageId` (`customResourcePageId`,`patronTypeId`)
-                ) ENGINE=InnoDB',
+    				customResourcePageId INT(11) NOT NULL,
+    				patronTypeId int(11) NOT NULL,
+    				UNIQUE KEY `customResourcePageId` (`customResourcePageId`,`patronTypeId`)
+                    ) ENGINE=InnoDB',
 			],
 		], //create_web_builder_custom_resource_page_access_table
 		'create_web_builder_custom_resource_page_audience_table' => [
@@ -90,10 +90,10 @@ function getUpdates25_03_00(): array {
 				"DROP TABLE IF EXISTS web_builder_custom_web_resource_page_audience",
 				'CREATE TABLE `web_builder_custom_web_resource_page_audience` (
     				id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  					customResourcePageId INT(11) NOT NULL,
-  					audienceId int(11) NOT NULL,
-  					UNIQUE KEY `customResourcePageId` (`customResourcePageId`,`audienceId`)
-                ) ENGINE=InnoDB',
+    				customResourcePageId INT(11) NOT NULL,
+    				audienceId int(11) NOT NULL,
+    				UNIQUE KEY `customResourcePageId` (`customResourcePageId`,`audienceId`)
+                    ) ENGINE=InnoDB',
 			],
 		], //create_web_builder_custom_resource_page_access_table
 		'create_web_builder_custom_resource_page_category_table' => [
@@ -103,10 +103,10 @@ function getUpdates25_03_00(): array {
 				"DROP TABLE IF EXISTS web_builder_custom_web_resource_page_category",
 				'CREATE TABLE `web_builder_custom_web_resource_page_category` (
     				id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  					customResourcePageId INT(11) NOT NULL,
-  					categoryId int(11) NOT NULL,
-  					UNIQUE KEY `customResourcePageId` (`customResourcePageId`,`categoryId`)
-                ) ENGINE=InnoDB',
+    				customResourcePageId INT(11) NOT NULL,
+    				categoryId int(11) NOT NULL,
+    				UNIQUE KEY `customResourcePageId` (`customResourcePageId`,`categoryId`)
+                    ) ENGINE=InnoDB',
 			],
 		], //create_web_builder_custom_resource_page_access_table
 		'create_library_web_builder_custom_web_resource_page_table' => [
