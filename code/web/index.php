@@ -1282,7 +1282,7 @@ function loadModuleActionId() {
 								$customResourcePage->urlAlias = $requestPath;
 								$customResourcePageLibrary = new LibraryCustomWebResourcePage();
 								$customResourcePageLibrary->libraryId = $library->libraryId;
-								$customResourcePage->joinAdd($customResourcePageLibrary, 'INNER', 'libraryFilter', 'id', 'grapesPageId');
+								$customResourcePage->joinAdd($customResourcePageLibrary, 'INNER', 'libraryFilter', 'id', 'customResourcePageId');
 								if ($customResourcePage->find(true)) {
 									$_GET['module'] = 'WebBuilder';
 									$_GET['action'] = 'CustomWebResourcePage';
