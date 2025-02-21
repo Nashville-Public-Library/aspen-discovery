@@ -994,7 +994,7 @@ public abstract class AbstractGroupedWorkSolr {
 			this.placesOfPublication.add(placeOfPublication);
 		}
 	}
-	
+
 	void addLiteraryForms(HashMap<String, Integer> literaryForms) {
 		for (String curLiteraryForm : literaryForms.keySet()) {
 			this.addLiteraryForm(curLiteraryForm, literaryForms.get(curLiteraryForm));
@@ -1232,13 +1232,13 @@ public abstract class AbstractGroupedWorkSolr {
 	}
 
 	void addIlsDescription(String description) {
-        	if (description == null || description.isEmpty()){
-            		return;
-        	} 
-        	if (this.ilsDescription == null || this.ilsDescription.isEmpty()){
-            		this.ilsDescription = description;
-        	}
-    	}
+		if (description == null || description.isEmpty()){
+			return;
+		}
+		if (this.ilsDescription == null || this.ilsDescription.isEmpty()){
+			this.ilsDescription = description;
+		}
+	}
 
 	void addDescription(String description, String formatCategory) {
 		if (description == null || description.isEmpty()) {

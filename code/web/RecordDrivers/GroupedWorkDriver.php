@@ -984,30 +984,30 @@ class GroupedWorkDriver extends IndexRecordDriver {
 
 	function getDescriptionFast($useHighlighting = false) {
 		global $library;
-	        // Don't check for highlighted values if highlighting is disabled:
-	        if ($this->highlight && $useHighlighting) {
+		// Don't check for highlighted values if highlighting is disabled:
+		if ($this->highlight && $useHighlighting) {
 			if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1 && isset($this->fields['_highlighting']['ils_description'][0])) {
-                		return $this->fields['_highlighting']['ils_description'][0];
-			}	
-            		if (isset($this->fields['_highlighting']['display_description'][0])) {
-                		return $this->fields['_highlighting']['display_description'][0];
-            		}
-        	}
+				return $this->fields['_highlighting']['ils_description'][0];
+			}
+			if (isset($this->fields['_highlighting']['display_description'][0])) {
+				return $this->fields['_highlighting']['display_description'][0];
+			}
+		}
 
 
-        	if ($this->fastDescription != null) {
-            		return $this->fastDescription;
-        	}
+		if ($this->fastDescription != null) {
+			return $this->fastDescription;
+		}
 
-        	if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1 && !empty($this->fields['ils_description'])) {
-            		$this->fastDescription = $this->fields['ils_description'];
-        	} else if (!empty($this->fields['display_description'])) {
-            		$this->fastDescription = $this->fields['display_description'];
-        	} else {
-            		$this->fastDescription = "";
-        	}
-        
-        	return $this->fastDescription;
+		if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1 && !empty($this->fields['ils_description'])) {
+			$this->fastDescription = $this->fields['ils_description'];
+		} else if (!empty($this->fields['display_description'])) {
+			$this->fastDescription = $this->fields['display_description'];
+		} else {
+			$this->fastDescription = "";
+		}
+
+		return $this->fastDescription;
 	}
 
 	private $detailedContributors = null;
