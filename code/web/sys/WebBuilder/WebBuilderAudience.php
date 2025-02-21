@@ -30,11 +30,12 @@ class WebBuilderAudience extends DataObject {
 			],
 			'description' => [
 				'property' => 'description',
-				'type' => 'text',
+				'type' => 'html',
 				'label' => 'Description',
 				'description' => 'A description for the audience',
+				'allowableTags' => '<p><em><i><strong><b><a><ul><ol><li><h1><h2><h3><h4><h5><h6><h7><pre><code><hr><table><tbody><tr><th><td><caption><img><br><div><span><sub><sup>',
 				'required' => false,
-				'maxLength' => 500,
+				'hideInLists' => true,
 			]
 		];
 	}

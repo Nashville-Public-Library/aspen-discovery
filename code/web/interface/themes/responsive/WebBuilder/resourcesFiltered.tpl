@@ -27,20 +27,18 @@
 				</a>
 			</div>
 			<div class="col-xs-9 col-sm-9 col-md-9 col-lg-10">
-				<div class="row">
-					<div class="col-xs-12">
-						<span class="result-index"></span>&nbsp;
-						<a href="{$curResource.link}" class="result-title notranslate" onclick="AspenDiscovery.Websites.trackUsage('{$curResource.id}')">
-							{if !$curResource.title|removeTrailingPunctuation} {translate text='Title not available' isPublicFacing=true}{else}{$curResource.title|removeTrailingPunctuation|highlight|truncate:180:"..."}{/if}
-						</a>
-					</div>
+				<div class="col-xs-12">
+					<span class="result-index"></span>&nbsp;
+					<a href="{$curResource.link}" class="result-title notranslate" onclick="AspenDiscovery.Websites.trackUsage('{$curResource.id}')">
+						{if !$curResource.title|removeTrailingPunctuation} {translate text='Title not available' isPublicFacing=true}{else}{$curResource.title|removeTrailingPunctuation|highlight|truncate:180:"..."}{/if}
+					</a>
 				</div>
 			</div>
 
 			{* Description Section *}
 			{if !empty($curResource.description)}
-				<div class="row">
-					<div class="result-value col-tn-9 col-xs-9">
+				<div class="result-value col-tn-9 col-xs-9">
+					<div class="col-xs-12">
 						{$curResource.description|highlight|truncate_html:450:"..."}
 					</div>
 				</div>
