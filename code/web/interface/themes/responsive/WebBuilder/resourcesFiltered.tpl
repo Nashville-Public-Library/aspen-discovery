@@ -2,20 +2,10 @@
 	<div class="row">
 		<div class="col-xs-12">
 			<div class="row">
-				{if isset($audience)}
-					<h1>{$audience->name}</h1>
-				{/if}
-				{if isset($category)}
-					<h1>{$category->name}</h1>
-				{/if}
+				<h1>{$title}</h1>
 			</div>
 			<div class="row">
-				{if isset($audience)}
-					<p>{$audience->description}</p>
-				{/if}
-				{if isset($category)}
-					<p>{$category->description}</p>
-				{/if}
+				<p>{$description}</p>
 			</div>
 		</div>
 	</div>

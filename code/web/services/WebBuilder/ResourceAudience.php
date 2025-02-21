@@ -39,7 +39,8 @@ class WebBuilder_ResourceAudience extends Action
 			}
 
 			$interface->assign('webResources', $webResources);
-			$interface->assign('audience', $audience);
+			$interface->assign('title', $audience->name);
+			$interface->assign('description', $audience->description);
 
 			$this->display('resourcesFiltered.tpl', $audience->name, '', false);
 

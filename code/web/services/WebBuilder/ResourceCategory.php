@@ -39,7 +39,8 @@ class WebBuilder_ResourceCategory extends Action
 			}
 
 			$interface->assign('webResources', $webResources);
-			$interface->assign('category', $category);
+			$interface->assign('title', $category->name);
+			$interface->assign('description', $category->description);
 
 			$this->display('resourcesFiltered.tpl', $category->name, '', false);
 
