@@ -28,18 +28,35 @@ class WebBuilderCategory extends DataObject {
 				'required' => true,
 				'maxLength' => 100,
 			],
-			'description' => [
-				'property' => 'description',
-				'type' => 'html',
+			'customWebBuilderCategoryDescription' => [
+				'property' => 'customWebBuilderCategoryDescription',
+				'type' => 'translatableTextBlock',
 				'label' => 'Description',
-				'description' => 'A description for the category',
-				'allowableTags' => '<p><em><i><strong><b><a><ul><ol><li><h1><h2><h3><h4><h5><h6><h7><pre><code><hr><table><tbody><tr><th><td><caption><img><br><div><span><sub><sup>',
-				'required' => false,
+				'description' => 'A description for the category.',
+				'defaultTextFile' => '',
 				'hideInLists' => true,
-			]
+			],
 		];
 	}
 
+	public function insert($context = '')
+	{
+		$this->lastUpdate = time();
+		$ret = parent::insert();
+		if ($ret !== FALSE) {
+			$this->saveTextBlockTranslations('customWebBuilderCategoryDescription');
+		}
+		return $ret;
+	}
+	public function update($context = '')
+	{
+		$this->lastUpdate = time();
+		$ret = parent::update();
+		if ($ret !== FALSE) {
+			$this->saveTextBlockTranslations('customWebBuilderCategoryDescription');
+		}
+		return $ret;
+	}
 	public static function getCategories() {
 		$categories = [];
 		$category = new WebBuilderCategory();

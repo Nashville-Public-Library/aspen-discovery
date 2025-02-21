@@ -6,6 +6,7 @@ class WebBuilder_ResourceAudience extends Action
 	function launch()
 	{
 		global $interface;
+		global $activeLanguage;
 
 		require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderAudience.php';
 		$audience = new WebBuilderAudience();
@@ -40,7 +41,7 @@ class WebBuilder_ResourceAudience extends Action
 
 			$interface->assign('webResources', $webResources);
 			$interface->assign('title', $audience->name);
-			$interface->assign('description', $audience->description);
+			$interface->assign('description', $audience->getTextBlockTranslation('customWebBuilderAudienceDescription', $activeLanguage->code));
 
 			$this->display('resourcesFiltered.tpl', $audience->name, '', false);
 

@@ -28,18 +28,35 @@ class WebBuilderAudience extends DataObject {
 				'required' => true,
 				'maxLength' => 100,
 			],
-			'description' => [
-				'property' => 'description',
-				'type' => 'html',
+			'customWebBuilderAudienceDescription' => [
+				'property' => 'customWebBuilderAudienceDescription',
+				'type' => 'translatableTextBlock',
 				'label' => 'Description',
-				'description' => 'A description for the audience',
-				'allowableTags' => '<p><em><i><strong><b><a><ul><ol><li><h1><h2><h3><h4><h5><h6><h7><pre><code><hr><table><tbody><tr><th><td><caption><img><br><div><span><sub><sup>',
-				'required' => false,
+				'description' => 'A description for the audience.',
+				'defaultTextFile' => '',
 				'hideInLists' => true,
-			]
+			],
 		];
 	}
 
+	public function insert($context = '')
+	{
+		$this->lastUpdate = time();
+		$ret = parent::insert();
+		if ($ret !== FALSE) {
+			$this->saveTextBlockTranslations('customWebBuilderAudienceDescription');
+		}
+		return $ret;
+	}
+	public function update($context = '')
+	{
+		$this->lastUpdate = time();
+		$ret = parent::update();
+		if ($ret !== FALSE) {
+			$this->saveTextBlockTranslations('customWebBuilderAudienceDescription');
+		}
+		return $ret;
+	}
 	public static function getAudiences() {
 		$audiences = [];
 		$audience = new WebBuilderAudience();

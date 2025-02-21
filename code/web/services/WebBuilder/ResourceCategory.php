@@ -6,6 +6,7 @@ class WebBuilder_ResourceCategory extends Action
 	function launch()
 	{
 		global $interface;
+		global $activeLanguage;
 
 		require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderCategory.php';
 		$category = new WebBuilderCategory();
@@ -40,7 +41,7 @@ class WebBuilder_ResourceCategory extends Action
 
 			$interface->assign('webResources', $webResources);
 			$interface->assign('title', $category->name);
-			$interface->assign('description', $category->description);
+			$interface->assign('description', $category->getTextBlockTranslation('customWebBuilderCategoryDescription', $activeLanguage->code));
 
 			$this->display('resourcesFiltered.tpl', $category->name, '', false);
 
