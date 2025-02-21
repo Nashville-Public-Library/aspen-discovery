@@ -27,15 +27,6 @@ function getUpdates25_03_00(): array {
 		//kirstien - Grove
 
 		//kodi - Grove
-		'descriptions_for_categories_audiences' => [
-			'title' => 'Audience and Category Descriptions',
-			'description' => 'Add descriptions for categories and audiences in Web Builder',
-			'continueOnError' => false,
-			'sql' => [
-				'ALTER TABLE web_builder_audience ADD COLUMN description mediumtext DEFAULT NULL',
-				'ALTER TABLE web_builder_category ADD COLUMN description mediumtext DEFAULT NULL'
-			]
-		], //descriptions_for_categories_audiences
 		'custom_web_resource_pages_permissions' => [
 			'title' => 'Custom Web Resource Page Permissions',
 			'description' => 'Setup permissions for Custom Web Resource Pages',
