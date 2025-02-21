@@ -68,11 +68,12 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 				'description' => 'Adds resource page to indexed websites',
 				'default' => 0,
 			],
-			'description' => [
-				'property' => 'description',
+			'customWebResourceDescription' => [
+				'property' => 'customWebResourceDescription',
 				'type' => 'translatableTextBlock',
 				'label' => 'Description',
 				'description' => 'A description for the resource page.',
+				'defaultTextFile' => '',
 				'hideInLists' => true,
 			],
 			'requireLogin' => [
@@ -145,7 +146,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 			$this->saveAudiences();
 			$this->saveCategories();
 			$this->saveAccess();
-			$this->saveTextBlockTranslations('description');
+			$this->saveTextBlockTranslations('customWebResourceDescription');
 		}
 		return $ret;
 	}
@@ -159,7 +160,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 			$this->saveAudiences();
 			$this->saveCategories();
 			$this->saveAccess();
-			$this->saveTextBlockTranslations('description');
+			$this->saveTextBlockTranslations('customWebResourceDescription');
 		}
 		return $ret;
 	}
