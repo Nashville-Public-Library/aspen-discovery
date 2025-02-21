@@ -628,7 +628,8 @@ class Event extends DataObject {
 			'monthDate',
 			'monthOffset',
 			'endOption',
-			'dateUpdated'
+			'dateUpdated',
+			'sublocationId'
 		];
 	}
 
