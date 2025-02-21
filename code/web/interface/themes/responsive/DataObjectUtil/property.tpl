@@ -422,6 +422,8 @@
 			{include file="DataObjectUtil/partialDate.tpl"}
 		{elseif $property.type == 'time'}
 			<input type="time" name='{$propName}' id='{$propName}' value='{$propValue|date_format:"%H:%M"}' class='form-control' {if !empty($property.required) && (empty($objectAction) || $objectAction != 'edit')}required{/if} {if !empty($property.readOnly)}readonly disabled{/if} {if !empty($property.autocomplete)}autocomplete="{$property.autocomplete}"{/if} {if !empty($property.onchange)} onchange="{$property.onchange}"{/if}>
+		{elseif $property.type == 'duration'}
+			{include file="DataObjectUtil/duration.tpl"}
 		{elseif $property.type == 'textarea' || $property.type == 'html' || $property.type == 'markdown' || $property.type == 'javascript' || $property.type == 'crSeparated' || $property.type == 'multilineRegularExpression'}
 			{include file="DataObjectUtil/textarea.tpl"}
 			{if !empty($property.forcesReindex)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> {translate text="Updating this setting causes a nightly reindex" isAdminFacing=true}</small></span>{/if}

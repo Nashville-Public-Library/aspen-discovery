@@ -153,6 +153,7 @@ class Event extends DataObject {
 					'eventLength' => [
 						'property' => 'eventLength',
 						'type' => 'hidden',
+						'default' => 60,
 					],
 					'endDate' => [
 						'property' => 'endDate',
@@ -324,8 +325,8 @@ class Event extends DataObject {
 				],
 				'eventLength' => [
 					'property' => 'eventLength',
-					'type' => 'integer',
-					'label' => 'Event Length (Hours)',
+					'type' => 'duration',
+					'label' => 'Event Length',
 					'description' => 'How long this event lasts',
 					'note' => 'Default determined by Event Type',
 					'onchange' => "return AspenDiscovery.Events.calculateEndTime();"
@@ -888,7 +889,7 @@ class Event extends DataObject {
 	public function calculateEnd($fieldName) {
 		if (isset($this->startDate) && isset($this->startTime) && isset($this->eventLength)) {
 			$dateTime = new \DateTime($this->startDate . ' ' . $this->startTime);
-			$dateTime->modify('+' . $this->eventLength . ' hours');
+			$dateTime->modify('+' . $this->eventLength . ' minutes');
 			$endDate = $dateTime->format('Y-m-d');
 			$endTime = $dateTime->format('H:i:s');
 		}

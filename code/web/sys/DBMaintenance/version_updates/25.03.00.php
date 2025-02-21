@@ -24,6 +24,15 @@ function getUpdates25_03_00(): array {
 
 		//katherine - Grove
 
+		'track_event_length_in_minutes' => [
+			'title' => 'Track Event Length In Minutes',
+			'description' => 'Multiply existing event lengths by 60 to get minutes',
+			'sql' => [
+				'UPDATE event SET eventLength = eventLength * 60;',
+				'UPDATE event_instance SET length = length * 60;'
+			]
+		] //track_event_length_in_minutes
+
 		//kirstien - Grove
 
 		// Leo Stoyanov - BWS

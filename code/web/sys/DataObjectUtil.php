@@ -319,6 +319,12 @@ class DataObjectUtil {
 				$object->setProperty($propertyName, $time, $property);
 			}
 
+		} elseif ($property['type'] == 'duration') {
+			if (preg_match('/\\d+/', $_REQUEST[$propertyName])) {
+				$object->setProperty($propertyName, $_REQUEST[$propertyName], $property);
+			} else {
+				$object->setProperty($propertyName, 0, $property);
+			}
 		} elseif ($property['type'] == 'dayMonth') {
 			if (isset($_REQUEST[$propertyName . "_month"]) && isset($_REQUEST[$propertyName . "_day"])){
 				if (is_numeric($_REQUEST[$propertyName . "_month"]) && is_numeric($_REQUEST[$propertyName . "_day"])) {

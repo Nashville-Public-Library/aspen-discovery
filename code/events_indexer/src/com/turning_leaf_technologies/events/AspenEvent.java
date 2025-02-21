@@ -111,7 +111,7 @@ class AspenEvent {
 	}
 
 	public String getSublocationName() {
-		return sublocationName;
+		return sublocationName != null ? sublocationName : "";
 	}
 
 	public long getSublocationId() {
@@ -147,7 +147,7 @@ class AspenEvent {
 	public Date getEndDateTime(EventsIndexerLogEntry logEntry) {
 		try {
 			LocalDateTime date = LocalDateTime.parse(startDate + " " + startTime, dtf);
-			LocalDateTime end = date.plusHours(this.length);
+			LocalDateTime end = date.plusMinutes(this.length);
 			Instant endInstant = end.toInstant(zone);
 			return Date.from(endInstant);
 		} catch (DateTimeParseException e) {

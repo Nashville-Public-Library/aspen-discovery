@@ -12362,7 +12362,7 @@ AspenDiscovery.Events = (function(){
 			if (startDate && startDate.isValid() && startTime && startTime.length && length && length.length) {
 				var timeParts = startTime.split(":");
 				startDate.hour(timeParts[0]).minute(timeParts[1]);
-				startDate.add(length, 'h');
+				startDate.add(length, 'm');
 				$("#endDate").val(startDate.format("YYYY-MM-DD"));
 				$("#endTime").val(startDate.format("HH:mm"));
 			}

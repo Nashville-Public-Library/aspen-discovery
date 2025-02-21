@@ -46,8 +46,8 @@ class EventInstance extends DataObject {
 			'length' => [
 				'property' => 'length',
 				'type' => 'integer',
-				'label' => 'Length (Hours)',
-				'description' => 'The event length in hours',
+				'label' => 'Length (Minutes)',
+				'description' => 'The event length in minutes',
 			],
 			'note' => [
 				'property' => 'note',
