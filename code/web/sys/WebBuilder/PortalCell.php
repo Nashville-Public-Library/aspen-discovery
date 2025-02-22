@@ -457,7 +457,12 @@ class PortalCell extends DataObject {
 				}
 				$interface->assign('title', $customWebResourcePage->title);
 				$interface->assign('url', $customWebResourcePage->urlAlias);
-				$interface->assign('logo', '/files/original/' . $this->customImage);
+				if (!empty($this-$this->customImage)) {
+					$interface->assign('logo', '/files/original/' . $this->customImage);
+				}else{
+					$interface->assign('logo', null);
+				}
+
 				$contents .= $interface->fetch('WebBuilder/resource.tpl');
 			}
 		} elseif ($this->sourceType == 'quick_poll') {

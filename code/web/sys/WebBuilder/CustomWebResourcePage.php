@@ -335,7 +335,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 	private function clearAudiences()
 	{
 		//Delete links to the libraries
-		$link = new customWebResourcePageAudience();
+		$link = new CustomWebResourcePageAudience();
 		$link->customResourcePageId = $this->id;
 		return $link->delete(true);
 	}
