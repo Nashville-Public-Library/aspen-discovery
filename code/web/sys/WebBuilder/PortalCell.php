@@ -6,6 +6,8 @@ class PortalCell extends DataObject {
 	public $id;
 	public $portalRowId;
 	public $weight;
+	public $customImage;
+	public $hideDescription;
 
 	public $title;
 
@@ -76,7 +78,8 @@ class PortalCell extends DataObject {
 			'youtube_video' => 'YouTube Video',
 			'hours_locations' => 'Library Hours and Locations',
 			'web_resource' => 'Web Resource',
-			'quick_poll' => 'Quick Poll'
+			'quick_poll' => 'Quick Poll',
+			'custom_web_resource_page' => 'Custom Web Resource Page'
 		];
 		$colorOptions = [
 			'default' => 'default',
@@ -230,6 +233,13 @@ class PortalCell extends DataObject {
 				'label' => 'Source Id',
 				'description' => 'Source for the content of cell',
 			],
+			'hideDescription' => [
+				'property' => 'hideDescription',
+				'type' => 'checkbox',
+				'label' => 'Hide description',
+				'description' => 'Hide the description in the cell',
+				'default' => false,
+			],
 			'markdown' => [
 				'property' => 'markdown',
 				'type' => 'markdown',
@@ -278,11 +288,19 @@ class PortalCell extends DataObject {
 				'label' => 'Display the PDF',
 				'description' => 'How the page should display the PDF',
 			],
+			'customImage' => [
+				'property' => 'customImage',
+				'type' => 'image',
+				'label' => 'Custom Image',
+				'maxWidth' => 400,
+				'hideInLists' => true,
+			]
 		];
 	}
 
 	function getContents($inPageEditor) {
 		global $interface;
+		global $activeLanguage;
 		global $configArray;
 		$contents = '';
 		if (!empty($this->title) && $this->makeCellAccordion != '1') {
@@ -429,7 +447,19 @@ class PortalCell extends DataObject {
 					$contents .= translate(['text' => 'This resource no longer exists', 'isPublicFacing' => true]);
 				}
 			}
-
+		} elseif ($this->sourceType == 'custom_web_resource_page') {
+			require_once ROOT_DIR . '/sys/WebBuilder/CustomWebResourcePage.php';
+			$customWebResourcePage = new CustomWebResourcePage();
+			$customWebResourcePage->id = $this->sourceId;
+			if ($customWebResourcePage->find(true)) {
+				if (!$this->hideDescription) {
+					$interface->assign('description', $customWebResourcePage->getTextBlockTranslation('customWebResourceDescription', $activeLanguage->code));
+				}
+				$interface->assign('title', $customWebResourcePage->title);
+				$interface->assign('url', $customWebResourcePage->urlAlias);
+				$interface->assign('logo', '/files/original/' . $this->customImage);
+				$contents .= $interface->fetch('WebBuilder/resource.tpl');
+			}
 		} elseif ($this->sourceType == 'quick_poll') {
 			require_once ROOT_DIR . '/sys/WebBuilder/QuickPoll.php';
 			$quickPoll = new QuickPoll();

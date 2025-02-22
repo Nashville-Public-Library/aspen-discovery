@@ -114,6 +114,20 @@ function getUpdates25_03_00(): array {
 				) ENGINE INNODB',
 			],
 		], //create_library_web_builder_custom_web_resource_page_table
+		'portal_cell_custom_image' => [
+			'title' => 'Portal Cell Custom Image',
+			'description' => 'Add customImage column to web_builder_portal_cell table.',
+			'sql' => [
+				"ALTER TABLE web_builder_portal_cell ADD COLUMN customImage VARCHAR(255) DEFAULT NULL",
+			],
+		], //portal_cell_custom_image
+		'portal_cell_show_hide_description' => [
+			'title' => 'Portal Cell Show/Hide Description for Custom Web Resource Page',
+			'description' => 'Add hideDescription column to web_builder_portal_cell table.',
+			'sql' => [
+				"ALTER TABLE web_builder_portal_cell ADD COLUMN hideDescription TINYINT(1) DEFAULT 0",
+			],
+		], //portal_cell_show_hide_description
 
 		// Leo Stoyanov - BWS
 
