@@ -15,6 +15,8 @@ class EventInstance extends DataObject {
 	public $dateUpdated;
 	public $deleted;
 
+	public $_eventType;
+
 	public static function getObjectStructure($context = ''): array {
 		$structure = [
 			'id' => [

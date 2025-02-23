@@ -4556,6 +4556,10 @@ class User extends DataObject {
 					$aspenEventsAction->addSubAction(new AdminAction('Configure Event Field Sets', 'Define sets of event fields to use for Aspen Events.', '/Events/EventFieldSets'), 'Administer Field Sets');
 					$aspenEventsAction->addSubAction(new AdminAction('Configure Event Types', 'Define event types to use for Aspen Events.', '/Events/EventTypes'), 'Administer Event Types');
 					$aspenEventsAction->addSubAction(new AdminAction('Indexing Settings', 'Aspen Events Indexing Settings.', '/Events/IndexingSettings'), 'Administer Events for All Locations');
+					$aspenEventsAction->addSubAction(new AdminAction('Event Reports', 'Aspen Events Reporting.', '/Events/EventGraphs'), [
+						'View Event Reports for All Libraries',
+						'View Event Reports for Home Library'
+						]);
 				}
 			}
 			$sections['events']->addAction(new AdminAction('Assabet - Interactive Settings', 'Define collections to be loaded into Aspen Discovery.', '/Events/AssabetSettings'), 'Administer Assabet Settings');
