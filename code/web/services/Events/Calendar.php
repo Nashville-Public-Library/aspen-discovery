@@ -122,7 +122,7 @@ class Events_Calendar extends Action {
 						$formattedTime = date_format($startDate, "h:iA");
 						$endDate = new DateTime($result['end_date']);
 						$endDate->setTimezone($defaultTimezone);
-						$formattedTime .= ' - ' . date_format($endDate, "h:iA");
+						$formattedTime .= '<span class="end-time"> - ' . date_format($endDate, "h:iA") . "</span>";
 						if (($endDate->getTimestamp() - $startDate->getTimestamp()) > 24 * 60 * 60) {
 							$formattedTime = 'All day';
 						}

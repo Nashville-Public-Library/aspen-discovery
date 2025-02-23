@@ -34,7 +34,7 @@
 		{foreach from=$weeks item=week}
 			<div class="calendar-row">
 				{foreach from=$week.days item=day}
-					<div class="calendar-day-cell {if empty($day.day)}hidden-xs{/if}">
+					<div class="calendar-day-cell {if empty($day.day)}hidden-xs{/if} {if empty($day.events)}hide-for-agenda-view{/if}">
 						<div class="calendar-day-date">
 							<span class="visible-xs">{$day.fullDate}</span><span class="hidden-xs">{$day.day}</span>
 						</div>
