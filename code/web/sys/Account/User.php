@@ -4155,6 +4155,10 @@ class User extends DataObject {
 				'Administer All Web Resources',
 				'Administer Library Web Resources',
 			]);
+			$sections['web_builder']->addAction(new AdminAction('Custom Web Resource Pages', 'Create custom web resource pages to display web resources belonging to specific categories and audiences.', '/WebBuilder/CustomWebResourcePages'), [
+				'Administer All Custom Web Resource Pages',
+				'Administer Library Custom Web Resource Pages',
+			]);
 			$sections['web_builder']->addAction(new AdminAction('Staff Members', 'Add staff members to create a staff directory.', '/WebBuilder/StaffMembers'), [
 				'Administer All Staff Members',
 				'Administer Library Staff Members',
@@ -6012,19 +6016,19 @@ class User extends DataObject {
 
 		if (!preg_match("/[A-Z]/", $this->password)){
 			$validationResults['validatedOk'] = false;
-			$validationResults['errors'][] = 'At least one upper case letter must be included';
+			$validationResults['errors'][] = 'At least one upper case letter must be included in the password.';
 		}
 		if (!preg_match("/[a-z]/", $this->password)){
 			$validationResults['validatedOk'] = false;
-			$validationResults['errors'][] = 'At least one lower case letter must be included';
+			$validationResults['errors'][] = 'At least one lower case letter must be included in the password.';
 		}
 		if (!preg_match("/[0-9]/", $this->password)){
 			$validationResults['validatedOk'] = false;
-			$validationResults['errors'][] = 'At least one number must be included';
+			$validationResults['errors'][] = 'At least one number must be included in the password.';
 		}
 		if (!preg_match("/[-_~!@#$%^&*.()+=]/", $this->password)){
 			$validationResults['validatedOk'] = false;
-			$validationResults['errors'][] = 'At least one special character (-_~!@#$%^&*.+=) must be included';
+			$validationResults['errors'][] = 'At least one special character (-_~!@#$%^&*.+=) must be included in the password.';
 		}
 
 		return $validationResults;
