@@ -25,7 +25,7 @@
                         <td>{$campaign->endDate}</td>
                         <td>
                             {$campaign->rewardName}
-                            {if $campaign->rewardType === 1 && $campaign->rewardExists}
+                            {if $campaign->rewardType == 1 && $campaign->rewardExists}
                                 <img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
                             {/if}
                         </td>
@@ -56,7 +56,7 @@
                                             <td>{$milestone->name}</td>
                                             <td>
                                                 {$milestone->rewardName}
-                                                 {if $milestone->rewardType === 1 && $milestone->rewardExists}
+                                                 {if $milestone->rewardType == 1 && $milestone->rewardExists}
                                                     <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
                                                 {/if}
                                             </td>
@@ -105,7 +105,7 @@
                         <td>{$campaign->name}</td>
                         <td>
                             {$campaign->rewardName}
-                            {if $campaign->rewardType === 1 && $campaign->rewardExists}
+                            {if $campaign->rewardType == 1 && $campaign->rewardExists}
                                 <img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
                             {/if}
                         </td>
@@ -148,7 +148,7 @@
                                             <td>{$milestone->name}</td>
                                             <td>
                                                 {$milestone->rewardName}
-                                                 {if $milestone->rewardType === 1 && $milestone->rewardExists}
+                                                 {if $milestone->rewardType == 1 && $milestone->rewardExists}
                                                     <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
                                                 {/if}
                                             </td>
@@ -198,7 +198,7 @@
                         <td>{$campaign->name}</td>
                         <td>
                             {$campaign->rewardName}
-                            {if $campaign->rewardType === 1 && $campaign->rewardExists}
+                            {if $campaign->rewardType == 1 && $campaign->rewardExists}
                                 <img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
                             {/if}
                         </td>
@@ -237,7 +237,7 @@
                                             <td>{$milestone->name}</td>
                                             <td>
                                                 {$milestone->rewardName}
-                                                {if $milestone->rewardType === 1 && $milestone->rewardExists}
+                                                {if $milestone->rewardType == 1 && $milestone->rewardExists}
                                                     <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
                                                 {/if}
                                             </td>
@@ -268,7 +268,7 @@
                     <td>{$campaign->endDate}</td>
                     <td>
                         {$campaign->rewardName}
-                        {if $campaign->rewardType === 1 && $campaign->rewardExists}
+                        {if $campaign->rewardType == 1 && $campaign->rewardExists}
                             <img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
                         {/if}
                     </td>
@@ -291,7 +291,7 @@
                                         <td>{$milestone->name}</td>
                                         <td>
                                             {$milestone->rewardName}
-                                            {if $milestone->rewardType === 1 && $milestone->rewardExists}
+                                            {if $milestone->rewardType == 1 && $milestone->rewardExists}
                                                 <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
                                             {/if}
                                         </td>
@@ -323,7 +323,7 @@
                             <td>{$campaign->endDate}</td>
                             <td>
                             {$campaign->rewardName}
-                            {if $campaign->rewardType === 1 && $campaign->rewardExists}
+                            {if $campaign->rewardType == 1 && $campaign->rewardExists}
                                 <img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
                             {/if}<br>
                              {if $campaign->campaignRewardGiven}
@@ -356,7 +356,7 @@
                                             </td>
                                             <td>
                                                 {$milestone->rewardName}
-                                                {if $milestone->rewardType === 1 && $milestone->rewardExists}
+                                                {if $milestone->rewardType == 1 && $milestone->rewardExists}
                                                     <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
                                                 {/if}
                                             </td>
