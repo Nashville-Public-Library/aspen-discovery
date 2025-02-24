@@ -235,6 +235,13 @@ class Events_Calendar extends Action {
 			}
 		}
 		$interface->assign('weeks', $weeks);
+
+		$headerImage = $this->getHeaderImage();
+		if (!empty($headerImage)) {
+			$interface->assign('headerImage', $headerImage['image']);
+			$interface->assign('headerAlt', $headerImage['altText']);
+		}
+
 		if ($useWeek) {
 			$this->display('calendar.tpl', 'Events Calendar ' . $formattedWeekYear, '');
 		} else {
@@ -248,5 +255,16 @@ class Events_Calendar extends Action {
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home#events', 'Events');
 		$breadcrumbs[] = new Breadcrumb('/Events/Calendar', 'Events Calendar');
 		return $breadcrumbs;
+	}
+
+	function getHeaderImage() {
+		require_once ROOT_DIR . '/sys/Events/CalendarDisplaySetting.php';
+		$setting = new CalendarDisplaySetting();
+		$headerImage = [];
+		if ($setting->find(true)) {
+			$headerImage["image"] =  !empty($setting->cover) ? "/files/original/" . $setting->cover : '';
+			$headerImage["altText"] =  $setting->altText ?? '';
+		}
+		return $headerImage;
 	}
 }

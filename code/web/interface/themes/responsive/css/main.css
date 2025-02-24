@@ -10801,6 +10801,10 @@ a.browse-thumbnail.active {
 .calendar-event-state {
   display: inherit;
 }
+#calendar-header {
+  max-height: 10vh;
+  max-width: 100%;
+}
 @media print {
   body .top-link {
     display: none;
