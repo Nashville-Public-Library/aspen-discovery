@@ -156,7 +156,7 @@ public class GroupedWorkIndexer {
 	private PreparedStatement removeVariationsForWorkStmt;
 	private PreparedStatement removeRecordsForWorkStmt;
 
-	private PreparedStatement seriesModuleEnabled;
+	private boolean seriesModuleEnabled = false;
 	private PreparedStatement getSeriesStmt;
 	private PreparedStatement getSeriesMemberStmt;
 	private PreparedStatement addSeriesMemberStmt;
@@ -332,7 +332,6 @@ public class GroupedWorkIndexer {
 			removeVariationsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_variation where groupedWorkId = ?");
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
 
-			seriesModuleEnabled = dbConn.prepareStatement("SELECT enabled FROM modules WHERE name = 'series'");
 			getSeriesMemberStmt = dbConn.prepareStatement("SELECT * FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?");
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, description, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
@@ -343,6 +342,18 @@ public class GroupedWorkIndexer {
 			logEntry.incErrors("Could not load statements to get identifiers ", e);
 			this.okToIndex = false;
 			return;
+		}
+
+		// Check if series module is enabled
+		try {
+			PreparedStatement seriesModuleEnabledStmt = dbConn.prepareStatement("SELECT enabled FROM modules WHERE name = 'series'");
+			ResultSet enabledRS = seriesModuleEnabledStmt.executeQuery();
+			if (enabledRS.next()) {
+				seriesModuleEnabled = enabledRS.getBoolean("enabled");
+			}
+			enabledRS.close();
+		} catch (Exception e) {
+			logEntry.incErrors("Could not check if series module enabled ", e);
 		}
 
 		//Initialize the updateServer and solr server
@@ -1419,9 +1430,7 @@ public class GroupedWorkIndexer {
 
 	private void updateSeriesDataForWork(AbstractGroupedWorkSolr groupedWork) {
 		try {
-			ResultSet enabledRS = seriesModuleEnabled.executeQuery();
-			if (enabledRS.next() && enabledRS.getBoolean("enabled")) {
-				enabledRS.close();
+			if (seriesModuleEnabled) {
 				getSeriesMemberStmt.setString(1, groupedWork.getId());
 				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
 				ArrayList<Object> seriesInDb = new ArrayList<>();
