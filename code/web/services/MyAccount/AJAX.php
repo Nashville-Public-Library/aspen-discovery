@@ -8975,8 +8975,8 @@ class MyAccount_AJAX extends JSON_Action {
 		}
 
 		$userCampaign = new UserCampaign();
-        $userCampaign->userId = $userId;
-        $userCampaign->campaignId = $campaignId;
+		$userCampaign->userId = $userId;
+		$userCampaign->campaignId = $campaignId;
 		$campaign = new Campaign();
 		$campaign->id = $campaignId;
 		if (!$campaign->find(true)) {

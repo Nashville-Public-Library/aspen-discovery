@@ -13,17 +13,17 @@ require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneProgressEntry
  */
 
 add_action('after_object_insert', 'after_checkout_insert', function ($value) {
-    $campaignMilestone = CampaignMilestone::getCampaignMilestonesToUpdate($value, 'user_checkout', $value->userId);
-    if (!$campaignMilestone)
-        return;
+	$campaignMilestone = CampaignMilestone::getCampaignMilestonesToUpdate($value, 'user_checkout', $value->userId);
+	if (!$campaignMilestone)
+		return;
 
-    while ($campaignMilestone->fetch()) {
-        if (_campaignMilestoneProgressEntryObjectAlreadyExists($value, $campaignMilestone))
-            return;
+	while ($campaignMilestone->fetch()) {
+		if (_campaignMilestoneProgressEntryObjectAlreadyExists($value, $campaignMilestone))
+			return;
 
-        $campaignMilestone->addCampaignMilestoneProgressEntry($value, $value->userId, $value->groupedWorkId);
-    }
-    return;
+		$campaignMilestone->addCampaignMilestoneProgressEntry($value, $value->userId, $value->groupedWorkId);
+	}
+	return;
 });
 
 /**
@@ -36,17 +36,17 @@ add_action('after_object_insert', 'after_checkout_insert', function ($value) {
  */
 
 add_action('after_object_insert', 'after_hold_insert', function ($value) {
-    $campaignMilestone = CampaignMilestone::getCampaignMilestonesToUpdate($value, 'user_hold', $value->userId);
-    if (!$campaignMilestone)
-        return;
+	$campaignMilestone = CampaignMilestone::getCampaignMilestonesToUpdate($value, 'user_hold', $value->userId);
+	if (!$campaignMilestone)
+		return;
 
-    while ($campaignMilestone->fetch()) {
-        if (_campaignMilestoneProgressEntryObjectAlreadyExists($value, $campaignMilestone))
-            return;
+	while ($campaignMilestone->fetch()) {
+		if (_campaignMilestoneProgressEntryObjectAlreadyExists($value, $campaignMilestone))
+			return;
 
-        $campaignMilestone->addCampaignMilestoneProgressEntry($value, $value->userId, $value->groupedWorkId);
-    }
-    return;
+		$campaignMilestone->addCampaignMilestoneProgressEntry($value, $value->userId, $value->groupedWorkId);
+	}
+	return;
 });
 
 /**
@@ -79,14 +79,14 @@ add_action('after_object_insert', 'after_hold_insert', function ($value) {
  */
 
 add_action('after_object_insert', 'after_work_review_insert', function ($value) {
-    $campaignMilestone = CampaignMilestone::getCampaignMilestonesToUpdate($value, 'user_work_review', $value->userId);
-    if (!$campaignMilestone)
-        return;
+	$campaignMilestone = CampaignMilestone::getCampaignMilestonesToUpdate($value, 'user_work_review', $value->userId);
+	if (!$campaignMilestone)
+		return;
 
-    while ($campaignMilestone->fetch()) {
-        $campaignMilestone->addCampaignMilestoneProgressEntry($value, $value->userId, $value->groupedRecordPermanentId);
-    }
-    return;
+	while ($campaignMilestone->fetch()) {
+		$campaignMilestone->addCampaignMilestoneProgressEntry($value, $value->userId, $value->groupedRecordPermanentId);
+	}
+	return;
 });
 
 /**
@@ -100,21 +100,21 @@ add_action('after_object_insert', 'after_work_review_insert', function ($value) 
  */
 function _campaignMilestoneProgressEntryObjectAlreadyExists($value, $campaignMilestone)
 {
-    $campaignMilestoneProgressEntryCheck = new CampaignMilestoneProgressEntry();
-    $campaignMilestoneProgressEntryCheck->initialize($campaignMilestone);
-    if ($campaignMilestoneProgressEntryCheck->find()) {
-        while ($campaignMilestoneProgressEntryCheck->fetch()) {
-            $decoded_object = json_decode($campaignMilestoneProgressEntryCheck->object);
-            if (
-                $decoded_object->sourceId == $value->sourceId &&
-                $decoded_object->recordId == $value->recordId &&
-                $decoded_object->userId == $value->userId
-            ) {
-                return true;
-            }
-        }
-    }
-    return false;
+	$campaignMilestoneProgressEntryCheck = new CampaignMilestoneProgressEntry();
+	$campaignMilestoneProgressEntryCheck->initialize($campaignMilestone);
+	if ($campaignMilestoneProgressEntryCheck->find()) {
+		while ($campaignMilestoneProgressEntryCheck->fetch()) {
+			$decoded_object = json_decode($campaignMilestoneProgressEntryCheck->object);
+			if (
+				$decoded_object->sourceId == $value->sourceId &&
+				$decoded_object->recordId == $value->recordId &&
+				$decoded_object->userId == $value->userId
+			) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 

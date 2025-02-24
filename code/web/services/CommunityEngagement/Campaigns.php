@@ -6,7 +6,7 @@ require_once ROOT_DIR . '/services/Admin/ObjectEditor.php';
 
 class CommunityEngagement_Campaigns extends ObjectEditor {
 
-    function getObjectType(): string {
+	function getObjectType(): string {
 		return 'Campaign';
 	}
 
@@ -14,17 +14,17 @@ class CommunityEngagement_Campaigns extends ObjectEditor {
 		return 'Campaigns';
 	}
 
-    function getModule(): string {
+	function getModule(): string {
 		return 'Community Engagement';
 	}
 
-    function getPageTitle(): string {
+	function getPageTitle(): string {
 		return 'Campaigns';
 	}
 
-    function getAllObjects($page, $recordsPerPage): array {
-        $object = new Campaign();
-        $object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
+	function getAllObjects($page, $recordsPerPage): array {
+		$object = new Campaign();
+		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
 		$this->applyFilters($object);
 		$object->orderBy($this->getSort());
 		$object->find();
@@ -33,9 +33,9 @@ class CommunityEngagement_Campaigns extends ObjectEditor {
 			$objectList[$object->id] = clone $object;
 		}
 		return $objectList;
-    }
+	}
 
-    
+	
 	function getDefaultSort(): string {
 		return 'name asc';
 	}
@@ -44,7 +44,7 @@ class CommunityEngagement_Campaigns extends ObjectEditor {
 		return Campaign::getObjectStructure($context);
 	}
 
-    function getPrimaryKeyColumn(): string {
+	function getPrimaryKeyColumn(): string {
 		return 'id';
 	}
 
@@ -52,15 +52,15 @@ class CommunityEngagement_Campaigns extends ObjectEditor {
 		return 'id';
 	}
 
-    function getAdditionalObjectActions($existingObject): array {
+	function getAdditionalObjectActions($existingObject): array {
 		return [];
 	}
 
-    function getInstructions(): string {
+	function getInstructions(): string {
 		return '';
 	}
 
-    function getBreadcrumbs(): array {
+	function getBreadcrumbs(): array {
 		$breadcrumbs = [];
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home', 'Administration Home');
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home#communityEngagement', 'Community Engagement');
@@ -72,13 +72,13 @@ class CommunityEngagement_Campaigns extends ObjectEditor {
 		return 'communityEngagement';
 	}
 
-    function canView(): bool {
+	function canView(): bool {
 		return UserAccount::userHasPermission([
-            'Administer Community Engagement Module',
-        ]);
+			'Administer Community Engagement Module',
+		]);
 	}
 
-    function canBatchEdit(): bool {
+	function canBatchEdit(): bool {
 		return UserAccount::userHasPermission([
 			'Administer Community Engagement Module',
 		]);

@@ -3,50 +3,50 @@
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class UserCampaignData extends DataObject {
-    public $__table = 'ce_user_campaign_data';
-    public $id;
-    public $instance;
-    public $userId;
-    public $year;
-    public $month;
-    public $enrollmentCount;
-    public $campaignId;
+	public $__table = 'ce_user_campaign_data';
+	public $id;
+	public $instance;
+	public $userId;
+	public $year;
+	public $month;
+	public $enrollmentCount;
+	public $campaignId;
 
-    public function getUniquenessFields(): array
-    {
-        return [
-            'instance',
-            'userId',
-            'year',
-            'month',
-        ];
-    }
+	public function getUniquenessFields(): array
+	{
+		return [
+			'instance',
+			'userId',
+			'year',
+			'month',
+		];
+	}
 
 	public static function getObjectStructure($context = '') {
 		return [
 			'id' => [
-                'property' => 'id',
-                'type' => 'label',
+				'property' => 'id',
+				'type' => 'label',
 				'label' => 'Id',
 				'description' => 'The unique id',
-            ],
+			],
 			'userId' => [
-                'property' => 'userId',
-                'type' => 'label',
+				'property' => 'userId',
+				'type' => 'label',
 				'label' => 'Id',
 				'description' => 'The unique user id',
-            ],
+			],
 		
 		];
 	}
 
-    public function toArray($includeRuntimeProperties = true, $encryptFields = false): array {
+	public function toArray($includeRuntimeProperties = true, $encryptFields = false): array {
 		$return = parent::toArray($includeRuntimeProperties, $encryptFields);
 		unset($return['userId']);
 		return $return;
 	}
 
-    public function okToExport(array $selectedFilters): bool {
+	public function okToExport(array $selectedFilters): bool {
 		$okToExport = parent::okToExport($selectedFilters);
 		if (in_array($this->instance, $selectedFilters['instances'])) {
 			$okToExport = true;
@@ -61,7 +61,7 @@ class UserCampaignData extends DataObject {
 		return $okToExport;
 	}
 
-    public function getLinksForJSON(): array {
+	public function getLinksForJSON(): array {
 		$links = parent::getLinksForJSON();
 		$user = new User();
 		$user->id = $this->userId;

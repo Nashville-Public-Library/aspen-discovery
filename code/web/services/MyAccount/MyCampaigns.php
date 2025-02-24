@@ -8,120 +8,120 @@ require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneProgressEntry
 
 class MyCampaigns extends MyAccount {
 
-    function launch() {
-        global $interface;
-        global $library;
+	function launch() {
+		global $interface;
+		global $library;
 
-        $campaign = new Campaign();
-          //Get User
-          $userId = $this->getUserId();
-          $interface->assign('userId', $userId);
+		$campaign = new Campaign();
+		  //Get User
+		  $userId = $this->getUserId();
+		  $interface->assign('userId', $userId);
 
-        //Get Campaigns
-        $campaignList = $this->getCampaigns();
-        $interface->assign('campaignList', $campaignList);
+		//Get Campaigns
+		$campaignList = $this->getCampaigns();
+		$interface->assign('campaignList', $campaignList);
 
-        //Get past campaigns
-        $pastCampaigns = $campaign->getPastCampaigns($userId);
-        $interface->assign('pastCampaigns', $pastCampaigns);
-
-
-        $this->display('../MyAccount/myCampaigns.tpl', 'My Campaigns');
-    }
-
-    function getUserId() {
-        $user = UserAccount::getLoggedInUser();
-        $userId = $user->id;
-        return $userId;
-    }
-
-    function getCampaigns() {
-        $campaign = new Campaign();
-        $campaignList = [];
-
-        if (!UserAccount::isLoggedIn()) {
-            return $campaignList;
-        }
-        $user = UserAccount::getLoggedInUser();
-        $userId = $user->id;
-
-        //Get active campaigns
-        $activeCampaigns = Campaign::getActiveCampaignsList();
-
-        //Get upcoming campaigns - those starting in the next month
-        $upcomingCampaigns = Campaign::getUpcomingCampaigns();
-
-        //Get campaigns
-        $campaign->find();
-        while ($campaign->fetch()) {
-            $campaignId = $campaign->id;
-
-            //Find out if user is enrolled in campaign
-            $campaign->enrolled = $campaign->isUserEnrolled($userId);
-            //Find out if campaign is active
-            $campaign->isActive = isset($activeCampaigns[$campaignId]);
-
-            //Find out if campaign in upcoming
-            $campaign->isUpcoming = isset($upcomingCampaigns[$campaignId]);
-
-            //Get campaign reward name
-            $rewardDetails = $campaign->getRewardDetails();
-            if ($rewardDetails) {
-                $campaign->rewardName = $rewardDetails['name'];
-                $campaign->rewardType = $rewardDetails['rewardType'];
-                $campaign->badgeImage = $rewardDetails['badgeImage'];
-                $campaign->rewardExists = $rewardDetails['rewardExists'];
-            }
-
-                //Fetch milestones for this campaign
-                $milestones = CampaignMilestone::getMilestoneByCampaign($campaignId);
-                $completedMilestonesCount = 0;
-                $numCampaignMilestones = 0;
-                $milestoneProgressData = [];
-
-                //Store progress for each milestone
-                $campaign->milestoneProgress = [];
+		//Get past campaigns
+		$pastCampaigns = $campaign->getPastCampaigns($userId);
+		$interface->assign('pastCampaigns', $pastCampaigns);
 
 
-                foreach ($milestones as $milestone) {
-                    $milestoneId = $milestone->id;
-                    $numCampaignMilestones++;
+		$this->display('../MyAccount/myCampaigns.tpl', 'My Campaigns');
+	}
 
-                    //Calculate milestone progress
-                    $milestoneProgress = CampaignMilestone::getMilestoneProgress($campaignId, $userId, $milestone->id);
-                    $progressData = CampaignMilestoneProgressEntry::getUserProgressDataByMilestoneId($userId, $milestoneId, $campaignId);
+	function getUserId() {
+		$user = UserAccount::getLoggedInUser();
+		$userId = $user->id;
+		return $userId;
+	}
 
-                    $milestone->progress = $milestoneProgress['progress'];
-                    $milestone->completedGoals = $milestoneProgress['completed'];
-                    $milestone->totalGoals = CampaignMilestone::getMilestoneGoalCountByCampaign($campaignId, $milestoneId);
-                    $milestone->progressData = $progressData;
-                 
-                }
-                $campaign->numCampaignMilestones = $numCampaignMilestones;
+	function getCampaigns() {
+		$campaign = new Campaign();
+		$campaignList = [];
 
-                $userCampaign = new UserCampaign();
-                $userCampaign->userId = $userId;
-                $userCampaign->campaignId = $campaignId;
-                $milestoneCompletionStatus = $userCampaign->checkMilestoneCompletionStatus();
-                $campaign->numCompletedMilestones = count(array_filter($milestoneCompletionStatus));
+		if (!UserAccount::isLoggedIn()) {
+			return $campaignList;
+		}
+		$user = UserAccount::getLoggedInUser();
+		$userId = $user->id;
 
-                //Add milestones to campaign object
-                $campaign->milestones = $milestones;
+		//Get active campaigns
+		$activeCampaigns = Campaign::getActiveCampaignsList();
 
-                //Add the campaign to the list
+		//Get upcoming campaigns - those starting in the next month
+		$upcomingCampaigns = Campaign::getUpcomingCampaigns();
 
-            $campaignList[] = clone $campaign;
-        }
-        return $campaignList;
-    }
+		//Get campaigns
+		$campaign->find();
+		while ($campaign->fetch()) {
+			$campaignId = $campaign->id;
+
+			//Find out if user is enrolled in campaign
+			$campaign->enrolled = $campaign->isUserEnrolled($userId);
+			//Find out if campaign is active
+			$campaign->isActive = isset($activeCampaigns[$campaignId]);
+
+			//Find out if campaign in upcoming
+			$campaign->isUpcoming = isset($upcomingCampaigns[$campaignId]);
+
+			//Get campaign reward name
+			$rewardDetails = $campaign->getRewardDetails();
+			if ($rewardDetails) {
+				$campaign->rewardName = $rewardDetails['name'];
+				$campaign->rewardType = $rewardDetails['rewardType'];
+				$campaign->badgeImage = $rewardDetails['badgeImage'];
+				$campaign->rewardExists = $rewardDetails['rewardExists'];
+			}
+
+				//Fetch milestones for this campaign
+				$milestones = CampaignMilestone::getMilestoneByCampaign($campaignId);
+				$completedMilestonesCount = 0;
+				$numCampaignMilestones = 0;
+				$milestoneProgressData = [];
+
+				//Store progress for each milestone
+				$campaign->milestoneProgress = [];
+
+
+				foreach ($milestones as $milestone) {
+					$milestoneId = $milestone->id;
+					$numCampaignMilestones++;
+
+					//Calculate milestone progress
+					$milestoneProgress = CampaignMilestone::getMilestoneProgress($campaignId, $userId, $milestone->id);
+					$progressData = CampaignMilestoneProgressEntry::getUserProgressDataByMilestoneId($userId, $milestoneId, $campaignId);
+
+					$milestone->progress = $milestoneProgress['progress'];
+					$milestone->completedGoals = $milestoneProgress['completed'];
+					$milestone->totalGoals = CampaignMilestone::getMilestoneGoalCountByCampaign($campaignId, $milestoneId);
+					$milestone->progressData = $progressData;
+				 
+				}
+				$campaign->numCampaignMilestones = $numCampaignMilestones;
+
+				$userCampaign = new UserCampaign();
+				$userCampaign->userId = $userId;
+				$userCampaign->campaignId = $campaignId;
+				$milestoneCompletionStatus = $userCampaign->checkMilestoneCompletionStatus();
+				$campaign->numCompletedMilestones = count(array_filter($milestoneCompletionStatus));
+
+				//Add milestones to campaign object
+				$campaign->milestones = $milestones;
+
+				//Add the campaign to the list
+
+			$campaignList[] = clone $campaign;
+		}
+		return $campaignList;
+	}
 
 
 
-    function getBreadcrumbs(): array
-    {
-        $breadcrumbs = [];
+	function getBreadcrumbs(): array
+	{
+		$breadcrumbs = [];
 		$breadcrumbs[] = new Breadcrumb('/MyAccount/Home', 'Your Account');
 		$breadcrumbs[] = new Breadcrumb('', 'Campaigns');
 		return $breadcrumbs;
-    }
+	}
 }

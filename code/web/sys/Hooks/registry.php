@@ -12,13 +12,13 @@ $hook_actions = array();
 
 function add_action($hook_name, $action_name, $callback = NULL)
 {
-    global $hook_actions;
+	global $hook_actions;
 
-    if ($callback) {
-        $hook_actions[$hook_name][$action_name] = $callback;
-    } else {
-        unset($hook_actions[$hook_name][$action_name]);
-    }
+	if ($callback) {
+		$hook_actions[$hook_name][$action_name] = $callback;
+	} else {
+		unset($hook_actions[$hook_name][$action_name]);
+	}
 }
 
 /**
@@ -31,12 +31,12 @@ function add_action($hook_name, $action_name, $callback = NULL)
 
 function do_action($hook_name, $value = NULL)
 {
-    global $hook_actions;
+	global $hook_actions;
 
-    if (isset($hook_actions[$hook_name])) // Fire a callback
-    {
-        foreach ($hook_actions[$hook_name] as $function) {
-            call_user_func($function, $value);
-        }
-    }
+	if (isset($hook_actions[$hook_name])) // Fire a callback
+	{
+		foreach ($hook_actions[$hook_name] as $function) {
+			call_user_func($function, $value);
+		}
+	}
 }
