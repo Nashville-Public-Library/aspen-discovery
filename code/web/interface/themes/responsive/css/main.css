@@ -10691,6 +10691,9 @@ a.browse-thumbnail.active {
 .calendar-current-month {
   font-size: 36px;
 }
+.week-view .calendar-current-month {
+  font-size: 28px;
+}
 .calendar-day-cell {
   border: 1px solid lightgray;
 }
@@ -10706,6 +10709,11 @@ a.browse-thumbnail.active {
     display: flex;
     flex-direction: column;
     min-height: 150px;
+  }
+}
+@media (min-width: 768px) {
+  .week-view .calendar-day-cell {
+    min-height: 50vh;
   }
 }
 .calendar-header-cell {

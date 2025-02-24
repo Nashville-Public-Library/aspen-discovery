@@ -15,6 +15,9 @@
 .calendar-current-month{
 	font-size: 36px;
 }
+.week-view .calendar-current-month {
+	font-size: 28px;
+}
 .calendar-day-cell{
 	@media (max-width: @screen-xs-max) {
 		width: 100%;
@@ -27,6 +30,13 @@
 		min-height: 150px;
 	}
 	border: 1px solid lightgray;
+}
+.week-view {
+	@media (min-width: @screen-sm-min) {
+		.calendar-day-cell {
+			min-height: 50vh;
+		}
+	}
 }
 .calendar-header-cell {
 	display: flex;
