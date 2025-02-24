@@ -436,7 +436,9 @@ class PortalCell extends DataObject {
 				require_once ROOT_DIR . '/RecordDrivers/WebResourceRecordDriver.php';
 				$resourceDriver = new WebResourceRecordDriver('WebResource:' . $webResource->id);
 				if ($resourceDriver->isValid()) {
-					$interface->assign('description', $webResource->getFormattedDescription());
+					if (!$this->hideDescription) {
+						$interface->assign('description', $webResource->getFormattedDescription());
+					}
 					$interface->assign('title', $webResource->name);
 					$interface->assign('url', $webResource->url);
 					$interface->assign('logo', $resourceDriver->getBookcoverUrl('large'));
@@ -457,12 +459,11 @@ class PortalCell extends DataObject {
 				}
 				$interface->assign('title', $customWebResourcePage->title);
 				$interface->assign('url', $customWebResourcePage->urlAlias);
-				if (!empty($this-$this->customImage)) {
+				if (!empty( $this->customImage)){
 					$interface->assign('logo', '/files/original/' . $this->customImage);
 				}else{
 					$interface->assign('logo', null);
 				}
-
 				$contents .= $interface->fetch('WebBuilder/resource.tpl');
 			}
 		} elseif ($this->sourceType == 'quick_poll') {
