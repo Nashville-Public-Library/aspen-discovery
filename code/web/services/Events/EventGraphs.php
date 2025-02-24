@@ -50,15 +50,16 @@ class Events_EventGraphs extends Admin_Admin {
 		$interface->assign('query', $query);
 
 
-		$title = 'Aspen Event Hours Graph';
+		$title = 'Aspen Event Hours';
 		$interface->assign('section', 'Events');
-		// $interface->assign('showCSVExportButton', true);
+		$interface->assign('showCSVExportButton', true);
 		$interface->assign('graphTitle', $title);
 		// $this->assignGraphSpecificTitle($stat);
 		$this->getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields);
 		$interface->assign('stat', $stat);
 		$interface->assign('propName', 'exportToCSV');
 		$title = $interface->getVariable('graphTitle');
+		$this->assignGraphSpecificTitle($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields);
 		$this->display('event-graph.tpl', $title);
 	}
 
@@ -79,6 +80,60 @@ class Events_EventGraphs extends Admin_Admin {
 			"View Event Reports for All Libraries",
 			"View Event Reports for Home Library",
 		]);
+	}
+
+	public function buildCSV() {
+		global $interface;
+
+		$stat = "eventHours";
+
+		// Form options
+		$timeframe = $_REQUEST['timeframe'] ?? 'days';
+		$eventType = $_REQUEST['type'] ?? '';
+		$location = $_REQUEST['location'] ?? '';
+		$sublocation = $_REQUEST['sublocation'] ?? '';
+		$fields = array_filter($_REQUEST, function($v, $k) {
+			return str_contains($k, 'field_') && $v != NULL && $v !== '';
+		}, ARRAY_FILTER_USE_BOTH);
+		foreach ($fields as $key => $value) {
+			$field[$key] = $_REQUEST[$key];
+		}
+		$query = $_REQUEST['query'] ?? '';
+
+		$this->getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields);
+		$dataSeries = $interface->getVariable('dataSeries');
+
+		$filename = "AspenUsageData_{$stat}.csv";
+		header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
+		header("Cache-Control: no-store, no-cache, must-revalidate");
+		header("Cache-Control: post-check=0, pre-check=0", false);
+		header("Pragma: no-cache");
+		header('Content-Type: text/csv; charset=utf-8');
+		header("Content-Disposition: attachment;filename={$filename}");
+		$fp = fopen('php://output', 'w');
+		$graphTitles = array_keys($dataSeries);
+		$numGraphTitles = count($dataSeries);
+
+		// builds the header for each section of the table in the CSV - column headers: Dates, and the title of the graph
+		for($i = 0; $i < $numGraphTitles; $i++) {
+			$dataSerie = $dataSeries[$graphTitles[$i]];
+			$numRows = count($dataSerie['data']);
+			$dates = array_keys($dataSerie['data']);
+			$header = ['Dates', $graphTitles[$i]];
+			fputcsv($fp, $header);
+
+			if( empty($numRows)) {
+				fputcsv($fp, ['no data found!']);
+			}
+			// builds each subsequent data row - aka the column value
+			for($j = 0; $j < $numRows; $j++) {
+				$date = $dates[$j];
+				$value = $dataSerie['data'][$date];
+				$row = [$date, $value];
+				fputcsv($fp, $row);
+			}
+		}
+		exit();
 	}
 
 	private function getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation = '', $query = '', $fields = []) {
@@ -174,6 +229,45 @@ class Events_EventGraphs extends Admin_Admin {
 		$interface->assign('dataSeries', $dataSeries);
 		$interface->assign('translateDataSeries', true);
 		$interface->assign('translateColumnLabels', false);
+	}
+
+	private function assignGraphSpecificTitle($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields) {
+		global $interface;
+		$title = $interface->getVariable('graphTitle');
+		$title .= " by " . ucfirst(substr($timeframe, 0, -1));
+		if (!empty($eventType) || !empty($location) || !empty($sublocation) || !empty($query) || !empty($fields)) {
+			$title .= " - ";
+			if (!empty($eventType)) {
+				$eventTypes = EventType::getEventTypeList();
+				$title .= "Event Type: " . $eventTypes[$eventType] . ", ";
+			}
+			if (!empty($location)) {
+				$locations = Location::getLocationList(!UserAccount::userHasPermission('View Event Reports for All Libraries') || UserAccount::userHasPermission('View Event Reports for Home Library'));
+				$title .= "Location: " . $locations[$location] . ", ";
+			}
+			if (!empty($sublocation)) {
+				$sublocations = Location::getEventSublocations($location);
+				$title .= "Sublocation: " . $sublocations[$sublocation] . ", ";
+			}
+			if (!empty($fields)) {
+				$fieldData = EventField::getEventFieldsByTypes([2, 3]);
+				foreach ($fields as $key => $value) {
+					if ($fieldData[substr($key, -1)]->type == 2) {
+						$optionName = "true";
+					} else {
+						$values = explode(",", $fieldData[substr($key, -1)]->allowableValues);
+						$optionName = $values[$value];
+					}
+					$title .= $fieldData[substr($key, -1)]->name . ": " . $optionName . ", ";
+				}
+			}
+			if (!empty($query)) {
+				$title .= "Search Term: '" . $query . "', ";
+			}
+			$title = substr($title, 0, -2);
+		}
+		$interface->assign('graphTitle', $title);
+
 	}
 
 }

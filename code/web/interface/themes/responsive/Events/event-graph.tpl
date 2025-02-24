@@ -77,9 +77,10 @@
 			</div>
 			<hr>
 			<div class="form-group">
-				<input type="submit" value="Apply Filters" class="form-control"/>
+				<input type="submit" value="Apply Filters" class="form-control btn btn-primary"/>
 			</div>
 		</form>
+		<hr>
 
 		<h2>{translate text="Raw Data" isAdminFacing=true}</h2>
 		<div class="adminTableRegion fixed-height-table">
