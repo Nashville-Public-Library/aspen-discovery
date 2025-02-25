@@ -54,7 +54,6 @@ class Series extends DataObject {
 				'type' => 'text',
 				'label' => 'Description',
 				'description' => 'Series description',
-				'note' => 'This is automatically imported from Novelist if available but can be edited',
 				'hideInLists' => true,
 			],
 			'cover' => [
