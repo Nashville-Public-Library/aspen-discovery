@@ -167,6 +167,13 @@ function getUpdates25_03_00(): array {
 		// Leo Stoyanov - BWS
 
 		//alexander - PTFS-Europe
+		'filter_books_from_summon_results' => [
+			'title' => 'Filter Books From Summon Results',
+			'description' => 'Add the option of filtering out records with the content type of book or ebook from Summon results',
+			'sql' => [
+				"ALTER TABLE summon_settings ADD COLUMN filterOutBooksAndEbooks TINYINT(1) NOT NULL DEFAULT 0",
+			],
+		],
 
 		//chloe - PTFS-Europe
 

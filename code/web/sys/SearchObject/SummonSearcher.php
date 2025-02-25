@@ -291,6 +291,19 @@ class SearchObject_SummonSearcher extends SearchObject_BaseSearcher{
 				$splitFacets = $this->splitFacets($recordData['facetFields']);
 				$this->facetFields = $splitFacets['facetFields'];
 				$this->limitFields = $splitFacets['limitFields'];
+
+				$summonSettings = $this->getSettings();
+				if ($summonSettings && !empty($summonSettings->filterOutBooksAndEbooks)) {
+					foreach ($this->facetFields as $key => $facet) {
+						if ($facet['displayName'] === 'ContentType') {
+							foreach ($facet['counts'] as $index => $count) {
+								if (isset($count['value']) && ($count['value'] === 'Book / eBook' || $count['value'] === 'Book%20%2F%20eBook')) {
+									unset($this->facetFields[$key]['counts'][$index]);
+								}
+							}
+						}
+					}
+				}
 			}
 			return $recordData;
 	}
@@ -571,6 +584,12 @@ class SearchObject_SummonSearcher extends SearchObject_BaseSearcher{
 				$encodedValue = urlencode($value);
 				$this->filters[] = urlencode($key) . ',' . $encodedValue . ',';
 			}
+		}
+
+		$summonSettings = $this->getSettings();
+
+		if ($summonSettings && !empty($summonSettings->filterOutBooksAndEbooks)) {
+			$this->filters[] = 'ContentType,Book%20%2F%20eBook,t';
 		}
 		return $this->filters;
 	}
