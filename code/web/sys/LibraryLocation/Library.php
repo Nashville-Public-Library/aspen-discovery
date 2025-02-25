@@ -1326,7 +1326,8 @@ class Library extends DataObject {
 					'allowSelectingHoldsToDisplay' => [
 						'property' => 'allowSelectingHoldsToDisplay',
 						'type' => 'checkbox',
-						'label' => 'Allow Ability To Display Only Selected Holds.',
+						'label' => 'Allow Ability To Display Only Selected Holds',
+						'description' => 'Whether or not users can select holds to display.',
 						'hideInLists' => true,
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],
