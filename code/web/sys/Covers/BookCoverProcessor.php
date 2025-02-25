@@ -2105,9 +2105,8 @@ class BookCoverProcessor {
 				if (!empty($cachedUrl)) {
 					$url = $cachedUrl;
 				}
-			} else {
-				file_put_contents($this->urlCacheFile, $url);
 			}
+
 			// Check HTTP headers.
 			$headers = @get_headers($url);
 			if ($headers && preg_match('/^HTTP\/\d+\.\d+\s+(200|30[1-9])/', $headers[0])) {
@@ -2148,7 +2147,10 @@ class BookCoverProcessor {
 								if ($rgbLeft == 8421504 && $rgbRight == 8421504) {
 									$this->log("Original cover URL $url returned an image with partial gray at the bottom; falling back.", Logger::LOG_NOTICE);
 								} else {
-									// All checks passed; issue the redirect.
+									// All checks passed; cache the URL and issue the redirect.
+									// Only write to the cache file after we've confirmed the URL is valid.
+									file_put_contents($this->urlCacheFile, $url);
+									$this->setBookCoverInfo($source, $width, $height);
 									header("HTTP/1.1 301 Moved Permanently");
 									header("Location: $url");
 									$this->addCachingHeader();
