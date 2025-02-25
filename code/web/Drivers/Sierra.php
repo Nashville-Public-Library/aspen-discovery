@@ -1912,10 +1912,30 @@ class Sierra extends Millennium {
 			'payments' => [],
 		];
 
-		// Use patron's home location stat group by default.
-		$homeLocation = $patron->getHomeLocation();
-		if ($homeLocation && $homeLocation->statGroup != -1) {
-			$paymentParams['statgroup'] = (int)$homeLocation->statGroup;
+		// Get payment location based on system configuration.
+		$systemVariables = SystemVariables::getSystemVariables();
+		global $locationSingleton;
+
+		if ($systemVariables && $systemVariables->libraryToUseForPayments == 1) {
+			// Get active library location using the singleton pattern.
+			$activeLocation = $locationSingleton->getActiveLocation();
+			global $logger;
+			if ($activeLocation) {
+				$paymentLocation = $activeLocation;
+				$logger->log("Using active catalog location {$activeLocation->code} for payments.", Logger::LOG_NOTICE);
+			} else {
+				$paymentLocation = $patron->getHomeLocation();
+				$logger->log("No active location found, falling back to patron's home library.", Logger::LOG_WARNING);
+			}
+		} else {
+			// Default to patron's home library location.
+			global $logger;
+			$paymentLocation = $patron->getHomeLocation();
+			$logger->log("Using patron' home library {$paymentLocation->code} for payments.", Logger::LOG_NOTICE);
+		}
+
+		if ($paymentLocation && $paymentLocation->statGroup != -1) {
+			$paymentParams['statgroup'] = (int)$paymentLocation->statGroup;
 		}
 
 		$finePayments = explode(',', $payment->finesPaid);
