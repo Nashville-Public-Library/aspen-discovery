@@ -59,7 +59,8 @@ function getUpdates25_03_00(): array {
 					displayName VARCHAR(500),
 					author VARCHAR(500),
 					description TEXT,
-					audience VARCHAR(25),
+					audience TINYTEXT,
+					cover VARCHAR(100),
 					isIndexed TINYINT(1) DEFAULT 1,
 					deleted TINYINT(1) DEFAULT 0,
 					dateUpdated INT(11),
@@ -73,7 +74,7 @@ function getUpdates25_03_00(): array {
 					displayName VARCHAR(500),
 					author VARCHAR(200),
 					description TEXT,
-					cover VARCHAR(50),
+					cover VARCHAR(100),
 					volume VARCHAR(50),
 					pubDate INT,
 					weight INT NOT NULL DEFAULT 0
