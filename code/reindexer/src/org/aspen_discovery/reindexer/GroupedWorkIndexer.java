@@ -1422,9 +1422,9 @@ public class GroupedWorkIndexer {
 				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
 				HashMap<String, Integer> seriesInDb = new HashMap<>();
 				while (seriesMemberRS.next()) {
-					seriesInDb.put(seriesMemberRS.getString("groupedWorkSeriesTitle"), seriesMemberRS.getInt("seriesId"));
+					seriesInDb.put(seriesMemberRS.getString("groupedWorkSeriesTitle").toLowerCase(), seriesMemberRS.getInt("seriesId"));
 				}
-				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.values()) {
+				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.keySet()) {
 					String[] series = seriesNameWithVolume.split("\\|");
 					if (!seriesInDb.containsKey(series[0])) { // Skip if this work is already in the series
 						// Check if series exists
