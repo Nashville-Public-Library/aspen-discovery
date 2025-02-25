@@ -339,7 +339,7 @@ public class GroupedWorkIndexer {
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
 			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesId, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?)");
 			deleteSeriesMemberStmt = dbConn.prepareStatement("DELETE FROM series_member WHERE seriesId = ? AND groupedWorkPermanentId = ? AND userAdded = 0;");
-			deleteSeriesStmt = dbConn.prepareStatement("DELETE FROM series AS s LEFT JOIN series_member AS sm ON s.id = sm.seriesId WHERE sm.seriesId = ? HAVING COUNT(sm.groupedWorkPermanentId) = 1;");
+			deleteSeriesStmt = dbConn.prepareStatement("DELETE FROM series WHERE id in (SELECT seriesId FROM series_member WHERE seriesId = ? HAVING COUNT(groupedWorkPermanentId) = 1);");
 			updateSeriesAuthor = dbConn.prepareStatement("UPDATE series SET author = ? WHERE id = ?;");
 			setSeriesDateUpdated = dbConn.prepareStatement("UPDATE series SET dateUpdated = ? WHERE id = ?;");
 		} catch (Exception e){
