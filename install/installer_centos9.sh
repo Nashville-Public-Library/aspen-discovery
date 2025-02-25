@@ -1,10 +1,13 @@
 #!/bin/sh
 
+git config --global --add safe.directory /usr/local/aspen-discovery
+
 #This will need to be copied to the server manually to do the setup.
-#Expects to be installed on CentOS7
+#Expects to be installed on CentOS9
 #Run as sudo ./installer_centos9.sh
 yum check-update
 yum -y install wget
+yum -y install curl
 yum -y install httpd
 yum -y install http://rpms.remirepo.net/enterprise/remi-release-9.rpm
 yum -y install yum-utils
@@ -21,17 +24,23 @@ yum -y install php-ldap
 service httpd start
 chkconfig httpd on
 # New PHP ini file
-# - Change max_memory to 256M (from 128M)
-# - Increase max file size to 50M
-# - Increase max post size to 50M
+# - Change max_memory to 256M
+# - Increase max file size to 75M
+# - Increase max post size to 75M
 mv /etc/php.ini /etc/php.ini.old
 cp php.ini /etc/php.ini
+php_ini="/etc/php.ini"
+grep -q '^memory_limit = 256M' "$php_ini" || sed -Ei 's/^memory_limit = [0-9]+M/memory_limit = 256M/' "$php_ini"
+grep -q '^post_max_size = 75M' "$php_ini" || sed -Ei 's/^post_max_size = [0-9]+M/post_max_size = 75M/' "$php_ini"
+grep -q '^upload_max_filesize = 75M' "$php_ini" || sed -Ei 's/^upload_max_filesize = [0-9]+M/upload_max_filesize = 75M/' "$php_ini"
+grep -q '^session.gc_probability = 0' "$php_ini" || sed -Ei 's/^session.gc_probability = 0/session.gc_probability = 1/' "$php_ini"
+
 dnf -y install mariadb-server
 mv /etc/my.cnf /etc/my.cnf.old
 cp my.cnf /etc/my.cnf
 systemctl start mariadb
 systemctl enable mariadb
-yum -y install java-11-openjdk
+yum -y install java-17-openjdk
 yum -y install unzip
 yum -y install strace
 yum -y install mytop
