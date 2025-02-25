@@ -1438,9 +1438,6 @@ class GroupedWorkDriver extends IndexRecordDriver {
 			$interface->assign('summExplain', $this->getExplain());
 		}
 
-		//Get Rating
-		$interface->assign('summRating', $this->getRatingData());
-
 		//Description
 		$interface->assign('summDescription', $this->getDescriptionFast());
 		$timer->logTime('Finished Loading Description');

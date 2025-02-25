@@ -6,9 +6,6 @@
 					<a href="{$summUrl}" aria-hidden="true">
 						<img src="{$bookCoverUrlMedium}" class="listResultImage img-thumbnail{* img-responsive*} {$coverStyle}" alt="{translate text='Cover Image' inAttribute=true isPublicFacing=true}">
 					</a>
-					{if !empty($showRatings)}
-						{include file="GroupedWork/title-rating.tpl" id=$summId ratingData=$summRating showNotInterested=false}
-					{/if}
 				</div>
 			{/if}
 			<div class="{if !empty($showCovers)}col-xs-9 col-sm-9 col-md-9 col-lg-10{else}col-xs-12{/if}">
