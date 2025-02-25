@@ -157,6 +157,7 @@ class SeriesIndexer {
 				numSeriesProcessed++;
 			}
 			if (numSeriesProcessed > 0){
+				allSeriesRS.close();
 				logEntry.addNote("Calling final commit");
 				logEntry.saveResults();
 				updateServer.commit(false, false, true);
@@ -218,7 +219,6 @@ class SeriesIndexer {
 					}
 				}
 				allTitlesRS.close();
-				allSeriesRS.close();
 				// Index in the solr catalog
 				SolrInputDocument document = seriesSolr.getSolrDocument();
 				if (document != null) {
