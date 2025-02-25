@@ -160,6 +160,8 @@ public class GroupedWorkIndexer {
 	private PreparedStatement getSeriesStmt;
 	private PreparedStatement getSeriesMemberStmt;
 	private PreparedStatement addSeriesMemberStmt;
+	private PreparedStatement deleteSeriesMemberStmt;
+	private PreparedStatement deleteSeriesStmt;
 	private PreparedStatement addSeriesStmt;
 	private PreparedStatement setSeriesDateUpdated;
 	private PreparedStatement updateSeriesAuthor;
@@ -332,10 +334,12 @@ public class GroupedWorkIndexer {
 			removeVariationsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_variation where groupedWorkId = ?");
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
 
-			getSeriesMemberStmt = dbConn.prepareStatement("SELECT * FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
+			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, sm.seriesId FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?");
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
-			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesID, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?)");
+			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesId, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?)");
+			deleteSeriesMemberStmt = dbConn.prepareStatement("DELETE FROM series_member WHERE seriesId = ? AND groupedWorkPermanentId = ? AND userAdded = 0;");
+			deleteSeriesStmt = dbConn.prepareStatement("DELETE FROM series AS s LEFT JOIN series_member AS sm ON s.id = sm.seriesId WHERE sm.seriesId = ? HAVING COUNT(sm.groupedWorkPermanentId) = 1;");
 			updateSeriesAuthor = dbConn.prepareStatement("UPDATE series SET author = ? WHERE id = ?;");
 			setSeriesDateUpdated = dbConn.prepareStatement("UPDATE series SET dateUpdated = ? WHERE id = ?;");
 		} catch (Exception e){
@@ -1416,19 +1420,19 @@ public class GroupedWorkIndexer {
 			if (seriesModuleEnabled) {
 				getSeriesMemberStmt.setString(1, groupedWork.getId());
 				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
-				ArrayList<Object> seriesInDb = new ArrayList<>();
+				HashMap<String, Integer> seriesInDb = new HashMap<>();
 				while (seriesMemberRS.next()) {
-					seriesInDb.add(seriesMemberRS.getString("displayName"));
+					seriesInDb.put(seriesMemberRS.getString("groupedWorkSeriesTitle"), seriesMemberRS.getInt("seriesId"));
 				}
 				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.values()) {
 					String[] series = seriesNameWithVolume.split("\\|");
-					if (!seriesInDb.contains(series[0])) {
+					if (!seriesInDb.containsKey(series[0])) { // Skip if this work is already in the series
 						// Check if series exists
 						getSeriesStmt.setString(1, series[0]);
 						ResultSet seriesRS = getSeriesStmt.executeQuery();
 						long timeNow = new Date().getTime() / 1000;
 						long seriesId;
-						if (seriesRS.next()) { // Need to add handling for more than one match
+						if (seriesRS.next()) { // Should only be one match
 							seriesId = seriesRS.getLong("id");
 							// Check to see if we need to add additional authors
 							String authors = seriesRS.getString("author");
@@ -1488,6 +1492,21 @@ public class GroupedWorkIndexer {
 						}
 						seriesRS.close();
 
+					} else {
+						seriesInDb.remove(series[0]); // Remove since we have accounted for it
+					}
+				}
+				if (!seriesInDb.isEmpty()) {
+					// Remove entries from series_member table when this work is no longer part of the series
+					for (int seriesId : seriesInDb.values()) {
+						deleteSeriesMemberStmt.setInt(1, seriesId);
+						deleteSeriesMemberStmt.setString(2, groupedWork.id);
+						int result = deleteSeriesMemberStmt.executeUpdate();
+						// Also delete the series if it no longer has any members
+						if (result != 0) {
+							deleteSeriesStmt.setInt(1, seriesId); // Deletes if it only had 1 member (this work)
+							deleteSeriesStmt.executeUpdate();
+						}
 					}
 				}
 				seriesMemberRS.close();

@@ -15,6 +15,7 @@ class SeriesMember extends DataObject {
 	public $pubDate;
 	public $weight;
 	public $cover;
+	public $userAdded;
 
 	public static function getObjectStructure($context = ''): array {
 		global $configArray;
@@ -89,6 +90,12 @@ class SeriesMember extends DataObject {
 				'label' => 'Weight',
 				'weight' => 'Defines how items are sorted.  Lower weights are displayed higher.',
 			],
+			'userAdded' => [
+				'property' => 'userAdded',
+				'type' => 'hidden',
+				'label' => 'User Added',
+				'readOnly' => true,
+			],
 		];
 		return $structure;
 	}
@@ -108,12 +115,15 @@ class SeriesMember extends DataObject {
 		} else {
 			$this->isPlaceholder = true;
 		}
+		$this->userAdded = true;
 		return parent::insert();
 	}
 
 	public function getNumericColumnNames(): array {
 		return [
 			'pubDate',
+			'isPlaceholder',
+			'userAdded',
 		];
 	}
 

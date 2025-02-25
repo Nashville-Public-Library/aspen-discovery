@@ -77,7 +77,8 @@ function getUpdates25_03_00(): array {
 					cover VARCHAR(100),
 					volume VARCHAR(50),
 					pubDate INT,
-					weight INT NOT NULL DEFAULT 0
+					weight INT NOT NULL DEFAULT 0,
+					userAdded TINYINT(1) DEFAULT 0
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
 				"CREATE TABLE series_indexing_log (
 					id int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
