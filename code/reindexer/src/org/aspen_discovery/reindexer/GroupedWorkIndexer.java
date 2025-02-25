@@ -335,7 +335,7 @@ public class GroupedWorkIndexer {
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
 
 			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, sm.seriesId FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
-			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?");
+			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle COLLATE utf8_unicode_ci = ?");
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
 			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesId, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?)");
 			deleteSeriesMemberStmt = dbConn.prepareStatement("DELETE FROM series_member WHERE seriesId = ? AND groupedWorkPermanentId = ? AND userAdded = 0;");
@@ -1456,8 +1456,9 @@ public class GroupedWorkIndexer {
 							addSeriesMemberStmt.setLong(1, seriesId);
 						} else {
 							// Add the series first
-							addSeriesStmt.setString(1, series[0]); //displayTitle (user can edit)
-							addSeriesStmt.setString(6, series[0]); //groupedWorkSeriesTitle (to match on)
+							String[] displayTitle = groupedWork.seriesWithVolume.get(seriesNameWithVolume).split("\\|");
+							addSeriesStmt.setString(1, displayTitle[0]); //displayTitle (user can edit)
+							addSeriesStmt.setString(6, displayTitle[0]); //groupedWorkSeriesTitle (to match on)
 							addSeriesStmt.setString(2, groupedWork.getTargetAudiencesAsString());
 							addSeriesStmt.setLong(3, timeNow);
 							addSeriesStmt.setLong(4, timeNow);
