@@ -40,7 +40,7 @@
 			<script type="text/javascript">
 				$(document).ready(
 					function () {ldelim}
-						AspenDiscovery.Searches.loadExploreMoreBar('lists', '{$exploreMoreSearchTerm|escape:"html"}');
+						AspenDiscovery.Searches.loadExploreMoreBar('series', '{$exploreMoreSearchTerm|escape:"html"}');
 					{rdelim}
 				);
 			</script>
