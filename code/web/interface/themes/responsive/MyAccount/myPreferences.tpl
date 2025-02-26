@@ -155,7 +155,7 @@
 						<div id="pickupSublocationOptions" class="form-group propertyRow">
 							{assign var=activePickupLocationId value=$profile->pickupLocationId}
 							{if $edit == true && !empty($allowPickupLocationUpdates)}
-								{if $activePickupLocationId > 0 && count($pickupSublocations.$activePickupLocationId) > 1}
+								{if $activePickupLocationId > 0 && !empty($pickupSublocations.$activePickupLocationId) && count($pickupSublocations.$activePickupLocationId) > 1}
 									{if $profile->pickupLocationId}
 										<div id="sublocationSelectPlaceHolder">
 											<label class="control-label" for="pickupSublocation">{translate text='Preferred Pickup Location' isPublicFacing=true}</label>
