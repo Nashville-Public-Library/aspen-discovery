@@ -18,6 +18,7 @@ import org.ini4j.Ini;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.text.Normalizer;
 import java.util.*;
 import java.util.Date;
 import java.util.zip.CRC32;
@@ -335,7 +336,7 @@ public class GroupedWorkIndexer {
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
 
 			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, sm.seriesId FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
-			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle COLLATE utf8_unicode_ci = ?");
+			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?");
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
 			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesId, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?)");
 			deleteSeriesMemberStmt = dbConn.prepareStatement("DELETE FROM series_member WHERE seriesId = ? AND groupedWorkPermanentId = ? AND userAdded = 0;");
@@ -1422,11 +1423,14 @@ public class GroupedWorkIndexer {
 				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
 				HashMap<String, Integer> seriesInDb = new HashMap<>();
 				while (seriesMemberRS.next()) {
-					seriesInDb.put(seriesMemberRS.getString("groupedWorkSeriesTitle").toLowerCase(), seriesMemberRS.getInt("seriesId"));
+					// Strip diacritics and switch to lowercase for comparing series names to minimize duplicates
+					String normalizedSeriesName = Normalizer.normalize(seriesMemberRS.getString("groupedWorkSeriesTitle").toLowerCase(), Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
+					seriesInDb.put(normalizedSeriesName, seriesMemberRS.getInt("seriesId"));
 				}
 				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.keySet()) {
 					String[] series = seriesNameWithVolume.split("\\|");
-					if (!seriesInDb.containsKey(series[0])) { // Skip if this work is already in the series
+					String normalizedSeriesName = Normalizer.normalize(series[0], Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
+					if (!seriesInDb.containsKey(normalizedSeriesName)) { // Skip if this work is already in the series
 						// Check if series exists
 						getSeriesStmt.setString(1, series[0]);
 						ResultSet seriesRS = getSeriesStmt.executeQuery();
@@ -1494,7 +1498,7 @@ public class GroupedWorkIndexer {
 						seriesRS.close();
 
 					} else {
-						seriesInDb.remove(series[0]); // Remove since we have accounted for it
+						seriesInDb.remove(normalizedSeriesName); // Remove since we have accounted for it
 					}
 				}
 				if (!seriesInDb.isEmpty()) {
