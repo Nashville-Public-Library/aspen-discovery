@@ -1,12 +1,10 @@
 {strip}
 	<div class="row">
 		<div class="col-xs-12">
-			<div class="row">
-				<h1>{$title}</h1>
-			</div>
-			<div class="row">
-				<p>{$description}</p>
-			</div>
+			<h1>{$title}</h1>
+		</div>
+		<div class="col-xs-12">
+			{$description}
 		</div>
 	</div>
 	{foreach from=$webResources item=curResource}

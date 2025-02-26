@@ -4155,6 +4155,10 @@ class User extends DataObject {
 				'Administer All Web Resources',
 				'Administer Library Web Resources',
 			]);
+			$sections['web_builder']->addAction(new AdminAction('Web Resource Settings', 'Settings for Web Resources including which custom pages get indexed.', '/WebBuilder/WebResourceSettings'), [
+				'Administer All Web Resources',
+				'Administer Library Web Resources',
+			]);
 			$sections['web_builder']->addAction(new AdminAction('Custom Web Resource Pages', 'Create custom web resource pages to display web resources belonging to specific categories and audiences.', '/WebBuilder/CustomWebResourcePages'), [
 				'Administer All Custom Web Resource Pages',
 				'Administer Library Custom Web Resource Pages',
@@ -4646,6 +4650,16 @@ class User extends DataObject {
 			}
 			$sections['aspen_lida']->addAction(new AdminAction('Self-Check Settings', 'Define settings for self-check in Aspen LiDA.', '/AspenLiDA/SelfCheckSettings'), 'Administer Aspen LiDA Self-Check Settings');
 		}
+		if (array_key_exists('Series', $enabledModules)) {
+			$sections['series'] = new AdminSection("Series Search");
+			$sections['series']->addAction(new AdminAction('Administer Series', 'Edit series data for series search', '/Series/AdministerSeries'), 'Administer Series');
+			$sections['series']->addAction(new AdminAction('Indexing Settings', 'Administer Series Indexing Settings', '/Series/Settings'), 'Administer Series');
+			$sections['series']->addAction(new AdminAction('Indexing Log', 'View Series Indexing Log', '/Series/IndexingLog'), [
+				'View System Reports',
+				'View Indexing Logs',
+			]);
+		}
+
 
 		$sections['support'] = new AdminSection('Aspen Discovery Support');
 		$sections['support']->addAction(new AdminAction('Request Tracker Settings', 'Define settings for a Request Tracker support system.', '/Support/RequestTrackerConnections'), 'Administer Request Tracker Connection');
