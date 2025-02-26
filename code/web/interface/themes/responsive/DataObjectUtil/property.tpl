@@ -482,7 +482,19 @@
 				<label class="input-group-btn">
 					<span class="btn btn-primary">
 						{if $property.type == 'image'}
-							{translate text="Select an image" isAdminFacing=true}&hellip; <input type="file" style="display: none;" name="{$propName}" id="{$propName}" {if !empty($property.required)}required="required"{/if} {if !empty($property.readOnly)}readonly disabled{/if}>
+							{translate text="Select an image" isAdminFacing=true}&hellip; <input type="file" style="display: none;" name="{$propName}" id="{$propName}" accept="image/jpeg, image/png, image/svg+xml" {if !empty($property.required)}required="required"{/if} {if !empty($property.readOnly)}readonly disabled{/if}>
+							{literal}
+							<script>
+								document.getElementById('{/literal}{$propName}{literal}').addEventListener('change', function(e) {
+									const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.svg)$/i;
+									const file = e.target.files[0];
+									if (file && !allowedExtensions.exec(file.name)) {
+										alert('{/literal}{translate text="Invalid file type. Allowed types: JPG, JPEG, PNG, SVG" isAdminFacing=true}{literal}');
+										e.target.value = '';
+									}
+								});
+							</script>
+							{/literal}
 						{else}
 							{translate text="Select a file" isAdminFacing=true}&hellip; <input type="file" style="display: none;" name="{$propName}" id="{$propName}" {if !empty($property.required)}required="required"{/if} {if !empty($property.readOnly)}readonly disabled{/if}>
 						{/if}
@@ -540,37 +552,43 @@
 			{include file="DataObjectUtil/portalRows.tpl"}
 		{elseif $property.type == 'translatableTextBlock'}
 			<ul class="nav nav-tabs" role="tablist" id="{$propName}_language_tab">
-				<li role="presentation"class="active"><a href="#{$propName}_default_tab" aria-controls="{$propName}_default_tab" role="tab" data-toggle="tab">{translate text="Default" isAdminFacing=true}</a></li>
+				{if !empty($property.defaultTextFile)}
+					<li role="presentation" class="active"><a href="#{$propName}_default_tab" aria-controls="{$propName}_default_tab" role="tab" data-toggle="tab">{translate text="Default" isAdminFacing=true}</a></li>
+				{/if}
 				{foreach from=$validLanguages key=languageCode item=language}
 					{if $languageCode != 'ubb' && $languageCode != 'pig'}
-						<li role="presentation"><a href="#{$propName}_{$languageCode}_tab" aria-controls="{$propName}_{$languageCode}_tab" role="tab" data-toggle="tab">{$language->displayName|escape}</a></li>
+						<li role="presentation" {if empty($property.defaultTextFile) && $userLang->code==$languageCode}class="active"{/if}><a href="#{$propName}_{$languageCode}_tab" aria-controls="{$propName}_{$languageCode}_tab" role="tab" data-toggle="tab">{$language->displayName|escape}</a></li>
 					{/if}
 				{/foreach}
 			</ul>
 			<div class="tab-content" id="{$propName}_languages">
-				{assign var='localPropName' value="`$propName`_default"}
-				{assign var='localPropValue' value=$object->getTextBlockTranslation($property.property,'default')}
-				{if empty($property.readOnly)}
-					{assign var='localReadOnly' value=false}
-				{else}
-					{assign var='localReadOnly' value=$property.readOnly}
+				{if !empty($property.defaultTextFile)}
+					{assign var='localPropName' value="`$propName`_default"}
+					{assign var='localPropValue' value=$object->getTextBlockTranslation($property.property,'default')}
+					{if empty($property.readOnly)}
+						{assign var='localReadOnly' value=false}
+					{else}
+						{assign var='localReadOnly' value=$property.readOnly}
+					{/if}
+					<div role="tabpanel" class="tab-pane active" id="{$propName}_default_tab">
+						{append var='property' value=true index='readOnly'}
+						{include file="DataObjectUtil/textarea.tpl" propName=$localPropName propValue=$localPropValue}
+						{append var='property' value=$localReadOnly index='readOnly'}
+					</div>
 				{/if}
-				<div role="tabpanel" class="tab-pane active" id="{$propName}_default_tab">
-					{append var='property' value=true index='readOnly'}
-					{include file="DataObjectUtil/textarea.tpl" propName=$localPropName propValue=$localPropValue}
-					{append var='property' value=$localReadOnly index='readOnly'}
-				</div>
 				{foreach from=$validLanguages key=languageCode item=language}
 					{if $languageCode != 'ubb' && $languageCode != 'pig'}
 						{assign var='localPropName' value="`$propName`_`$languageCode`"}
 						{assign var='localPropValue' value=$object->getTextBlockTranslation($property.property,$languageCode,false)}
-						<div role="tabpanel" class="tab-pane" id="{$propName}_{$languageCode}_tab">
+						<div role="tabpanel" class="tab-pane {if empty($property.defaultTextFile) && $userLang->code==$languageCode}active{/if}" id="{$propName}_{$languageCode}_tab">
 							<div class="form-group">
 								{include file="DataObjectUtil/textarea.tpl" propName=$localPropName propValue=$localPropValue}
 							</div>
 							<div class="form-group">
 								<div class="btn-group btn-group-sm">
-									<a class="btn btn-sm btn-default" onclick="tinyMCE.get('{$localPropName}').setContent(tinyMCE.get('{$propName}_default').getContent());return false;">{translate text="Copy From Default" isAdminFacing=true}</a>
+									{if !empty($property.defaultTextFile)}
+										<a class="btn btn-sm btn-default" onclick="tinyMCE.get('{$localPropName}').setContent(tinyMCE.get('{$propName}_default').getContent());return false;">{translate text="Copy From Default" isAdminFacing=true}</a>
+									{/if}
 									<a class="btn btn-sm btn-danger" onclick="tinyMCE.get('{$localPropName}').setContent('');return false;">{translate text="Clear" isAdminFacing=true}</a>
 								</div>
 							</div>
