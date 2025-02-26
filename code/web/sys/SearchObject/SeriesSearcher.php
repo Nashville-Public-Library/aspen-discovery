@@ -305,7 +305,7 @@ class SearchObject_SeriesSearcher extends SearchObject_SolrSearcher {
 			$eContentSource->id = 6;
 			$eContentSource->multiSelect = true;
 			$eContentSource->facetName = "econtent_source_$solrScope";
-			$eContentSource->displayName = "EContent Source";
+			$eContentSource->displayName = "eContent Source";
 			$eContentSource->numEntriesToShowByDefault = 10;
 			$eContentSource->translate = true;
 			$eContentSource->collapseByDefault = true;
