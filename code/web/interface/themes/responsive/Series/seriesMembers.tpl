@@ -52,18 +52,15 @@
 					{else}
 						<div class="clearer"></div>
 						<div id="listTopButtons" class="btn-toolbar">
-							{if !empty($allowEdit)}
+							{if !empty($loggedIn) && (in_array('Administer Series', $userPermissions))}
 								<div class="btn-group btn-group-sm">
-									<button value="editList" id="FavEdit" class="btn btn-sm btn-info listViewButton" onclick="return AspenDiscovery.CourseReserves.editListAction()">{translate text='Edit' isPublicFacing=true}</button>
-								</div>
-								<div class="btn-group btn-group-sm">
-									<button value="cancelEditList" id="cancelEditList" class="btn btn-sm btn-default listEditButton" style="display:none" onclick='return AspenDiscovery.CourseReserves.cancelEditListAction()'>{translate text='Cancel' isPublicFacing=true}</button>
+									<button value="editList" id="FavEdit" class="btn btn-sm btn-info listViewButton" onclick="return AspenDiscovery.Series.editAction({$series->id})">{translate text='Edit' isPublicFacing=true}</button>
 								</div>
 							{/if}
 
 							<div class="btn-group btn-group-sm">
-								<button value="emailList" id="CourseReserveEmail" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.CourseReserves.emailAction("{$series->id}")'>{translate text='Email' isPublicFacing=true}</button>
-								<button value="printList" id="CourseReservePrint" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.CourseReserves.printAction()'>{translate text='Print' isPublicFacing=true}</button>
+								<button value="emailList" id="SeriesEmail" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.Series.emailAction("{$series->id}")'>{translate text='Email' isPublicFacing=true}</button>
+								<button value="printList" id="Seriesrint" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.Series.printAction()'>{translate text='Print' isPublicFacing=true}</button>
 							</div>
 
 							<div class="btn-group" role="group">
