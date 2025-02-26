@@ -237,10 +237,8 @@ class Events_Calendar extends Action {
 		$interface->assign('weeks', $weeks);
 
 		$headerImage = $this->getHeaderImage();
-		if (!empty($headerImage)) {
-			$interface->assign('headerImage', $headerImage['image']);
-			$interface->assign('headerAlt', $headerImage['altText']);
-		}
+		$interface->assign('headerImage', $headerImage['image'] ?? '');
+		$interface->assign('headerAlt', $headerImage['altText'] ?? '');
 
 		if ($useWeek) {
 			$this->display('calendar.tpl', 'Events Calendar ' . $formattedWeekYear, '');

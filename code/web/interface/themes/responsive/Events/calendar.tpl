@@ -1,7 +1,7 @@
 {strip}
-{if !empty($loggedIn) && in_array('Print Calendars with Header Images', $userPermissions)}
+{if !empty($headerImage) && !empty($loggedIn) && in_array('Print Calendars with Header Images', $userPermissions)}
 	<div class="calendar-header-image">
-		<img src="{if !empty($headerImage)}{$headerImage}{/if}" alt="{translate text=$headerAlt inAttribute=true isPublicFacing=true}" title="{translate text=$headerAlt inAttribute=true isPublicFacing=true}" id="calendar-header">
+		<img src="{$headerImage}" {if !empty($headerAlt)}alt="{translate text=$headerAlt inAttribute=true isPublicFacing=true}" title="{translate text=$headerAlt inAttribute=true isPublicFacing=true}"{/if} id="calendar-header">
 	</div>
 {/if}
 <h1>{translate text='Events Calendar' isPublicFacing=true}</h1>
