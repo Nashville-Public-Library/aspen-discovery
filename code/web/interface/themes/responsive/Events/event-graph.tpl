@@ -36,17 +36,17 @@
 					{/foreach}
 				</select>
 			</div>
-			{if $sublocations}
-			<div class="form-group">
+			<div class="form-group" {if empty($sublocations)}style="display:none"{/if}>
 				<label for="type">Sublocation:</label>
-				<select name="sublocation" id="sublocation" class="form-control">
-					<option {if $sublocationValue == ''}selected{/if} value="">All Sublocations</option>
-					{foreach $sublocations as $id => $sublocation}
-						<option {if $sublocationValue == $id}selected{/if} value="{$id}">{$sublocation}</option>
-					{/foreach}
+				<select name="sublocation" id="sublocation" class="form-control" >
+					<option {if $sublocations && $sublocationValue == ''}selected{/if} value="">All Sublocations</option>
+					{if $sublocations}
+						{foreach $sublocations as $id => $sublocation}
+							<option {if $sublocationValue == $id}selected{/if} value="{$id}">{$sublocation}</option>
+						{/foreach}
+					{/if}
 				</select>
 			</div>
-			{/if}
 			<h3>{translate text="Custom Fields" isAdminFacing=true}</h3>
 			<div class="form-inline">
 			{foreach $checkboxFields as $id => $checkbox}
