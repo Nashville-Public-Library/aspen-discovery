@@ -148,7 +148,7 @@ class Events_EventGraphs extends Admin_Admin {
 		if (!empty($query) || !empty($fields)) {
 			$eventField = new EventEventField();
 			foreach ($fields as $key => $value) {
-				$eventField->whereAdd("(eventFieldId = " . substr($key, -1) . " AND value = $value)");
+				$eventField->whereAdd("eventFieldId = " . $eventField->escape(substr($key, -1)) . " AND value = " . $eventField->escape($value));
 			}
 			$eventField->groupBy("eventId");
 			$userHours->joinAdd($eventField, 'INNER', 'eventEventField', 'eventId', 'eventId');
@@ -156,12 +156,12 @@ class Events_EventGraphs extends Admin_Admin {
 		if (!empty($eventType) || !empty($location) || !empty($query)) {
 			$event = new Event();
 			if (!empty($eventType)) {
-				$event->whereAdd("eventTypeId = '$eventType'");
+				$event->whereAdd("eventTypeId = " . $event->escape($eventType));
 			}
 			if (!empty($location)) {
-				$event->whereAdd("locationId = '$location'");
+				$event->whereAdd("locationId = " . $event->escape($location));
 				if (!empty($sublocation)) {
-					$event->whereAdd("sublocationId = '$sublocation'");
+					$event->whereAdd("sublocationId = " . $event->escape($sublocation));
 				}
 			}
 			$userHours->joinAdd($event, 'INNER', 'event', 'eventId', 'id');
