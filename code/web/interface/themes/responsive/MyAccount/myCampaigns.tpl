@@ -5,7 +5,7 @@
             {translate text="There are no available campaigns at the moment" isPublicFacing=true}
         </div>
     {else}
-        <h2>Your Campaigns</h2>
+        <h2>{translate text="Your Campaigns" isPublicFacing=true}</h2>
         <table id="yourCampaignsTable" class="table table-striped">
             <thead>
                 <tr>
@@ -88,7 +88,7 @@
             {/foreach}
             </tbody>
         </table>
-        <h2>Active Campaigns</h2>
+        <h2>{translate text="Active Campaigns" isPublicFacing=true}</h2>
         <table id="activeCampaignsTable" class="table table-striped">
             <thead>
                 <tr>
@@ -180,7 +180,7 @@
             {/foreach}
             </tbody>
         </table>
-        <h2>Upcoming Campaigns</h2>
+        <h2>{translate text="Upcoming Campaigns" isPublicFacing=true}</h2>
         <table id ="upcomingCampaignsTable" class="table table-striped">
             <thead>
                 <tr>
@@ -250,7 +250,7 @@
                 {/if}
             {/foreach}
         </table>
-        <h2>Past Campaigns</h2>
+        <h2>{translate text="Past Campaigns" isPublicFacing=true}</h2>
         <table id="pastCampaignsTable" class="table table-striped">
             <thead>
                 <tr>
@@ -304,7 +304,7 @@
             {/foreach}
             </tbody>
         </table>
-        <h2>Your Past Campaigns</h2>
+        <h2>{translate text="Your Past Campaigns" isPublicFacing=true}</h2>
         <table class="table table-striped">
             <thead>
                 <tr>
