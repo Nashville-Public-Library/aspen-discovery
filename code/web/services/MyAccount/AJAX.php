@@ -3648,10 +3648,10 @@ class MyAccount_AJAX extends JSON_Action {
 
 			if (isset($parsedHolds['selected'])) {
 				foreach ($parsedHolds['selected'] as $holdKey => $value) {
-					if (preg_match('/(\d+)\|(\d+)\|/', $holdKey, $matches)) {
+					if (preg_match('/(\d+)\|([a-zA-Z0-9_-]+)\|?/', $holdKey, $matches)) {
 						$selectedHoldsArray[] = [
 							'userId' => (int)$matches[1],
-							'recordId' => (int)$matches[2],
+							'recordId' => $matches[2],
 						];
 					}
 				}
@@ -3667,18 +3667,33 @@ class MyAccount_AJAX extends JSON_Action {
 		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" || $selectedUser === '[""]');
 
 		foreach ($allHolds['available'] as $key => $hold) {
-			if ($allUsersSelected || strval($hold->userId) === strval($selectedUser)) {
+			if ($allUsersSelected || intval($hold->userId) === intval($selectedUser)) {
+				if (!empty($selectedHolds)) {
+					$matchFound = false;
+					foreach ($selectedHolds as $selectedHold) {
+						if (
+							strval($hold->recordId) === strval($selectedHold['recordId']) &&
+							intval($hold->userId) === intval($selectedHold['userId'])
+						) {
+							$matchFound = true;
+							break;
+						}
+					}
+					if (!$matchFound) {
+						continue;
+					}
+				}
 				$filteredHolds['available'][$key] = $hold;
 			}
 		}
 
 		foreach ($allHolds['unavailable'] as $key => $hold) {
-			if ($allUsersSelected || strval($hold->userId) === strval($selectedUser)) {
+			if ($allUsersSelected || intval($hold->userId) === intval($selectedUser)) {
 				if (!empty($selectedHolds)) {
 					$matchFound = false;
 					foreach ($selectedHolds as $selectedHold) {
 						if (
-							intval($hold->recordId) === intval($selectedHold['recordId']) &&
+							strval($hold->recordId) === strval($selectedHold['recordId']) &&
 							intval($hold->userId) === intval($selectedHold['userId'])
 						) {
 							$matchFound = true;
