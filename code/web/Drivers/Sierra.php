@@ -1912,28 +1912,49 @@ class Sierra extends Millennium {
 			'payments' => [],
 		];
 
-		// Get payment location based on system configuration.
+		// Get payment location based on system configuration
 		$systemVariables = SystemVariables::getSystemVariables();
-		global $locationSingleton;
+		$paymentLocation = null;
+		global $locationSingleton, $library;
 
 		if ($systemVariables && $systemVariables->libraryToUseForPayments == 1) {
-			// Get active library location using the singleton pattern.
+			// Get active location using the singleton pattern.
 			$activeLocation = $locationSingleton->getActiveLocation();
 			global $logger;
 			if ($activeLocation) {
 				$paymentLocation = $activeLocation;
-				$logger->log("Using active catalog location {$activeLocation->code} for payments.", Logger::LOG_NOTICE);
+				$logger->log("Using active branch location {$activeLocation->code} for Sierra payments", Logger::LOG_NOTICE);
+			} else if ($library) {
+				// Fall back to library's main location or first alphabetical location.
+				$mainLocation = $library->getMainLocation();
+				if ($mainLocation) {
+					$paymentLocation = $mainLocation;
+					$logger->log("Using library's main location {$mainLocation->code} for Sierra payments.", Logger::LOG_NOTICE);
+				} else {
+					// Get first location alphabetically.
+					$libraryLocations = new Location();
+					$libraryLocations->libraryId = $library->libraryId;
+					$libraryLocations->orderBy('code');
+					if ($libraryLocations->find(true)) {
+						$paymentLocation = clone $libraryLocations; // Shallow copy to prevent accidental modifications of the original object.
+						$logger->log("Using library's first alphabetical location {$paymentLocation->code} for Sierra payments.", Logger::LOG_NOTICE);
+					} else {
+						$logger->log("No locations found for library {$library->displayName}, falling back to patron's home library.", Logger::LOG_WARNING);
+						$paymentLocation = $patron->getHomeLocation();
+					}
+				}
 			} else {
+				$logger->log("No active library found, falling back to patron's home library.", Logger::LOG_WARNING);
 				$paymentLocation = $patron->getHomeLocation();
-				$logger->log("No active location found, falling back to patron's home library.", Logger::LOG_WARNING);
 			}
 		} else {
-			// Default to patron's home library location.
+			// Default to patron home location.
 			global $logger;
 			$paymentLocation = $patron->getHomeLocation();
-			$logger->log("Using patron' home library {$paymentLocation->code} for payments.", Logger::LOG_NOTICE);
+			$logger->log("Using patron home location {$paymentLocation->code} for Sierra payments as per system configuration.", Logger::LOG_NOTICE);
 		}
 
+		// Set stat group if configured.
 		if ($paymentLocation && $paymentLocation->statGroup != -1) {
 			$paymentParams['statgroup'] = (int)$paymentLocation->statGroup;
 		}
