@@ -1231,12 +1231,12 @@ class SirsiDynixROA extends HorizonAPI {
 				$curHold->expirationDate = strtotime($expireDate);
 				$curHold->automaticCancellationDate = strtotime($fillByDate);
 				$curHold->reactivateDate = strtotime($reactivateDate);
-				$curHold->cancelable = strcasecmp($curHold->status, 'Suspended') != 0 && strcasecmp($curHold->status, 'Expired') != 0 && strcasecmp($curHold->status, 'INSHIPPING') != 0 && strcasecmp($curHold->status, 'ILL WYLD') != 0;
+				$curHold->cancelable = !in_array(strtoupper($curHold->status), ['SUSPENDED', 'EXPIRED', 'INSHIPPING', 'INTRANSIT', 'ILL_WYLD', 'ILLSHIPPED']);
 
 				$curHold->frozen = strcasecmp($curHold->status, 'Suspended') == 0;
 				$curHold->canFreeze = true;
 				$curHold->locationUpdateable = true;
-				if (in_array(strtoupper($curHold->status), ['TRANSIT', 'EXPIRED', 'INSHIPPING', 'ILL WYLD', 'ILLPENDING'])) {
+				if (in_array(strtoupper($curHold->status), ['TRANSIT', 'EXPIRED', 'INSHIPPING', 'ILL WYLD', 'ILLPENDING', 'ILLSHIPPED'])) {
 					$curHold->locationUpdateable = false;
 					$curHold->canFreeze = false;
 				}
