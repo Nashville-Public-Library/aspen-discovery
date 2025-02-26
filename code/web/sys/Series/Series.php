@@ -51,7 +51,7 @@ class Series extends DataObject {
 			],
 			'description' => [
 				'property' => 'description',
-				'type' => 'text',
+				'type' => 'html',
 				'label' => 'Description',
 				'description' => 'Series description',
 				'hideInLists' => true,
