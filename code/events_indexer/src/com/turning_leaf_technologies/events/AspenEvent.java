@@ -180,7 +180,7 @@ class AspenEvent {
 				case 2:
 					return "program_type_facet";
 				case 3:
-					return "internal_category_facet";
+					return "internal_category";
 				case 4:
 					return "event_type";
 				case 5:
