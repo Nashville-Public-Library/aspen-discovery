@@ -1,5 +1,6 @@
 <?php
 require_once ROOT_DIR . '/Action.php';
+require_once ROOT_DIR . '/RecordDrivers/SeriesRecordDriver.php';
 
 class Series_Home extends Action {
 
@@ -58,6 +59,9 @@ class Series_Home extends Action {
 			$authors = explode("|", $series->author);
 			$interface->assign('authors', $authors);
 
+			$seriesRecordDriver = new SeriesRecordDriver($listId);
+			$interface->assign('cover', $seriesRecordDriver->getBookcoverUrl('medium'));
+
 			$this->buildListForDisplay($series, $activeSort);
 
 			$template = 'seriesMembers.tpl';
@@ -66,7 +70,7 @@ class Series_Home extends Action {
 			$template = 'invalidReserve.tpl';
 		}
 
-		$this->display($template, isset($series->title) ? $series->title : translate([
+		$this->display($template, isset($series->displayName) ? $series->displayName : translate([
 			'text' => 'Series',
 			'isPublicFacing' => true,
 		]), '', false);

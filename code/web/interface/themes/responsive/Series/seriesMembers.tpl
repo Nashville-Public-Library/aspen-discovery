@@ -7,9 +7,9 @@
 					<input type="hidden" name="myListActionHead" id="myListActionHead" class="form">
 					<h1 id="listTitle">{$series->displayName|escape:"html"}</h1>
 					<div class="row">
-{*						<div class="col-xs-3 col-sm-3 col-md-3 col-lg-2 text-center">*}
-{*							{$cover}*}
-{*						</div>*}
+						<div class="col-xs-3 col-sm-3 col-md-3 col-lg-2 text-center">
+							<img src='{$cover}' alt='{translate text='Series Cover' inAttribute=true isPublicFacing=true}'/>
+						</div>
 						<div class="col-xs-9 col-sm-9 col-md-9 col-lg-10">
 							{if !empty($authors)}
 								<div class="row">
@@ -40,7 +40,7 @@
 							{if !empty($series->description)}
 								<br/>
 								<div class="row">
-									<div class="result-value col-sm-12">{$series->description|escape:"html"}</div>
+									<div class="result-value col-sm-12">{$series->description}</div>
 								</div>
 							{/if}
 						</div>
@@ -58,16 +58,6 @@
 								</div>
 								<div class="btn-group btn-group-sm">
 									<button value="cancelEditList" id="cancelEditList" class="btn btn-sm btn-default listEditButton" style="display:none" onclick='return AspenDiscovery.CourseReserves.cancelEditListAction()'>{translate text='Cancel' isPublicFacing=true}</button>
-								</div>
-							{/if}
-							{if !empty($loggedIn) && (in_array('Administer All Collection Spotlights', $userPermissions) || in_array('Administer Library Collection Spotlights', $userPermissions) || in_array('Administer All Browse Categories', $userPermissions) || in_array('Administer Library Browse Categories', $userPermissions))}
-								<div class="btn-group btn-group-sm">
-									{if (in_array('Administer All Collection Spotlights', $userPermissions) || in_array('Administer Library Collection Spotlights', $userPermissions))}
-										&nbsp;&nbsp;<a href="#" class="button btn btn-sm btn-default listViewButton" id="FavCreateSpotlight" onclick="return AspenDiscovery.CollectionSpotlights.createSpotlightFromCourseReserve('{$series->id}')">{translate text='Create Spotlight' isAdminFacing=true}</a>
-									{/if}
-									{if (in_array('Administer All Browse Categories', $userPermissions) || in_array('Administer Library Browse Categories', $userPermissions) || in_array('Administer Selected Browse Category Groups', $userPermissions))}
-										<a href="#" id="FavHome" class="btn btn-sm btn-default listViewButton" onclick="return AspenDiscovery.CourseReserves.addToHomePage('{$series->id}')">{translate text='Add To Browse' isAdminFacing=true}</a>
-									{/if}
 								</div>
 							{/if}
 
