@@ -260,5 +260,12 @@ function getCommunityEngagementUpdates() {
 				"INSERT INTO role_permissions(roleId, permissionId) VALUES ((SELECT roleId from roles where name='opacAdmin'), (SELECT id from permissions where name='View Community Engagement Dashboard'))"
 			],
 		],
+		'drop_date_of_birth_from_user_table' => [
+			'title' => 'Drop Date Of Birth From User Table',
+			'description' => 'Remove patron date of birth from user table',
+			'sql' => [
+				"ALTER TABLE user DROP COLUMN dateOfBirth"
+			],
+		],
 	];
 }

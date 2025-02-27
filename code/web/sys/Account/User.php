@@ -52,7 +52,6 @@ class User extends DataObject {
 	public $userCookiePreferenceLocalAnalytics;
 	public $holdInfoLastLoaded;
 	public $checkoutInfoLastLoaded;
-	public $dateOfBirth;
 
 	public $onboardAppNotifications;
 	public $shouldAskBrightness;
@@ -129,6 +128,8 @@ class User extends DataObject {
 	public $_noticePreferenceLabel;
 	private $_numMaterialsRequests = 0;
 	private $_readingHistorySize = 0;
+	public $_dateOfBirth;
+
 
 	// CarlX Option
 	public $_emailReceiptFlag;
@@ -3116,15 +3117,13 @@ class User extends DataObject {
 	 * @return int|null The user's age or null if date of birth is not set.
 	*/
 	public function getAge(): ?int {
-		if (empty($this->dateOfBirth)) {
-			return null;
-		}
-
-		$dob = new DateTime($this->dateOfBirth);
+		
+		$this->loadContactInformation();
+		
+		$dob = new DateTime($this->_dateOfBirth);
 		$today = new DateTime();
 
 		$age = $dob->diff($today)->y;
-
 		return $age;
 	}
 
