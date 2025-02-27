@@ -806,6 +806,28 @@ class Evergreen extends AbstractIlsDriver {
 		ExternalRequestLogEntry::logRequest('evergreen.updatePatronProperty', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $request, $this->apiCurlWrapper->getResponseCode(), $apiResponse, []);
 
 		$responseData = json_decode($apiResponse, true);
+		$response = ['success' => false, 'message' => ['code' => '', 'text' =>  'Evergreen sent an unexpected response']];
+		if (!isset($responseData['payload'])) {
+			return $response;
+		}
+
+		/** It seems the response sent back by the Evergreen API will have a
+		 * status code of 200 even upon failure (eg. if the patron password
+		 * is incorrect.) However, a successful update will always result
+		 * in the "payload" property being set to 1. Check for this instead.
+		*/
+		$response['success'] = $responseData['payload'][0] == 1;
+
+		if (!$response['success']) {
+			global $logger;
+			$logger->log('Error updating patron property ' . $propertyName . ': ' .  $responseData['payload'][0]['desc'], Logger::LOG_ERROR);
+			$response['message']['code'] = $responseData['payload'][0]['textcode'];
+			$response['message']['text'] = $responseData['payload'][0]['desc'];
+			return $response;
+		}
+
+		$response['message']['text'] = "Patron property update successfull";
+		return $response;
 	}
 
 	public function hasNativeReadingHistory(): bool {
