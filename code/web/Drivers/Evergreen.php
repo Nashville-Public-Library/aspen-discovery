@@ -785,6 +785,29 @@ class Evergreen extends AbstractIlsDriver {
 		];
 	}
 
+	private function updatePatronProperty($propertyName, $propertyValue, $patronIlsPassword, $authToken): array {
+		$evergreenUrl = $this->accountProfile->patronApiUrl . "/osrf-gateway-v1/$propertyName";
+		$headers = [
+			'Content-Type: application/x-www-form-urlencoded',
+		];
+		$this->apiCurlWrapper->addCustomHeaders($headers, false);
+		/**The order of the request parameters is crucial
+		 * This Evergreen API only handles unnamed parameters,
+		 * And so it is only their position within the URL that
+		 * determines which is which
+		*/
+		$request = 'service=open-ils.actor';
+		$request .= "&method=open-ils.actor.user.$propertyName.update";
+		$request .= '&param=' . json_encode($authToken);
+		$request .= '&param=' . json_encode($propertyValue);
+		$request .= '&param=' . json_encode($patronIlsPassword);
+
+		$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request);
+		ExternalRequestLogEntry::logRequest('evergreen.updatePatronProperty', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $request, $this->apiCurlWrapper->getResponseCode(), $apiResponse, []);
+
+		$responseData = json_decode($apiResponse, true);
+	}
+
 	public function hasNativeReadingHistory(): bool {
 		return true;
 	}
