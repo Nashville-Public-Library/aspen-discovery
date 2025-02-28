@@ -261,6 +261,23 @@ function getUpdates25_03_00(): array {
 				"ALTER TABLE library ADD COLUMN webResourcesSettingId INT(11) DEFAULT -1",
 			],
 		], //add_web_resources_setting_id_to_library_table
+		'placard_source_type' => [
+			'title' => 'Placard Source Type',
+			'description' => 'Add sourceType and sourceId columns to placards table.',
+			'sql' => [
+				"ALTER TABLE placards ADD COLUMN sourceType VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN sourceId VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN generatedFromSource VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN isCustomized TINYINT(1) DEFAULT 0",
+			],
+		], //placard_source_type
+		'web_resource_generate_placard' => [
+			'title' => 'Web Resource: Generate Placard',
+			'description' => 'Add option to generate a placard for a web resource.',
+			'sql' => [
+				"ALTER TABLE web_builder_resource ADD COLUMN generatePlacard TINYINT(1) DEFAULT 0",
+			],
+		], //web_resource_generate_placard
 
 		// Leo Stoyanov - BWS
 

@@ -235,6 +235,57 @@ class WebBuilder_AJAX extends JSON_Action {
 		return $result;
 	}
 
+	function getSourceValuesForPlacard() {
+		$result = [
+			'success' => false,
+			'message' => translate([
+				'text' => 'Unknown Error',
+				'isPublicFacing' => true,
+			]),
+		];
+
+		$sourceType = $_REQUEST['sourceType'];
+		switch ($sourceType) {
+			case 'none':
+				$result = [
+					'success' => true,
+				];
+				break;
+			case 'web_resource':
+				require_once ROOT_DIR . '/sys/WebBuilder/WebResource.php';
+				$list = [];
+				$list['-1'] = 'Select a web resource';
+				$object = new WebResource();
+				$object->orderBy('name');
+				$object->find();
+				while ($object->fetch()) {
+					$list[$object->id] = $object->name;
+				}
+				$result = [
+					'success' => true,
+					'values' => $list,
+				];
+				break;
+			default:
+				$result['message'] = 'Unhandled Source Type ' . $sourceType;
+		}
+
+		$placardId = $_REQUEST['placardId'];
+		$result['selected'] = '-1';
+		if (!empty($placardId)) {
+			require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
+			$placard = new Placard();
+			$placard->id = $placardId;
+			if ($placard->find(true)) {
+				if ($placard->sourceType == $sourceType) {
+					$result['selected'] = $placard->sourceId;
+				}
+			}
+		}
+
+		return $result;
+	}
+
 	/** @noinspection PhpUnused */
 	function uploadImage() {
 		$result = [

@@ -20,6 +20,10 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		$dismissable;
 	public $startDate;
 	public $endDate;
+	public $sourceType;
+	public $sourceId;
+	public $generatedFromSource;
+	public $isCustomized;
 
 	/** @var PlacardTrigger[] */
 	protected $_triggers;
@@ -40,6 +44,11 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Placards'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Placards'));
 		$languageList = Language::getLanguageList();
+
+		$sourceOptions = [
+			'none' => 'None',
+			'web_resource' => 'Web Resource',
+		];
 
 		return [
 			'id' => [
@@ -129,6 +138,21 @@ class Placard extends DB_LibraryLocationLinkedObject {
 				'canEdit' => false,
 				'canAddNew' => true,
 				'canDelete' => true,
+			],
+			'sourceType' => [
+				'property' => 'sourceType',
+				'type' => 'enum',
+				'values' => $sourceOptions,
+				'label' => 'Source Type',
+				'description' => 'Source type for the content of cell',
+				'onchange' => 'return AspenDiscovery.WebBuilder.getSourceValuesForPlacard();',
+			],
+			'sourceId' => [
+				'property' => 'sourceId',
+				'type' => 'enum',
+				'values' => [],
+				'label' => 'Source Id',
+				'description' => 'Source for the content of placard',
 			],
 			'languages' => [
 				'property' => 'languages',
@@ -228,6 +252,12 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	 * @see DB/DB_DataObject::update()
 	 */
 	public function update($context = '') {
+		if ($this->sourceType != 'none') {
+			$this->compareLinkedObject();
+		}
+		if ($this->sourceType == 'none') {
+			$this->__set('isCustomized', 0);
+		}
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -516,5 +546,20 @@ class Placard extends DB_LibraryLocationLinkedObject {
 			$index--;
 		}
 		$this->getLanguages();
+	}
+
+	private function compareLinkedObject() {
+		if ($this->sourceType == 'web_resource') {
+			require_once ROOT_DIR . '/sys/WebBuilder/WebResource.php';
+			$webResource = new WebResource();
+			$webResource->id = $this->sourceId;
+			if ($webResource->find(true)) {
+				if ($webResource->name != $this->title || $webResource->url != $this->link || $webResource->teaser != $this->body) {
+					$this->__set('isCustomized', 1);
+				} else {
+					$this->__set('isCustomized', 0);
+				}
+			}
+		}
 	}
 }

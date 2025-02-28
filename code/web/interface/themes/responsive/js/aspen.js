@@ -16469,7 +16469,35 @@ AspenDiscovery.WebBuilder = function () {
 					}
 				});
 			}
+		},
 
+		getSourceValuesForPlacard: function () {
+			var placardId = $("#id").val();
+			var sourceType = $("#sourceTypeSelect").val();
+
+			if (sourceType === 'none') {
+				$("#propertyRowsourceId").hide();
+			} else {
+				$("#propertyRowsourceId").show();
+			}
+
+			var url = Globals.path + '/WebBuilder/AJAX?method=getSourceValuesForPlacard&placardId=' + placardId + '&sourceType=' + sourceType;
+			$.getJSON(url, function(data){
+				if (data.success === true){
+					var sourceIdSelect = $("#sourceIdSelect" );
+					sourceIdSelect.find('option').remove();
+					var optionValues = data.values;
+					for (var key in optionValues) {
+						if (data.selected === key){
+							sourceIdSelect.append('<option value="' + key + '" selected>' + optionValues[key] + '</option>')
+						}else{
+							sourceIdSelect.append('<option value="' + key + '">' + optionValues[key] + '</option>')
+						}
+					}
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			});
 		},
 
 		getImageActionFields: function() {
