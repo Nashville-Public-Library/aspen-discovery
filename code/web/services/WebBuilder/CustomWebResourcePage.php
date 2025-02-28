@@ -7,12 +7,12 @@ class WebBuilder_CustomWebResourcePage extends Action {
 	function __construct() {
 		parent::__construct();
 
-		require_once ROOT_DIR . '/sys/WebBuilder/customWebResourcePage.php';
+		require_once ROOT_DIR . '/sys/WebBuilder/CustomWebResourcePage.php';
 
 		global $interface;
 
 		$id = strip_tags($_REQUEST['id']);
-		$this->customWebResourcePage = new customWebResourcePage();
+		$this->customWebResourcePage = new CustomWebResourcePage();
 		$this->customWebResourcePage->id = $id;
 
 		if (!$this->customWebResourcePage->find(true)) {
@@ -26,7 +26,7 @@ class WebBuilder_CustomWebResourcePage extends Action {
 			$interface->assign('module', 'Error');
 			$interface->assign('action', 'Handle401');
 			$interface->assign('followupModule', 'WebBuilder');
-			$interface->assign('followupAction', 'customWebResourcePage');
+			$interface->assign('followupAction', 'CustomWebResourcePage');
 			$interface->assign('id', $id);
 			require_once ROOT_DIR . "/services/Error/Handle401.php";
 			$actionClass = new Error_Handle401();
@@ -40,7 +40,7 @@ class WebBuilder_CustomWebResourcePage extends Action {
 		global $activeLanguage;
 
 		require_once ROOT_DIR . '/sys/WebBuilder/CustomWebResourcePageAudience.php';
-		require_once ROOT_DIR . '/sys/WebBuilder/customWebResourcePageCategory.php';
+		require_once ROOT_DIR . '/sys/WebBuilder/CustomWebResourcePageCategory.php';
 
 		//Get audiences to show resources for
 		$audiencesForPage = new CustomWebResourcePageAudience();
@@ -66,7 +66,7 @@ class WebBuilder_CustomWebResourcePage extends Action {
 
 		if (!empty($categoryIds) || !empty($audienceIds)) {
 			require_once ROOT_DIR . '/sys/WebBuilder/WebResource.php';
-			require_once ROOT_DIR . '/sys/WebBuilder/customWebResourcePage.php';
+			require_once ROOT_DIR . '/sys/WebBuilder/CustomWebResourcePage.php';
 			require_once ROOT_DIR . '/RecordDrivers/WebResourceRecordDriver.php';
 
 			$audienceWebResourceIds = [];
@@ -149,7 +149,7 @@ class WebBuilder_CustomWebResourcePage extends Action {
 				'Administer All Custom Web Resource Pages',
 				'Administer Library Custom Web Resource Pages',
 			])) {
-				$breadcrumbs[] = new Breadcrumb('/WebBuilder/customWebResourcePages?id=' . $this->customWebResourcePage->id . '&objectAction=edit', 'Edit', true);
+				$breadcrumbs[] = new Breadcrumb('/WebBuilder/CustomWebResourcePages?id=' . $this->customWebResourcePage->id . '&objectAction=edit', 'Edit', true);
 			}
 		}
 		return $breadcrumbs;

@@ -335,7 +335,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 	private function clearAudiences()
 	{
 		//Delete links to the libraries
-		$link = new customWebResourcePageAudience();
+		$link = new CustomWebResourcePageAudience();
 		$link->customResourcePageId = $this->id;
 		return $link->delete(true);
 	}
@@ -521,6 +521,17 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		} else {
 			return '';
 		}
+	}
+
+	public static function getCustomPages() {
+		$customPages = [];
+		$customPage = new CustomWebResourcePage();
+		$customPage->orderBy('title');
+		$customPage->find();
+		while ($customPage->fetch()) {
+			$customPages[$customPage->id] = $customPage->title;
+		}
+		return $customPages;
 	}
 
 	public function loadCopyableSubObjects() {
