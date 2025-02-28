@@ -5068,7 +5068,7 @@ var AspenDiscovery = (function(){
 			}
 		},
 
-		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle){
+		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle, hideCloseButton){
 			if (largeModal === undefined || largeModal === false) {
 				aspenJQ('.modal-dialog').removeClass('modal-dialog-large');
 			}else{
@@ -5078,6 +5078,11 @@ var AspenDiscovery = (function(){
 				aspenJQ('.modal-header').hide();
 			}else{
 				aspenJQ('.modal-header').show();
+			}
+			if (hideCloseButton !== undefined && hideCloseButton === true) {
+				aspenJQ('#modalCloseButton').hide();
+			}else{
+				aspenJQ('#modalCloseButton').show();
 			}
 			if (refreshAfterClose === undefined){
 				refreshAfterClose = false;
@@ -16514,11 +16519,7 @@ AspenDiscovery.WebBuilder = function () {
 						submitForm();
 					} else{
 						AspenDiscovery.WebBuilder.saveLinkedObjCallback = submitForm;
-						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons);
-						$('.modalClose').on('click', function(){
-							AspenDiscovery.WebBuilder.setPlacardToCustomized();
-							submitForm();
-						});
+						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons, '', '', false, '', true);
 					}
 				}else{
 					AspenDiscovery.showMessage('Sorry', data.message);
@@ -16530,13 +16531,14 @@ AspenDiscovery.WebBuilder = function () {
 
 		},
 
-		saveLinkedObject: function(){
+		saveLinkedObject: function(doFullSave){
 			var params = {
 				objectId: $("#id").val(),
 				objectName: $("#name").val(),
 				url: $("#url").val(),
 				body: $("#teaser").val(),
-				image: $("#importFile-label-logo").val()
+				image: $("#importFile-label-logo").val(),
+				doFullSave: doFullSave
 			};
 			var url = Globals.path + '/WebBuilder/AJAX?method=saveLinkedObject';
 			$.getJSON(url, params,function(data){

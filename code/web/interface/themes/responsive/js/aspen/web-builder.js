@@ -135,11 +135,7 @@ AspenDiscovery.WebBuilder = function () {
 						submitForm();
 					} else{
 						AspenDiscovery.WebBuilder.saveLinkedObjCallback = submitForm;
-						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons);
-						$('.modalClose').on('click', function(){
-							AspenDiscovery.WebBuilder.setPlacardToCustomized();
-							submitForm();
-						});
+						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons, '', '', false, '', true);
 					}
 				}else{
 					AspenDiscovery.showMessage('Sorry', data.message);
@@ -151,13 +147,14 @@ AspenDiscovery.WebBuilder = function () {
 
 		},
 
-		saveLinkedObject: function(){
+		saveLinkedObject: function(doFullSave){
 			var params = {
 				objectId: $("#id").val(),
 				objectName: $("#name").val(),
 				url: $("#url").val(),
 				body: $("#teaser").val(),
-				image: $("#importFile-label-logo").val()
+				image: $("#importFile-label-logo").val(),
+				doFullSave: doFullSave
 			};
 			var url = Globals.path + '/WebBuilder/AJAX?method=saveLinkedObject';
 			$.getJSON(url, params,function(data){

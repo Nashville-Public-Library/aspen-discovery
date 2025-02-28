@@ -303,7 +303,7 @@ class WebBuilder_AJAX extends JSON_Action {
 					'text' => 'This Web Resource is linked to a Placard. Would you like to update the linked placard as well?',
 					'isAdminFacing' => true,
 				]),
-				'modalButtons' => "<button class='tool btn btn-primary modal-btn' onclick='return AspenDiscovery.WebBuilder.saveLinkedObject()'>Yes</button>",
+				'modalButtons' => "<button class='tool btn btn-primary modal-btn' onclick='return AspenDiscovery.WebBuilder.saveLinkedObject(true)'>Yes</button><button class='tool btn btn-primary modal-btn' onclick='return AspenDiscovery.WebBuilder.saveLinkedObject(false)'>No</button>",
 			];
 		} else {
 			$result = [
@@ -321,11 +321,15 @@ class WebBuilder_AJAX extends JSON_Action {
 		$placard = new Placard();
 		$placard->sourceId = $_REQUEST['objectId'];
 		if ($placard->find(true)) {
-			$placard->title = $_REQUEST['objectName'];
-			$placard->image = $_REQUEST['image'];
-			$placard->link = $_REQUEST['url'];
-			$placard->body = $_REQUEST['body'];
-			$placard->isCustomized = 0;
+			if ($_REQUEST['doFullSave'] == "true"){
+				$placard->title = $_REQUEST['objectName'];
+				$placard->image = $_REQUEST['image'];
+				$placard->link = $_REQUEST['url'];
+				$placard->body = $_REQUEST['body'];
+				$placard->isCustomized = 0;
+			} else {
+				$placard->isCustomized = 1;
+			}
 			$placard->update('',false);
 			$result = [
 				'success' => true,
