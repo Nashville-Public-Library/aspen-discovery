@@ -149,7 +149,7 @@ class AnodeAPI extends Action {
 				if (!isset($groupedWorkRecord['image'])) {
 					$groupedWork['image'] = '/bookcover.php?id=' . $groupedWork['id'] . '&size=medium&type=grouped_work';
 				}
-				if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1 && isset($groupedWorkRecord['ils_description'])) {
+				if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1 && !empty($groupedWorkRecord['ils_description'])) {
 					$groupedWork['description'] = $groupedWorkRecord['ils_description'];
 				} else if (isset($groupedWorkRecord['display_description'])) {
 					$groupedWork['description'] = $groupedWorkRecord['display_description'];

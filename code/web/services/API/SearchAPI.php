@@ -2793,7 +2793,7 @@ class SearchAPI extends AbstractAPI {
 					$format = $format . ' - ' . $ccode;
 				}
 
-				if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1) {
+				if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1 && !empty($item['ils_description'])) {
 					$summary = utf8_encode(trim(strip_tags($item['ils_description'])));
 				} else {
 					$summary = utf8_encode(trim(strip_tags($item['display_description'])));
@@ -3343,7 +3343,7 @@ class SearchAPI extends AbstractAPI {
 					$items[$recordKey]['author'] = $record['author_display'];
 					$items[$recordKey]['image'] = $configArray['Site']['url'] . '/bookcover.php?id=' . $record['id'] . '&size=medium&type=grouped_work';
 					$items[$recordKey]['language'] = $record['language'][0];
-					if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1) {
+					if ($library->getGroupedWorkDisplaySettings()->preferIlsDescription == 1 && !empty($record['ils_description'])) {
 						$items[$recordKey]['summary'] = $record['ils_description'];
 					} else {
 						$items[$recordKey]['summary'] = $record['display_description'];
