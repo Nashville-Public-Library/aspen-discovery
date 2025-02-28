@@ -317,13 +317,18 @@ class WebBuilder_AJAX extends JSON_Action {
 
 	/** @noinspection PhpUnused */
 	function saveLinkedObject() {
+		//Save Linked Placard
 		require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
+		$imageForPlacard = $_REQUEST['image'];
+		if (!str_starts_with($imageForPlacard, 'logo')) {
+			$imageForPlacard = 'logo' . $imageForPlacard;
+		}
 		$placard = new Placard();
 		$placard->sourceId = $_REQUEST['objectId'];
 		if ($placard->find(true)) {
 			if ($_REQUEST['doFullSave'] == "true"){
 				$placard->title = $_REQUEST['objectName'];
-				$placard->image = $_REQUEST['image'];
+				$placard->image = $imageForPlacard;
 				$placard->link = $_REQUEST['url'];
 				$placard->body = $_REQUEST['body'];
 				$placard->isCustomized = 0;
