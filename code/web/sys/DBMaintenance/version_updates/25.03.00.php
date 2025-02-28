@@ -58,6 +58,13 @@ function getUpdates25_03_00(): array {
 				"INSERT INTO modules (name, indexName, backgroundProcess, logClassPath, logClassName, settingsClassPath, settingsClassName) VALUES ('Series', 'series', 'series_indexer', '/sys/Series/SeriesIndexingLogEntry.php', 'SeriesIndexingLog', '/sys/Series/SeriesIndexingSettings.php', 'SeriesIndexingSettings')",
 			],
 		], // add_series_module
+		'series_log_class_name' => [
+			'title' => 'Update Series Log Class Name',
+			'description' => 'Update Series Log Class Name',
+			'sql' => [
+				"UPDATE modules set logClassName='SeriesIndexingLogEntry' where name = 'Series'",
+			],
+		], // series_log_class_name
 		'add_administer_series_permission' => [
 			'title' => 'Manage Series Permission',
 			'description' => 'Add new permission to manage series',
