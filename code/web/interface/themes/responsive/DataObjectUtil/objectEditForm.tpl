@@ -13,6 +13,10 @@
 	{/if}
 {/if}
 
+{if !empty($linkedObjectNotif)}
+	<div class="alert alert-info">{$linkedObjectNotif}</div>
+{/if}
+
 {* Create the base form *}
 <form id='objectEditor-{if !empty($id)}{$id}{else}-1{/if}' method="post" {if !empty($contentType)}enctype="{$contentType}"{/if} {if !empty($submitUrl)}action="{$submitUrl}"{/if} role="form" onsubmit="setFormSubmitting();" {if !empty($formLabel)}aria-label="{translate text=$formLabel isAdminFacing=true inAttribute=true}"{/if}>
 	<div class='editor'>

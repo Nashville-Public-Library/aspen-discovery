@@ -328,7 +328,11 @@ class WebBuilder_AJAX extends JSON_Action {
 				$placard->body = $_REQUEST['body'];
 				$placard->isCustomized = 0;
 			} else {
-				$placard->isCustomized = 1;
+				if ($placard->title != $_REQUEST['objectName'] || $placard->image != $_REQUEST['image'] || $placard->link != $_REQUEST['url'] || $placard->body != $_REQUEST['body']) {
+					$placard->isCustomized = 1;
+				} else{
+					$placard->isCustomized = 0;
+				}
 			}
 			$placard->update('',false);
 			$result = [

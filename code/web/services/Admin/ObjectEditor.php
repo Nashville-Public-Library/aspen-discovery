@@ -53,6 +53,7 @@ abstract class ObjectEditor extends Admin_Admin {
 		$interface->assign('canShareToCommunity', $this->canShareToCommunity());
 		$interface->assign('canFetchFromCommunity', $this->canFetchFromCommunity());
 		$interface->assign('hasMultiStepAddNew', $this->hasMultiStepAddNew());
+		$interface->assign('linkedObjectNotif', $this->getLinkedObjectNotif());
 
 		$interface->assign('objectType', $this->getObjectType());
 		$interface->assign('toolName', $this->getToolName());
@@ -840,6 +841,42 @@ abstract class ObjectEditor extends Admin_Admin {
 		}
 
 		$interface->setTemplate('../Admin/compareObjects.tpl');
+	}
+
+	function getLinkedObjectNotif() {
+		$result = null;
+		if ($_REQUEST['action'] == 'WebResources') {
+			require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
+			$placard = new Placard();
+			$placard->sourceId = $_REQUEST['id'];
+			if ($placard->find(true)) {
+				$url = "/Admin/Placards?objectAction=edit&id=" . $placard->id;
+				$result = translate([
+					'text' => 'This Web Resource is linked to the Placard ',
+					'isAdminFacing' => true,
+				]) . "<a href='$url'>$placard->title</a>";
+			}
+		}
+		else if ($_REQUEST['action'] == 'Placards') {
+			require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
+			$placard = new Placard();
+			$placard->id = $_REQUEST['id'];
+			if ($placard->find(true)) {
+				if ($placard->sourceType == 'web_resource') {
+					require_once ROOT_DIR . '/sys/WebBuilder/WebResource.php';
+					$webResource = new WebResource();
+					$webResource->id = $placard->sourceId;
+					if ($webResource->find(true)) {
+						$url = "/WebBuilder/WebResources?objectAction=edit&id=" . $webResource->id;
+						$result = translate([
+								'text' => 'This Placard is linked to the Web Resource ',
+								'isAdminFacing' => true,
+							]) . "<a href='$url'>$webResource->name</a>";
+					}
+				}
+			}
+		}
+		return $result;
 	}
 
 	/**
