@@ -21,6 +21,15 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE aspen_lida_branded_settings add COLUMN logoAppIconAndroid varchar(100) DEFAULT NULL'
 			]
 		], //make_app_icons_os_specific
+		'remove_unused_updates_properties' => [
+			'title' => 'Make App Icons OS Specific',
+			'description' => 'Update settings to store separate icons per OS',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE system_variables DROP COLUMN allowScheduledUpdates',
+				'ALTER TABLE system_variables DROP COLUMN doQuickUpdates',
+			]
+		], //remove_unused_updates_properties
 
 		//katherine - Grove
 		'track_event_length_in_minutes' => [
