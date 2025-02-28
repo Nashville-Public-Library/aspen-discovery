@@ -151,6 +151,7 @@ class CommunicoIndexer {
 
 	private final SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private final SimpleDateFormat eventDayFormatter = new SimpleDateFormat("yyyy-MM-dd");
+	private final SimpleDateFormat eventWeekFormatter = new SimpleDateFormat("yyyy-ww");
 	private final SimpleDateFormat eventMonthFormatter = new SimpleDateFormat("yyyy-MM");
 	private final SimpleDateFormat eventYearFormatter = new SimpleDateFormat("yyyy");
 
@@ -224,17 +225,20 @@ class CommunicoIndexer {
 						continue;
 					}
 					HashSet<String> eventDays = new HashSet<>();
+					HashSet<String> eventWeeks = new HashSet<>();
 					HashSet<String> eventMonths = new HashSet<>();
 					HashSet<String> eventYears = new HashSet<>();
 					Date tmpDate = (Date)startDate.clone();
 
 					if (tmpDate.equals(endDate) || tmpDate.after(endDate)){
 						eventDays.add(eventDayFormatter.format(tmpDate));
+						eventWeeks.add(eventWeekFormatter.format(tmpDate));
 						eventMonths.add(eventMonthFormatter.format(tmpDate));
 						eventYears.add(eventYearFormatter.format(tmpDate));
 					}else {
 						while (tmpDate.before(endDate)) {
 							eventDays.add(eventDayFormatter.format(tmpDate));
+							eventWeeks.add(eventWeekFormatter.format(tmpDate));
 							eventMonths.add(eventMonthFormatter.format(tmpDate));
 							eventYears.add(eventYearFormatter.format(tmpDate));
 							tmpDate.setTime(tmpDate.getTime() + 24 * 60 * 60 * 1000);
@@ -252,6 +256,7 @@ class CommunicoIndexer {
 						boost += (int) (30 - daysInFuture);
 					}
 					solrDocument.addField("event_day", eventDays);
+					solrDocument.addField("event_week", eventWeeks);
 					solrDocument.addField("event_month", eventMonths);
 					solrDocument.addField("event_year", eventYears);
 

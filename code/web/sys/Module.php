@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class Module extends DataObject {
@@ -13,6 +13,7 @@ class Module extends DataObject {
 	public $settingsClassPath;
 	public $settingsClassName;
 
+	/** @noinspection PhpUnusedParameterInspection */
 	static function getObjectStructure($context = ''): array {
 		return [
 			'id' => [

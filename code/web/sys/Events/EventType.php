@@ -77,9 +77,9 @@ class EventType extends DataObject {
 			],
 			'eventLength' => [
 				'property' => 'eventLength',
-				'type' => 'integer',
-				'label' => 'Event Length (Hours)',
-				'description' => 'The default event length (in hours) for this type of event',
+				'type' => 'duration',
+				'label' => 'Event Length',
+				'description' => 'The default event length for this type of event',
 			],
 			'lengthCustomizable' => [
 				'property' => 'lengthCustomizable',

@@ -99,5 +99,18 @@ class EventField extends DataObject {
 		}
 		return $fieldList;
 	}
+
+	public static function getEventFieldsByTypes(array $types): array {
+		$fieldList = [];
+		$object = new EventField();
+		$object->whereAdd();
+		$object->whereAddIn('type', $types, false, "OR");
+		$object->orderBy('name');
+		$object->find();
+		while ($object->fetch()) {
+			$fieldList[$object->id] = clone($object);
+		}
+		return $fieldList;
+	}
 }
 
