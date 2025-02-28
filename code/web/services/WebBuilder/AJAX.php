@@ -235,6 +235,7 @@ class WebBuilder_AJAX extends JSON_Action {
 		return $result;
 	}
 
+	/** @noinspection PhpUnused */
 	function getSourceValuesForPlacard() {
 		$result = [
 			'success' => false,
@@ -286,6 +287,52 @@ class WebBuilder_AJAX extends JSON_Action {
 		return $result;
 	}
 
+	/** @noinspection PhpUnused */
+	function checkLinkedObject() {
+		require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
+		$placard = new Placard();
+		$placard->sourceId = $_REQUEST['objectId'];
+		if ($placard->find(true)) {
+			$result = [
+				'success' => true,
+				'title' => translate([
+					'text' => 'Save Linked Object?',
+					'isAdminFacing' => true,
+				]),
+				'modalBody' => translate([
+					'text' => 'This Web Resource is linked to a Placard. Would you like to update the linked placard as well?',
+					'isAdminFacing' => true,
+				]),
+				'modalButtons' => "<button class='tool btn btn-primary modal-btn' onclick='return AspenDiscovery.WebBuilder.saveLinkedObject()'>Yes</button>",
+			];
+		} else {
+			$result = [
+				'success' => true,
+				'noLinkedObject' => true,
+			];
+		}
+		return $result;
+
+	}
+
+	/** @noinspection PhpUnused */
+	function saveLinkedObject() {
+		require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
+		$placard = new Placard();
+		$placard->sourceId = $_REQUEST['objectId'];
+		if ($placard->find(true)) {
+			$placard->title = $_REQUEST['objectName'];
+			$placard->image = $_REQUEST['image'];
+			$placard->link = $_REQUEST['url'];
+			$placard->body = $_REQUEST['body'];
+			$placard->isCustomized = 0;
+			$placard->update('',false);
+			$result = [
+				'success' => true,
+			];
+		}
+		return $result;
+	}
 	/** @noinspection PhpUnused */
 	function uploadImage() {
 		$result = [

@@ -251,8 +251,8 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
-		if ($this->sourceType != 'none') {
+	public function update($context = '', $savingOnObjectPage = true) {
+		if ($this->sourceType != 'none' && $savingOnObjectPage) {
 			$this->compareLinkedObject();
 		}
 		if ($this->sourceType == 'none') {
@@ -554,7 +554,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 			$webResource = new WebResource();
 			$webResource->id = $this->sourceId;
 			if ($webResource->find(true)) {
-				if ($webResource->name != $this->title || $webResource->url != $this->link || $webResource->teaser != $this->body) {
+				if ($webResource->name != $this->title || $webResource->url != $this->link || $webResource->teaser != $this->body || $webResource->logo != $this->image) {
 					$this->__set('isCustomized', 1);
 				} else {
 					$this->__set('isCustomized', 0);

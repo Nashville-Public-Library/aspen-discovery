@@ -141,7 +141,22 @@
 				{$initializationJs}
 			{/if}
 			{if !empty($initializationAdditionalJs)}
-			{$initializationAdditionalJs}
+				{$initializationAdditionalJs}
+			{/if}
+			{if !empty($onSubmissionJS)}
+			{literal}
+			var shouldPrevent = true;
+			objectEditorObject.on("submit", function (e) {
+				if (shouldPrevent) {
+					e.preventDefault();
+					var submitForm = function() {
+						shouldPrevent = false;
+						objectEditorObject.submit();
+					};
+					{/literal}{$onSubmissionJS}{literal};
+				}
+			});
+			{/literal}
 			{/if}
 			{literal}
 

@@ -519,17 +519,11 @@ class WebResource extends DB_LibraryLinkedObject {
 
 	public function generatePlacard() {
 		require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
-		//create or update existing placard linked to this resource
+		//check if placard already exists
 		$placard = new Placard();
 		$placard->sourceType = 'web_resource';
 		$placard->sourceId = $this->id;
-		if ($placard->find(true)){
-			$placard->title = $this->name;
-			$placard->image = $this->logo;
-			$placard->link = $this->url;
-			$placard->body = $this->teaser;
-			$placard->update();
-		} else {
+		if (!$placard->find(true)){ //if placard exists don't update (user will be prompted separately)
 			$placard->sourceType = 'web_resource';
 			$placard->sourceId = $this->id;
 			$placard->title = $this->name;

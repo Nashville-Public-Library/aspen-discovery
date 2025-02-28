@@ -16381,6 +16381,7 @@ AspenDiscovery.WebBuilder = function () {
 	// noinspection JSUnusedGlobalSymbols
 	return {
 		editors: [],
+		saveLinkedObjCallback: function() {},
 
 		getPortalCellValuesForSource: function () {
 			var portalCellId = $("#id").val();
@@ -16498,6 +16499,54 @@ AspenDiscovery.WebBuilder = function () {
 					AspenDiscovery.showMessage('Sorry', data.message);
 				}
 			});
+		},
+
+		checkLinkedObject: function (submitForm) {
+			var url = Globals.path + "/WebBuilder/AJAX";
+			var params = {
+				'method': 'checkLinkedObject',
+				objectId: $("#id").val()
+			};
+
+			$.getJSON(url, params,function(data){
+				if (data.success){
+					if (data.noLinkedObject === true){
+						submitForm();
+					} else{
+						AspenDiscovery.WebBuilder.saveLinkedObjCallback = submitForm;
+						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons);
+						$('.modalClose').on('click', function(){
+							AspenDiscovery.WebBuilder.setPlacardToCustomized();
+							submitForm();
+						});
+					}
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			})
+		},
+
+		setPlacardToCustomized: function() {
+
+		},
+
+		saveLinkedObject: function(){
+			var params = {
+				objectId: $("#id").val(),
+				objectName: $("#name").val(),
+				url: $("#url").val(),
+				body: $("#teaser").val(),
+				image: $("#importFile-label-logo").val()
+			};
+			var url = Globals.path + '/WebBuilder/AJAX?method=saveLinkedObject';
+			$.getJSON(url, params,function(data){
+				if (data.success === true){
+					AspenDiscovery.WebBuilder.saveLinkedObjCallback();
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			});
+
 		},
 
 		getImageActionFields: function() {

@@ -58,6 +58,7 @@ abstract class ObjectEditor extends Admin_Admin {
 		$interface->assign('toolName', $this->getToolName());
 		$interface->assign('initializationJs', $this->getInitializationJs());
 		$interface->assign('initializationAdditionalJs', $this->getInitializationAdditionalJs());
+		$interface->assign('onSubmissionJS', $this->getOnSubmissionJS());
 		$interface->assign('allowSearchingProperties', $this->allowSearchingProperties($structure));
 
 		//Define the structure of the object.
@@ -96,6 +97,7 @@ abstract class ObjectEditor extends Admin_Admin {
 				$this->viewIndividualObject($structure);
 			}
 		}
+		$template = $interface->getTemplate();
 		$this->display($interface->getTemplate(), $this->getPageTitle());
 	}
 
@@ -800,6 +802,10 @@ abstract class ObjectEditor extends Admin_Admin {
 	}
 
 	function getInitializationAdditionalJs() {
+		return '';
+	}
+
+	function getOnSubmissionJS() {
 		return '';
 	}
 
