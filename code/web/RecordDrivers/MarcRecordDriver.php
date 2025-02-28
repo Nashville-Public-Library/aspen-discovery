@@ -1149,9 +1149,6 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 						//Check to see if all items require a request
 						$allVolumesRequireIll = true;
 						if ($interLibraryLoanType !== 'none') {
-							if (count($itemsWithoutVolumes) > 0 && !$itemsWithoutVolumesNeedIllRequest) {
-								$allVolumesRequireIll = false;
-							}
 							foreach ($holdableVolumes as $volumeInfo) {
 								if (!$volumeInfo['needsIllRequest']) {
 									$allVolumesRequireIll = false;
@@ -1161,8 +1158,22 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 							$allVolumesRequireIll = false;
 						}
 						if ($allVolumesRequireIll) {
-							//The button will show a message to the patron no volumes can be requested
-							$this->_actions[$variationId][] = getNoVolumesCanBeRequestedAction($this->getModule(), $source, $id);
+							if (count($itemsWithoutVolumes) > 0) {
+								//Check to see if a title level request is possible and if so show a request or hold button as appropriate
+								if ($itemsWithoutVolumesNeedIllRequest) {
+									if ($interLibraryLoanType == 'vdx') {
+										//VDX does not support volumes, we'll just prompt for a regular VDX
+										$this->_actions[$variationId][] = getVdxRequestAction($this->getModule(), $source, $id);
+									} elseif ($interLibraryLoanType == 'localIll') {
+										$this->_actions[$variationId][] = getLocalIllRequestAction($this->getModule(), $source, $id);
+									}
+								}else{
+									$this->_actions[$variationId][] = getHoldRequestAction($this->getModule(), $source, $id, $variationId);
+								}
+							} else {
+								//The button will show a message to the patron no volumes can be requested
+								$this->_actions[$variationId][] = getNoVolumesCanBeRequestedAction($this->getModule(), $source, $id);
+							}
 						}else{
 							//We will need to show a popup to select the volume
 							$interface->assign('itemsWithoutVolumesNeedIllRequest', $itemsWithoutVolumesNeedIllRequest);

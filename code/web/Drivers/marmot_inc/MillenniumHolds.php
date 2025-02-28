@@ -45,7 +45,7 @@ class MillenniumHolds {
 				$hold_result['success'] = true;
 				if (!isset($reason) || strlen($reason) == 0) {
 					$hold_result['message'] = translate([
-						'text' => "Your hold was placed successfully.  It may take up to 45 seconds for the hold to appear on your account.",
+						'text' => "Your hold was placed successfully.  It may take up to 45 secona minute for the hold to appear on your account.",
 						'isPublicFacing' => true,
 					]);
 					$hold_result['api']['title'] = translate([
@@ -53,7 +53,7 @@ class MillenniumHolds {
 						'isPublicFacing' => true,
 					]);
 					$hold_result['api']['message'] = translate([
-						'text' => 'Your hold was placed successfully.  It may take up to 45 seconds for the hold to appear on your account.',
+						'text' => 'Your hold was placed successfully.  It may take up to a minute for the hold to appear on your account.',
 						'isPublicFacing' => true,
 					]);
 					$hold_result['api']['action'] = translate([

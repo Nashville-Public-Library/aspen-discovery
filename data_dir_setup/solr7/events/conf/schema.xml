@@ -93,6 +93,7 @@
 		<field name="end_date" type="date" indexed="true" stored="true" docValues="true"/>
 
 		<field name="event_day" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
+		<field name="event_week" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
 		<field name="event_month" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
 		<field name="event_year" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
 

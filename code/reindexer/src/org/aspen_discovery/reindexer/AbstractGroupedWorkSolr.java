@@ -857,7 +857,7 @@ public abstract class AbstractGroupedWorkSolr {
 		series = series.replaceAll("[#|]\\s*\\d+$", "");
 
 		//Remove anything in parentheses since it's normally just the format
-		series = series.replaceAll("\\s+\\(+.*?\\)+", "");
+		// series = series.replaceAll("\\s+\\(+.*?\\)+", "");
 		series = series.replaceAll(" & ", " and ");
 		series = series.replaceAll("--", " ");
 		series = series.replaceAll(",\\s+(the|an)$", "");
