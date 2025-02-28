@@ -1101,7 +1101,7 @@ function loadModuleActionId() {
 	}
 	/** IndexingProfile[] $indexingProfiles */ global $indexingProfiles;
 	/** SideLoad[] $sideLoadSettings */ global $sideLoadSettings;
-	$allRecordModules = "OverDrive|GroupedWork|Record|ExternalEContent|Person|Library|RBdigital|Hoopla|RBdigitalMagazine|CloudLibrary|Files|Axis360|WebBuilder|ProPay|CourseReserves|Springshare|LibraryMarket|Communico|PalaceProject|Assabet|AspenEvents";
+	$allRecordModules = "OverDrive|GroupedWork|Record|ExternalEContent|Person|Library|RBdigital|Hoopla|RBdigitalMagazine|CloudLibrary|Files|Axis360|WebBuilder|ProPay|CourseReserves|Springshare|LibraryMarket|Communico|PalaceProject|Assabet|AspenEvents|Series";
 	foreach ($indexingProfiles as $profile) {
 		$allRecordModules .= '|' . $profile->recordUrlComponent;
 	}
@@ -1275,6 +1275,23 @@ function loadModuleActionId() {
 								$_REQUEST['action'] = 'GrapesPage';
 								$_REQUEST['id'] = $grapesPage->id;
 								$pageExists = true;
+							} else {
+								require_once ROOT_DIR . '/sys/WebBuilder/CustomWebResourcePage.php';
+								require_once ROOT_DIR . '/sys/WebBuilder/LibraryCustomWebResourcePage.php';
+								$customResourcePage = new CustomWebResourcePage();
+								$customResourcePage->urlAlias = $requestPath;
+								$customResourcePageLibrary = new LibraryCustomWebResourcePage();
+								$customResourcePageLibrary->libraryId = $library->libraryId;
+								$customResourcePage->joinAdd($customResourcePageLibrary, 'INNER', 'libraryFilter', 'id', 'customResourcePageId');
+								if ($customResourcePage->find(true)) {
+									$_GET['module'] = 'WebBuilder';
+									$_GET['action'] = 'CustomWebResourcePage';
+									$_GET['id'] = $customResourcePage->id;
+									$_REQUEST['module'] = 'WebBuilder';
+									$_REQUEST['action'] = 'CustomWebResourcePage';
+									$_REQUEST['id'] = $customResourcePage->id;
+									$pageExists = true;
+								}
 							}
 						}
 					}
