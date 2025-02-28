@@ -597,6 +597,10 @@ class Axis360Driver extends AbstractEContentDriver {
 						'text' => 'Place a Hold',
 						'isPublicFacing' => true,
 					]);
+					$email = empty($patron->axis360Email) ? $patron->email : $patron->axis360Email;
+					$result['api']['holdParams'] = [
+						'email' => $email
+					];
 				} else {
 					$result['message'] .= '&nbsp;' . (string)$status->statusMessage;
 					$this->incrementStat('numApiErrors');
