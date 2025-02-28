@@ -13,8 +13,8 @@
 	{/if}
 {/if}
 
-{if !empty($linkedObjectNotif)}
-	<div class="alert alert-info">{$linkedObjectNotif}</div>
+{if !empty($linkedObjectNotifications)}
+	<div class="alert alert-info">{$linkedObjectNotifications}</div>
 {/if}
 
 {* Create the base form *}
