@@ -731,7 +731,21 @@ class UserAccount {
 		}
 
 		foreach ($driversToTest as $driverName => $additionalInfo) {
-			if ($accountSource == null || $accountSource == $additionalInfo['accountProfile']->name) {
+			/** @var AccountProfile $accountProfile */
+			$accountProfile = $additionalInfo['accountProfile'];
+			$okToCheckAccountProfile = false;
+			if ($accountSource == null) {
+				if ($accountProfile->id == $library->accountProfileId) {
+					$okToCheckAccountProfile = true;
+				}elseif ($accountProfile->authenticationMethod == 'db' || $accountProfile->authenticationMethod == 'sso') {
+					$okToCheckAccountProfile = true;
+				}
+			}else{
+				$okToCheckAccountProfile = $accountSource == $accountProfile->name;
+			}
+
+			if ($okToCheckAccountProfile) {
+				$logger->log("authenticating $username with profile $accountProfile->name", Logger::LOG_DEBUG);
 				try {
 					$authN = AuthenticationFactory::initAuthentication($additionalInfo['authenticationMethod'], $additionalInfo);
 				} catch (UnknownAuthenticationMethodException $e) {

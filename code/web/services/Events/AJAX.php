@@ -82,4 +82,10 @@ class Events_AJAX extends JSON_Action {
 		return $result;
 	}
 
+	public function exportUsageData() {
+		require_once ROOT_DIR . '/services/Events/EventGraphs.php';
+		$aspenUsageGraph = new Events_EventGraphs();
+		$aspenUsageGraph->buildCSV();
+	}
+
 }

@@ -53,6 +53,7 @@ public class AspenEventsIndexer {
 
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	private final SimpleDateFormat eventDayFormatter = new SimpleDateFormat("yyyy-MM-dd");
+	private final SimpleDateFormat eventWeekFormatter = new SimpleDateFormat("yyyy-ww");
 	private final SimpleDateFormat eventMonthFormatter = new SimpleDateFormat("yyyy-MM");
 	private final SimpleDateFormat eventYearFormatter = new SimpleDateFormat("yyyy");
 	private void loadEvents() {
@@ -73,7 +74,7 @@ public class AspenEventsIndexer {
 			PreparedStatement deleteEventsStmt;
 			if (runFullUpdate) {
 				// Get event instance and event info
-				eventsStmt = aspenConn.prepareStatement("SELECT ei.*, e.title, e.description, e.eventTypeId, e.locationId, l.displayName, sl.name AS sublocationName, e.sublocationId, e.cover, e.private FROM event_instance AS ei LEFT JOIN event as e ON e.id = ei.eventID LEFT JOIN location AS l ON e.locationId = l.locationId LEFT JOIN sublocation AS sl on e.sublocationId = sl.id WHERE ei.date > ? AND ei.deleted = 0;");
+				eventsStmt = aspenConn.prepareStatement("SELECT ei.*, e.title, e.description, e.eventTypeId, e.locationId, l.displayName, sl.name AS sublocationName, e.sublocationId, e.cover, e.private FROM event_instance AS ei LEFT JOIN event as e ON e.id = ei.eventID LEFT JOIN location AS l ON e.locationId = l.locationId LEFT JOIN sublocation AS sl on e.sublocationId = sl.id WHERE ei.date < ? AND ei.deleted = 0;");
 			} else {
 				eventsStmt = aspenConn.prepareStatement("SELECT ei.*, e.title, e.description, e.eventTypeId, e.locationId, l.displayName, sl.name AS sublocationName, e.sublocationId, e.cover, e.private FROM event_instance AS ei LEFT JOIN event as e ON e.id = ei.eventID LEFT JOIN location AS l ON e.locationId = l.locationId LEFT JOIN sublocation AS sl on e.sublocationId = sl.id WHERE ei.date < ? AND (e.dateUpdated > ? OR ei.dateUpdated > ?) AND ei.deleted = 0;");
 				deleteEventsStmt = aspenConn.prepareStatement("SELECT id FROM event_instance WHERE deleted = 1 AND dateUpdated > ?;");
@@ -169,17 +170,20 @@ public class AspenEventsIndexer {
 				solrDocument.addField("end_date", endDate);
 
 				HashSet<String> eventDays = new HashSet<>();
+				HashSet<String> eventWeeks = new HashSet<>();
 				HashSet<String> eventMonths = new HashSet<>();
 				HashSet<String> eventYears = new HashSet<>();
 				Date tmpDate = (Date)startDate.clone();
 
 				if (tmpDate.equals(endDate) || tmpDate.after(endDate)){
 					eventDays.add(eventDayFormatter.format(tmpDate));
+					eventWeeks.add(eventWeekFormatter.format(tmpDate));
 					eventMonths.add(eventMonthFormatter.format(tmpDate));
 					eventYears.add(eventYearFormatter.format(tmpDate));
 				}else {
 					while (tmpDate.before(endDate)) {
 						eventDays.add(eventDayFormatter.format(tmpDate));
+						eventWeeks.add(eventWeekFormatter.format(tmpDate));
 						eventMonths.add(eventMonthFormatter.format(tmpDate));
 						eventYears.add(eventYearFormatter.format(tmpDate));
 						tmpDate.setTime(tmpDate.getTime() + 24 * 60 * 60 * 1000);
@@ -197,6 +201,7 @@ public class AspenEventsIndexer {
 					boost += (int) (30 - daysInFuture);
 				}
 				solrDocument.addField("event_day", eventDays);
+				solrDocument.addField("event_week", eventWeeks);
 				solrDocument.addField("event_month", eventMonths);
 				solrDocument.addField("event_year", eventYears);
 				solrDocument.addField("title", eventInfo.getName());
