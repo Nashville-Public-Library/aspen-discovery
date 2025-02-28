@@ -60,6 +60,16 @@ class SpringshareLibCalIndexer {
 	private String oAuthTokenType;
 	private String oAuthAccessToken;
 
+	private bool orphanEventCleanup = false;
+
+	// indexer for cleaning up orphans
+	SpringshareLibCalIndexer(long settingsId, ConcurrentUpdateHttp2SolrClient solrUpdateServer, Connection aspenConn, Logger logger)
+	{
+		this(settingsId, "Orphan", "", null, null, null, 0, solrUpdateServer, aspenConn, logger);
+		this.orphanEventCleanup = true;
+		logEntry.addNote("Cleaning up orphan events for settingsId:"+settingsId);
+	}
+
 	SpringshareLibCalIndexer(long settingsId, String name, String baseUrl, String calId, String clientId, String clientSecret, int numberOfDaysToIndex, ConcurrentUpdateHttp2SolrClient solrUpdateServer, Connection aspenConn, Logger logger) {
 		this.settingsId = settingsId;
 		this.name = name;
@@ -480,6 +490,11 @@ class SpringshareLibCalIndexer {
 	}
 
 	private JSONArray getLibCalEvents() {
+		// we don't have any new events to add if we are cleaning up orphans
+		if(this.orphanEventCleanup)
+		{
+			return new JSONArray();
+		}
 		try {
 			CloseableHttpClient httpclient = HttpClients.createDefault();
 			HttpRequestBase apiRequest;
@@ -611,5 +626,20 @@ class SpringshareLibCalIndexer {
 			}
 		}
 		return values;
+	}
+
+	public static void cleanOrphanEvents(ConcurrentUpdateHttp2SolrClient solrUpdateServer, Connection aspenConn, Logger logger)
+	{
+		//get settingsIds with orphans
+		//create orphan indexers for them
+		//run index events
+		getEventsSitesToIndexStmt = aspenConn.prepareStatement("SELECT unique(settingsId) from springshare_libcal_events where settingsId not in (select id from springshare_libcal_settings) and deleted = 0");
+		eventsSitesRS = getEventsSitesToIndexStmt.executeQuery();
+		while (eventsSitesRS.next()) {
+			SpringshareLibCalIndexer indexer = new SpringshareLibCalIndexer(
+							eventsSitesRS.getLong("settingsId"),
+							solrUpdateServer, aspenConn, logger);
+					indexer.indexEvents();
+		}
 	}
 }
