@@ -1109,7 +1109,7 @@ class Sierra extends Millennium {
 		if ($placeHoldResponse == null && ($this->lastResponseCode == 200 || $this->lastResponseCode = 204)) {
 			$hold_result['success'] = true;
 			$hold_result['message'] = translate([
-				'text' => "Your hold was placed successfully. It may take up to 45 seconds for the hold to appear on your account.",
+				'text' => "Your hold was placed successfully. It may take up to a minute for the hold to appear on your account.",
 				'isPublicFacing' => true,
 			]);
 
@@ -1118,7 +1118,7 @@ class Sierra extends Millennium {
 				'isPublicFacing' => true,
 			]);
 			$hold_result['api']['message'] = translate([
-				'text' => 'Your hold was placed successfully. It may take up to 45 seconds for the hold to appear on your account.',
+				'text' => 'Your hold was placed successfully. It may take up to a minute for the hold to appear on your account.',
 				'isPublicFacing' => true,
 			]);
 //			$hold_result['api']['action'] = translate([
