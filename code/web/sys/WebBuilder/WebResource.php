@@ -24,6 +24,7 @@ class WebResource extends DB_LibraryLinkedObject {
 		$teaser;
 	public $description;
 	public $lastUpdate;
+	public $generatePlacard;
 
 	private $_allowAccessByLibrary;
 
@@ -92,6 +93,13 @@ class WebResource extends DB_LibraryLinkedObject {
 				'type' => 'checkbox',
 				'label' => 'Featured?',
 				'description' => 'Whether or not the resource is a featured resource',
+				'default' => 0,
+			],
+			'generatePlacard' => [
+				'property' => 'generatePlacard',
+				'type' => 'checkbox',
+				'label' => 'Generate Placard?',
+				'description' => 'Whether or not the resource has an automatically generated placard which can be edited in Local Catalog Enrichment > Placards.',
 				'default' => 0,
 			],
 			'teaser' => [
@@ -197,6 +205,9 @@ class WebResource extends DB_LibraryLinkedObject {
 			$this->saveAudiences();
 			$this->saveCategories();
 			$this->saveAllowableLibraries();
+			if ($this->generatePlacard) {
+				$this->generatePlacard();
+			}
 		}
 		return $ret;
 	}
@@ -209,6 +220,9 @@ class WebResource extends DB_LibraryLinkedObject {
 			$this->saveAudiences();
 			$this->saveCategories();
 			$this->saveAllowableLibraries();
+			if ($this->generatePlacard) {
+				$this->generatePlacard();
+			}
 		}
 		return $ret;
 	}
@@ -500,6 +514,24 @@ class WebResource extends DB_LibraryLinkedObject {
 				$link->insert();
 			}
 			unset($this->_allowAccessByLibrary);
+		}
+	}
+
+	public function generatePlacard() {
+		require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
+		//check if placard already exists
+		$placard = new Placard();
+		$placard->sourceType = 'web_resource';
+		$placard->sourceId = $this->id;
+		if (!$placard->find(true)){ //if placard exists don't update (user will be prompted separately)
+			$placard->sourceType = 'web_resource';
+			$placard->sourceId = $this->id;
+			$placard->title = $this->name;
+			$placard->image = $this->logo;
+			$placard->link = $this->url;
+			$placard->body = $this->teaser;
+			$placard->generatedFromSource = 'web_resource:' . $this->id;
+			$placard->insert();
 		}
 	}
 }
