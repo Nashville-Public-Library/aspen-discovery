@@ -12724,6 +12724,28 @@ AspenDiscovery.Events = (function(){
 			}
 			AspenDiscovery.Events.calculateRecurrenceDates();
 			return false;
+		},
+		iCalendarExport: function (eventId, wholeSeries) {
+			var url = Globals.path + '/Events/AJAX';
+			var params = {
+				method: 'iCalendarExport',
+				eventId: eventId,
+				wholeSeries : wholeSeries
+			};
+
+			$.getJSON(url, params, function (data) {
+				if (data.success && data.icsFile.length > 0) {
+					console.log(data.icsFile);
+					var filename = eventId + ".ics";
+					var element = document.createElement('a');
+					element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data.icsFile));
+					element.setAttribute('download', filename);
+					element.style.display = 'none';
+					document.body.appendChild(element);
+					element.click();
+					document.body.removeChild(element);
+				}
+			});
 		}
 	};
 }(AspenDiscovery.Events || {}));

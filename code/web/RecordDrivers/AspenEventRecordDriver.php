@@ -103,6 +103,8 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 	$interface->assign('eventsInLists', true);
 	$interface->assign('bypassEventPage', false);
 
+	$interface->assign('upcomingInstanceCount', $this->getEventObject()->getUpcomingInstanceCount() ?? 0);
+
 //		require_once ROOT_DIR . '/sys/Events/EventsUsage.php';
 //		$eventsUsage = new EventsUsage();
 //		$eventsUsage->type = $this->getType();

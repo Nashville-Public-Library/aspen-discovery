@@ -88,4 +88,67 @@ class Events_AJAX extends JSON_Action {
 		$aspenUsageGraph->buildCSV();
 	}
 
+	public function iCalendarExport() {
+		require_once ROOT_DIR . '/sys/Events/Event.php';
+		require_once ROOT_DIR . '/sys/Events/EventInstance.php';
+		$result = [
+			'success' => false,
+			'title' => translate([
+				'text' => "Error",
+				'isAdminFacing' => true,
+			]),
+			'message' =>  translate([
+				'text' => 'Could not export event.',
+				'isAdminFacing' => true,
+			])
+		];
+		$eventId = $_REQUEST['eventId'] ?? '';
+		$wholeSeries = $_REQUEST['wholeSeries'] ?? '';
+		if (!empty($eventId)) {
+			global $interface;
+			global $configArray;
+			$eventIdParts = explode("_", $eventId, 3);
+			if (isset($eventIdParts[2])) {
+				$eventInstance = new EventInstance();
+				$eventInstance->id = $eventIdParts[2];
+				$eventInstance->find(true);
+				$eventInfo = $eventInstance->getParentEvent();
+				$interface->assign('title', $eventInfo->title ?? '');
+				$interface->assign('status', $eventInstance->status ? '' : "Cancelled");
+				$description = $eventInfo->description ?? '';
+				$description = preg_replace("/(<br\s?\/?>)|(<\/p>)/", "\n", $description);
+				$description = strip_tags($description);
+				$interface->assign('description', $description);
+				$interface->assign('location', $eventInstance->getLocation() ?? '');
+				$interface->assign('hours', (int)($eventInstance->length / 60));
+				$interface->assign('minutes', $eventInstance->length % 60);
+				$interface->assign('timezone', $configArray['Site']['timezone']);
+				$startTime = $eventInstance->date . "T" . $eventInstance->time;
+				$event = new stdClass();
+				$event->date = preg_replace('/([-:])/', '', $startTime);
+				$event->uid = $eventId;
+				$event->sublocation = $eventInstance->getSublocation() ?? '';
+				$instances[] = $event;
+				if ($wholeSeries) {
+					$series = $eventInstance->getSeries(true);
+					foreach ($series as $instance) {
+						$event = new stdClass();
+						$date = $instance->date . "T" . $instance->time;
+						$event->date = preg_replace('/([-:])/', '', $date);
+						$event->uid = join("_", [$eventIdParts[0], $eventIdParts[0], $instance->id]);
+						$event->sublocation = $instance->getSublocation() ?? '';
+						$instances[] = $event;
+					}
+				}
+				$interface->assign('instances', $instances);
+				$icsFile = $interface->fetch('Events/ics-export.tpl');
+				$result = [
+					'success' => true,
+					'icsFile' => $icsFile,
+				];
+			}
+		}
+		return $result;
+	}
+
 }
