@@ -5433,6 +5433,9 @@ class Library extends DataObject {
 					if ($theme->logoApp) {
 						$apiInfo['logoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoApp;
 					}
+					if ($theme->headerLogoApp) {
+						$apiInfo['headerLogoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
+					}
 					$apiInfo['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
 					$apiInfo['primaryForegroundColor'] = $theme->primaryForegroundColor;
 					$apiInfo['secondaryBackgroundColor'] = $theme->secondaryBackgroundColor;

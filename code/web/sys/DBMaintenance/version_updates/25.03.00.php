@@ -30,6 +30,14 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE system_variables DROP COLUMN doQuickUpdates',
 			]
 		], //remove_unused_updates_properties
+		'theme_app_header_logo' => [
+			'title' => 'Theme - App Header Logo',
+			'description' => 'Allow an app header logo to be added for display in LiDA',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE themes ADD COLUMN headerLogoApp VARCHAR(100) DEFAULT NULL',
+			]
+		], //theme_app_header_logo
 
 		//katherine - Grove
 		'track_event_length_in_minutes' => [
