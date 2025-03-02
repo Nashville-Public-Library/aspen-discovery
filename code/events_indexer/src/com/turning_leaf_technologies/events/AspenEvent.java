@@ -125,8 +125,12 @@ class AspenEvent {
 		return "Cancelled";
 	}
 
-	public Boolean getNonPublic() {
-		return nonPublic;
+	public int getNonPublic() {
+		if (nonPublic) {
+			return 1;
+		} else {
+			return 0;
+		}
 	}
 
 	private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

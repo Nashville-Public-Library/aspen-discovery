@@ -214,6 +214,7 @@ public class AspenEventsIndexer {
 				}
 
 				solrDocument.addField("reservation_state", eventInfo.getStatus());
+				solrDocument.addField("private", eventInfo.getNonPublic());
 
 				// Extra fields
 				ArrayList<AspenEvent.EventField> extraFields = eventInfo.getFields();
