@@ -145,12 +145,13 @@ class Events_AJAX extends JSON_Action {
 					}
 					$interface->assign('title', $driver->getTitle());
 					$description = $driver->getDescription() ?? '';
-					$description = str_replace("<p>", "  <p>", $description);
+					$description = str_replace("<p>", " <p>", $description);
 					$interface->assign('htmlDescription', $description);
-					$description = preg_replace("/(^\r\n)/", "\r\n  ", $description);
+					$description = preg_replace("/(\r\n)/", "\\n\\n", $description);
 					$description = str_replace("&nbsp;", "", $description);
-					$description = preg_replace("/(<br\s?\/?>)|(<\/p>)/", "\r\n  ", $description);
+					$description = preg_replace("/(<br\s?\/?>)|(<\/p>)/", "\\n\\n", $description);
 					$description = strip_tags($description);
+					$description = preg_replace("(;|,)", '\\\\$0', $description);
 					$interface->assign('description', $description);
 					$interface->assign('location', $driver->getBranch());
 					$interface->assign('sublocation', $driver->getRoom());

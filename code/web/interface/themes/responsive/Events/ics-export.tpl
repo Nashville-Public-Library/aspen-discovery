@@ -12,7 +12,7 @@ TZID:{$timezone}
 DTSTAMP:{$instance->date}
 DTSTART:{$instance->date}
 DURATION:PT{$hours}H{$minutes}M
-LOCATION:{$location|wordwrap:50:"\r\n  ":true}{if $instance->sublocation} - {$instance->sublocation|wordwrap:50:"\r\n ":true}{/if}
+LOCATION:{$location|wordwrap:50:"\r\n  ":true}{if $instance->sublocation} - {$instance->sublocation|wordwrap:50:"\r\n  ":true}{/if}
 
 DESCRIPTION:{$description|wordwrap:50:"\r\n  ":true}
 X-ALT-DESC;FMTTYPE=text/html:{$htmlDescription|wordwrap:50:"\r\n  ":true}
