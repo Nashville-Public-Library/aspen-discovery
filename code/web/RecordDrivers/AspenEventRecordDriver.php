@@ -154,6 +154,14 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 		}
 	}
 
+	public function getStatus() {
+		if (array_key_exists('reservation_state', $this->fields) && in_array('Cancelled', $this->fields['reservation_state'])) {
+			return "Cancelled";
+		} else {
+			return "Active";
+		}
+	}
+
 	public function getFullDescription() {
 		if (isset($this->fields['description'])) {
 			return $this->fields['description'];

@@ -12725,10 +12725,11 @@ AspenDiscovery.Events = (function(){
 			AspenDiscovery.Events.calculateRecurrenceDates();
 			return false;
 		},
-		iCalendarExport: function (eventId, wholeSeries) {
+		iCalendarExport: function (eventId, source, wholeSeries) {
 			var url = Globals.path + '/Events/AJAX';
 			var params = {
 				method: 'iCalendarExport',
+				source: source,
 				eventId: eventId,
 				wholeSeries : wholeSeries
 			};

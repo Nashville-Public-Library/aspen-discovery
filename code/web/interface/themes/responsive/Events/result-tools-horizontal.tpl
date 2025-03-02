@@ -21,17 +21,17 @@
 										<span class="caret"></span>
 									</button>
 									<ul class="dropdown-menu" aria-labelledby="export_{$recordDriver->getUniqueID()|escape}">
-										<li><a href="#" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 0);">{translate text="Only this event" isPublicFacing="true"}</a></li>
-										<li><a onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 1);" href="#">{translate text="All upcoming events in this series" isPublicFacing="true"}</a></li>
+										<li><a href="#" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 'event_aspenEvent', 0);">{translate text="Only this event" isPublicFacing="true"}</a></li>
+										<li><a onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 'event_aspenEvent', 1);" href="#">{translate text="All upcoming events in this series" isPublicFacing="true"}</a></li>
 									</ul>
 								</div>
 							{else}
-								<button class="btn btn-sm btn-tools btn-default" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 0);">
+								<button class="btn btn-sm btn-tools btn-default" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 'event_aspenEvent', 0);">
 									{translate text="Export" isPublicFacing=true}
 								</button>
 							{/if}
 							{else}
-							<button class="btn btn-sm btn-tools btn-default" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 0);">
+							<button class="btn btn-sm btn-tools btn-default" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', '{$recordDriver->getIntegration()|escape}', 0);">
 								{translate text="Export" isPublicFacing=true}
 							</button>
 						{/if}
