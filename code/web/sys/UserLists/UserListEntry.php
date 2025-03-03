@@ -25,6 +25,7 @@ class UserListEntry extends DataObject {
 	function insert($context = '') : int {
 		if($this->source == "GroupedWork" && $this->title == null)
 		{
+			require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 			$groupedWork = new GroupedWork();
 			$groupedWork->permanent_id = $this->sourceId;
 			if ($groupedWork->find(true)) {
