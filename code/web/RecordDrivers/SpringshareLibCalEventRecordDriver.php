@@ -165,6 +165,14 @@ class SpringshareLibCalEventRecordDriver extends IndexRecordDriver {
 		}
 	}
 
+	public function getStatus() {
+		if (array_key_exists('reservation_state', $this->fields) && in_array('Cancelled', $this->fields['reservation_state'])) {
+			return "Cancelled";
+		} else {
+			return "Active";
+		}
+	}
+
 	/**
 	 * Return the unique identifier of this record within the Solr index;
 	 * useful for retrieving additional information (like tags and user

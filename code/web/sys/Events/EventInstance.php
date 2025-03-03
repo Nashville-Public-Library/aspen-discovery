@@ -104,4 +104,51 @@ class EventInstance extends DataObject {
 		}
 	}
 
+	function getParentEvent() {
+		$event = new Event();
+		$event->id = $this->eventId;
+		$event->find(true);
+		return $event;
+	}
+
+	function getLocation() {
+		$event = $this->getParentEvent();
+		$location = new Location();
+		$location->locationId = $event->locationId;
+		$location->find(true);
+		return $location->displayName;
+	}
+
+	function getSublocation() {
+		$event = $this->getParentEvent();
+		$sublocations = Location::getEventSublocations($event->locationId);
+		if ($event->sublocationId) {
+			$sublocation = $sublocations[$event->sublocationId];
+		}
+		return $sublocation ?? '';
+	}
+
+	function getSeries($onlyFuture = false) {
+		$series = [];
+		$eventInstances = new EventInstance();
+		$eventInstances->eventId = $this->eventId;
+		if ($onlyFuture) {
+			$escapedDate = $eventInstances->escape($this->date);
+			$escapedTime = $eventInstances->escape($this->time);
+			$eventInstances->whereAdd("date > " . $escapedDate . " OR date = " . $escapedDate . " AND time > " . $escapedTime);
+		} else {
+			$eventInstances->whereAdd("id != " . $this->id);
+		}
+		$eventInstances->find();
+		while ($eventInstances->fetch()) {
+			$series[$eventInstances->id] = clone($eventInstances);
+		}
+		return $series;
+	}
+
+	function getUpcomingInstanceCount() {
+		$event = $this->getParentEvent();
+		return $event->getInstanceCount();
+	}
+
 }

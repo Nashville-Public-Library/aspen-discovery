@@ -938,20 +938,15 @@ public class SierraExportAPIMain {
 
 	private static final MarcFactory marcFactory = MarcFactory.newInstance();
 	private static boolean updateMarcAndRegroupRecordId(SierraInstanceInformation sierraInstanceInformation, String id) {
-		final JSONObject[] marcResults = {null};
+		final JSONObject[] bibsResults = {null};
 		//noinspection CodeBlock2Expr
-		Thread getMarcResultsThread = new Thread(() -> {
-			marcResults[0] = getMarcJSONFromSierraApiURL(sierraInstanceInformation, apiBaseUrl, apiBaseUrl + "/bibs/" + id + "/marc", id);
-		});
-		final JSONObject[] fixedFieldResults = {null};
-		//noinspection CodeBlock2Expr
-		Thread fixedFieldThread = new Thread(() -> {
-			fixedFieldResults[0] = getMarcJSONFromSierraApiURL(sierraInstanceInformation, apiBaseUrl, apiBaseUrl + "/bibs/" + id + "?fields=fixedFields", id);
+		Thread getBibsResultsThread = new Thread(() -> {
+			bibsResults[0] = getMarcJSONFromSierraApiURL(sierraInstanceInformation, apiBaseUrl, apiBaseUrl + "/bibs?id=" + id + "&fields=marc,fixedFields", id);
 		});
 		final JSONObject[] itemIds = {null};
 		//noinspection CodeBlock2Expr
 		Thread itemUpdateThread = new Thread(() -> {
-			itemIds[0] = callSierraApiURL(sierraInstanceInformation, apiBaseUrl, apiBaseUrl + "/items?limit=1000&deleted=false&suppressed=false&fields=id,updatedDate,createdDate,location,status,barcode,callNumber,itemType,fixedFields,varFields&bibIds=" + id, false, true);
+			itemIds[0] = callSierraApiURL(sierraInstanceInformation, apiBaseUrl, apiBaseUrl + "/items?limit=1000&deleted=false&suppressed=false&fields=default,itemType,fixedFields,varFields&bibIds=" + id, false, true);
 		});
 		final JSONObject[] holdingIds = {null};
 		boolean hasHoldings = bibsWithHoldings.containsKey(id);
@@ -962,15 +957,13 @@ public class SierraExportAPIMain {
 				holdingIds[0] = callSierraApiURL(sierraInstanceInformation, apiBaseUrl, apiBaseUrl + "/holdings?limit=1000&deleted=false&suppressed=false&fields=id,fixedFields,varFields&bibIds=" + id, true, false);
 			});
 		}
-		getMarcResultsThread.start();
-		fixedFieldThread.start();
+		getBibsResultsThread.start();
 		itemUpdateThread.start();
 		if (hasHoldings) {
 			holdingsUpdateThread.start();
 		}
 		try {
-			getMarcResultsThread.join();
-			fixedFieldThread.join();
+			getBibsResultsThread.join();
 			itemUpdateThread.join();
 			if (hasHoldings) {
 				holdingsUpdateThread.join();
@@ -979,9 +972,9 @@ public class SierraExportAPIMain {
 			logEntry.incErrors("Loading data from Sierra was interrupted", e);
 		}
 		try {
-			if (marcResults[0] != null){
-				if (marcResults[0].has("httpStatus")){
-					if (marcResults[0].getInt("code") == 107) {
+			if (bibsResults[0] != null){
+				if (bibsResults[0].has("httpStatus")){
+					if (bibsResults[0].getInt("code") == 107) {
 						//This record was deleted
 						String longId = ".b" + id + getCheckDigit(id);
 						logger.debug("id " + longId + " was deleted");
@@ -995,81 +988,111 @@ public class SierraExportAPIMain {
 						}
 						logEntry.incDeleted();
 						return true;
-					}else if (marcResults[0].getInt("httpStatus") == 500){
+					} else if (bibsResults[0].getInt("httpStatus") == 500){
 						//This record can't be loaded
 						logEntry.incRecordsWithInvalidMarc("Record " + id + " could not be fetched from the API");
 						return true;
-					}else{
-						logEntry.incErrors("Unknown error " + marcResults[0]);
+					} else {
+						logEntry.incErrors("Unknown error " + bibsResults[0]);
 						return false;
 					}
 				}
-				String leader = marcResults[0].has("leader") ? marcResults[0].getString("leader") : "";
+
+				JSONObject bibsData = bibsResults[0].getJSONArray("entries").getJSONObject(0);
+				
+				//Get Marc data from bibs response
+				JSONObject marcData = bibsData.getJSONObject("marc");
+				String leader = "";
+				if (marcData.has("leader")) {
+					leader = marcData.getString("leader");
+					if (leader.isEmpty()){
+						logEntry.incRecordsWithInvalidMarc("Record " + id + " has empty MARC leader");
+						return true;
+					}
+				} else {
+					logEntry.incRecordsWithInvalidMarc("Record " + id + " has no valid MARC leader");
+					return true;
+				}
 				Record marcRecord = marcFactory.newRecord(leader);
-				JSONArray fields = marcResults[0].getJSONArray("fields");
-				for (int i = 0; i < fields.length(); i++){
-					JSONObject fieldData = fields.getJSONObject(i);
-					Iterator<String> tags = fieldData.keys();
-					while (tags.hasNext()){
-						String tag = tags.next();
-						if (!tag.equals(indexingProfile.getItemTag())) {
-							if (fieldData.get(tag) instanceof JSONObject) {
-								JSONObject fieldDataDetails = fieldData.getJSONObject(tag);
-								char ind1 = fieldDataDetails.getString("ind1").charAt(0);
-								char ind2 = fieldDataDetails.getString("ind2").charAt(0);
-								DataField dataField = marcFactory.newDataField(tag, ind1, ind2);
-								JSONArray subfields = fieldDataDetails.getJSONArray("subfields");
-								for (int j = 0; j < subfields.length(); j++) {
-									JSONObject subfieldData = subfields.getJSONObject(j);
-									String subfieldIndicatorStr = subfieldData.keys().next();
-									char subfieldIndicator = subfieldIndicatorStr.charAt(0);
-									String subfieldValue = subfieldData.getString(subfieldIndicatorStr);
-									dataField.addSubfield(marcFactory.newSubfield(subfieldIndicator, subfieldValue));
-								}
-								if (tag.equals(indexingProfile.getRecordNumberTag())) {
-									Subfield recordNumberSubfield = dataField.getSubfield(indexingProfile.getRecordNumberSubfield());
-									if (recordNumberSubfield == null) {
-										continue;
-									} else {
-										if (!recordNumberSubfield.getData().startsWith(".b")) {
-											continue;
-										} else if (recordNumberSubfield.getData().equals(".b")) {
-											continue;
-										}
+
+				if (marcData.has("fields")) {
+					JSONArray fields = marcData.getJSONArray("fields");
+					if (fields.length() == 0) {
+						logEntry.incRecordsWithInvalidMarc("Record " + id + " has empty MARC fields");
+						return true;
+					}
+					for (int i = 0; i < fields.length(); i++){
+						JSONObject fieldData = fields.getJSONObject(i);
+						Iterator<String> tags = fieldData.keys();
+						while (tags.hasNext()){
+							String tag = tags.next();
+							if (!tag.equals(indexingProfile.getItemTag())) {
+								if (fieldData.get(tag) instanceof JSONObject) {
+									JSONObject fieldDataDetails = fieldData.getJSONObject(tag);
+									char ind1 = fieldDataDetails.getString("ind1").charAt(0);
+									char ind2 = fieldDataDetails.getString("ind2").charAt(0);
+									DataField dataField = marcFactory.newDataField(tag, ind1, ind2);
+									JSONArray subfields = fieldDataDetails.getJSONArray("subfields");
+									for (int j = 0; j < subfields.length(); j++) {
+										JSONObject subfieldData = subfields.getJSONObject(j);
+										String subfieldIndicatorStr = subfieldData.keys().next();
+										char subfieldIndicator = subfieldIndicatorStr.charAt(0);
+										String subfieldValue = subfieldData.getString(subfieldIndicatorStr);
+										dataField.addSubfield(marcFactory.newSubfield(subfieldIndicator, subfieldValue));
 									}
-								} else if (tag.equals(sierraExportFieldMapping.getFixedFieldDestinationField())) {
-									continue;
+									if (tag.equals(indexingProfile.getRecordNumberTag())) {
+										Subfield recordNumberSubfield = dataField.getSubfield(indexingProfile.getRecordNumberSubfield());
+										if (recordNumberSubfield == null) {
+											continue;
+										} else {
+											if (!recordNumberSubfield.getData().startsWith(".b")) {
+												continue;
+											} else if (recordNumberSubfield.getData().equals(".b")) {
+												continue;
+											}
+										}
+									} else if (tag.equals(sierraExportFieldMapping.getFixedFieldDestinationField())) {
+										continue;
+									}
+									marcRecord.addVariableField(dataField);
+								} else {
+									String fieldValue = fieldData.getString(tag);
+									marcRecord.addVariableField(marcFactory.newControlField(tag, fieldValue));
 								}
-								marcRecord.addVariableField(dataField);
-							} else {
-								String fieldValue = fieldData.getString(tag);
-								marcRecord.addVariableField(marcFactory.newControlField(tag, fieldValue));
 							}
 						}
 					}
+				} else {
+					logEntry.incRecordsWithInvalidMarc("Record " + id + " has no valid MARC fields");
+					return true;
 				}
 				logger.debug("Converted JSON to MARC for Bib");
 
 				//Add the identifier
 				marcRecord.addVariableField(marcFactory.newDataField(indexingProfile.getRecordNumberTag(), ' ', ' ',  "a", ".b" + id + getCheckDigit(id)));
 
-				//Load Fixed Fields
-				if (fixedFieldResults[0] != null) {
+				//Get Fixed Fields data from bibs response
+				if (bibsData.has("fixedFields")) {
+					JSONObject bibsFixedFields = bibsData.getJSONObject("fixedFields");
+					if (bibsFixedFields.isEmpty()) {
+						logEntry.incRecordsWithInvalidMarc("Record " + id + " has empty fixed fields");
+						return true;
+					}
 					if (!sierraExportFieldMapping.getFixedFieldDestinationField().isEmpty()) {
 						DataField fixedDataField = marcFactory.newDataField(sierraExportFieldMapping.getFixedFieldDestinationField(), ' ', ' ');
 						if (sierraExportFieldMapping.getBcode3DestinationSubfield() != ' ') {
-							String bCode3 = fixedFieldResults[0].getJSONObject("fixedFields").getJSONObject("31").getString("value");
+							String bCode3 = bibsFixedFields.getJSONObject("31").getString("value");
 							fixedDataField.addSubfield(marcFactory.newSubfield(sierraExportFieldMapping.getBcode3DestinationSubfield(), bCode3));
 						}
 						if (sierraExportFieldMapping.getMaterialTypeSubfield() != ' ') {
-							String matType = fixedFieldResults[0].getJSONObject("fixedFields").getJSONObject("30").getString("value");
+							String matType = bibsFixedFields.getJSONObject("30").getString("value");
 							fixedDataField.addSubfield(marcFactory.newSubfield(sierraExportFieldMapping.getMaterialTypeSubfield(), matType));
 						}
 						if (sierraExportFieldMapping.getBibLevelLocationsSubfield() != ' ') {
-							if (fixedFieldResults[0].has("26")) {
-								String location = fixedFieldResults[0].getJSONObject("26").getString("value");
+							if (bibsFixedFields.has("26")) {
+								String location = bibsFixedFields.getJSONObject("26").getString("value");
 								if (location.equalsIgnoreCase("multi")) {
-									JSONArray locationsJSON = fixedFieldResults[0].getJSONArray("locations");
+									JSONArray locationsJSON = bibsFixedFields.getJSONArray("locations");
 									for (int k = 0; k < locationsJSON.length(); k++) {
 										location = locationsJSON.getJSONObject(k).getString("code");
 										fixedDataField.addSubfield(marcFactory.newSubfield(sierraExportFieldMapping.getBibLevelLocationsSubfield(), location));
@@ -1081,6 +1104,9 @@ public class SierraExportAPIMain {
 						}
 						marcRecord.addVariableField(fixedDataField);
 					}
+				} else {
+					logEntry.incRecordsWithInvalidMarc("Record " + id + " has no valid fixed fields");
+					return true;
 				}
 
 				//Get Holdings for the bib record
