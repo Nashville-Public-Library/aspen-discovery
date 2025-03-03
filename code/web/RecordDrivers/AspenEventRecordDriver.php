@@ -164,7 +164,11 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 	}
 
 	public function isPrivate() {
-		return in_array("private", $this->fields['private']);
+		if (array_key_exists('private', $this->fields)) {
+			return in_array("private", $this->fields['private']);
+		}else{
+			return false;
+		}
 	}
 
 	public function getFullDescription() {
