@@ -103,6 +103,9 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 	$interface->assign('eventsInLists', true);
 	$interface->assign('bypassEventPage', false);
 
+	$interface->assign('upcomingInstanceCount', $this->getEventObject()->getUpcomingInstanceCount() ?? 0);
+	$interface->assign('private', $this->isPrivate() ? 'private' : '');
+
 //		require_once ROOT_DIR . '/sys/Events/EventsUsage.php';
 //		$eventsUsage = new EventsUsage();
 //		$eventsUsage->type = $this->getType();
@@ -150,6 +153,18 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 		} else {
 			return '';
 		}
+	}
+
+	public function getStatus() {
+		if (array_key_exists('reservation_state', $this->fields) && in_array('Cancelled', $this->fields['reservation_state'])) {
+			return "Cancelled";
+		} else {
+			return "Active";
+		}
+	}
+
+	public function isPrivate() {
+		return in_array("private", $this->fields['private']);
 	}
 
 	public function getFullDescription() {

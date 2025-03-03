@@ -124,6 +124,11 @@ class Event extends DataObject {
 						'type' => 'checkbox',
 						'label' => 'Private?',
 						'default' => false,
+						'permissions' => [
+							'View Private Events for All Locations',
+							'View Private Events for Home Library Locations',
+							'View Private Events for Home Location'
+						],
 						'description' => 'Private events are limited to those with permission to view private events',
 					],
 				],

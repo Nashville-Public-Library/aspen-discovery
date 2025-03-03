@@ -49,6 +49,11 @@
 					<div class="result-value col-tn-6 notranslate">
 						{$recordDriver->getBranch()}
 					</div>
+					{if $private}
+						<div class="result-value col-tn-8">
+							<span class="label label-default">{translate text="Private" isPublicFacing=true}</span>
+						</div>
+					{/if}
 					{* Register Button *}
 					<div class="result-value col-tn-4">
 						{if $recordDriver->inEvents()}

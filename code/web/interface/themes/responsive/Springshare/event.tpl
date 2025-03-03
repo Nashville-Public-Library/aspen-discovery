@@ -121,6 +121,9 @@
 				{if $isStaff && $eventsInLists == 1 || $eventsInLists == 2}
 					<button onclick="return AspenDiscovery.Account.showSaveToListForm(this, 'Events', '{$recordDriver->getUniqueID()|escape}');" class="btn btn-sm btn-tools addToListBtn">{translate text="Add to List" isPublicFacing=true}</button>
 				{/if}
+				<button class="btn btn-sm btn-tools btn-default" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', '{$recordDriver->getIntegration()|escape}', 0);">
+					{translate text="Export" isPublicFacing=true}
+				</button>
 			</div>
 			<div class="btn-group btn-group-sm">
 				{include file="Events/share-tools.tpl" eventUrl=$recordDriver->getExternalUrl()}
