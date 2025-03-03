@@ -54,6 +54,11 @@ class SearchObject_EventsSearcher extends SearchObject_SolrSearcher {
 		$now = new DateTime();
 		$this->addHiddenFilter('end_date', "[{$now->format("Y-m-d\TH:i:s\Z")} TO *]");
 
+		// Check permissions before showing private events
+		if (!UserAccount::userHasPermission('View Private Events for All Locations')) {
+			$this->addHiddenFilter('-private', "1");
+		}
+
 		$timer->logTime('Setup Events Search Object');
 	}
 

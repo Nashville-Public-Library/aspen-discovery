@@ -101,6 +101,10 @@ class Events_Calendar extends Action {
 		} else {
 			$searchObject->addHiddenFilter("event_month", '"' . $monthFilter . '"');
 		}
+		// Check permissions before showing private events
+		if (!UserAccount::userHasPermission('View Private Events for All Locations')) {
+			$searchObject->addHiddenFilter('-private', "1");
+		}
 		$searchObject->setSort('start_date_sort');
 
 		$timer->logTime('Setup Search');
