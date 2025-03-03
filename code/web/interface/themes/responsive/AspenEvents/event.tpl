@@ -70,6 +70,11 @@
 					{if !empty($recordDriver->getEventTypeFields())}
 						{$recordDriver->getEventTypeFields()}
 					{/if}
+					{if $private}
+						<li>
+							<span class="label label-default">{translate text="Private" isPublicFacing=true}</span>
+						</li>
+					{/if}
 				</ul>
 			</div>
 			<div class="col-tn-4" style="display:flex; justify-content:center;">

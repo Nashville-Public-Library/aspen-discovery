@@ -104,6 +104,7 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 	$interface->assign('bypassEventPage', false);
 
 	$interface->assign('upcomingInstanceCount', $this->getEventObject()->getUpcomingInstanceCount() ?? 0);
+	$interface->assign('private', $this->isPrivate() ? 'private' : '');
 
 //		require_once ROOT_DIR . '/sys/Events/EventsUsage.php';
 //		$eventsUsage = new EventsUsage();
@@ -160,6 +161,10 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 		} else {
 			return "Active";
 		}
+	}
+
+	public function isPrivate() {
+		return in_array("private", $this->fields['private']);
 	}
 
 	public function getFullDescription() {
