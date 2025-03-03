@@ -56,7 +56,22 @@ class SearchObject_EventsSearcher extends SearchObject_SolrSearcher {
 
 		// Check permissions before showing private events
 		if (!UserAccount::userHasPermission('View Private Events for All Locations')) {
-			$this->addHiddenFilter('-private', "1");
+			if (!UserAccount::userHasPermission([
+					'View Private Events for Home Library Locations',
+					'View Private Events for Home Location'
+				])) {
+				$this->addHiddenFilter('-private', "private");
+			} else {
+				if (!UserAccount::userHasPermission('View Private Events for Home Library Locations')) {
+					$user = UserAccount::getLoggedInUser();
+					$locations = array_values($user->getAdditionalAdministrationLocations());
+					$locations[] = $user->getHomeLocationName();
+					$this->addHiddenFilter('private', '("' . implode('" OR "private_', $locations) . '" OR "public")');
+				} else {
+					$locations = array_values(Location::getLocationList(true));
+					$this->addHiddenFilter('private', '("private_' . implode('" OR "private_', $locations) . '" OR "public")');
+				}
+			}
 		}
 
 		$timer->logTime('Setup Events Search Object');

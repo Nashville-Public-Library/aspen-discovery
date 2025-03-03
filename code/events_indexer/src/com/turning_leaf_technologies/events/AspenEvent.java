@@ -125,11 +125,11 @@ class AspenEvent {
 		return "Cancelled";
 	}
 
-	public int getNonPublic() {
+	public String getNonPublic() {
 		if (nonPublic) {
-			return 1;
+			return "private";
 		} else {
-			return 0;
+			return "public";
 		}
 	}
 

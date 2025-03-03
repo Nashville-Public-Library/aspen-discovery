@@ -127,7 +127,7 @@
 
 		<field name="library_scopes" type="unchanged_string" indexed="true" stored="false" multiValued="true"/>
 
-		<field name="private" type="integer" indexed="true" stored="true" multiValued="false"/>
+		<field name="private" type="unchanged_string" indexed="true" stored="true" multiValued="true" default="public"/>
 
 		<!-- Field to get random titles -->
 		<dynamicField name="random*" type="random" indexed="true" stored="true"/>
