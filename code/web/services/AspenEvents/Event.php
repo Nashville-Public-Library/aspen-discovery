@@ -20,6 +20,30 @@ class AspenEvents_Event extends Action {
 			$actionClass->launch();
 			die();
 		}
+		// Check permissions
+		if ($this->recordDriver->isPrivate()) {
+			if (!UserAccount::userHasPermission('View Private Events for All Locations')) {
+				if (!UserAccount::userHasPermission([
+					'View Private Events for Home Library Locations',
+					'View Private Events for Home Location'
+				])) {
+					$this->display('../Admin/noPermission.tpl', 'Access Error');
+					exit();
+				} else {
+					if (!UserAccount::userHasPermission('View Private Events for Home Library Locations')) {
+						$user = UserAccount::getLoggedInUser();
+						$locations = array_values($user->getAdditionalAdministrationLocations());
+						$locations[] = $user->getHomeLocationName();
+					} else {
+						$locations = array_values(Location::getLocationList(true));
+					}
+					if (!in_array($this->recordDriver->getBranch(), $locations)) {
+						$this->display('../Admin/noPermission.tpl', 'Access Error');
+						exit();
+					}
+				}
+			}
+		}
 		$interface->assign('recordDriver', $this->recordDriver);
 		$interface->assign('eventsInLists', true);
 		$interface->assign('isStaff', UserAccount::isStaff());
