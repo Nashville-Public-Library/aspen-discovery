@@ -10,7 +10,7 @@
 					...
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default modalClose" data-dismiss="modal">{translate text="Close" isPublicFacing=true}</button>
+					<button type="button" id="modalCloseButton" class="btn btn-default modalClose" data-dismiss="modal">{translate text="Close" isPublicFacing=true}</button>
 					<span class="modal-buttons"></span>
 				</div>
 			</div><!-- /.modal-content -->

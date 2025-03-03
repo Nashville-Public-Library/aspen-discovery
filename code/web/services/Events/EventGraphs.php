@@ -17,7 +17,7 @@ class Events_EventGraphs extends Admin_Admin {
 		$interface->assign('timeframe', $timeframe);
 		$eventType = $_REQUEST['type'] ?? '';
 		$interface->assign('eventTypeValue', $eventType);
-		$interface->assign('eventTypes', EventType::getEventTypeList());
+		$interface->assign('eventTypes', EventType::getEventTypeList(true));
 
 		// $libraryList = Library::getLibraryList(!UserAccount::userHasPermission('View Event Reports For All Libraries'));
 		$locations = Location::getLocationList(!UserAccount::userHasPermission('View Event Reports for All Libraries') || UserAccount::userHasPermission('View Event Reports for Home Library'));
@@ -238,7 +238,7 @@ class Events_EventGraphs extends Admin_Admin {
 		if (!empty($eventType) || !empty($location) || !empty($sublocation) || !empty($query) || !empty($fields)) {
 			$title .= " - ";
 			if (!empty($eventType)) {
-				$eventTypes = EventType::getEventTypeList();
+				$eventTypes = EventType::getEventTypeList(true);
 				$title .= "Event Type: " . $eventTypes[$eventType] . ", ";
 			}
 			if (!empty($location)) {
