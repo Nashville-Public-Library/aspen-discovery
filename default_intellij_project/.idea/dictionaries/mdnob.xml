@@ -41,6 +41,7 @@
       <w>bookpack</w>
       <w>bookpacks</w>
       <w>booksellerid</w>
+      <w>boxine</w>
       <w>branchaddress</w>
       <w>branchcity</w>
       <w>branchcode</w>
@@ -254,6 +255,7 @@
       <w>tapereel</w>
       <w>tasklist</w>
       <w>tokener</w>
+      <w>tonies</w>
       <w>transbid</w>
       <w>transcode</w>
       <w>transitem</w>
@@ -277,8 +279,10 @@
       <w>wonderbook</w>
       <w>xbox</w>
       <w>xmlns</w>
+      <w>yoto</w>
       <w>yourcloudlibrary</w>
       <w>zebraqueue</w>
+      <w>zoodle</w>
       <w>zzzz</w>
     </words>
   </dictionary>

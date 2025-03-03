@@ -404,7 +404,7 @@ class SystemAPI extends AbstractAPI {
 		return $pendingUpdates;
 	}
 
-	public function runDatabaseUpdate(&$availableUpdates, $updateName) {
+	public function runDatabaseUpdate(&$availableUpdates, $updateName) : array {
 		if ($availableUpdates == null) {
 			$availableUpdates = $this->getDatabaseUpdates();
 		}
@@ -441,7 +441,7 @@ class SystemAPI extends AbstractAPI {
 		}
 	}
 
-	private function runSQLStatement(&$update, $sql) {
+	private function runSQLStatement(&$update, $sql) : bool {
 		global $aspen_db;
 		set_time_limit(500);
 		$updateOk = true;
@@ -583,6 +583,8 @@ class SystemAPI extends AbstractAPI {
 				$fileName = $theme->footerLogo;
 			} elseif ($type === "logoApp") {
 				$fileName = $theme->logoApp;
+			} elseif ($type === "headerLogoApp") {
+				$fileName = $theme->headerLogoApp;
 			} elseif ($type === "appSplash") {
 				$fileName = $app->logoSplash;
 			} elseif ($type === "appLogin") {

@@ -37,6 +37,21 @@ class Admin_Modules extends ObjectEditor {
 		return 'name asc';
 	}
 
+	protected function getDefaultRecordsPerPage() : int {
+		return 50;
+	}
+
+	function getDefaultFilters(array $filterFields): array {
+		return [
+			'name' => [
+				'fieldName' => 'name',
+				'filterType' => 'text',
+				'filterValue' => '',
+				'field' => $filterFields['name'],
+			],
+		];
+	}
+
 	function getObjectStructure($context = ''): array {
 		return Module::getObjectStructure($context);
 	}
@@ -53,15 +68,15 @@ class Admin_Modules extends ObjectEditor {
 		return UserAccount::userHasPermission('Administer Modules');
 	}
 
-	function canAddNew() {
+	function canAddNew() : bool {
 		return false;
 	}
 
-	function canDelete() {
+	function canDelete() : bool {
 		return false;
 	}
 
-	function canCompare() {
+	function canCompare() : bool {
 		return false;
 	}
 

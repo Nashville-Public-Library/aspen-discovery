@@ -62,6 +62,10 @@ class WebBuilder_WebResources extends ObjectEditor {
 		return 'https://help.aspendiscovery.org/help/webbuilder/webresources';
 	}
 
+	function getOnSubmissionJS(): string {
+		return 'AspenDiscovery.WebBuilder.checkLinkedObject(submitForm)';
+	}
+
 	function getBreadcrumbs(): array {
 		$breadcrumbs = [];
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home', 'Administration Home');
