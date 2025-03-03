@@ -5068,7 +5068,7 @@ var AspenDiscovery = (function(){
 			}
 		},
 
-		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle){
+		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle, hideCloseButton){
 			if (largeModal === undefined || largeModal === false) {
 				aspenJQ('.modal-dialog').removeClass('modal-dialog-large');
 			}else{
@@ -5078,6 +5078,11 @@ var AspenDiscovery = (function(){
 				aspenJQ('.modal-header').hide();
 			}else{
 				aspenJQ('.modal-header').show();
+			}
+			if (hideCloseButton !== undefined && hideCloseButton === true) {
+				aspenJQ('#modalCloseButton').hide();
+			}else{
+				aspenJQ('#modalCloseButton').show();
 			}
 			if (refreshAfterClose === undefined){
 				refreshAfterClose = false;
@@ -16381,6 +16386,7 @@ AspenDiscovery.WebBuilder = function () {
 	// noinspection JSUnusedGlobalSymbols
 	return {
 		editors: [],
+		saveLinkedObjCallback: function() {},
 
 		getPortalCellValuesForSource: function () {
 			var portalCellId = $("#id").val();
@@ -16469,6 +16475,79 @@ AspenDiscovery.WebBuilder = function () {
 					}
 				});
 			}
+		},
+
+		getSourceValuesForPlacard: function () {
+			var placardId = $("#id").val();
+			var sourceType = $("#sourceTypeSelect").val();
+
+			if (sourceType === 'none') {
+				$("#propertyRowsourceId").hide();
+			} else {
+				$("#propertyRowsourceId").show();
+			}
+
+			var url = Globals.path + '/WebBuilder/AJAX?method=getSourceValuesForPlacard&placardId=' + placardId + '&sourceType=' + sourceType;
+			$.getJSON(url, function(data){
+				if (data.success === true){
+					var sourceIdSelect = $("#sourceIdSelect" );
+					sourceIdSelect.find('option').remove();
+					var optionValues = data.values;
+					for (var key in optionValues) {
+						if (data.selected === key){
+							sourceIdSelect.append('<option value="' + key + '" selected>' + optionValues[key] + '</option>')
+						}else{
+							sourceIdSelect.append('<option value="' + key + '">' + optionValues[key] + '</option>')
+						}
+					}
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			});
+		},
+
+		checkLinkedObject: function (submitForm) {
+			var url = Globals.path + "/WebBuilder/AJAX";
+			var params = {
+				'method': 'checkLinkedObject',
+				objectId: $("#id").val()
+			};
+
+			$.getJSON(url, params,function(data){
+				if (data.success){
+					if (data.noLinkedObject === true){
+						submitForm();
+					} else{
+						AspenDiscovery.WebBuilder.saveLinkedObjCallback = submitForm;
+						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons, '', '', false, '', true);
+					}
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			})
+		},
+
+		setPlacardToCustomized: function() {
+
+		},
+
+		saveLinkedObject: function(doFullSave){
+			var params = {
+				objectId: $("#id").val(),
+				objectName: $("#name").val(),
+				url: $("#url").val(),
+				body: $("#teaser").val(),
+				image: $("#importFile-label-logo").val(),
+				doFullSave: doFullSave
+			};
+			var url = Globals.path + '/WebBuilder/AJAX?method=saveLinkedObject';
+			$.getJSON(url, params,function(data){
+				if (data.success === true){
+					AspenDiscovery.WebBuilder.saveLinkedObjCallback();
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			});
 
 		},
 

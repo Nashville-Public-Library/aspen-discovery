@@ -12,6 +12,7 @@ class Theme extends DataObject {
 	public $favicon;
 	public $defaultCover;
 	public $logoApp;
+	public $headerLogoApp;
 	public $fullWidth;
 
 	//Format Icons
@@ -708,6 +709,17 @@ class Theme extends DataObject {
 				'thumbWidth' => 180,
 				'maxWidth' => 512,
 				'maxHeight' => 512,
+				'hideInLists' => true,
+			],
+			'headerLogoApp' => [
+				'property' => 'headerLogoApp',
+				'type' => 'image',
+				'label' => 'Logo to show above the screen title in LiDA (1536x200 pixels)',
+				'description' => 'The logo to display above the title in Aspen LiDA. If none provided, LiDA will only show the screen title.',
+				'required' => false,
+				'thumbWidth' => 180,
+				'maxWidth' => 1536,
+				'maxHeight' => 200,
 				'hideInLists' => true,
 			],
 			'defaultCover' => [
@@ -3279,12 +3291,13 @@ class Theme extends DataObject {
 		}
 	}
 
-	public function getApiInfo() {
+	public function getApiInfo() : Theme {
 		global $configArray;
 
 		$apiInfo = $this;
 		$this->logoName = $configArray['Site']['url'] . '/files/original/' . $this->logoName;
 		$this->favicon = $configArray['Site']['url'] . '/files/original/' . $this->favicon;
+		$this->headerLogoApp = $configArray['Site']['url'] . '/files/original/' . $this->headerLogoApp;
 		unset($this->additionalCssType);
 		unset($this->additionalCss);
 		unset($this->generatedCss);
@@ -3308,6 +3321,7 @@ class Theme extends DataObject {
 		unset($this->footerLogoLink);
 		unset($this->favicon);
 		unset($this->logoApp);
+		unset($this->headerLogoApp);
 		unset($this->headerBackgroundImage);
 		unset($this->customBodyFont);
 		unset($this->customHeadingFont);

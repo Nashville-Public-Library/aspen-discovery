@@ -21,6 +21,23 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE aspen_lida_branded_settings add COLUMN logoAppIconAndroid varchar(100) DEFAULT NULL'
 			]
 		], //make_app_icons_os_specific
+		'remove_unused_updates_properties' => [
+			'title' => 'Make App Icons OS Specific',
+			'description' => 'Update settings to store separate icons per OS',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE system_variables DROP COLUMN allowScheduledUpdates',
+				'ALTER TABLE system_variables DROP COLUMN doQuickUpdates',
+			]
+		], //remove_unused_updates_properties
+		'theme_app_header_logo' => [
+			'title' => 'Theme - App Header Logo',
+			'description' => 'Allow an app header logo to be added for display in LiDA',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE themes ADD COLUMN headerLogoApp VARCHAR(100) DEFAULT NULL',
+			]
+		], //theme_app_header_logo
 
 		//katherine - Grove
 		'track_event_length_in_minutes' => [
@@ -268,6 +285,23 @@ function getUpdates25_03_00(): array {
 				"ALTER TABLE library ADD COLUMN webResourcesSettingId INT(11) DEFAULT -1",
 			],
 		], //add_web_resources_setting_id_to_library_table
+		'placard_source_type' => [
+			'title' => 'Placard Source Type',
+			'description' => 'Add sourceType and sourceId columns to placards table.',
+			'sql' => [
+				"ALTER TABLE placards ADD COLUMN sourceType VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN sourceId VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN generatedFromSource VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN isCustomized TINYINT(1) DEFAULT 0",
+			],
+		], //placard_source_type
+		'web_resource_generate_placard' => [
+			'title' => 'Web Resource: Generate Placard',
+			'description' => 'Add option to generate a placard for a web resource.',
+			'sql' => [
+				"ALTER TABLE web_builder_resource ADD COLUMN generatePlacard TINYINT(1) DEFAULT 0",
+			],
+		], //web_resource_generate_placard
 
 		// Leo Stoyanov - BWS
 
