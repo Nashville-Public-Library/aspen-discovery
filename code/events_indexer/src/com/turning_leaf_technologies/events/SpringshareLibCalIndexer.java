@@ -632,7 +632,8 @@ class SpringshareLibCalIndexer {
 			while (eventsSitesRS.next()) {
 				long settingsId = eventsSitesRS.getLong("settingsId");	
 				deleteOrphans.setLong(1, settingsId);
-				deleteOrphans.executeUpdate();
+				int deletedEvents = deleteOrphans.executeUpdate();
+				logEntry.incDeletedByNum(deletedEvents);
 				solrUpdateServer.deleteByQuery("type:event_libcal AND source:" + settingsId);
 				solrUpdateServer.commit(false, false, true);
 				logEntry.addNote("Deleted orphans for settingsId: " + settingsId);
