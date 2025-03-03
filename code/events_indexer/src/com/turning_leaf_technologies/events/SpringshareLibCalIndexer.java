@@ -60,16 +60,6 @@ class SpringshareLibCalIndexer {
 	private String oAuthTokenType;
 	private String oAuthAccessToken;
 
-	private bool orphanEventCleanup = false;
-
-	// indexer for cleaning up orphans
-	SpringshareLibCalIndexer(long settingsId, ConcurrentUpdateHttp2SolrClient solrUpdateServer, Connection aspenConn, Logger logger)
-	{
-		this(settingsId, "Orphan", "", null, null, null, 0, solrUpdateServer, aspenConn, logger);
-		this.orphanEventCleanup = true;
-		logEntry.addNote("Cleaning up orphan events for settingsId:"+settingsId);
-	}
-
 	SpringshareLibCalIndexer(long settingsId, String name, String baseUrl, String calId, String clientId, String clientSecret, int numberOfDaysToIndex, ConcurrentUpdateHttp2SolrClient solrUpdateServer, Connection aspenConn, Logger logger) {
 		this.settingsId = settingsId;
 		this.name = name;
@@ -495,11 +485,6 @@ class SpringshareLibCalIndexer {
 	}
 
 	private JSONArray getLibCalEvents() {
-		// we don't have any new events to add if we are cleaning up orphans
-		if(this.orphanEventCleanup)
-		{
-			return new JSONArray();
-		}
 		try {
 			CloseableHttpClient httpclient = HttpClients.createDefault();
 			HttpRequestBase apiRequest;
@@ -635,16 +620,36 @@ class SpringshareLibCalIndexer {
 
 	public static void cleanOrphanEvents(ConcurrentUpdateHttp2SolrClient solrUpdateServer, Connection aspenConn, Logger logger)
 	{
+		EventsIndexerLogEntry logEntry = new EventsIndexerLogEntry("Springshare LibCal Orphan Events", aspenConn, logger);
 		//get settingsIds with orphans
 		//create orphan indexers for them
 		//run index events
-		getEventsSitesToIndexStmt = aspenConn.prepareStatement("SELECT unique(settingsId) from springshare_libcal_events where settingsId not in (select id from springshare_libcal_settings) and deleted = 0");
-		eventsSitesRS = getEventsSitesToIndexStmt.executeQuery();
-		while (eventsSitesRS.next()) {
-			SpringshareLibCalIndexer indexer = new SpringshareLibCalIndexer(
-							eventsSitesRS.getLong("settingsId"),
-							solrUpdateServer, aspenConn, logger);
-					indexer.indexEvents();
+		logEntry.addNote("Checking for orphaned events...");
+		try {
+			PreparedStatement getEventsSitesToIndexStmt = aspenConn.prepareStatement("SELECT unique(settingsId) from springshare_libcal_events where settingsId not in (select id from springshare_libcal_settings) and deleted = 0");
+			PreparedStatement deleteOrphans = aspenConn.prepareStatement("UPDATE springshare_libcal_events SET deleted = 1 where settingsId = ?");
+			ResultSet eventsSitesRS = getEventsSitesToIndexStmt.executeQuery();
+			while (eventsSitesRS.next()) {
+				long settingsId = eventsSitesRS.getLong("settingsId");	
+				deleteOrphans.setLong(1, settingsId);
+				deleteOrphans.executeUpdate();
+				solrUpdateServer.deleteByQuery("type:event_libcal AND source:" + settingsId);
+				solrUpdateServer.commit(false, false, true);
+				logEntry.addNote("Deleted orphans for settingsId: " + settingsId);
+			}
+		} catch (SQLException e) {
+			logger.error("SQLException cleaning orphan events", e);
+			logEntry.incErrors("SQLException cleaning orphan events", e);
+		} catch (SolrServerException e) {
+			logger.error("Solr Exception cleaning orphan events sql and solr may be out of sync", e);
+			logEntry.incErrors("Solr Exception cleaning orphan events sql and solr may be out of sync", e);
+		} catch (IOException e)
+		{
+			//this exception is ex
+			logger.error("IOException cleaning orphan events sql and solr may be out of sync", e);
+			logEntry.incErrors("IOException cleaning orphan events sql and solr may be out of sync", e);
 		}
+		logEntry.setFinished();
+		logEntry.saveResults();
 	}
 }
