@@ -816,11 +816,11 @@ class Evergreen extends AbstractIlsDriver {
 		*/
 		$request = 'service=open-ils.actor';
 		$request .= "&method=open-ils.actor.user.$propertyName.update";
-		$request .= '&param=' . json_encode($authToken);
-		$request .= '&param=' . json_encode($propertyValue);
-		$request .= '&param=' . json_encode($patronIlsPassword);
+		$requestParams = '&param=' . json_encode($authToken);
+		$requestParams .= '&param=' . json_encode($propertyValue);
+		$requestParams .= '&param=' . json_encode($patronIlsPassword);
 
-		$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request);
+		$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request . $requestParams);
 		ExternalRequestLogEntry::logRequest('evergreen.updatePatronProperty', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $request, $this->apiCurlWrapper->getResponseCode(), $apiResponse, []);
 
 		$responseData = json_decode($apiResponse, true);
