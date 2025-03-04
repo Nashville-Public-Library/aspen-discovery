@@ -315,14 +315,21 @@ function getUpdates25_03_00(): array {
 		], //web_resource_generate_placard
 
 		// Leo Stoyanov - BWS
-		'useOriginalCoverUrls' => [
+		'use_original_cover_urls_setting' => [
 			'title' => 'Add Option to Use Original Cover URLs',
 			'description' => 'Add an option to allow the use of original cover URLs rather than cached images in the file system.',
 			'continueOnError' => false,
 			'sql' => [
-				'ALTER TABLE system_variables ADD COLUMN useOriginalCoverUrls TINYINT(1) DEFAULT 0'
+				"ALTER TABLE system_variables ADD COLUMN IF NOT EXISTS useOriginalCoverUrls TINYINT(1) DEFAULT 0"
 			]
-		],
+		], //use_original_cover_urls_setting
+		'add_original_url_to_bookcover_info' => [
+			'title' => 'Add Original URL to Bookcover Info',
+			'description' => 'Add original_url field to bookcover_info table to store the original URL of the cover; required for using original cover URLs.',
+			'sql' => [
+				"ALTER TABLE bookcover_info ADD COLUMN IF NOT EXISTS original_url TEXT DEFAULT NULL",
+			],
+		], //add_original_url_to_bookcover_info
 
 		//alexander - PTFS-Europe
 		'filter_books_from_summon_results' => [

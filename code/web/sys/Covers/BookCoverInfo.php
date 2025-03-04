@@ -17,6 +17,7 @@ class BookCoverInfo extends DataObject {
 	protected $largeLoaded;
 	protected $uploadedImage;
 	protected $disallowThirdPartyCover;
+	protected $original_url;
 
 	public function getNumericColumnNames(): array {
 		return [
@@ -73,5 +74,22 @@ class BookCoverInfo extends DataObject {
 	 */
 	public function setRecordId($recordId): void {
 		$this->__set('recordId', $recordId);
+	}
+
+	/**
+	 * Get the original URL of the cover image
+	 * @return string|null
+	 */
+	public function getOriginalUrl(): ?string
+	{
+		return $this->original_url;
+	}
+
+	/**
+	 * Set the original URL of the cover image
+	 * @param string $url
+	 */
+	public function setOriginalUrl(string $url): void {
+		$this->__set('original_url', $url);
 	}
 }
