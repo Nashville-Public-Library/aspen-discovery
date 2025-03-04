@@ -256,9 +256,18 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
-		loadHolds: function (source, availableHoldSort, unavailableHoldSort, showCovers) {
+		loadHolds: function (source, availableHoldSort, unavailableHoldSort, showCovers, selectedUser,selectedTitles) {
 			AspenDiscovery.Account.currentHoldSource = source;
 			var url = Globals.path + "/MyAccount/AJAX?method=getHolds&source=" + source;
+
+			if (selectedUser || selectedUser == "") {
+				url += "&selectedUser=" + selectedUser;
+			}
+
+			if (selectedTitles !== undefined) {
+				url += "&selectedHolds=" + encodeURIComponent(JSON.stringify(selectedTitles));
+			}
+
 			if (availableHoldSort !== undefined) {
 				url += "&availableHoldSort=" + availableHoldSort;
 			}
@@ -273,7 +282,9 @@ AspenDiscovery.Account = (function () {
 				source: source,
 				availableHoldSort: availableHoldSort,
 				unavailableHoldSort: unavailableHoldSort,
-				showCovers: showCovers
+				showCovers: showCovers,
+				selectedUser: selectedUser,
+				selectedTitles: selectedTitles
 			};
 			var newUrl = AspenDiscovery.buildUrl(document.location.origin + document.location.pathname, 'source', source);
 			if (document.location.href) {
@@ -300,6 +311,7 @@ AspenDiscovery.Account = (function () {
 				if (data.success) {
 					$('#accountLoadTime').html(data.holdInfoLastLoaded);
 					$("#" + source + "HoldsPlaceholder").html(data.holds);
+					AspenDiscovery.Account.loadMenuData();
 				} else {
 					$("#" + source + "HoldsPlaceholder").html(data.message);
 				}
@@ -1309,6 +1321,39 @@ AspenDiscovery.Account = (function () {
 			}).get().join("&");
 
 			return queryString;
+		},
+
+		filterOutLinkedUsers: function () {
+			var selectedUser = $('#linkedUsersDropdown').val();
+			sessionStorage.setItem('selectedUser', selectedUser);
+			var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+			var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+			var showCovers = $('#showCovers').prop('checked');
+			AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, []);
+		},
+		displayOnlySelectedHolds: function () {
+			var selectedTitles = AspenDiscovery.getSelectedTitles();
+
+			if (selectedTitles) {
+				var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+				var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+				var showCovers = $('#showCovers').prop('checked');
+
+				var selectedUser = sessionStorage.getItem('selectedUsers');
+				
+				AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, selectedTitles);
+			}
+
+		},
+
+		clearDisplayOnlySelectedHolds: function () {
+			var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+			var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+			var showCovers = $('#showCovers').prop('checked');
+
+			var selectedUser = sessionStorage.getItem('selectedUser');
+				
+			AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, []);
 		},
 
 		saveSearch: function (searchId) {
