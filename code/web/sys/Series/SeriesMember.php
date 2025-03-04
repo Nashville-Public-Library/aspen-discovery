@@ -127,6 +127,10 @@ class SeriesMember extends DataObject {
 		];
 	}
 
+	function getEditLink($context): string {
+		return '/Series/SeriesMembers?objectAction=edit&id=' . $this->id;
+	}
+
 	public function getRecordDriver() {
 		require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 		$recordDriver = new GroupedWorkDriver($this->groupedWorkPermanentId);
@@ -135,5 +139,6 @@ class SeriesMember extends DataObject {
 		}
 		return $recordDriver;
 	}
+
 
 }

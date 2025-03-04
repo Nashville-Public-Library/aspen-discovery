@@ -66,6 +66,10 @@ class BookCoverProcessor {
 			if ($this->getSeriesCover($this->id)) {
 				return true;
 			}
+		} elseif ($this->type == 'seriesMember') {
+			if ($this->getSeriesMemberCover($this->id)) {
+				return true;
+			}
 		} elseif ($this->type == 'course_reserves') {
 			if ($this->getCourseReservesCover($this->id)) {
 				return true;
@@ -1580,6 +1584,28 @@ class BookCoverProcessor {
 		}
 	}
 
+	private function getSeriesMemberCover($id) {
+		//Build a cover based on the titles within list
+		require_once ROOT_DIR . '/sys/Covers/DefaultCoverImageBuilder.php';
+		$coverBuilder = new DefaultCoverImageBuilder();
+		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
+		$seriesMember = new SeriesMember();
+		$seriesMember->id = $id;
+
+		if ($seriesMember->find(true)) {
+			if ($this->getUploadedSeriesMemberCover($seriesMember->cover)) {
+				return true;
+			} else {
+				$title = $seriesMember->displayName;
+				$author = $seriesMember->author;
+				$coverBuilder->getCover($title, $author, $this->cacheFile);
+				return $this->processImageURL('default', $this->cacheFile, false);
+			}
+		} else {
+			return false;
+		}
+	}
+
 	private function getCourseReservesCover($id) {
 		if (strpos($id, ':') !== false) {
 			[
@@ -1911,6 +1937,14 @@ class BookCoverProcessor {
 
 	private function getUploadedSeriesCover($cover) {
 		$uploadedImage = $this->bookCoverPath . '/original/series/' . $cover;
+		if (file_exists($uploadedImage)) {
+			return $this->processImageURL('upload', $uploadedImage);
+		}
+		return false;
+	}
+
+	private function getUploadedSeriesMemberCover($cover) {
+		$uploadedImage = $this->bookCoverPath . '/original/seriesMember/' . $cover;
 		if (file_exists($uploadedImage)) {
 			return $this->processImageURL('upload', $uploadedImage);
 		}

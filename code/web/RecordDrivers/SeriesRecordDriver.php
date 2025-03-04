@@ -31,15 +31,20 @@ class SeriesRecordDriver extends IndexRecordDriver {
 		return $this->valid;
 	}
 
-	function getBookcoverUrl($size = 'small', $absolutePath = false) {
+	function getBookcoverUrl($size = 'small', $absolutePath = false, $seriesMember = false, $memberId = 0) {
 		global $configArray;
 		if ($absolutePath) {
 			$bookCoverUrl = $configArray['Site']['url'];
 		} else {
 			$bookCoverUrl = '';
 		}
-		$id = $this->getId();
-		$bookCoverUrl = $bookCoverUrl . "/bookcover.php?type=series&id={$id}&size={$size}";
+		if (!$seriesMember) {
+			$id = $this->getId();
+			$bookCoverUrl = $bookCoverUrl . "/bookcover.php?type=series&id={$id}&size={$size}";
+		} else {
+			$id = $memberId;
+			$bookCoverUrl = $bookCoverUrl . "/bookcover.php?type=seriesMember&id={$id}&size={$size}";
+		}
 		return $bookCoverUrl;
 	}
 

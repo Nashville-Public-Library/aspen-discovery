@@ -99,6 +99,7 @@ class Series extends DataObject {
 				'allowEdit' => true,
 				'hideInLists' => true,
 				'canAddNew' => true,
+				'canEdit' => true,
 			],
 		];
 		return $structure;
@@ -293,6 +294,8 @@ class Series extends DataObject {
 					$interface->assign('listEntrySource', "Series");
 					$interface->assign('seriesMemberId',$seriesMemberInfo['seriesMemberId']);
 					$interface->assign('placeholder', $seriesMemberInfo);
+					$seriesRecordDriver = new SeriesRecordDriver($seriesMemberInfo['seriesMemberId']);
+					$interface->assign('bookCoverUrl', $seriesRecordDriver->getBookcoverUrl('medium', false, true, $seriesMemberInfo['seriesMemberId']));
 					$listResults[$listPosition] = $interface->fetch('Series/placeHolderListEntry.tpl');
 				}
 			}
