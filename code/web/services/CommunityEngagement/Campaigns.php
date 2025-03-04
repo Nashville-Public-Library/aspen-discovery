@@ -15,7 +15,7 @@ class CommunityEngagement_Campaigns extends ObjectEditor {
 	}
 
 	function getModule(): string {
-		return 'Community Engagement';
+		return 'CommunityEngagement';
 	}
 
 	function getPageTitle(): string {

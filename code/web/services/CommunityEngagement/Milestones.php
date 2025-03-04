@@ -14,7 +14,7 @@ class CommunityEngagement_Milestones extends ObjectEditor {
 	}
 
 	function getModule(): string {
-		return 'Community Engagement';
+		return 'CommunityEngagement';
 	}
 
 	function getPageTitle(): string {
