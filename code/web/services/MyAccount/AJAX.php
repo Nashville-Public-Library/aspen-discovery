@@ -9148,8 +9148,219 @@ class MyAccount_AJAX extends JSON_Action {
 		return $result;
 	}
 
-	/** @noinspection PhpUnused */
-	function getYearInReviewSlide(): array {
+	public function enrollCampaign() {
+		require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
+		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
+
+		$campaignId = $_GET['campaignId'] ?? null;
+
+		if (!$campaignId) {
+			return[
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'Campaign ID is missing.',
+					'isPublicFacing' => true
+				])
+			];
+		}
+
+		$userId = UserAccount::getActiveUserId();
+		if (!$userId) {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'User is not logged in.',
+					'isPublicFacing' => true
+				])
+			];
+		}
+
+		$userCampaign = new UserCampaign();
+		$userCampaign->userId = $userId;
+		$userCampaign->campaignId = $campaignId;
+		$campaign = new Campaign();
+		$campaign->id = $campaignId;
+		if (!$campaign->find(true)) {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'Campaign not found.',
+					'isPublicFacing' => true
+				])
+			];
+		}
+
+		if ($userCampaign->find(true)) {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Already Enrolled',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'User is already enrolled in this campaign.',
+					'isPublicFacing' => true
+				])
+			];
+		}
+
+		if ($userCampaign->insert()) {
+			$campaign->enrollmentCounter++;
+			$campaign->currentEnrollments++;
+			$campaign->update();
+			return [
+				'success' => true,
+				'title' => translate([
+					'text' => 'Success',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'You have enrolled in the campaign successfully.',
+					'isPublicFacing' => true
+				])
+			];
+		} else {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'Failed to enroll user in campaign.',
+					'isPublicFacing' => true
+				])
+			];
+		}
+	}
+
+	public function unenrollCampaign() {
+		require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
+		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
+
+		$campaignId = $_GET['campaignId'] ?? null;
+
+		if (!$campaignId) {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'Campaign ID is missing.',
+					'isPublicFacing' => true
+				])
+			];
+		}
+
+		$userId = UserAccount::getActiveUserId();
+		if (!$userId) {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'User is not logged in.',
+					'isPublicFacing' => true
+				])
+			];
+		}
+
+		$userCampaign = new UserCampaign();
+		$userCampaign->userId = $userId;
+		$userCampaign->campaignId = $campaignId;
+
+		//Find user campaign entry and delete
+		if ($userCampaign->find(true)) {
+			$campaign = new Campaign();
+			$campaign->id = $campaignId;
+			if ($campaign->find(true)) {
+				if ($userCampaign->delete()) {
+					//Increase unenrollment counter
+					$campaign->unenrollmentCounter++;
+					$campaign->currentEnrollments--;
+					$campaign->update();
+
+					return [
+						'success' => true,
+						'title' => translate([
+							'text' => 'Success',
+							'isPublicFacing' => true
+						]),
+						'message' => translate([
+							'text' => 'You have successfully unenrolled.',
+							'isPublicFacing' => true
+						])
+					];
+				} else {
+					return [
+						'success' => false,
+						'title' => translate([
+							'text' => 'Error',
+							'isPublicFacing' => true
+						]),
+						'message' => translate([
+							'text' => 'Failed to unenroll.',
+							'isPublicFacing' => true
+						])
+					];
+				}
+			} else {
+				return [
+					'success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true
+					]),
+					'message' => translate([
+						'text' => 'Campaign not found.',
+						'isPublicFacing' => true
+					])
+				];
+			}
+		} else {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'User Not Enrolled',
+					'isPublicFacing' => true
+				]),
+				'message' => translate([
+					'text' => 'User is not enrolled in this campaign.',
+					'isPublicFacing' => true
+				])
+			];
+		}
+	}
+
+	public function getEnrolledCampaigns() {
+		require_once ROOT_DIR . '/sys/UserAccount.php';
+		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
+
+		$userId = UserAccount::getActiveUserId();
+		$enrolledCampaigns = Campaign::getUserEnrolledCampaigns($userId);
+		return [
+			'success' => true,
+			'numCampaigns' => count($enrolledCampaigns)
+		];
+	}
+
+	function getYearInReviewSlide() : array {
 		$result = [
 			'success' => false,
 			'title' => translate([

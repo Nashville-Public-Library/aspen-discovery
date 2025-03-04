@@ -128,6 +128,8 @@ class User extends DataObject {
 	public $_noticePreferenceLabel;
 	private $_numMaterialsRequests = 0;
 	private $_readingHistorySize = 0;
+	public $_dateOfBirth;
+
 
 	// CarlX Option
 	public $_emailReceiptFlag;
@@ -3109,6 +3111,22 @@ class User extends DataObject {
 		return $this->_pTypeObj;
 	}
 
+	/**
+	 * Get the user's age based on their date of birth.
+	 * 
+	 * @return int|null The user's age or null if date of birth is not set.
+	*/
+	public function getAge(): ?int {
+		
+		$this->loadContactInformation();
+		
+		$dob = new DateTime($this->_dateOfBirth);
+		$today = new DateTime();
+
+		$age = $dob->diff($today)->y;
+		return $age;
+	}
+
 	public function updatePatronInfo($canUpdateContactInfo, $fromMasquerade = false) {
 		$result = $this->getCatalogDriver()->updatePatronInfo($this, $canUpdateContactInfo, $fromMasquerade);
 		$this->clearCache();
@@ -4187,6 +4205,21 @@ class User extends DataObject {
 		$sections['translations']->addAction(new AdminAction('Languages', 'Define which languages are available within Aspen Discovery.', '/Translation/Languages'), 'Administer Languages');
 		$sections['translations']->addAction(new AdminAction('Translations', 'Translate the user interface of Aspen Discovery.', '/Translation/Translations'), 'Translate Aspen');
 
+		if (array_key_exists('Community Engagement', $enabledModules)) {
+			$sections['communityEngagement'] = new AdminSection('Community Engagement');
+			$sections['communityEngagement']->addAction(new AdminAction('Campaigns', 'Create and view campaigns.', '/CommunityEngagement/Campaigns'), [
+				'Administer Community Engagement Module',
+			]);
+			$sections['communityEngagement']->addAction(new AdminAction('Milestone Criteria', 'Create and view milestones.', '/CommunityEngagement/Milestones'), [
+				'Administer Community Engagement Module',
+			]);
+			$sections['communityEngagement']->addAction(new AdminAction('Rewards', 'Create and view rewards.', '/CommunityEngagement/Rewards'), [
+				'Administer Community Engagement Module',
+			]);
+			$sections['communityEngagement']->addAction(new AdminAction('Admin View', 'View progress and manage rewards.', '/CommunityEngagement/AdminView'), [
+				'View Community Engagement Dashboard',
+			]);
+		}
 		$sections['cataloging'] = new AdminSection('Catalog / Grouped Works');
 		$groupedWorkAction = new AdminAction('Grouped Work Display', 'Define information about what is displayed for Grouped Works in search results and full record displays.', '/Admin/GroupedWorkDisplay');
 		$groupedWorkAction->addSubAction(new AdminAction('Grouped Work Facets', 'Define information about what facets are displayed for grouped works in search results and Advanced Search.', '/Admin/GroupedWorkFacets'), [
@@ -5700,6 +5733,18 @@ class User extends DataObject {
 
 	public function isAspenAdminUser(): bool {
 		return $this->source == 'admin' && $this->username == 'aspen_admin';
+	}
+
+	public function isUserAdmin(): bool {
+		require_once ROOT_DIR . '/sys/Administration/UserRoles.php';
+		$userRole = new UserRoles();
+		$userRole->find();
+
+		$adminList = [];
+		while ($userRole->fetch()) {
+			$adminList[] = $userRole->userId;
+		}
+		return in_array($this->id, $adminList);
 	}
 
 	public function showRenewalLink(AccountSummary $ilsAccountSummary): bool {
