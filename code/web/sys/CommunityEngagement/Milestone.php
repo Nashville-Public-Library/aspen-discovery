@@ -71,7 +71,7 @@ class Milestone extends DataObject {
 				'type' => 'text',
 				'label' => 'Conditional Value: ',
 				'maxLength' => 100,
-				'description' => 'Optional value e.g. Fantasy',
+				'description' => 'Optional value e.g. Fantasy. This should be left blank to create a milestone with no condition.',
 				'required' => false,
 			],
 		];
