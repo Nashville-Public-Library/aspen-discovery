@@ -30,28 +30,26 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE aspen_lida_branded_settings add COLUMN logoAppIconAndroid varchar(100) DEFAULT NULL'
 			]
 		], //make_app_icons_os_specific
+		'remove_unused_updates_properties' => [
+			'title' => 'Make App Icons OS Specific',
+			'description' => 'Update settings to store separate icons per OS',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE system_variables DROP COLUMN allowScheduledUpdates',
+				'ALTER TABLE system_variables DROP COLUMN doQuickUpdates',
+			]
+		], //remove_unused_updates_properties
+		'theme_app_header_logo' => [
+			'title' => 'Theme - App Header Logo',
+			'description' => 'Allow an app header logo to be added for display in LiDA',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE themes ADD COLUMN headerLogoApp VARCHAR(100) DEFAULT NULL',
+			]
+		], //theme_app_header_logo
 
 		//katherine - Grove
-		'track_event_length_in_minutes' => [
-			'title' => 'Track Event Length In Minutes',
-			'description' => 'Multiply existing event lengths by 60 to get minutes',
-			'sql' => [
-				'UPDATE event SET eventLength = eventLength * 60;',
-				'UPDATE event_instance SET length = length * 60;'
-			]
-		], //track_event_length_in_minutes
-		'event_calendar_display_settings' => [
-			'title' => 'Event Calendar Display Settings',
-			'description' => 'Add table to store calendar display settings',
-			'sql' => [
-				"CREATE TABLE calendar_display_settings (
-					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-					name VARCHAR(50),
-					cover VARCHAR(100),
-					altText VARCHAR(100)
-				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
-			]
-		], //event_calendar_display_settings
+
 		'add_series_settings' => [
 			'title' => 'Add Series Search settings to Library Systems',
 			'description' => 'Add Series Search settings to Library Systems',
@@ -67,6 +65,13 @@ function getUpdates25_03_00(): array {
 				"INSERT INTO modules (name, indexName, backgroundProcess, logClassPath, logClassName, settingsClassPath, settingsClassName) VALUES ('Series', 'series', 'series_indexer', '/sys/Series/SeriesIndexingLogEntry.php', 'SeriesIndexingLog', '/sys/Series/SeriesIndexingSettings.php', 'SeriesIndexingSettings')",
 			],
 		], // add_series_module
+		'series_log_class_name' => [
+			'title' => 'Update Series Log Class Name',
+			'description' => 'Update Series Log Class Name',
+			'sql' => [
+				"UPDATE modules set logClassName='SeriesIndexingLogEntry' where name = 'Series'",
+			],
+		], // series_log_class_name
 		'add_administer_series_permission' => [
 			'title' => 'Manage Series Permission',
 			'description' => 'Add new permission to manage series',
@@ -130,6 +135,27 @@ function getUpdates25_03_00(): array {
 					"INSERT INTO series_indexing_settings VALUES (1,1,0,0);",
 			]
 		], //add_series_tables
+
+		'track_event_length_in_minutes' => [
+			'title' => 'Track Event Length In Minutes',
+			'description' => 'Multiply existing event lengths by 60 to get minutes',
+			'sql' => [
+				'UPDATE event SET eventLength = eventLength * 60;',
+				'UPDATE event_instance SET length = length * 60;'
+			]
+		], //track_event_length_in_minutes
+		'event_calendar_display_settings' => [
+			'title' => 'Event Calendar Display Settings',
+			'description' => 'Add table to store calendar display settings',
+			'sql' => [
+				"CREATE TABLE calendar_display_settings (
+					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					name VARCHAR(50),
+					cover VARCHAR(100),
+					altText VARCHAR(100)
+				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
+			]
+		], //event_calendar_display_settings
 
 		//kirstien - Grove
 
@@ -270,6 +296,23 @@ function getUpdates25_03_00(): array {
 				"ALTER TABLE library ADD COLUMN webResourcesSettingId INT(11) DEFAULT -1",
 			],
 		], //add_web_resources_setting_id_to_library_table
+		'placard_source_type' => [
+			'title' => 'Placard Source Type',
+			'description' => 'Add sourceType and sourceId columns to placards table.',
+			'sql' => [
+				"ALTER TABLE placards ADD COLUMN sourceType VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN sourceId VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN generatedFromSource VARCHAR(30) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN isCustomized TINYINT(1) DEFAULT 0",
+			],
+		], //placard_source_type
+		'web_resource_generate_placard' => [
+			'title' => 'Web Resource: Generate Placard',
+			'description' => 'Add option to generate a placard for a web resource.',
+			'sql' => [
+				"ALTER TABLE web_builder_resource ADD COLUMN generatePlacard TINYINT(1) DEFAULT 0",
+			],
+		], //web_resource_generate_placard
 
 		// Leo Stoyanov - BWS
 
@@ -287,6 +330,27 @@ function getUpdates25_03_00(): array {
 		//James Staub - Nashville Public Library
 
 		//Lucas Montoya - Theke Solutions
+
+		//Yanjun Li - ByWater
+		'sierra_self_reg_form_updates' => [
+			'title' => 'Sierra Self Reg updates',
+			'description' => 'Add new fields to Sierra self registration forms',
+			'sql' => [
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegNoticePref CHAR(1) DEFAULT "-"',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegTelephoneField VARCHAR(5) DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegExpirationDays INT DEFAULT 30',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegPcode1 VARCHAR(25) DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegPcode2 VARCHAR(25) DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegPcode3 INT DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegPcode4 INT DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegPatronMessage VARCHAR(35) DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegAgency INT DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra CHANGE COLUMN selfRegPatronCode selfRegPatronType INT DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegBarcodePrefix VARCHAR(10) DEFAULT NULL',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegBarcodeSuffixLength INT DEFAULT 7',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegGuardianField VARCHAR(10) DEFAULT NULL',
+			],
+		], //sierra_self_reg_form_updates
 
 		//other
 

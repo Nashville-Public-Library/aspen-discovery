@@ -70,6 +70,11 @@
 					{if !empty($recordDriver->getEventTypeFields())}
 						{$recordDriver->getEventTypeFields()}
 					{/if}
+					{if $private}
+						<li>
+							<span class="label label-default">{translate text="Private" isPublicFacing=true}</span>
+						</li>
+					{/if}
 				</ul>
 			</div>
 			<div class="col-tn-4" style="display:flex; justify-content:center;">
@@ -119,6 +124,22 @@
 				<a href="{$recordDriver->getExternalUrl()}" class="btn btn-sm btn-tools" target="_blank" aria-label="{translate text="More Info" isPublicFacing=true inAttribute=true} ({translate text="opens in a new window" isPublicFacing=true inAttribute=true})"><i class="fas fa-external-link-alt" role="presentation"></i> {translate text="More Info" isPublicFacing=true}</a>
 				{if $isStaff && $eventsInLists == 1 || $eventsInLists == 2}
 					<button onclick="return AspenDiscovery.Account.showSaveToListForm(this, 'Events', '{$recordDriver->getUniqueID()|escape}');" class="btn btn-sm btn-tools addToListBtn">{translate text="Add to List" isPublicFacing=true}</button>
+				{/if}
+				{if $upcomingInstanceCount > 1}
+					<div class="btn-group">
+						<button data-toggle="dropdown" class="btn btn-sm btn-tools btn-default dropdown-toggle" aria-haspopup="true" aria-expanded="false" id="export_{$recordDriver->getUniqueID()|escape}">
+							{translate text="Export" isPublicFacing=true}
+							<span class="caret"></span>
+						</button>
+						<ul class="dropdown-menu" aria-labelledby="export_{$recordDriver->getUniqueID()|escape}">
+							<li><a href="#" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 'event_aspenEvent', 0);">{translate text="Only this event" isPublicFacing="true"}</a></li>
+							<li><a onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 'event_aspenEvent', 1);" href="#">{translate text="All upcoming events in this series" isPublicFacing="true"}</a></li>
+						</ul>
+					</div>
+				{else}
+					<button class="btn btn-sm btn-tools btn-default" onclick="return AspenDiscovery.Events.iCalendarExport('{$recordDriver->getUniqueID()|escape}', 'event_aspenEvent', 0);">
+						{translate text="Export" isPublicFacing=true}
+					</button>
 				{/if}
 			</div>
 			<div class="btn-group btn-group-sm">
