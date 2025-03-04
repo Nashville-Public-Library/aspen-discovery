@@ -5514,6 +5514,14 @@ $.validator.addMethod('repeat', function(value, element){
 	}
 }, "Repeat fields do not match");
 
+jQuery.validator.addMethod("pinConfirmation", function (value, element) {
+	if (this.optional(element)) {
+		return true;
+	}
+	var pinToMatch = aspenJQ("#pin").val();
+	return value === pinToMatch;
+}, "PINs must match.");
+
 if (!String.prototype.startsWith) {
 	Object.defineProperty(String.prototype, 'startsWith', {
 		value: function(search, rawPos) {
@@ -10772,7 +10780,7 @@ AspenDiscovery.Axis360 = (function () {
 								AspenDiscovery.closeLightbox(function (){
 									var ret = confirm(data.message);
 									if (ret === true) {
-										AspenDiscovery.Axis360.doHold(patronId, id);
+										AspenDiscovery.Axis360.placeHold(id);
 									}
 								});
 							} else {
