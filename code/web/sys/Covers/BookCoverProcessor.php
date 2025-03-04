@@ -2109,97 +2109,107 @@ class BookCoverProcessor {
 	}
 
 	/**
-	 * If the system is configured to use the original cover URLs and the source is not an upload,
-	 * check for a cached URL in the database, write it if not present, and then
-	 * (if the URL appears to be valid and not a dummy) immediately issue a 301 redirect.
+	 * Validates a cover URL to ensure it returns a valid, usable image
 	 *
-	 * @param string $source The source label.
-	 * @param string $url The URL to process.
-	 * @return string Returns the (possibly unmodified) URL.
+	 * @param string $url The URL to validate
+	 * @return bool True if the URL is valid and returns a usable image, false otherwise
 	 */
+	private function validateCoverUrl(string $url, string $source): bool {
+		// Check HTTP headers.
+		$headers = @get_headers($url);
+		if (!$headers || !preg_match('/^HTTP\/\d+\.\d+\s+(200|30[1-9])/', $headers[0])) {
+			$this->log("Cover URL $url did not return a valid HTTP response; falling back.", Logger::LOG_ERROR);
+			return false;
+		}
+
+		// Fetch the image content (in memory) to perform additional checks.
+		$context = stream_context_create([
+			'http' => [
+				'header' => "User-Agent: {$this->configArray['Catalog']['catalogUserAgent']}\r\n",
+			],
+		]);
+		$image = @file_get_contents($url, false, $context);
+		if ($image === false) {
+			$this->log("Could not retrieve image content from cover URL $url; falling back.", Logger::LOG_ERROR);
+			return false;
+		}
+
+		// Check against known dummy image MD5 checksums.
+		$imageChecksum = md5($image);
+		$dummyChecksums = [
+			'e89e0e364e83c0ecfba5da41007c9a2c',
+			'f017f94ed618a86d0fa7cecd7112ab7e',
+			'798f904eabf783405079eaf699414801',
+			'dadde13fdb5f3775cdbdd25f34c0389b',
+			'b13e33c0262a3a1f21dd20b826710cbc',
+			'c6ddaf338cf667df0bf60045f05146db',
+			'821d0d442dbee0f51f4c803e8e9fc87a'
+		];
+		if (in_array($imageChecksum, $dummyChecksums)) {
+			$this->log("Cover URL $url returned a known dummy image (checksum: $imageChecksum); falling back.", Logger::LOG_ERROR);
+			return false;
+		}
+
+		// Verify that the image is not too small.
+		$imageInfo = @getimagesizefromstring($image);
+		if ($imageInfo === false || ($imageInfo[0] < 2 && $imageInfo[1] < 2)) {
+			$this->log("Cover URL $url returned an image that is too small; falling back.", Logger::LOG_ERROR);
+			return false;
+		}
+
+		// Check the color of the bottom left and bottom right corners.
+		if ($imageResource = @imagecreatefromstring($image)) {
+			$width = $imageInfo[0];
+			$height = $imageInfo[1];
+			$rgbLeft = imagecolorat($imageResource, 0, $height - 1);
+			$rgbRight = imagecolorat($imageResource, $width - 1, $height - 1);
+			imagedestroy($imageResource);
+			if ($rgbLeft == 8421504 && $rgbRight == 8421504) {
+				$this->log("Cover URL $url returned an image with partial gray at the bottom; falling back.", Logger::LOG_ERROR);
+				return false;
+			}
+
+			$this->setBookCoverInfo($source, $width, $height);
+			// All checks passed.
+			return true;
+		} else {
+			$this->log("Cover URL $url returned invalid image data; falling back.", Logger::LOG_ERROR);
+			return false;
+		}
+	}
+
 	private function handleOriginalCoverUrl(string $source, string $url): string {
 		if (SystemVariables::getSystemVariables()->useOriginalCoverUrls &&
 			$source !== 'upload' &&
 			preg_match('/^https?:\/\//i', $url)
 		) {
-			// Check HTTP headers.
-			$headers = @get_headers($url);
-			if ($headers && preg_match('/^HTTP\/\d+\.\d+\s+(200|30[1-9])/', $headers[0])) {
-				// Fetch the image content (in memory) to perform additional checks.
-				$context = stream_context_create([
-					'http' => [
-						'header' => "User-Agent: {$this->configArray['Catalog']['catalogUserAgent']}\r\n",
-					],
-				]);
-				$image = @file_get_contents($url, false, $context);
-				if ($image !== false) {
-					// Check against known dummy image MD5 checksums.
-					$imageChecksum = md5($image);
-					$dummyChecksums = [
-						'e89e0e364e83c0ecfba5da41007c9a2c',
-						'f017f94ed618a86d0fa7cecd7112ab7e',
-						'798f904eabf783405079eaf699414801',
-						'dadde13fdb5f3775cdbdd25f34c0389b',
-						'b13e33c0262a3a1f21dd20b826710cbc',
-						'c6ddaf338cf667df0bf60045f05146db',
-						'821d0d442dbee0f51f4c803e8e9fc87a'
-					];
-					if (in_array($imageChecksum, $dummyChecksums)) {
-						$this->log("Original cover URL $url returned a known dummy image (checksum: $imageChecksum); falling back.", Logger::LOG_ERROR);
-					} else {
-						// Verify that the image is not too small.
-						$imageInfo = @getimagesizefromstring($image);
-						if ($imageInfo === false || ($imageInfo[0] < 2 && $imageInfo[1] < 2)) {
-							$this->log("Original cover URL $url returned an image that is too small; falling back.", Logger::LOG_ERROR);
-						} else {
-							// Check the color of the bottom left and bottom right corners.
-							if ($imageResource = @imagecreatefromstring($image)) {
-								$width = $imageInfo[0];
-								$height = $imageInfo[1];
-								$rgbLeft = imagecolorat($imageResource, 0, $height - 1);
-								$rgbRight = imagecolorat($imageResource, $width - 1, $height - 1);
-								imagedestroy($imageResource);
-								if ($rgbLeft == 8421504 && $rgbRight == 8421504) {
-									$this->log("Original cover URL $url returned an image with partial gray at the bottom; falling back.", Logger::LOG_ERROR);
-								} else {
-									// All checks passed; store the URL in the database and issue the redirect.
-									// First set the basic cover info to ensure consistency.
+			// Validate the URL
+			if ($this->validateCoverUrl($url, $source)) {
+				// All checks passed; store the URL in the database and issue the redirect.
+				// First set the basic cover info to ensure consistency.
 
-									// Now calculate the validation hash with the updated values.
-									$validationFields = [
-										$this->bookCoverInfo->imageSource,
-										$this->bookCoverInfo->sourceWidth,
-										$this->bookCoverInfo->sourceHeight,
-										$this->bookCoverInfo->uploadedImage,
-										$this->bookCoverInfo->disallowThirdPartyCover
-									];
-									$validationHash = md5(implode('|', $validationFields));
-									// Store hash with URL for future validation.
-									$urlToStore = $validationHash . $url;
-									$this->bookCoverInfo->setOriginalUrl($urlToStore);
-									$this->bookCoverInfo->update();
+				// Now calculate the validation hash with the updated values.
+				$validationFields = [
+					$this->bookCoverInfo->imageSource,
+					$this->bookCoverInfo->sourceWidth,
+					$this->bookCoverInfo->sourceHeight,
+					$this->bookCoverInfo->uploadedImage,
+					$this->bookCoverInfo->disallowThirdPartyCover
+				];
+				$validationHash = md5(implode('|', $validationFields));
+				// Store hash with URL for future validation.
+				$urlToStore = $validationHash . $url;
+				$this->bookCoverInfo->setOriginalUrl($urlToStore);
+				$this->bookCoverInfo->update();
 
-									//$this->log("Using new original URL: $url", Logger::LOG_ERROR);
-									//$this->log("Debug - Storage: Hash: $validationHash", Logger::LOG_ERROR);
-									//$this->log("Debug - Storage fields: " . implode('|', $validationFields), Logger::LOG_ERROR);
+				//$this->log("Using new original URL: $url", Logger::LOG_ERROR);
+				//$this->log("Debug - Storage: Hash: $validationHash", Logger::LOG_ERROR);
+				//$this->log("Debug - Storage fields: " . implode('|', $validationFields), Logger::LOG_ERROR);
 
-									header("HTTP/1.1 301 Moved Permanently");
-									header("Location: $url");
-									$this->addCachingHeader();
-
-									$this->setBookCoverInfo($source, $width, $height);
-									exit;
-								}
-							} else {
-								$this->log("Original cover URL $url returned invalid image data; falling back.", Logger::LOG_ERROR);
-							}
-						}
-					}
-				} else {
-					$this->log("Could not retrieve image content from original cover URL $url; falling back.", Logger::LOG_ERROR);
-				}
-			} else {
-				$this->log("Original cover URL $url did not return a valid HTTP response; falling back.", Logger::LOG_ERROR);
+				header("HTTP/1.1 301 Moved Permanently");
+				header("Location: $url");
+				$this->addCachingHeader();
+				exit;
 			}
 		}
 		return $url;
@@ -2239,10 +2249,15 @@ class BookCoverProcessor {
 			//$this->log("Debug - Original URL: " . $this->bookCoverInfo->getOriginalUrl(), Logger::LOG_ERROR);
 
 			if ($currentHash === $storedHash && !empty($url)) {
-				header("HTTP/1.1 301 Moved Permanently");
-				header("Location: $url");
-				$this->addCachingHeader();
-				exit;
+				// Validate that the URL still returns a valid image.
+				if ($this->validateCoverUrl($url, $this->bookCoverInfo->imageSource)) {
+					header("HTTP/1.1 301 Moved Permanently");
+					header("Location: $url");
+					$this->addCachingHeader();
+					exit;
+				} else {
+					$this->log("URL validation failed for stored URL: $url", Logger::LOG_ERROR);
+				}
 			} else {
 				$this->log("Debug - Hash validation failed: " . ($currentHash === $storedHash ? "Hashes match" : "Hashes don't match") . ", URL empty: " . (empty($url) ? "Yes" : "No"), Logger::LOG_ERROR);
 			}
