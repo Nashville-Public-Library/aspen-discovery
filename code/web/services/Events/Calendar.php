@@ -10,7 +10,11 @@ class Events_Calendar extends Action {
 		require_once ROOT_DIR . '/sys/SolrConnector/Solr.php';
 
 		$today = new DateTime();
-		if (isset($_REQUEST['month'])) {
+		$useWeek = 0;
+		if (isset($_REQUEST['week'])) {
+			$week = $_REQUEST['week'];
+			$useWeek = 1;
+		} else if (isset($_REQUEST['month'])) {
 			$month = $_REQUEST['month'];
 		} else {
 			$month = $today->format('m');
@@ -20,30 +24,67 @@ class Events_Calendar extends Action {
 		} else {
 			$year = $today->format('Y');
 		}
-		$paddedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
-		$monthFilter = $year . '-' . $paddedMonth;
-		$calendarStart = "$paddedMonth/1/$year";
-		$calendarStartDay = new DateTime($calendarStart);
-		$formattedMonthYear = $calendarStartDay->format("M Y");
-		$interface->assign('calendarMonth', $formattedMonthYear);
+		$interface->assign("useWeek", $useWeek);
+		if ($useWeek) {
+			$paddedWeek = str_pad($week, 2, '0', STR_PAD_LEFT);
+			$weekFilter = $year . '-' . $paddedWeek;
+			$calendarStart = "{$year}W{$paddedWeek}";
+			$calendarStartDay = strtotime($calendarStart . " - 1 days"); // So that the week starts on Sunday
+			$formattedWeekYear = date("M j, Y", $calendarStartDay) . " - " . date("M j, Y", strtotime($calendarStart . "+ 5 days"));
+			$month = date("n", strtotime($calendarStart));
+			$interface->assign('calendarMonth', $formattedWeekYear);
+			$monthLink = "/Events/Calendar?month=$month&year=$year";
+			$interface->assign("monthLink", $monthLink);
 
-		$prevMonth = $month - 1;
-		$prevYear = $year;
-		if ($prevMonth == 0) {
-			$prevMonth = 12;
-			$prevYear--;
-		}
-		$prevLink = "/Events/Calendar?month=$prevMonth&year=$prevYear";
-		$interface->assign('prevLink', $prevLink);
+			$prevWeek = $week - 1;
+			$prevYear = $year;
+			$lastWeekLastYear = date('W', strtotime('December 28th ' . ($year - 1)));
+			if ($prevWeek == 0) {
+				$prevWeek = $lastWeekLastYear;
+				$prevYear--;
+			}
+			$prevLink = "/Events/Calendar?week=$prevWeek&year=$prevYear";
+			$interface->assign('prevLink', $prevLink);
 
-		$nextMonth = $month + 1;
-		$nextYear = $year;
-		if ($nextMonth == 13) {
-			$nextMonth = 1;
-			$nextYear++;
+			$nextWeek = $week + 1;
+			$nextYear = $year;
+			$lastWeekThisYear = date('W', strtotime('December 28th ' . $year));
+			if ($nextWeek > $lastWeekThisYear) {
+				$nextWeek = 1;
+				$nextYear++;
+			}
+			$nextLink = "/Events/Calendar?week=$nextWeek&year=$nextYear";
+			$interface->assign('nextLink', $nextLink);
+		} else {
+			$paddedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
+			$monthFilter = $year . '-' . $paddedMonth;
+			$calendarStart = "$paddedMonth/1/$year";
+			$calendarStartDay = new DateTime($calendarStart);
+			$formattedMonthYear = $calendarStartDay->format("M Y");
+			$week = (int)$calendarStartDay->format("W") + 1;
+			$interface->assign('calendarMonth', $formattedMonthYear);
+			$weekLink = "/Events/Calendar?week=$week&year=$year";
+			$interface->assign("weekLink", $weekLink);
+
+			$prevMonth = $month - 1;
+			$prevYear = $year;
+			if ($prevMonth == 0) {
+				$prevMonth = 12;
+				$prevYear--;
+			}
+			$prevLink = "/Events/Calendar?month=$prevMonth&year=$prevYear";
+			$interface->assign('prevLink', $prevLink);
+
+			$nextMonth = $month + 1;
+			$nextYear = $year;
+			if ($nextMonth == 13) {
+				$nextMonth = 1;
+				$nextYear++;
+			}
+			$nextLink = "/Events/Calendar?month=$nextMonth&year=$nextYear";
+			$interface->assign('nextLink', $nextLink);
 		}
-		$nextLink = "/Events/Calendar?month=$nextMonth&year=$nextYear";
-		$interface->assign('nextLink', $nextLink);
+
 
 
 		// Initialise from the current search globals
@@ -55,7 +96,30 @@ class Events_Calendar extends Action {
 		//We have a default hidden filter to only show events after today, needs to be cleared for calendars.
 		$searchObject->clearHiddenFilters();
 		//Instead we limit to just this month.
-		$searchObject->addHiddenFilter("event_month", '"' . $monthFilter . '"');
+		if ($useWeek) {
+			$searchObject->addHiddenFilter("event_week", '"' . $weekFilter . '"');
+		} else {
+			$searchObject->addHiddenFilter("event_month", '"' . $monthFilter . '"');
+		}
+		// Check permissions before showing private events
+		if (!UserAccount::userHasPermission('View Private Events for All Locations')) {
+			if (!UserAccount::userHasPermission([
+				'View Private Events for Home Library Locations',
+				'View Private Events for Home Location'
+			])) {
+				$searchObject->addHiddenFilter('-private', "private");
+			} else {
+				if (!UserAccount::userHasPermission('View Private Events for Home Library Locations')) {
+					$user = UserAccount::getLoggedInUser();
+					$locations = array_values($user->getAdditionalAdministrationLocations());
+					$locations[] = $user->getHomeLocationName();
+					$searchObject->addHiddenFilter('private', '("' . implode('" OR "private_', $locations) . '" OR "public")');
+				} else {
+					$locations = array_values(Location::getLocationList(true));
+					$searchObject->addHiddenFilter('private', '("private_' . implode('" OR "private_', $locations) . '" OR "public")');
+				}
+			}
+		}
 		$searchObject->setSort('start_date_sort');
 
 		$timer->logTime('Setup Search');
@@ -86,8 +150,16 @@ class Events_Calendar extends Action {
 		//Setup the calendar display
 		//Get a list of weeks for the month
 		$weeks = [];
-		$dayNum = 1;
-		$maxDay = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+		if ($useWeek) {
+			$month = date("n", $calendarStartDay);
+			$paddedMonth = date("m", $calendarStartDay);
+			$dayNum = date("j", $calendarStartDay);
+			$lastDayInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+			$maxDay = date("d", strtotime($calendarStart . " + 6 days"));
+		} else {
+			$dayNum = 1;
+			$maxDay = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+		}
 		for ($i = 0; $i < 5; $i++) {
 			$week = [
 				'days' => [],
@@ -95,7 +167,11 @@ class Events_Calendar extends Action {
 
 			$startDayIndex = 0;
 			if ($i == 0) {
-				$startDayIndex = $calendarStartDay->format('N');
+				if ($useWeek) {
+					$startDayIndex = 0;
+				} else {
+					$startDayIndex = $calendarStartDay->format('N');
+				}
 				for ($j = 0; $j < $startDayIndex; $j++) {
 					$week['days'][] = [
 						'day' => '',
@@ -122,7 +198,7 @@ class Events_Calendar extends Action {
 						$formattedTime = date_format($startDate, "h:iA");
 						$endDate = new DateTime($result['end_date']);
 						$endDate->setTimezone($defaultTimezone);
-						$formattedTime .= ' - ' . date_format($endDate, "h:iA");
+						$formattedTime .= '<span class="end-time"> - ' . date_format($endDate, "h:iA") . "</span>";
 						if (($endDate->getTimestamp() - $startDate->getTimestamp()) > 24 * 60 * 60) {
 							$formattedTime = 'All day';
 						}
@@ -158,18 +234,36 @@ class Events_Calendar extends Action {
 				$week['days'][] = $eventDayObj;
 
 				$dayNum++;
-				if ($dayNum > $maxDay) {
+				if ($useWeek) {
+					if ($dayNum > $lastDayInMonth) {
+						$dayNum = 1;
+						$paddedMonth = str_pad($month + 1, 2, '0', STR_PAD_LEFT);
+					}
+					if ($paddedMonth == 13) {
+						$paddedMonth = "01";
+					}
+				} else if ($dayNum > $maxDay) {
 					break;
 				}
 			}
 			$weeks[] = $week;
-			if ($dayNum > $maxDay) {
+			if ($useWeek) {
+				break;
+			} else if (!$useWeek && $dayNum > $maxDay) {
 				break;
 			}
 		}
 		$interface->assign('weeks', $weeks);
 
-		$this->display('calendar.tpl', 'Events Calendar ' . $formattedMonthYear, '');
+		$headerImage = $this->getHeaderImage();
+		$interface->assign('headerImage', $headerImage['image'] ?? '');
+		$interface->assign('headerAlt', $headerImage['altText'] ?? '');
+
+		if ($useWeek) {
+			$this->display('calendar.tpl', 'Events Calendar ' . $formattedWeekYear, '');
+		} else {
+			$this->display('calendar.tpl', 'Events Calendar ' . $formattedMonthYear, '');
+		}
 	}
 
 	function getBreadcrumbs(): array {
@@ -178,5 +272,16 @@ class Events_Calendar extends Action {
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home#events', 'Events');
 		$breadcrumbs[] = new Breadcrumb('/Events/Calendar', 'Events Calendar');
 		return $breadcrumbs;
+	}
+
+	function getHeaderImage() {
+		require_once ROOT_DIR . '/sys/Events/CalendarDisplaySetting.php';
+		$setting = new CalendarDisplaySetting();
+		$headerImage = [];
+		if ($setting->find(true)) {
+			$headerImage["image"] =  !empty($setting->cover) ? "/files/original/" . $setting->cover : '';
+			$headerImage["altText"] =  $setting->altText ?? '';
+		}
+		return $headerImage;
 	}
 }

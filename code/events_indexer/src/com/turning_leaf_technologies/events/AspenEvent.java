@@ -111,7 +111,7 @@ class AspenEvent {
 	}
 
 	public String getSublocationName() {
-		return sublocationName;
+		return sublocationName != null ? sublocationName : "";
 	}
 
 	public long getSublocationId() {
@@ -125,8 +125,12 @@ class AspenEvent {
 		return "Cancelled";
 	}
 
-	public Boolean getNonPublic() {
-		return nonPublic;
+	public String getNonPublic() {
+		if (nonPublic) {
+			return "private";
+		} else {
+			return "public";
+		}
 	}
 
 	private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -147,7 +151,7 @@ class AspenEvent {
 	public Date getEndDateTime(EventsIndexerLogEntry logEntry) {
 		try {
 			LocalDateTime date = LocalDateTime.parse(startDate + " " + startTime, dtf);
-			LocalDateTime end = date.plusHours(this.length);
+			LocalDateTime end = date.plusMinutes(this.length);
 			Instant endInstant = end.toInstant(zone);
 			return Date.from(endInstant);
 		} catch (DateTimeParseException e) {
@@ -180,7 +184,7 @@ class AspenEvent {
 				case 2:
 					return "program_type_facet";
 				case 3:
-					return "internal_category_facet";
+					return "internal_category";
 				case 4:
 					return "event_type";
 				case 5:

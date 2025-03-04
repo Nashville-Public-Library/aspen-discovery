@@ -91,6 +91,10 @@ class Admin_Placards extends ObjectEditor {
 		return 'local_enrichment';
 	}
 
+	function getInitializationJs(): string {
+		return 'AspenDiscovery.WebBuilder.getSourceValuesForPlacard()';
+	}
+
 	function canView(): bool {
 		return UserAccount::userHasPermission([
 			'Administer All Placards',

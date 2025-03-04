@@ -27,17 +27,34 @@ class Events_Events extends ObjectEditor {
 		$object->orderBy($this->getSort());
 		$user = UserAccount::getLoggedInUser();
 		if (!UserAccount::userHasPermission('Administer Events for All Locations')) {
+			$includedLocations = [];
+			$additionalAdministrationLocations = $user->getAdditionalAdministrationLocations();
+			$includedLocations = $includedLocations + $additionalAdministrationLocations;
 			if (!UserAccount::userHasPermission('Administer Events for Home Library Locations')) {
-				//Need to use where add here so the where add in below works properly
-				$object->whereAdd("locationId = $user->homeLocationId");
+				$includedLocations[$user->homeLocationId] = $user->homeLocationId;
+				$object->whereAddIn("locationId", array_keys($includedLocations), false, 'AND');
 			} else {
 				//Scope to just locations for the user based on their home library
-				$patronLibrary = Library::getLibraryForLocation($user->homeLocationId);
-				$object->whereAdd("libraryId = $patronLibrary->libraryId");
+				$locationsInLibrary = Location::getLocationList(true);
+				$includedLocations = $locationsInLibrary + $includedLocations;
+				$object->whereAddIn("locationId", array_keys($includedLocations), false, 'AND');
 			}
-			$additionalAdministrationLocations = $user->getAdditionalAdministrationLocations();
-			if (!empty($additionalAdministrationLocations)) {
-				$object->whereAddIn('locationId', array_keys($additionalAdministrationLocations), false, 'OR');
+		}
+		if (!UserAccount::userHasPermission('View Private Events for All Locations')) {
+			if (!UserAccount::userHasPermission([
+				'View Private Events for Home Library Locations',
+				'View Private Events for Home Location'
+			])) {
+				$object->private = 0;
+			} else {
+				if (!UserAccount::userHasPermission('View Private Events for Home Library Locations')) {
+					$locations = array_keys($user->getAdditionalAdministrationLocations());
+					$locations[] = $user->homeLocationId;
+					$object->whereAdd("(private = 0 OR locationId IN (" . implode(", ", $locations) . "))");
+				} else {
+					$locationsInLibrary = array_keys(Location::getLocationList(true));
+					$object->whereAdd("(private = 0 OR locationId IN (" . implode(", ", $locationsInLibrary) . "))");
+				}
 			}
 		}
 		$this->applyFilters($object);

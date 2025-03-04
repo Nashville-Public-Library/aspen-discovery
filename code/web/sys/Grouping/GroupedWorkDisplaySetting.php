@@ -71,6 +71,7 @@ class GroupedWorkDisplaySetting extends DataObject {
 	public $showFastAddSubjects;
 	public $showOtherSubjects;
 	public $showInMainDetails;
+	public $preferIlsDescription;
 
 	//search options
 	public $searchSpecVersion;
@@ -374,6 +375,9 @@ class GroupedWorkDisplaySetting extends DataObject {
 						'type' => 'enum',
 						'values' => $formatSortGroups,
 						'label' => 'Format Sorting',
+						'description' => 'Required format sorting configuration that can be created under Format Sorting.',
+						'required' => true,
+						'default' => 1
 					],
 					'searchAlgorithm' => [
 						'property' => 'searchAlgorithm',
@@ -631,6 +635,14 @@ class GroupedWorkDisplaySetting extends DataObject {
 						'description' => 'Whether or notes for items are shown within the copy details if available.',
 						'hideInLists' => true,
 						'default' => true,
+					],
+					'preferIlsDescription' => [
+						'property' => 'preferIlsDescription',
+						'type' => 'checkbox',
+						'label' => 'Prefer ILS Description',
+						'description' => 'Whether or not the Description loaded from ILS should be preferred over eContent Description',
+						'hideInLists' => true,
+						'default' => false,
 					],
 					'showInMainDetails' => [
 						'property' => 'showInMainDetails',

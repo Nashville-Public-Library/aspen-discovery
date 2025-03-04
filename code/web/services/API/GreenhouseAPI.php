@@ -515,13 +515,21 @@ class GreenhouseAPI extends AbstractAPI {
 						$theme->applyDefaults();
 
 						$themeArray['themeId'] = $theme->id;
-						$themeArray['logo'] = '';
-						$themeArray['favicon'] = '';
+
 						if($theme->logoName) {
 							$themeArray['logo'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoName;
+						}else{
+							$themeArray['logo'] = '';
 						}
 						if($theme->favicon) {
 							$themeArray['favicon'] = $configArray['Site']['url'] . '/files/original/' . $theme->favicon;
+						}else{
+							$themeArray['favicon'] = '';
+						}
+						if($theme->headerLogoApp) {
+							$themeArray['headerLogo'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
+						}else{
+							$themeArray['headerLogo'] = '';
 						}
 						$themeArray['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
 						$themeArray['primaryForegroundColor'] = $theme->primaryForegroundColor;

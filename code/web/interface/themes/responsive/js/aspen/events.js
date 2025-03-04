@@ -135,7 +135,7 @@ AspenDiscovery.Events = (function(){
 			if (startDate && startDate.isValid() && startTime && startTime.length && length && length.length) {
 				var timeParts = startTime.split(":");
 				startDate.hour(timeParts[0]).minute(timeParts[1]);
-				startDate.add(length, 'h');
+				startDate.add(length, 'm');
 				$("#endDate").val(startDate.format("YYYY-MM-DD"));
 				$("#endTime").val(startDate.format("HH:mm"));
 			}
@@ -497,6 +497,29 @@ AspenDiscovery.Events = (function(){
 			}
 			AspenDiscovery.Events.calculateRecurrenceDates();
 			return false;
+		},
+		iCalendarExport: function (eventId, source, wholeSeries) {
+			var url = Globals.path + '/Events/AJAX';
+			var params = {
+				method: 'iCalendarExport',
+				source: source,
+				eventId: eventId,
+				wholeSeries : wholeSeries
+			};
+
+			$.getJSON(url, params, function (data) {
+				if (data.success && data.icsFile.length > 0) {
+					console.log(data.icsFile);
+					var filename = eventId + ".ics";
+					var element = document.createElement('a');
+					element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data.icsFile));
+					element.setAttribute('download', filename);
+					element.style.display = 'none';
+					document.body.appendChild(element);
+					element.click();
+					document.body.removeChild(element);
+				}
+			});
 		}
 	};
 }(AspenDiscovery.Events || {}));

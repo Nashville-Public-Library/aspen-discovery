@@ -15,6 +15,8 @@ class EventInstance extends DataObject {
 	public $dateUpdated;
 	public $deleted;
 
+	public $_eventType;
+
 	public static function getObjectStructure($context = ''): array {
 		$structure = [
 			'id' => [
@@ -46,8 +48,8 @@ class EventInstance extends DataObject {
 			'length' => [
 				'property' => 'length',
 				'type' => 'integer',
-				'label' => 'Length (Hours)',
-				'description' => 'The event length in hours',
+				'label' => 'Length (Minutes)',
+				'description' => 'The event length in minutes',
 			],
 			'note' => [
 				'property' => 'note',
@@ -100,6 +102,53 @@ class EventInstance extends DataObject {
 		} else {
 			return parent::delete($useWhere);
 		}
+	}
+
+	function getParentEvent() {
+		$event = new Event();
+		$event->id = $this->eventId;
+		$event->find(true);
+		return $event;
+	}
+
+	function getLocation() {
+		$event = $this->getParentEvent();
+		$location = new Location();
+		$location->locationId = $event->locationId;
+		$location->find(true);
+		return $location->displayName;
+	}
+
+	function getSublocation() {
+		$event = $this->getParentEvent();
+		$sublocations = Location::getEventSublocations($event->locationId);
+		if ($event->sublocationId) {
+			$sublocation = $sublocations[$event->sublocationId];
+		}
+		return $sublocation ?? '';
+	}
+
+	function getSeries($onlyFuture = false) {
+		$series = [];
+		$eventInstances = new EventInstance();
+		$eventInstances->eventId = $this->eventId;
+		if ($onlyFuture) {
+			$escapedDate = $eventInstances->escape($this->date);
+			$escapedTime = $eventInstances->escape($this->time);
+			$eventInstances->whereAdd("date > " . $escapedDate . " OR date = " . $escapedDate . " AND time > " . $escapedTime);
+		} else {
+			$eventInstances->whereAdd("id != " . $this->id);
+		}
+		$eventInstances->find();
+		while ($eventInstances->fetch()) {
+			$series[$eventInstances->id] = clone($eventInstances);
+		}
+		return $series;
+	}
+
+	function getUpcomingInstanceCount() {
+		$event = $this->getParentEvent();
+		return $event->getInstanceCount();
 	}
 
 }

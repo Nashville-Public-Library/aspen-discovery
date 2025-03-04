@@ -77,9 +77,9 @@ class EventType extends DataObject {
 			],
 			'eventLength' => [
 				'property' => 'eventLength',
-				'type' => 'integer',
-				'label' => 'Event Length (Hours)',
-				'description' => 'The default event length (in hours) for this type of event',
+				'type' => 'duration',
+				'label' => 'Event Length',
+				'description' => 'The default event length for this type of event',
 			],
 			'lengthCustomizable' => [
 				'property' => 'lengthCustomizable',
@@ -255,10 +255,13 @@ class EventType extends DataObject {
 		}
 	}
 
-	public static function getEventTypeList(): array {
+	public static function getEventTypeList($includeArchived = false): array {
 		$typeList = [];
 		$object = new EventType();
 		$object->orderBy('title');
+		if (!$includeArchived) {
+			$object->archived = 0;
+		}
 		$object->find();
 		while ($object->fetch()) {
 			$label = $object->title;

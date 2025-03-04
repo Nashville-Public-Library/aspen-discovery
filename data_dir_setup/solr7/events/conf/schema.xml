@@ -93,6 +93,7 @@
 		<field name="end_date" type="date" indexed="true" stored="true" docValues="true"/>
 
 		<field name="event_day" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
+		<field name="event_week" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
 		<field name="event_month" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
 		<field name="event_year" type="unchanged_string" indexed="true" stored="true" multiValued="true"/>
 
@@ -125,6 +126,8 @@
 		<field name="image_url" type="unchanged_string" indexed="false" stored="true" multiValued="false"/>
 
 		<field name="library_scopes" type="unchanged_string" indexed="true" stored="false" multiValued="true"/>
+
+		<field name="private" type="unchanged_string" indexed="true" stored="true" multiValued="true" default="public"/>
 
 		<!-- Field to get random titles -->
 		<dynamicField name="random*" type="random" indexed="true" stored="true"/>

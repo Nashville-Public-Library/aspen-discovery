@@ -422,6 +422,8 @@
 			{include file="DataObjectUtil/partialDate.tpl"}
 		{elseif $property.type == 'time'}
 			<input type="time" name='{$propName}' id='{$propName}' value='{$propValue|date_format:"%H:%M"}' class='form-control' {if !empty($property.required) && (empty($objectAction) || $objectAction != 'edit')}required{/if} {if !empty($property.readOnly)}readonly disabled{/if} {if !empty($property.autocomplete)}autocomplete="{$property.autocomplete}"{/if} {if !empty($property.onchange)} onchange="{$property.onchange}"{/if}>
+		{elseif $property.type == 'duration'}
+			{include file="DataObjectUtil/duration.tpl"}
 		{elseif $property.type == 'textarea' || $property.type == 'html' || $property.type == 'markdown' || $property.type == 'javascript' || $property.type == 'crSeparated' || $property.type == 'multilineRegularExpression'}
 			{include file="DataObjectUtil/textarea.tpl"}
 			{if !empty($property.forcesReindex)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> {translate text="Updating this setting causes a nightly reindex" isAdminFacing=true}</small></span>{/if}
@@ -432,7 +434,10 @@
 			{include file="DataObjectUtil/password.tpl"}
 
 		{elseif $property.type == 'pin'}
-			<input type='password' name='{$propName}' id='{$propName}' value='{$propValue|escape}' {if !empty($property.maxLength)}maxlength='{$property.maxLength}'{/if} {if !empty($property.size)}size='{$property.size}'{/if} class='form-control digits {if !empty($property.required)}required{/if}' {if !empty($property.readOnly)}readonly{/if}>
+			<input type='password' name='{$propName}' id='{$propName}' value='{$propValue|escape}' {if !empty($property.maxLength)}maxlength='{$property.maxLength}'{/if} {if !empty($property.size)}size='{$property.size}'{/if} class='form-control pin {if !empty($property.required)}required{/if}' {if !empty($property.readOnly)}readonly{/if}>
+
+		{elseif $property.type == 'pinConfirmation'}
+			<input type='password' name='{$propName}' id='{$propName}' value='{$propValue|escape}' {if !empty($property.maxLength)}maxlength='{$property.maxLength}'{/if} {if !empty($property.size)}size='{$property.size}'{/if} class='form-control pinConfirmation {if !empty($property.required)}required{/if}' {if !empty($property.readOnly)}readonly{/if}>
 
 
 		{elseif $property.type == 'currency'}
@@ -480,7 +485,19 @@
 				<label class="input-group-btn">
 					<span class="btn btn-primary">
 						{if $property.type == 'image'}
-							{translate text="Select an image" isAdminFacing=true}&hellip; <input type="file" style="display: none;" name="{$propName}" id="{$propName}" {if !empty($property.required)}required="required"{/if} {if !empty($property.readOnly)}readonly disabled{/if}>
+							{translate text="Select an image" isAdminFacing=true}&hellip; <input type="file" style="display: none;" name="{$propName}" id="{$propName}" accept="image/jpeg, image/png, image/svg+xml" {if !empty($property.required)}required="required"{/if} {if !empty($property.readOnly)}readonly disabled{/if}>
+							{literal}
+							<script>
+								document.getElementById('{/literal}{$propName}{literal}').addEventListener('change', function(e) {
+									const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.svg)$/i;
+									const file = e.target.files[0];
+									if (file && !allowedExtensions.exec(file.name)) {
+										alert('{/literal}{translate text="Invalid file type. Allowed types: JPG, JPEG, PNG, SVG" isAdminFacing=true}{literal}');
+										e.target.value = '';
+									}
+								});
+							</script>
+							{/literal}
 						{else}
 							{translate text="Select a file" isAdminFacing=true}&hellip; <input type="file" style="display: none;" name="{$propName}" id="{$propName}" {if !empty($property.required)}required="required"{/if} {if !empty($property.readOnly)}readonly disabled{/if}>
 						{/if}

@@ -169,8 +169,6 @@ class CatalogConnection {
 				$invalidUser = true;
 			} elseif (!empty($user->ils_barcode) && (strip_tags($user->ils_barcode) != $user->ils_barcode)) {
 				$invalidUser = true;
-			} elseif (!empty($user->ils_password) && (strip_tags($user->ils_password) != $user->ils_password)) {
-				$invalidUser = true;
 			} elseif (!empty($user->displayName) && (strip_tags($user->displayName) != $user->displayName)) {
 				$invalidUser = true;
 			} elseif (!empty($user->phone) && (strip_tags($user->phone) != $user->phone)) {

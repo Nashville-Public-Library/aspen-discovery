@@ -5068,7 +5068,7 @@ var AspenDiscovery = (function(){
 			}
 		},
 
-		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle){
+		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle, hideCloseButton){
 			if (largeModal === undefined || largeModal === false) {
 				aspenJQ('.modal-dialog').removeClass('modal-dialog-large');
 			}else{
@@ -5078,6 +5078,11 @@ var AspenDiscovery = (function(){
 				aspenJQ('.modal-header').hide();
 			}else{
 				aspenJQ('.modal-header').show();
+			}
+			if (hideCloseButton !== undefined && hideCloseButton === true) {
+				aspenJQ('#modalCloseButton').hide();
+			}else{
+				aspenJQ('#modalCloseButton').show();
 			}
 			if (refreshAfterClose === undefined){
 				refreshAfterClose = false;
@@ -5508,6 +5513,14 @@ $.validator.addMethod('repeat', function(value, element){
 		return value === valueOriginal;
 	}
 }, "Repeat fields do not match");
+
+jQuery.validator.addMethod("pinConfirmation", function (value, element) {
+	if (this.optional(element)) {
+		return true;
+	}
+	var pinToMatch = aspenJQ("#pin").val();
+	return value === pinToMatch;
+}, "PINs must match.");
 
 if (!String.prototype.startsWith) {
 	Object.defineProperty(String.prototype, 'startsWith', {
@@ -10767,7 +10780,7 @@ AspenDiscovery.Axis360 = (function () {
 								AspenDiscovery.closeLightbox(function (){
 									var ret = confirm(data.message);
 									if (ret === true) {
-										AspenDiscovery.Axis360.doHold(patronId, id);
+										AspenDiscovery.Axis360.placeHold(id);
 									}
 								});
 							} else {
@@ -12362,7 +12375,7 @@ AspenDiscovery.Events = (function(){
 			if (startDate && startDate.isValid() && startTime && startTime.length && length && length.length) {
 				var timeParts = startTime.split(":");
 				startDate.hour(timeParts[0]).minute(timeParts[1]);
-				startDate.add(length, 'h');
+				startDate.add(length, 'm');
 				$("#endDate").val(startDate.format("YYYY-MM-DD"));
 				$("#endTime").val(startDate.format("HH:mm"));
 			}
@@ -12724,6 +12737,29 @@ AspenDiscovery.Events = (function(){
 			}
 			AspenDiscovery.Events.calculateRecurrenceDates();
 			return false;
+		},
+		iCalendarExport: function (eventId, source, wholeSeries) {
+			var url = Globals.path + '/Events/AJAX';
+			var params = {
+				method: 'iCalendarExport',
+				source: source,
+				eventId: eventId,
+				wholeSeries : wholeSeries
+			};
+
+			$.getJSON(url, params, function (data) {
+				if (data.success && data.icsFile.length > 0) {
+					console.log(data.icsFile);
+					var filename = eventId + ".ics";
+					var element = document.createElement('a');
+					element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data.icsFile));
+					element.setAttribute('download', filename);
+					element.style.display = 'none';
+					document.body.appendChild(element);
+					element.click();
+					document.body.removeChild(element);
+				}
+			});
 		}
 	};
 }(AspenDiscovery.Events || {}));
@@ -15929,6 +15965,53 @@ AspenDiscovery.Searches = (function(){
 		}
 	}
 }(AspenDiscovery.Searches || {}));
+AspenDiscovery.Series = (function(){
+	// noinspection JSUnusedGlobalSymbols
+	return {
+		editAction: function (seriesId){
+			window.location.href = "/Series/AdministerSeries?objectAction=edit&id=" + seriesId;
+			return false;
+		},
+		emailAction: function (seriesId) {
+			var urlToDisplay = Globals.path + '/Series/AJAX';
+			AspenDiscovery.loadingMessage();
+			$.getJSON(urlToDisplay, {
+					method  : 'getEmailSeriesForm',
+					seriesId : seriesId
+				},
+				function(data){
+					AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons);
+				}
+			);
+			return false;
+		},
+		sendEmail: function () {
+			var url = Globals.path + "/Series/AJAX";
+
+			$.getJSON(url,
+				{ // form inputs passed as data
+					seriesId   : $('#emailSeriesForm input[name="seriesId"]').val()
+					,to      : $('#emailSeriesForm input[name="to"]').val()
+					,from    : $('#emailSeriesForm input[name="from"]').val()
+					,message : $('#emailSeriesForm textarea[name="message"]').val()
+					,method  : 'sendEmail'
+				},
+				function(data) {
+					if (data.result) {
+						AspenDiscovery.showMessage("Success", data.message);
+					} else {
+						AspenDiscovery.showMessage("Error", data.message);
+					}
+				}
+			);
+		},
+		printAction: function (){
+			window.print();
+			return false;
+		}
+
+	};
+}(AspenDiscovery.Series || {}));
 AspenDiscovery.SideLoads = (function(){
 	return {
 		deleteMarc: function (sideLoadId, fileName, fileIndex) {
@@ -16334,6 +16417,7 @@ AspenDiscovery.WebBuilder = function () {
 	// noinspection JSUnusedGlobalSymbols
 	return {
 		editors: [],
+		saveLinkedObjCallback: function() {},
 
 		getPortalCellValuesForSource: function () {
 			var portalCellId = $("#id").val();
@@ -16422,6 +16506,79 @@ AspenDiscovery.WebBuilder = function () {
 					}
 				});
 			}
+		},
+
+		getSourceValuesForPlacard: function () {
+			var placardId = $("#id").val();
+			var sourceType = $("#sourceTypeSelect").val();
+
+			if (sourceType === 'none') {
+				$("#propertyRowsourceId").hide();
+			} else {
+				$("#propertyRowsourceId").show();
+			}
+
+			var url = Globals.path + '/WebBuilder/AJAX?method=getSourceValuesForPlacard&placardId=' + placardId + '&sourceType=' + sourceType;
+			$.getJSON(url, function(data){
+				if (data.success === true){
+					var sourceIdSelect = $("#sourceIdSelect" );
+					sourceIdSelect.find('option').remove();
+					var optionValues = data.values;
+					for (var key in optionValues) {
+						if (data.selected === key){
+							sourceIdSelect.append('<option value="' + key + '" selected>' + optionValues[key] + '</option>')
+						}else{
+							sourceIdSelect.append('<option value="' + key + '">' + optionValues[key] + '</option>')
+						}
+					}
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			});
+		},
+
+		checkLinkedObject: function (submitForm) {
+			var url = Globals.path + "/WebBuilder/AJAX";
+			var params = {
+				'method': 'checkLinkedObject',
+				objectId: $("#id").val()
+			};
+
+			$.getJSON(url, params,function(data){
+				if (data.success){
+					if (data.noLinkedObject === true){
+						submitForm();
+					} else{
+						AspenDiscovery.WebBuilder.saveLinkedObjCallback = submitForm;
+						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons, '', '', false, '', true);
+					}
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			})
+		},
+
+		setPlacardToCustomized: function() {
+
+		},
+
+		saveLinkedObject: function(doFullSave){
+			var params = {
+				objectId: $("#id").val(),
+				objectName: $("#name").val(),
+				url: $("#url").val(),
+				body: $("#teaser").val(),
+				image: $("#importFile-label-logo").val(),
+				doFullSave: doFullSave
+			};
+			var url = Globals.path + '/WebBuilder/AJAX?method=saveLinkedObject';
+			$.getJSON(url, params,function(data){
+				if (data.success === true){
+					AspenDiscovery.WebBuilder.saveLinkedObjCallback();
+				}else{
+					AspenDiscovery.showMessage('Sorry', data.message);
+				}
+			});
 
 		},
 

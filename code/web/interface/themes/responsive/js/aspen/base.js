@@ -401,7 +401,7 @@ var AspenDiscovery = (function(){
 			}
 		},
 
-		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle){
+		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle, hideCloseButton){
 			if (largeModal === undefined || largeModal === false) {
 				aspenJQ('.modal-dialog').removeClass('modal-dialog-large');
 			}else{
@@ -411,6 +411,11 @@ var AspenDiscovery = (function(){
 				aspenJQ('.modal-header').hide();
 			}else{
 				aspenJQ('.modal-header').show();
+			}
+			if (hideCloseButton !== undefined && hideCloseButton === true) {
+				aspenJQ('#modalCloseButton').hide();
+			}else{
+				aspenJQ('#modalCloseButton').show();
 			}
 			if (refreshAfterClose === undefined){
 				refreshAfterClose = false;
@@ -841,6 +846,14 @@ $.validator.addMethod('repeat', function(value, element){
 		return value === valueOriginal;
 	}
 }, "Repeat fields do not match");
+
+jQuery.validator.addMethod("pinConfirmation", function (value, element) {
+	if (this.optional(element)) {
+		return true;
+	}
+	var pinToMatch = aspenJQ("#pin").val();
+	return value === pinToMatch;
+}, "PINs must match.");
 
 if (!String.prototype.startsWith) {
 	Object.defineProperty(String.prototype, 'startsWith', {
