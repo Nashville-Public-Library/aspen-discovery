@@ -101,6 +101,12 @@ class Series extends DataObject {
 				'canAddNew' => true,
 				'canEdit' => true,
 				'canDelete' => true,
+				'additionalOneToManyActions' => [
+					'showExcluded' => [
+						'text' => 'Show Excluded Series Titles',
+						'url' => '/Series/AdministerSeries?id=$id&amp;objectAction=edit&amp;showExcluded=true',
+					],
+				],
 			],
 		];
 		return $structure;
@@ -143,7 +149,10 @@ class Series extends DataObject {
 
 	public function __get($name) {
 		if ($name == 'seriesMembers') {
-			return $this->getSeriesMembers();
+			if (!empty($_REQUEST['showExcluded'])) {
+				return $this->getSeriesMembers(true);
+			}
+			return $this->getSeriesMembers(false);
 		} else {
 			return parent::__get($name);
 		}
@@ -226,10 +235,13 @@ class Series extends DataObject {
 	/**
 	 * @return array      of series members
 	 */
-	function getSeriesMembers() {
+	function getSeriesMembers($showExcluded = true) {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
+		if (!$showExcluded) {
+			$seriesMember->excluded = 0;
+		}
 		$seriesMember->orderBy('weight');
 		$this->_seriesMembers = [];
 		$seriesMember->find();
