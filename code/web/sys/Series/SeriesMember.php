@@ -88,6 +88,7 @@ class SeriesMember extends DataObject {
 				'property' => 'weight',
 				'type' => 'numeric',
 				'label' => 'Weight',
+				'hiddenByDefault' => true,
 				'weight' => 'Defines how items are sorted.  Lower weights are displayed higher.',
 			],
 			'userAdded' => [
@@ -129,6 +130,23 @@ class SeriesMember extends DataObject {
 
 	function getEditLink($context): string {
 		return '/Series/SeriesMembers?objectAction=edit&id=' . $this->id;
+	}
+
+	function canActiveUserEdit(): bool {
+		if (!$this->userAdded) {
+			return false;
+		}
+		return parent::canActiveUserEdit();
+	}
+
+	public function updateStructureForEditingObject($structure) : array {
+		if ($this->userAdded) {
+			$structure['displayName']['readOnly'] = false;
+			$structure['author']['readOnly'] = false;
+			$structure['description']['readOnly'] = false;
+			$structure['groupedWorkPermanentId']['readOnly'] = false;
+		}
+		return $structure;
 	}
 
 	public function getRecordDriver() {
