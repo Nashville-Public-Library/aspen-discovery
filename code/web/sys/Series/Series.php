@@ -293,7 +293,7 @@ class Series extends DataObject {
 					$interface->assign('listEntrySource', "Series");
 					$interface->assign('seriesMemberId',$seriesMemberInfo['seriesMemberId']);
 					$interface->assign('placeholder', $seriesMemberInfo);
-					$listResults[$listPosition] = $interface->fetch('Series/placeHolderListEntry.tpl');
+					$listResults[$listPosition] = $interface->fetch('Series/placeholderListEntry.tpl');
 				}
 			}
 		}
