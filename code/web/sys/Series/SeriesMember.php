@@ -16,6 +16,7 @@ class SeriesMember extends DataObject {
 	public $weight;
 	public $cover;
 	public $userAdded;
+	public $excluded;
 
 	public static function getObjectStructure($context = ''): array {
 		global $configArray;
@@ -89,13 +90,20 @@ class SeriesMember extends DataObject {
 				'type' => 'numeric',
 				'label' => 'Weight',
 				'hiddenByDefault' => true,
-				'weight' => 'Defines how items are sorted.  Lower weights are displayed higher.',
+				'description' => 'Defines how items are sorted.  Lower weights are displayed higher.',
 			],
 			'userAdded' => [
 				'property' => 'userAdded',
 				'type' => 'hidden',
 				'label' => 'User Added',
 				'readOnly' => true,
+			],
+			'excluded' => [
+				'property' => 'excluded',
+				'type' => 'checkbox',
+				'label' => 'Exclude',
+				'readOnly' => false,
+				'description' => "If excluded, this title won't show up as a member of the series",
 			],
 		];
 		return $structure;
@@ -137,6 +145,16 @@ class SeriesMember extends DataObject {
 			return false;
 		}
 		return parent::canActiveUserEdit();
+	}
+
+	public function delete($useWhere = false) : int {
+		if (!$this->userAdded) {
+			$this->deleted = 1;
+			$this->update();
+			return 1;
+		} else {
+			return parent::delete($useWhere);
+		}
 	}
 
 	public function updateStructureForEditingObject($structure) : array {

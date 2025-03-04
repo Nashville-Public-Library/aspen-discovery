@@ -136,7 +136,7 @@ class SeriesIndexer {
 				seriesStmt.setLong(1, lastReindexTime);
 			}
 
-			PreparedStatement getSeriesMembersStmt = dbConn.prepareStatement("SELECT * FROM series_member WHERE seriesId = ?");
+			PreparedStatement getSeriesMembersStmt = dbConn.prepareStatement("SELECT * FROM series_member WHERE seriesId = ? AND excluded = 0");
 
 			ResultSet allSeriesRS = seriesStmt.executeQuery();
 			ResultSet numSeriesRS = numSeriesStmt.executeQuery();

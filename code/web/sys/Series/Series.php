@@ -100,6 +100,7 @@ class Series extends DataObject {
 				'hideInLists' => true,
 				'canAddNew' => true,
 				'canEdit' => true,
+				'canDelete' => true,
 			],
 		];
 		return $structure;
@@ -163,6 +164,7 @@ class Series extends DataObject {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$members = new SeriesMember();
 		$members->seriesId = $this->id;
+		$members->excluded = 0;
 		return $members->count();
 	}
 
@@ -173,6 +175,7 @@ class Series extends DataObject {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
+		$seriesMember->excluded = 0;
 		$seriesMember->orderBy($sortName);
 
 		$seriesMembers = [];
