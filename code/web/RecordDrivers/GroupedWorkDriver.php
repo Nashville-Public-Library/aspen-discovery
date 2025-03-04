@@ -2922,7 +2922,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 					}
 					if (UserAccount::isLoggedIn()) {
 						$user = UserAccount::getActiveUserObj();
-						$userHomeLocation = $user->getHomeLocation();
+						$userHomeLocation = $user->getPickupLocation();
 						if ($userHomeLocation != null) {
 							$scope = new Grouping_Scope();
 							$mainLibraryScopeName = str_replace('-', '', strtolower(!empty($userHomeLocation->subdomain) ? $userHomeLocation->subdomain : $userHomeLocation->code));
