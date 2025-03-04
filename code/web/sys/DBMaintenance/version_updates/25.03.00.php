@@ -31,8 +31,8 @@ function getUpdates25_03_00(): array {
 			]
 		], //make_app_icons_os_specific
 		'remove_unused_updates_properties' => [
-			'title' => 'Make App Icons OS Specific',
-			'description' => 'Update settings to store separate icons per OS',
+			'title' => 'Remove unused updates properties',
+			'description' => 'Update system variables to remove unused columns',
 			'continueOnError' => false,
 			'sql' => [
 				'ALTER TABLE system_variables DROP COLUMN allowScheduledUpdates',
