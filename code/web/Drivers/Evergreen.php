@@ -789,22 +789,28 @@ class Evergreen extends AbstractIlsDriver {
 			$userMessages['messages'][] = 'Your contact information cannot be updated.';
 			return $userMessages;
 		}
-		$propertyName = '';
 
 		if (!isset($_REQUEST['email'])) {
 			return $userMessages;
 		}
+
 		$propertyName = 'email';
 		$propertyValue = $_REQUEST['email'];
-		$response = $this->updatePatronProperty($propertyName, $propertyValue, $patron->ils_password, $authToken);
+		$response = $this->updatePatronPropertyInEvergreen($propertyName, $propertyValue, $patron->ils_password, $authToken);
+
+		if($response['success']) {
+			$patron->email = $propertyValue;
+			$patron->update();
+		}
+
 		$userMessages['messages'][] = $response['success'] ? 'Your email has been updated.' : 'Your email could not be updated. Please contact your library';
 		$userMessages['success'] = $response['success'];
 
 		return $userMessages;
 	}
 
-	private function updatePatronProperty($propertyName, $propertyValue, $patronIlsPassword, $authToken): array {
-		$evergreenUrl = $this->accountProfile->patronApiUrl . "/osrf-gateway-v1/$propertyName";
+	private function updatePatronPropertyInEvergreen(string $propertyEvergreenName, string $propertyValue, string $patronIlsPassword, string $authToken): array {
+		$evergreenUrl = $this->accountProfile->patronApiUrl . "/osrf-gateway-v1/$propertyEvergreenName";
 		$headers = [
 			'Content-Type: application/x-www-form-urlencoded',
 		];
@@ -815,13 +821,13 @@ class Evergreen extends AbstractIlsDriver {
 		 * determines which is which
 		*/
 		$request = 'service=open-ils.actor';
-		$request .= "&method=open-ils.actor.user.$propertyName.update";
+		$request .= "&method=open-ils.actor.user.$propertyEvergreenName.update";
 		$requestParams = '&param=' . json_encode($authToken);
 		$requestParams .= '&param=' . json_encode($propertyValue);
 		$requestParams .= '&param=' . json_encode($patronIlsPassword);
 
 		$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request . $requestParams);
-		ExternalRequestLogEntry::logRequest('evergreen.updatePatronProperty', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $request, $this->apiCurlWrapper->getResponseCode(), $apiResponse, []);
+		ExternalRequestLogEntry::logRequest('evergreen.updatePatronPropertyInEvergreen', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $request, $this->apiCurlWrapper->getResponseCode(), $apiResponse, []);
 
 		$responseData = json_decode($apiResponse, true);
 		$response = ['success' => false, 'message' => ['code' => '', 'text' =>  'Evergreen sent an unexpected response']];
@@ -838,7 +844,7 @@ class Evergreen extends AbstractIlsDriver {
 
 		if (!$response['success']) {
 			global $logger;
-			$logger->log('Error updating patron property ' . $propertyName . ': ' .  $responseData['payload'][0]['desc'], Logger::LOG_ERROR);
+			$logger->log('Error updating patron property ' . $propertyEvergreenName . ': ' . $responseData['payload'][0]['desc'], Logger::LOG_ERROR);
 			$response['message']['code'] = $responseData['payload'][0]['textcode'];
 			$response['message']['text'] = $responseData['payload'][0]['desc'];
 			return $response;
@@ -2592,9 +2598,6 @@ class Evergreen extends AbstractIlsDriver {
 						}
 						if (!empty($mappedPatronData['suffix'])) {
 							$user->_fullname .= ' ' . $mappedPatronData['suffix'];
-						}
-						if (!empty($mappedPatronData['email'])) {
-							$user->email = $mappedPatronData['email'];
 						}
 						$user->_fullname = trim($user->_fullname);
 
