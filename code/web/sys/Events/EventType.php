@@ -255,10 +255,13 @@ class EventType extends DataObject {
 		}
 	}
 
-	public static function getEventTypeList(): array {
+	public static function getEventTypeList($includeArchived = false): array {
 		$typeList = [];
 		$object = new EventType();
 		$object->orderBy('title');
+		if (!$includeArchived) {
+			$object->archived = 0;
+		}
 		$object->find();
 		while ($object->fetch()) {
 			$label = $object->title;

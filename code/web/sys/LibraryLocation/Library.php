@@ -4202,7 +4202,7 @@ class Library extends DataObject {
 		if (!array_key_exists('Single sign-on', $enabledModules)) {
 			unset($structure['ssoSection']);
 		}
-		if ($catalog && !$catalog->hasIlsConsentSupport()) {
+		if (!$catalog || !$catalog->hasIlsConsentSupport()) {
 			unset($structure['dataProtectionRegulations']['properties']['ilsConsentEnabled']);
 		}
 
@@ -5432,6 +5432,9 @@ class Library extends DataObject {
 					}
 					if ($theme->logoApp) {
 						$apiInfo['logoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoApp;
+					}
+					if ($theme->headerLogoApp) {
+						$apiInfo['headerLogoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
 					}
 					$apiInfo['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
 					$apiInfo['primaryForegroundColor'] = $theme->primaryForegroundColor;

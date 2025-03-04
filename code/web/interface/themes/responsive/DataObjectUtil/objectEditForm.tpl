@@ -13,6 +13,10 @@
 	{/if}
 {/if}
 
+{if !empty($linkedObjectNotifications)}
+	<div class="alert alert-info">{$linkedObjectNotifications}</div>
+{/if}
+
 {* Create the base form *}
 <form id='objectEditor-{if !empty($id)}{$id}{else}-1{/if}' method="post" {if !empty($contentType)}enctype="{$contentType}"{/if} {if !empty($submitUrl)}action="{$submitUrl}"{/if} role="form" onsubmit="setFormSubmitting();" {if !empty($formLabel)}aria-label="{translate text=$formLabel isAdminFacing=true inAttribute=true}"{/if}>
 	<div class='editor'>
@@ -141,7 +145,22 @@
 				{$initializationJs}
 			{/if}
 			{if !empty($initializationAdditionalJs)}
-			{$initializationAdditionalJs}
+				{$initializationAdditionalJs}
+			{/if}
+			{if !empty($onSubmissionJS)}
+			{literal}
+			var shouldPrevent = true;
+			objectEditorObject.on("submit", function (e) {
+				if (shouldPrevent) {
+					e.preventDefault();
+					var submitForm = function() {
+						shouldPrevent = false;
+						objectEditorObject.submit();
+					};
+					{/literal}{$onSubmissionJS}{literal};
+				}
+			});
+			{/literal}
 			{/if}
 			{literal}
 
