@@ -4193,7 +4193,7 @@ class User extends DataObject {
 			$sections['communityEngagement']->addAction(new AdminAction('Campaigns', 'Create and view campaigns.', '/CommunityEngagement/Campaigns'), [
 				'Administer Community Engagement Module',
 			]);
-			$sections['communityEngagement']->addAction(new AdminAction('Milestones', 'Create and view milestones.', '/CommunityEngagement/Milestones'), [
+			$sections['communityEngagement']->addAction(new AdminAction('Milestone Criteria', 'Create and view milestones.', '/CommunityEngagement/Milestones'), [
 				'Administer Community Engagement Module',
 			]);
 			$sections['communityEngagement']->addAction(new AdminAction('Rewards', 'Create and view rewards.', '/CommunityEngagement/Rewards'), [

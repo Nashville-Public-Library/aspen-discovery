@@ -46,7 +46,7 @@ class CampaignMilestone extends DataObject {
 			'milestoneId' => [
 				'property' => 'milestoneId',
 				'type' => 'enum',
-				'label' => 'Milestone',
+				'label' => 'Milestone Criteria',
 				'values' => $availableMilestones,
 				'description' => 'The milestone to be added to the campaign',
 			],

@@ -18,7 +18,7 @@ class CommunityEngagement_Milestones extends ObjectEditor {
 	}
 
 	function getPageTitle(): string {
-		return 'Milestones';
+		return 'Milestone Criteria';
 	}
 
 	function getAllObjects($page, $recordsPerPage): array {
