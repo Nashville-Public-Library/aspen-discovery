@@ -2114,7 +2114,20 @@ class BookCoverProcessor {
 	 * @param string $url The URL to validate
 	 * @return bool True if the URL is valid and returns a usable image, false otherwise
 	 */
-	private function validateCoverUrl(string $url, string $source): bool {
+	private function validateCoverUrl(string $url, string $source, bool $forceValidation = false): array|bool {
+		// Check if we should validate the URL or if we can use the cached validation.
+		// Always validate if reload flag is set or if forceValidation is true.
+		if (!$forceValidation && !$this->reload && $this->bookCoverInfo && $this->bookCoverInfo->getLastUrlValidation()) {
+			// Hardcoded expiration time: 24 hours (86400 seconds).
+			$expirationTime = $this->bookCoverInfo->getLastUrlValidation() + 86400;
+			if (time() < $expirationTime) {
+				// URL validation hasn't expired yet, consider it valid.
+				global $logger;
+				$logger->log("URL has not expired.", Logger::LOG_ERROR);
+				return true;
+			}
+		}
+
 		// Check HTTP headers.
 		$headers = @get_headers($url);
 		if (!$headers || !preg_match('/^HTTP\/\d+\.\d+\s+(200|30[1-9])/', $headers[0])) {
@@ -2170,6 +2183,15 @@ class BookCoverProcessor {
 			}
 
 			$this->setBookCoverInfo($source, $width, $height);
+
+			// Update the last validation timestamp
+			if ($this->bookCoverInfo) {
+				$this->bookCoverInfo->setLastUrlValidation(time());
+				$this->bookCoverInfo->update();
+				global $logger;
+				$logger->log("Updated last validation time.", Logger::LOG_ERROR);
+			}
+
 			// All checks passed.
 			return true;
 		} else {
@@ -2183,8 +2205,9 @@ class BookCoverProcessor {
 			$source !== 'upload' &&
 			preg_match('/^https?:\/\//i', $url)
 		) {
-			// Validate the URL
-			if ($this->validateCoverUrl($url, $source)) {
+			// Always validate the URL when first storing it or when reload is requested
+			$validationResult = $this->validateCoverUrl($url, $source, true);
+			if ($validationResult !== false) {
 				// All checks passed; store the URL in the database and issue the redirect.
 				// First set the basic cover info to ensure consistency.
 
@@ -2222,9 +2245,7 @@ class BookCoverProcessor {
 	 *
 	 * Runs if the user's browser has not cached the image.
 	 *
-	 * @param string $source The source label.
-	 * @param string $url The URL to process.
-	 * @return string Returns the (possibly unmodified) URL.
+	 * @return bool Returns true if a redirect was issued, false otherwise.
 	 */
 	private function checkForEarlyRedirect(): bool {
 		if ($this->bookCoverInfo &&
@@ -2249,8 +2270,11 @@ class BookCoverProcessor {
 			//$this->log("Debug - Original URL: " . $this->bookCoverInfo->getOriginalUrl(), Logger::LOG_ERROR);
 
 			if ($currentHash === $storedHash && !empty($url)) {
-				// Validate that the URL still returns a valid image.
-				if ($this->validateCoverUrl($url, $this->bookCoverInfo->imageSource)) {
+				// Check if we need to validate the URL based on the expiration time
+				// Force validation if reload flag is set
+				$forceValidation = $this->reload;
+				$validationResult = $this->validateCoverUrl($url, $this->bookCoverInfo->imageSource, $forceValidation);
+				if ($validationResult !== false) {
 					header("HTTP/1.1 301 Moved Permanently");
 					header("Location: $url");
 					$this->addCachingHeader();
