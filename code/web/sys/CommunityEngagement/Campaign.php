@@ -78,13 +78,13 @@ class Campaign extends DataObject {
 			'startDate' => [
 				'property' => 'startDate',
 				'type' => 'date',
-				'label' => 'Campaign Start Date',
+				'label' => 'Campaign Start Date (campaigns with no start date will not be visible to patrons)',
 				'description' => 'The date the campaign starts',
 			],
 			'endDate' => [
 				'property' => 'endDate',
 				'type' => 'date',
-				'label' => 'Campaign End Date',
+				'label' => 'Campaign End Date (campaigns with no end date will not be visible to patrons)',
 				'description' => 'The date the campaign ends',
 			],
 			'campaignReward' => [
