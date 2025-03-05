@@ -18,10 +18,13 @@ class Series_SeriesMembers extends ObjectEditor {
 	}
 
 	function getPageTitle(): string {
-		return 'Series Members';
+		return 'Series Member';
 	}
 
 	function getAllObjects($page, $recordsPerPage): array {
+		if (empty($_REQUEST['id'])) {
+			header('Location: /Series/AdministerSeries');
+		}
 		$object = new SeriesMember();
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
 		$this->applyFilters($object);
@@ -63,7 +66,6 @@ class Series_SeriesMembers extends ObjectEditor {
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home', 'Administration Home');
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home#series', 'Series');
 		$breadcrumbs[] = new Breadcrumb('/Series/AdministerSeries', 'Administer Series');
-		$breadcrumbs[] = new Breadcrumb('/Series/SeriesMember', 'Series Member');
 		return $breadcrumbs;
 	}
 
