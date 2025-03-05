@@ -331,7 +331,7 @@ class Library extends DataObject {
 
 	public $allowLinkedAccounts;
 	public $allowFilteringOfLinkedAccountsInHolds;
-	public $allowSelectingHoldsToDisplay;
+	public $allowSelectingHoldsToExport;
 
 
 	public $maxFinesToAllowAccountUpdates;
@@ -1326,11 +1326,11 @@ class Library extends DataObject {
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],
 					],
-					'allowSelectingHoldsToDisplay' => [
-						'property' => 'allowSelectingHoldsToDisplay',
+					'allowSelectingHoldsToExport' => [
+						'property' => 'allowSelectingHoldsToExport',
 						'type' => 'checkbox',
-						'label' => 'Allow Ability To Display Only Selected Holds',
-						'description' => 'Whether or not users can select holds to display.',
+						'label' => 'Allow Ability To Export Only Selected Holds',
+						'description' => 'Whether or not users can export only selected holds.',
 						'hideInLists' => true,
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],
