@@ -135,6 +135,14 @@ function getUpdates25_03_00(): array {
 					"INSERT INTO series_indexing_settings VALUES (1,1,0,0);",
 			]
 		], //add_series_tables
+		'add_excluded_column_to_series_member' => [
+			'title' => 'Add excluded column to series_member',
+			'description' => 'Add excluded column to series_member table',
+			'continueOnError' => true,
+			'sql' => [
+				'ALTER TABLE series_member ADD COLUMN excluded TINYINT(1) DEFAULT 0;'
+			],
+		], // add_excluded_column_to_series_member
 
 		'track_event_length_in_minutes' => [
 			'title' => 'Track Event Length In Minutes',
