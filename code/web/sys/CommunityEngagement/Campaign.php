@@ -53,10 +53,12 @@ class Campaign extends DataObject {
 			],
 			'description' => [
 				'property' => 'description',
-				'type' => 'text',
+				'type' => 'translatableTextBlock',
 				'label' => 'Description',
 				'maxLength' => 255,
 				'description' => 'A description of the campaign',
+				'defaultTextFile' => 'Campaign_description.MD',
+				'hideInLists'=> true,
 			],
 			'availableMilestones' => [
 				'property' => 'availableMilestones',
@@ -300,6 +302,8 @@ class Campaign extends DataObject {
 			$this->savePatronTypeAccess();
 			$this->saveLibraryAccess();
 			$this->saveMilestones();
+			$this->saveTextBlockTranslations('description');
+
 		}
 		return $ret;
 	}
@@ -315,6 +319,7 @@ class Campaign extends DataObject {
 			$this->savePatronTypeAccess();
 			$this->saveLibraryAccess();
 			$this->saveMilestones();
+			$this->saveTextBlockTranslations('description');
 		}
 		return $ret;
 	}

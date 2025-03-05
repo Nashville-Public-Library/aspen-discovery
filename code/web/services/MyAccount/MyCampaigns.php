@@ -36,6 +36,8 @@ class MyCampaigns extends MyAccount {
 	}
 
 	function getCampaigns() {
+		global $activeLanguage;
+
 		$campaign = new Campaign();
 		$campaignList = [];
 
@@ -63,7 +65,10 @@ class MyCampaigns extends MyAccount {
 
 			//Find out if campaign in upcoming
 			$campaign->isUpcoming = isset($upcomingCampaigns[$campaignId]);
-
+			$campaign->textBlockTranslationDescription = $campaign->getTextBlockTranslation('description', $activeLanguage->code);
+			if (empty($campaign->textBlockTranslationDescription)) {
+				$campaign->textBlockTranslationDescription = "";
+			}
 			//Get campaign reward name
 			$rewardDetails = $campaign->getRewardDetails();
 			if ($rewardDetails) {
