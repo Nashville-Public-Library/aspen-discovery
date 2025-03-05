@@ -2122,8 +2122,6 @@ class BookCoverProcessor {
 			$expirationTime = $this->bookCoverInfo->getLastUrlValidation() + 86400;
 			if (time() < $expirationTime) {
 				// URL validation hasn't expired yet, consider it valid.
-				global $logger;
-				$logger->log("URL has not expired.", Logger::LOG_ERROR);
 				return true;
 			}
 		}
@@ -2188,8 +2186,6 @@ class BookCoverProcessor {
 			if ($this->bookCoverInfo) {
 				$this->bookCoverInfo->setLastUrlValidation(time());
 				$this->bookCoverInfo->update();
-				global $logger;
-				$logger->log("Updated last validation time.", Logger::LOG_ERROR);
 			}
 
 			// All checks passed.
