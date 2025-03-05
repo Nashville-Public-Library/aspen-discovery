@@ -3167,11 +3167,15 @@ class MyAccount_AJAX extends JSON_Action {
 		if ($selectedUnavailableSortOption == null) {
 			$selectedUnavailableSortOption = ($showPosition ? 'position' : 'title');
 		}
-
-		$selectedHolds = $this->setFilterSelectedHolds();
 		$selectedUser = $this->setFilterLinkedUser();
+		$selectedHolds = isset($_REQUEST['selectedHolds']) ? json_decode($_REQUEST['selectedHolds'], true) : [];
 
-		$allHolds = $this->filterHolds($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source),$selectedUser, $selectedHolds);
+		if (!empty($selectedHolds)) {
+			$allHolds = $this->filterHoldsBySelected($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source),$selectedHolds);
+		} else {
+			$allHolds = $this->filterHolds($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source),$selectedUser);
+		}
+
 
 		$showDateWhenSuspending = $user->showDateWhenSuspending();
 
@@ -3640,7 +3644,17 @@ class MyAccount_AJAX extends JSON_Action {
 		return $result;
 	}
 
-	public function filterHolds(array $allHolds, string $selectedUser, $selectedHolds): array {
+	private function normalizeRecordId(string $recordId): string {
+		$recordId = urldecode($recordId);
+
+		$recordId = trim($recordId);
+
+		$recordId = strtolower($recordId);
+
+		return $recordId;
+	}
+
+	public function filterHoldsBySelected(array $allHolds, $selectedHolds): array {
 
 		if (!empty($selectedHolds) && !is_array($selectedHolds)) {
 			$selectedHoldsArray = [];
@@ -3648,65 +3662,75 @@ class MyAccount_AJAX extends JSON_Action {
 
 			if (isset($parsedHolds['selected'])) {
 				foreach ($parsedHolds['selected'] as $holdKey => $value) {
-					if (preg_match('/(\d+)\|([a-zA-Z0-9_-]+)\|?/', $holdKey, $matches)) {
+
+					if (preg_match('/(\d+)\|([a-zA-Z0-9:._-]+)\|?/', $holdKey, $matches)) {
 						$selectedHoldsArray[] = [
-							'userId' => (int)$matches[1],
-							'recordId' => $matches[2],
+							'recordId' => $this->normalizeRecordId($matches[2]),
 						];
 					}
 				}
 			}
 			$selectedHolds = $selectedHoldsArray;
 		}
+		$filteredHolds = [
+			'available' => [],
+			'unavailable' => [],
+		];
+	
+		foreach ($allHolds['available'] as $key => $hold) {
+			$hold->recordId = $this->normalizeRecordId($hold->recordId);
+			$matchFound = false;
+			foreach ($selectedHolds as $selectedHold) {
+				if (strval($hold->recordId) === strval($selectedHold['recordId'])) {
+					$matchFound = true;
+					break;
+				}
+			}
+			if ($matchFound) {
+				$filteredHolds['available'][$key] = $hold;
+			}
+		}
+	
+		foreach ($allHolds['unavailable'] as $key => $hold) {
+			$hold->recordId = $this->normalizeRecordId($hold->recordId);
+			$matchFound = false;
+			foreach ($selectedHolds as $selectedHold) {
+				if (strval($hold->recordId) === strval($selectedHold['recordId'])) {
+					$matchFound = true;
+					break;
+				}
+			}
+			if ($matchFound) {
+				$filteredHolds['unavailable'][$key] = $hold;
+			}
+		}
+	
+		return $filteredHolds;
+	}
+	
+
+	public function filterHolds(array $allHolds, string $selectedUser): array {
 
 		$filteredHolds = [
 			'available' => [],
 			'unavailable' => [],
 		];
-
-		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" || $selectedUser === '[""]');
-
+	
+		// Check if we're filtering by a specific user
+		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" | $selectedUser === '[""]');
+	
 		foreach ($allHolds['available'] as $key => $hold) {
 			if ($allUsersSelected || intval($hold->userId) === intval($selectedUser)) {
-				if (!empty($selectedHolds)) {
-					$matchFound = false;
-					foreach ($selectedHolds as $selectedHold) {
-						if (
-							strval($hold->recordId) === strval($selectedHold['recordId']) &&
-							intval($hold->userId) === intval($selectedHold['userId'])
-						) {
-							$matchFound = true;
-							break;
-						}
-					}
-					if (!$matchFound) {
-						continue;
-					}
-				}
 				$filteredHolds['available'][$key] = $hold;
 			}
 		}
-
+	
 		foreach ($allHolds['unavailable'] as $key => $hold) {
 			if ($allUsersSelected || intval($hold->userId) === intval($selectedUser)) {
-				if (!empty($selectedHolds)) {
-					$matchFound = false;
-					foreach ($selectedHolds as $selectedHold) {
-						if (
-							strval($hold->recordId) === strval($selectedHold['recordId']) &&
-							intval($hold->userId) === intval($selectedHold['userId'])
-						) {
-							$matchFound = true;
-							break;
-						}
-					}
-					if (!$matchFound) {
-						continue;
-					}
-				}
 				$filteredHolds['unavailable'][$key] = $hold;
 			}
 		}
+	
 		return $filteredHolds;
 	}
 
@@ -3727,27 +3751,6 @@ class MyAccount_AJAX extends JSON_Action {
 		return (string)$selectedUser;
 	}
 
-	function setFilterSelectedHolds() {
-		global $interface;
-		$selectedHolds = [];
-
-		if (isset($_REQUEST['selectedHolds'])) {
-			$selectedHolds = json_decode($_REQUEST['selectedHolds'], true);
-
-			if (isset($_SESSION)) {
-				if (empty($selectedHolds)) {
-					unset($_SESSION['selectedHolds']);
-				} else {
-					$_SESSION['selectedHolds'] = $selectedHolds;
-				}
-			}
-		} elseif (isset($_SESSION['selectedHolds'])) {
-			$selectedHolds = $_SESSION['selectedHolds'];
-		}
-		$interface->assign('selectedHolds', $selectedHolds);
-
-		return $selectedHolds;
-	}
 
 	/** @noinspection PhpUnused */
 	public function getHolds(): array {
@@ -3779,14 +3782,13 @@ class MyAccount_AJAX extends JSON_Action {
 				]);
 			} else {
 				$selectedUser = $this->setFilterLinkedUser();
-				$selectedHolds = $this->setFilterSelectedHolds();
 				if ($user->getHomeLibrary() != null) {
-					$allowSelectingHoldsToDisplay = $user->getHomeLibrary()->allowSelectingHoldsToDisplay;
+					$allowSelectingHoldsToExport = $user->getHomeLibrary()->allowSelectingHoldsToExport;
 				} else {
-					$allowSelectingHoldsToDisplay = $library->allowSelectingHoldsToDisplay;
+					$allowSelectingHoldsToExport = $library->allowSelectingHoldsToExport;
 				}
 
-				$interface->assign('allowSelectingHoldsToDisplay', $allowSelectingHoldsToDisplay);
+				$interface->assign('allowSelectingHoldsToExport', $allowSelectingHoldsToExport);
 
 
 				if ($source != 'interlibrary_loan') {
@@ -3874,7 +3876,7 @@ class MyAccount_AJAX extends JSON_Action {
 				global $offlineMode;
 				if (!$offlineMode) {
 					if ($user) {
-						$allHolds = $this->filterHolds($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source), $selectedUser, $selectedHolds);
+						$allHolds = $this->filterHolds($user->getHolds(true, $selectedUnavailableSortOption, $selectedAvailableSortOption, $source), $selectedUser);
 						$interface->assign('recordList', $allHolds);
 					}
 				}
