@@ -3662,7 +3662,8 @@ class MyAccount_AJAX extends JSON_Action {
 
 			if (isset($parsedHolds['selected'])) {
 				foreach ($parsedHolds['selected'] as $holdKey => $value) {
-					if (preg_match('/(\d+)\|([a-zA-Z0-9:_-]+)\|?/', $holdKey, $matches)) {
+
+					if (preg_match('/(\d+)\|([a-zA-Z0-9:._-]+)\|?/', $holdKey, $matches)) {
 						$selectedHoldsArray[] = [
 							'recordId' => $this->normalizeRecordId($matches[2]),
 						];
