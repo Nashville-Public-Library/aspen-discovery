@@ -16,25 +16,17 @@ fi
 if ! [ -s "$keyrings/sury.gpg" ] || ! [ -s /etc/apt/sources.list.d/sury.list ]; then
   wget -q -O - https://packages.sury.org/php/apt.gpg | gpg -o "$keyrings/sury.gpg" --dearmor
   echo "deb [signed-by=$keyrings/sury.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" >/etc/apt/sources.list.d/sury.list
-  apt-get update -q
-fi
-
-# disable older version of php apache module if present
-# will be empty on new installs
-curr_php=$(a2query -m | grep -Eo php...)
-curr_php=${curr_php#php}
-
-if [ -n "$curr_php" ] && [ "$curr_php" != "$php_vers" ]; then
-	a2dismod "php${curr_php}"
 fi
 
 # install new package versions
-apt-get install -y -q "php${php_vers}" "php${php_vers}-mcrypt" "php${php_vers}-gd" "php${php_vers}-imagick" "php${php_vers}-curl" "php${php_vers}-mysql" "php${php_vers}-zip" "php${php_vers}-xml" "php${php_vers}-intl" "php${php_vers}-mbstring" "php${php_vers}-soap" "php${php_vers}-pgsql" "php${php_vers}-ssh2" "php${php_vers}-ldap"
+apt-get update -q
+apt-get install -y -q "libapache2-mod-php${php_vers}" "php${php_vers}" "php${php_vers}-mcrypt" "php${php_vers}-gd" "php${php_vers}-imagick" "php${php_vers}-curl" "php${php_vers}-mysql" "php${php_vers}-zip" "php${php_vers}-xml" "php${php_vers}-intl" "php${php_vers}-mbstring" "php${php_vers}-soap" "php${php_vers}-pgsql" "php${php_vers}-ssh2" "php${php_vers}-ldap"
 
 # Make sure the active apache module has the correct settings
 cp php.ini "/etc/php/$php_vers/apache2/"
 
 # and turn it on
+rm /etc/apache2/mods-enabled/php*
 a2enmod "php${php_vers}"
 systemctl restart apache2
 
