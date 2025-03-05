@@ -115,7 +115,8 @@ class Campaign extends DataObject {
 			'userAgeRange' => [
 				'property' => 'userAgeRange',
 				'type' => 'text',
-				'label' => 'User Age Range',
+				'label' => 'User Age Range ',
+				'note' => 'Applies to Koha Only',
 				'description' => 'Define the age range for this campaign e.g. &quot;14-18&quot;, &quot;14+&quot;, &quot;Over14&quot;, &quot;Under14&quot;, &quot;All Ages&quot;',
 				'default' => 'All Ages',
 				'maxLength' => 255,
