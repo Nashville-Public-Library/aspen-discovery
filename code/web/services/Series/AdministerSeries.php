@@ -75,6 +75,6 @@ class Series_AdministerSeries extends ObjectEditor {
 	}
 
 	function canAddNew() {
-		return $this->getNumObjects() == 0;
+		return UserAccount::userHasPermission('Administer Series');
 	}
 }
