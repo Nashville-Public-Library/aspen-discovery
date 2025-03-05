@@ -669,7 +669,10 @@ class BookCoverProcessor {
 	}
 
 	private function getCachedCover() {
-		if (SystemVariables::getSystemVariables()->useOriginalCoverUrls) {
+		// Always check for cached covers for default and uploaded covers regardless of useOriginalCoverUrls setting.
+		if (SystemVariables::getSystemVariables()->useOriginalCoverUrls &&
+			$this->bookCoverInfo->imageSource !== 'default' &&
+			$this->bookCoverInfo->imageSource !== 'upload') {
 			return false;
 		}
 
@@ -2143,10 +2146,10 @@ class BookCoverProcessor {
 	}
 
 	/**
-	 * Validates a cover URL to ensure it returns a valid, usable image
+	 * Validates a cover URL to ensure it returns a valid, usable image.
 	 *
-	 * @param string $url The URL to validate
-	 * @return bool True if the URL is valid and returns a usable image, false otherwise
+	 * @param string $url The URL to validate.
+	 * @return bool True if the URL is valid and returns a usable image, false otherwise.
 	 */
 	private function validateCoverUrl(string $url, string $source, bool $forceValidation = false): array|bool {
 		// Check if we should validate the URL or if we can use the cached validation.
@@ -2216,7 +2219,7 @@ class BookCoverProcessor {
 
 			$this->setBookCoverInfo($source, $width, $height);
 
-			// Update the last validation timestamp
+			// Update the last validation timestamp.
 			if ($this->bookCoverInfo) {
 				$this->bookCoverInfo->setLastUrlValidation(time());
 				$this->bookCoverInfo->update();
@@ -2230,8 +2233,18 @@ class BookCoverProcessor {
 		}
 	}
 
+	/**
+	 * If the system is configured to use the original cover URLs and the source is not an 'upload' or 'default',
+	 * check for a cached URL in the database, write it if not present, and then
+	 * (if the URL appears to be valid and not a dummy) immediately issue a 301 redirect.
+	 *
+	 * @param string $source The source label.
+	 * @param string $url The URL to process.
+	 * @return string Returns the (possibly unmodified) URL.
+	 */
 	private function handleOriginalCoverUrl(string $source, string $url): string {
 		if (SystemVariables::getSystemVariables()->useOriginalCoverUrls &&
+			$source !== 'default' &&
 			$source !== 'upload' &&
 			preg_match('/^https?:\/\//i', $url)
 		) {
@@ -2269,7 +2282,7 @@ class BookCoverProcessor {
 	}
 
 	/**
-	 * If the system is configured to use the original cover URLs and the source is not an upload,
+	 * If the system is configured to use the original cover URLs and the source is not an 'upload' or 'default',
 	 * check for a valid, cached URL in the database. This bypasses all logic that builds the URL, as
 	 * it is not needed unless certain fields on the BookCoverInfo object have been modified.
 	 *
