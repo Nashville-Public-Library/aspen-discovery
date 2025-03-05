@@ -2166,7 +2166,7 @@ class BookCoverProcessor {
 		// Check HTTP headers.
 		$headers = @get_headers($url);
 		if (!$headers || !preg_match('/^HTTP\/\d+\.\d+\s+(200|30[1-9])/', $headers[0])) {
-			$this->log("Cover URL $url did not return a valid HTTP response; falling back.", Logger::LOG_ERROR);
+			$this->log("Cover URL $url did not return a valid HTTP response; falling back.", Logger::LOG_DEBUG);
 			return false;
 		}
 
@@ -2178,7 +2178,7 @@ class BookCoverProcessor {
 		]);
 		$image = @file_get_contents($url, false, $context);
 		if ($image === false) {
-			$this->log("Could not retrieve image content from cover URL $url; falling back.", Logger::LOG_ERROR);
+			$this->log("Could not retrieve image content from cover URL $url; falling back.", Logger::LOG_DEBUG);
 			return false;
 		}
 
@@ -2194,14 +2194,14 @@ class BookCoverProcessor {
 			'821d0d442dbee0f51f4c803e8e9fc87a'
 		];
 		if (in_array($imageChecksum, $dummyChecksums)) {
-			$this->log("Cover URL $url returned a known dummy image (checksum: $imageChecksum); falling back.", Logger::LOG_ERROR);
+			$this->log("Cover URL $url returned a known dummy image (checksum: $imageChecksum); falling back.", Logger::LOG_DEBUG);
 			return false;
 		}
 
 		// Verify that the image is not too small.
 		$imageInfo = @getimagesizefromstring($image);
 		if ($imageInfo === false || ($imageInfo[0] < 2 && $imageInfo[1] < 2)) {
-			$this->log("Cover URL $url returned an image that is too small; falling back.", Logger::LOG_ERROR);
+			$this->log("Cover URL $url returned an image that is too small; falling back.", Logger::LOG_DEBUG);
 			return false;
 		}
 
@@ -2213,7 +2213,7 @@ class BookCoverProcessor {
 			$rgbRight = imagecolorat($imageResource, $width - 1, $height - 1);
 			imagedestroy($imageResource);
 			if ($rgbLeft == 8421504 && $rgbRight == 8421504) {
-				$this->log("Cover URL $url returned an image with partial gray at the bottom; falling back.", Logger::LOG_ERROR);
+				$this->log("Cover URL $url returned an image with partial gray at the bottom; falling back.", Logger::LOG_DEBUG);
 				return false;
 			}
 
@@ -2228,7 +2228,7 @@ class BookCoverProcessor {
 			// All checks passed.
 			return true;
 		} else {
-			$this->log("Cover URL $url returned invalid image data; falling back.", Logger::LOG_ERROR);
+			$this->log("Cover URL $url returned invalid image data; falling back.", Logger::LOG_DEBUG);
 			return false;
 		}
 	}
@@ -2268,9 +2268,9 @@ class BookCoverProcessor {
 				$this->bookCoverInfo->setOriginalUrl($urlToStore);
 				$this->bookCoverInfo->update();
 
-				//$this->log("Using new original URL: $url", Logger::LOG_ERROR);
-				//$this->log("Debug - Storage: Hash: $validationHash", Logger::LOG_ERROR);
-				//$this->log("Debug - Storage fields: " . implode('|', $validationFields), Logger::LOG_ERROR);
+				//$this->log("Using new original URL: $url", Logger::LOG_DEBUG);
+				//$this->log("Debug - Storage: Hash: $validationHash", Logger::LOG_DEBUG);
+				//$this->log("Debug - Storage fields: " . implode('|', $validationFields), Logger::LOG_DEBUG);
 
 				header("HTTP/1.1 301 Moved Permanently");
 				header("Location: $url");
@@ -2308,9 +2308,9 @@ class BookCoverProcessor {
 			$storedHash = substr($this->bookCoverInfo->getOriginalUrl(), 0, 32);
 			$url = substr($this->bookCoverInfo->getOriginalUrl(), 32);
 
-			//$this->log("Debug - Validation check: Current hash: $currentHash, Stored hash: $storedHash", Logger::LOG_ERROR);
-			//$this->log("Debug - Validation fields: " . implode('|', $validationFields), Logger::LOG_ERROR);
-			//$this->log("Debug - Original URL: " . $this->bookCoverInfo->getOriginalUrl(), Logger::LOG_ERROR);
+			//$this->log("Debug - Validation check: Current hash: $currentHash, Stored hash: $storedHash", Logger::LOG_DEBUG);
+			//$this->log("Debug - Validation fields: " . implode('|', $validationFields), Logger::LOG_DEBUG);
+			//$this->log("Debug - Original URL: " . $this->bookCoverInfo->getOriginalUrl(), Logger::LOG_DEBUG);
 
 			if ($currentHash === $storedHash && !empty($url)) {
 				// Check if we need to validate the URL based on the expiration time
@@ -2323,15 +2323,15 @@ class BookCoverProcessor {
 					$this->addCachingHeader();
 					exit;
 				} else {
-					$this->log("URL validation failed for stored URL: $url", Logger::LOG_ERROR);
+					$this->log("URL validation failed for stored URL: $url", Logger::LOG_DEBUG);
 				}
 			} else {
-				$this->log("Debug - Hash validation failed: " . ($currentHash === $storedHash ? "Hashes match" : "Hashes don't match") . ", URL empty: " . (empty($url) ? "Yes" : "No"), Logger::LOG_ERROR);
+				$this->log("Debug - Hash validation failed: " . ($currentHash === $storedHash ? "Hashes match" : "Hashes don't match") . ", URL empty: " . (empty($url) ? "Yes" : "No"), Logger::LOG_DEBUG);
 			}
 		} else {
 			$this->log("Debug - Early conditions failed: BookCoverInfo exists: " . ($this->bookCoverInfo ? "Yes" : "No") .
 				", Original URL exists: " . (!empty($this->bookCoverInfo) && !empty($this->bookCoverInfo->getOriginalUrl()) ? "Yes" : "No") .
-				", useOriginalCoverUrls enabled: " . (SystemVariables::getSystemVariables()->useOriginalCoverUrls ? "Yes" : "No"), Logger::LOG_ERROR);
+				", useOriginalCoverUrls enabled: " . (SystemVariables::getSystemVariables()->useOriginalCoverUrls ? "Yes" : "No"), Logger::LOG_DEBUG);
 		}
 		return false;
 	}
