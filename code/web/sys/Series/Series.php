@@ -308,7 +308,7 @@ class Series extends DataObject {
 					$interface->assign('placeholder', $seriesMemberInfo);
 					$seriesRecordDriver = new SeriesRecordDriver($seriesMemberInfo['seriesMemberId']);
 					$interface->assign('bookCoverUrl', $seriesRecordDriver->getBookcoverUrl('medium', false, true, $seriesMemberInfo['seriesMemberId']));
-					$listResults[$listPosition] = $interface->fetch('Series/placeHolderListEntry.tpl');
+					$listResults[$listPosition] = $interface->fetch('Series/placeholderListEntry.tpl');
 				}
 			}
 		}

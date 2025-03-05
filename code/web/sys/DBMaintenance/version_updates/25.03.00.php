@@ -31,8 +31,8 @@ function getUpdates25_03_00(): array {
 			]
 		], //make_app_icons_os_specific
 		'remove_unused_updates_properties' => [
-			'title' => 'Make App Icons OS Specific',
-			'description' => 'Update settings to store separate icons per OS',
+			'title' => 'Remove unused updates properties',
+			'description' => 'Update system variables to remove unused columns',
 			'continueOnError' => false,
 			'sql' => [
 				'ALTER TABLE system_variables DROP COLUMN allowScheduledUpdates',
@@ -325,13 +325,28 @@ function getUpdates25_03_00(): array {
 		// Leo Stoyanov - BWS
 
 		//alexander - PTFS-Europe
+
 		'filter_books_from_summon_results' => [
 			'title' => 'Filter Books From Summon Results',
 			'description' => 'Add the option of filtering out records with the content type of book or ebook from Summon results',
 			'sql' => [
 				"ALTER TABLE summon_settings ADD COLUMN filterOutBooksAndEbooks TINYINT(1) NOT NULL DEFAULT 0",
 			],
-		],
+		], //filter_books_from_summon_results
+		'allow_filtering_of_linked_users_in_holds' => [
+			'title' => 'Allow Filtering of Linked Users in Holds',
+			'description' => 'Allow libraries the option of allowing users to filter their holds by linked user',
+			'sql' => [
+				'ALTER TABLE library ADD COLUMN allowFilteringOfLinkedAccountsInHolds TINYINT(1) DEFAULT 0',
+			]
+		], //allow_filtering_of_linked_users_in_holds
+		'allow_selecting_holds_to_display' => [
+			'title' => 'Allow Selecting Holds to Display',
+			'description' => 'Allow libraries the option of allowing users to display only selected holds',
+			'sql' => [
+				'ALTER TABLE library ADD COLUMN allowSelectingHoldsToDisplay TINYINT(1) DEFAULT 0',
+			]
+		], //allow_selecting_holds_to_display
 
 		//chloe - PTFS-Europe
 
