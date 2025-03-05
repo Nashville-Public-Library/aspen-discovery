@@ -339,6 +339,18 @@ class Campaign extends DataObject {
 		return $campaignList;
 	}
 
+	public static function getAllCampaignsWithEnrolledUsers() {
+		$campaign = new Campaign();
+		$campaignList = [];
+		$campaign->whereAdd("currentEnrollments > 0");
+		if ($campaign->find()) {
+			while ($campaign->fetch()) {
+				$campaignList[$campaign->id] = clone $campaign;
+			}
+		}
+		return $campaignList;
+	}
+
 	public static function getCampaignById($id) {
 		$campaign = new Campaign();
 		$campaign->whereAdd("id = '" .$id . "'");
@@ -595,13 +607,13 @@ class Campaign extends DataObject {
 	public function getCompletedUsersCount() {
 		$userCampaign = new UserCampaign();
 		$completedUsers = [];
-
 		$userCampaign->whereAdd("campaignId = {$this->id}");
-		$userCampaign->whereAdd("completed = 1");
-		$userCampaign->find();
-	
-		while($userCampaign->fetch()) {
-			$completedUsers[$userCampaign->userId] = true;
+		if ($userCampaign->find()) {
+			while($userCampaign->fetch()) {
+				if ($userCampaign->checkCompletionStatus())	 {
+					$completedUsers[$userCampaign->userId] = true;
+				}			
+			}
 		}
 		return count($completedUsers);
 	}

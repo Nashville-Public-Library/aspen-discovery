@@ -21,7 +21,7 @@
 					<select id="user_id" class="form-control-sm" style="margin-bottom: 3px;" onchange="AspenDiscovery.CommunityEngagement.filterDropdownOptions('user')">
 						<option value="">All Users</option>
 						{foreach from=$users item=$user}
-								<option value="{$user->id}">{$user->username}</option>
+								<option value="{$user->id}">{$user->displayName}</option>
 						{/foreach}
 					</select>
 			</div>
