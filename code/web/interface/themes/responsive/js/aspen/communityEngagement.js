@@ -42,12 +42,12 @@ AspenDiscovery.CommunityEngagement = function() {
 		},
 		filterDropdownOptions: function(filterType) {
 
-		   var selectedId = (filterType === 'campaign') ? document.getElementById("campaign_id").value : document.getElementById("user_id").value;
-
+			var selectedId = (filterType === 'campaign') ? document.getElementById("campaign_id").value : document.getElementById("user_id").value;
 			var url = Globals.path + "/CommunityEngagement/AJAX?method=filterCampaigns";
 			var params = {
 				campaignId: filterType === "campaign" ? selectedId : null,
-				userId: filterType === "user" ? selectedId : null
+				userId: filterType === "user" ? selectedId : null,
+				filterType: filterType
 			}
 			
 			//Show/hide campaigns list and filtered campaigns divs

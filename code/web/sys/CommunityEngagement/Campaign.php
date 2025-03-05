@@ -53,10 +53,12 @@ class Campaign extends DataObject {
 			],
 			'description' => [
 				'property' => 'description',
-				'type' => 'text',
+				'type' => 'translatableTextBlock',
 				'label' => 'Description',
 				'maxLength' => 255,
 				'description' => 'A description of the campaign',
+				'defaultTextFile' => 'Campaign_description.MD',
+				'hideInLists'=> true,
 			],
 			'availableMilestones' => [
 				'property' => 'availableMilestones',
@@ -78,13 +80,13 @@ class Campaign extends DataObject {
 			'startDate' => [
 				'property' => 'startDate',
 				'type' => 'date',
-				'label' => 'Campaign Start Date',
+				'label' => 'Campaign Start Date (campaigns with no start date will not be visible to patrons)',
 				'description' => 'The date the campaign starts',
 			],
 			'endDate' => [
 				'property' => 'endDate',
 				'type' => 'date',
-				'label' => 'Campaign End Date',
+				'label' => 'Campaign End Date (campaigns with no end date will not be visible to patrons)',
 				'description' => 'The date the campaign ends',
 			],
 			'campaignReward' => [
@@ -115,7 +117,8 @@ class Campaign extends DataObject {
 			'userAgeRange' => [
 				'property' => 'userAgeRange',
 				'type' => 'text',
-				'label' => 'User Age Range',
+				'label' => 'User Age Range ',
+				'note' => 'Applies to Koha Only',
 				'description' => 'Define the age range for this campaign e.g. &quot;14-18&quot;, &quot;14+&quot;, &quot;Over14&quot;, &quot;Under14&quot;, &quot;All Ages&quot;',
 				'default' => 'All Ages',
 				'maxLength' => 255,
@@ -299,6 +302,8 @@ class Campaign extends DataObject {
 			$this->savePatronTypeAccess();
 			$this->saveLibraryAccess();
 			$this->saveMilestones();
+			$this->saveTextBlockTranslations('description');
+
 		}
 		return $ret;
 	}
@@ -314,6 +319,7 @@ class Campaign extends DataObject {
 			$this->savePatronTypeAccess();
 			$this->saveLibraryAccess();
 			$this->saveMilestones();
+			$this->saveTextBlockTranslations('description');
 		}
 		return $ret;
 	}
@@ -331,6 +337,18 @@ class Campaign extends DataObject {
 		$campaign = new Campaign();
 		$campaignList = [];
 
+		if ($campaign->find()) {
+			while ($campaign->fetch()) {
+				$campaignList[$campaign->id] = clone $campaign;
+			}
+		}
+		return $campaignList;
+	}
+
+	public static function getAllCampaignsWithEnrolledUsers() {
+		$campaign = new Campaign();
+		$campaignList = [];
+		$campaign->whereAdd("currentEnrollments > 0");
 		if ($campaign->find()) {
 			while ($campaign->fetch()) {
 				$campaignList[$campaign->id] = clone $campaign;
@@ -595,13 +613,13 @@ class Campaign extends DataObject {
 	public function getCompletedUsersCount() {
 		$userCampaign = new UserCampaign();
 		$completedUsers = [];
-
 		$userCampaign->whereAdd("campaignId = {$this->id}");
-		$userCampaign->whereAdd("completed = 1");
-		$userCampaign->find();
-	
-		while($userCampaign->fetch()) {
-			$completedUsers[$userCampaign->userId] = true;
+		if ($userCampaign->find()) {
+			while($userCampaign->fetch()) {
+				if ($userCampaign->checkCompletionStatus())	 {
+					$completedUsers[$userCampaign->userId] = true;
+				}			
+			}
 		}
 		return count($completedUsers);
 	}
