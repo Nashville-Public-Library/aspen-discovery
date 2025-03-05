@@ -28,10 +28,12 @@ class Reward extends DataObject {
 			],
 			'description' => [
 				'property' => 'description',
-				'type' => 'text',
+				'type' => 'translatableTextBlock',
 				'label' => 'Description',
 				'maxLength' => 255,
 				'description' => 'A description of the campaign',
+				'defaultTextFile' => 'Reward_description.MD',
+				'hideInLists'=> true,
 			],
 			'rewardType' => [
 				'property' => 'rewardType',
@@ -75,12 +77,14 @@ class Reward extends DataObject {
 
 	function insert($context = ' ') {
 			$this->uploadImage();
+			$this->saveTextBlockTranslations('description');
 		
 		return parent::insert();
 	}
 
 	function update($context = ' ') {
 			$this->uploadImage();
+			$this->saveTextBlockTranslations('description');
 		
 		return parent::update();
 	}

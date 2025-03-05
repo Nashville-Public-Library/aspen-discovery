@@ -151,6 +151,8 @@
                                 <td colspan="4">
                                     {* <h4>{translate text="Milestones"}</h4> *}
                                     <table class="table table-bordered">
+                                    {$campaign->textBlockTranslationDescription}
+
                                     <thead>
                                         <tr>
                                             <th>{translate text="Milestone" isPublicFacing=true}</th>
