@@ -339,6 +339,14 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE library ADD COLUMN allowSelectingHoldsToDisplay TINYINT(1) DEFAULT 0',
 			]
 		], //allow_selecting_holds_to_display
+		'allow_selecting_holds_to_export' => [
+			'title' => 'Allow Selecting Holds to Export',
+			'description' => 'Allow libraries the option of allowing users to export only selected holds',
+			'sql' => [
+				'ALTER TABLE library DROP COLUMN allowSelectingHoldsToDisplay',
+				'ALTER TABLE library ADD COLUMN allowSelectingHoldsToExport TINYINT(1) DEFAULT 0'
+			]
+		], //allow_selecting_holds_to_display
 
 		//chloe - PTFS-Europe
 
