@@ -7,12 +7,14 @@ class Series extends DataObject {
 	public $__table = 'series';
 	public $id;
 	public $displayName;
+	public $groupedWorkSeriesTitle;
 	public $description;
 	public $cover;
 	public $audience;
 	public $author;
 	public $isIndexed;
 	public $dateUpdated;
+	public $created;
 
 	public $_seriesMembers; // grouped works and placeholders
 
@@ -40,8 +42,7 @@ class Series extends DataObject {
 				'type' => 'text',
 				'label' => 'Author',
 				'description' => 'Up to three authors with titles in this series',
-				'readOnly' => true,
-				'note' => "This field can't be edited because it gets overwritten during indexing"
+				'note' => $context == 'addNew' ? '' : "This field may be automatically updated during indexing"
 			],
 			'audience' => [
 				'property' => 'audience',
@@ -65,12 +66,6 @@ class Series extends DataObject {
 				'maxHeight' => 280,
 				'path' => "$coverPath/original/Series",
 				'hideInLists' => true,
-			],
-			'created' => [
-				'property' => 'created',
-				'type' => 'timestamp',
-				'label' => 'Date Created',
-				'readOnly' => true,
 			],
 			'dateUpdated' => [
 				'property' => 'dateUpdated',
@@ -99,6 +94,14 @@ class Series extends DataObject {
 				'allowEdit' => true,
 				'hideInLists' => true,
 				'canAddNew' => true,
+				'canEdit' => true,
+				'canDelete' => true,
+				'additionalOneToManyActions' => [
+					'showExcluded' => [
+						'text' => 'Show Excluded Series Titles',
+						'url' => '/Series/AdministerSeries?id=$id&amp;objectAction=edit&amp;showExcluded=true',
+					],
+				],
 			],
 		];
 		return $structure;
@@ -120,15 +123,14 @@ class Series extends DataObject {
 		if (empty($this->dateUpdated)) {
 			$this->dateUpdated = time();
 		}
+		if (empty($this->created)) {
+			$this->created = time();
+		}
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveSeriesMembers();
 		}
 		return $ret;
-	}
-
-	function delete($useWhere = false) : int {
-		return false; // Placeholder till Delete is removed as an option
 	}
 
 	public function __set($name, $value) {
@@ -141,7 +143,10 @@ class Series extends DataObject {
 
 	public function __get($name) {
 		if ($name == 'seriesMembers') {
-			return $this->getSeriesMembers();
+			if (!empty($_REQUEST['showExcluded'])) {
+				return $this->getSeriesMembers(true);
+			}
+			return $this->getSeriesMembers(false);
 		} else {
 			return parent::__get($name);
 		}
@@ -162,6 +167,7 @@ class Series extends DataObject {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$members = new SeriesMember();
 		$members->seriesId = $this->id;
+		$members->excluded = 0;
 		return $members->count();
 	}
 
@@ -172,6 +178,7 @@ class Series extends DataObject {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
+		$seriesMember->excluded = 0;
 		$seriesMember->orderBy($sortName);
 
 		$seriesMembers = [];
@@ -222,10 +229,16 @@ class Series extends DataObject {
 	/**
 	 * @return array      of series members
 	 */
-	function getSeriesMembers() {
+	function getSeriesMembers($showExcluded = true) {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
+		if (empty($this->id)) {
+			return [];
+		}
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
+		if (!$showExcluded) {
+			$seriesMember->excluded = 0;
+		}
 		$seriesMember->orderBy('weight');
 		$this->_seriesMembers = [];
 		$seriesMember->find();
@@ -293,6 +306,8 @@ class Series extends DataObject {
 					$interface->assign('listEntrySource', "Series");
 					$interface->assign('seriesMemberId',$seriesMemberInfo['seriesMemberId']);
 					$interface->assign('placeholder', $seriesMemberInfo);
+					$seriesRecordDriver = new SeriesRecordDriver($seriesMemberInfo['seriesMemberId']);
+					$interface->assign('bookCoverUrl', $seriesRecordDriver->getBookcoverUrl('medium', false, true, $seriesMemberInfo['seriesMemberId']));
 					$listResults[$listPosition] = $interface->fetch('Series/placeholderListEntry.tpl');
 				}
 			}

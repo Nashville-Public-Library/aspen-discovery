@@ -2,15 +2,15 @@
 
 require_once ROOT_DIR . '/Action.php';
 require_once ROOT_DIR . '/services/Admin/ObjectEditor.php';
-require_once ROOT_DIR . '/sys/Series/Series.php';
+require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 
-class Series_AdministerSeries extends ObjectEditor {
+class Series_SeriesMembers extends ObjectEditor {
 	function getObjectType(): string {
-		return 'Series';
+		return 'SeriesMember';
 	}
 
 	function getToolName(): string {
-		return 'AdministerSeries';
+		return 'SeriesMembers';
 	}
 
 	function getModule(): string {
@@ -18,11 +18,14 @@ class Series_AdministerSeries extends ObjectEditor {
 	}
 
 	function getPageTitle(): string {
-		return 'Administer Series';
+		return 'Series Member';
 	}
 
 	function getAllObjects($page, $recordsPerPage): array {
-		$object = new Series();
+		if (empty($_REQUEST['id'])) {
+			header('Location: /Series/AdministerSeries');
+		}
+		$object = new SeriesMember();
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
 		$this->applyFilters($object);
 		$object->orderBy($this->getSort());
@@ -39,7 +42,7 @@ class Series_AdministerSeries extends ObjectEditor {
 	}
 
 	function getObjectStructure($context = ''): array {
-		return Series::getObjectStructure($context);
+		return SeriesMember::getObjectStructure($context);
 	}
 
 	function getPrimaryKeyColumn(): string {
@@ -75,6 +78,6 @@ class Series_AdministerSeries extends ObjectEditor {
 	}
 
 	function canAddNew() {
-		return UserAccount::userHasPermission('Administer Series');
+		return $this->getNumObjects() == 0;
 	}
 }
