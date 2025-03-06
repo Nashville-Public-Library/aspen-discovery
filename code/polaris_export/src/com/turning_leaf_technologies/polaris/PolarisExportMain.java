@@ -465,16 +465,29 @@ public class PolarisExportMain {
 							addAspenLibraryStmt.setString(2, abbreviation);
 							addAspenLibraryStmt.setString(3, libraryDisplayName);
 							addAspenLibraryStmt.setLong(4, ilsId);
-							addAspenLibraryStmt.executeUpdate();
-							ResultSet addAspenLibraryRS = addAspenLibraryStmt.getGeneratedKeys();
-							if (addAspenLibraryRS.next()){
-								libraryId = addAspenLibraryRS.getLong(1);
-							}
 
-							//Add records to include for the library
-							addAspenLibraryRecordsToIncludeStmt.setLong(1, libraryId);
-							addAspenLibraryRecordsToIncludeStmt.setLong(2, indexingProfile.getId());
-							addAspenLibraryRecordsToIncludeStmt.executeUpdate();
+							try {
+								addAspenLibraryStmt.executeUpdate();
+								ResultSet addAspenLibraryRS = addAspenLibraryStmt.getGeneratedKeys();
+								if (addAspenLibraryRS.next()){
+									libraryId = addAspenLibraryRS.getLong(1);
+								}
+
+								//Add records to include for the library
+								addAspenLibraryRecordsToIncludeStmt.setLong(1, libraryId);
+								addAspenLibraryRecordsToIncludeStmt.setLong(2, indexingProfile.getId());
+								addAspenLibraryRecordsToIncludeStmt.executeUpdate();
+							} catch (SQLException e) {
+								if (e.getMessage().contains("Duplicate entry") && e.getMessage().contains("for key 'subdomain'")) {
+									// Log error about duplicate subdomain in Polaris data.
+									logEntry.incErrors("Data duplication in Polaris detected. Attempted to insert library with subdomain '" +
+										abbreviation + "' but it already exists. OrganizationID: " + ilsId +
+										", DisplayName: " + libraryDisplayName);
+								} else {
+									// Re-throw other SQL exceptions.
+									throw e;
+								}
+							}
 						}
 					}else if (organizationCodeId == 3){
 						long parentOrganizationId = organizationInfo.getLong("ParentOrganizationID");
