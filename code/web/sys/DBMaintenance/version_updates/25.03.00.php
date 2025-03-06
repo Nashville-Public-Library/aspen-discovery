@@ -323,6 +323,16 @@ function getUpdates25_03_00(): array {
 		], //web_resource_generate_placard
 
 		// Leo Stoyanov - BWS
+		'use_original_cover_urls_settings' => [
+			'title' => 'Add Option to Use Original Cover URLs, Last URL Validation to BookCoverInfo, and Original Cover URLs',
+			'description' => 'Add an option to allow the use of original cover URLs and the original URL itself rather than cached images in the file system along with tracking last URL validation.',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE system_variables ADD COLUMN IF NOT EXISTS useOriginalCoverUrls TINYINT(1) DEFAULT 0",
+				"ALTER TABLE bookcover_info ADD COLUMN IF NOT EXISTS last_url_validation INT(11) DEFAULT NULL",
+				"ALTER TABLE bookcover_info ADD COLUMN IF NOT EXISTS original_url TEXT DEFAULT NULL"
+			]
+		], //use_original_cover_urls_setting
 
 		//alexander - PTFS-Europe
 

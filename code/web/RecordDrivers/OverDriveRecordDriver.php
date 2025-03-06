@@ -430,7 +430,7 @@ class OverDriveRecordDriver extends GroupedWorkSubDriver {
 
 	/** @noinspection PhpUnused */
 	public function getSubjects() : array {
-		return $this->getOverDriveMetaData()->getDecodedRawData()->subjects;
+		return $this->getOverDriveMetaData()->getDecodedRawData()->subjects ?? [];
 	}
 
 	/**

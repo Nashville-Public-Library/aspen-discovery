@@ -74,7 +74,24 @@ class Series_AdministerSeries extends ObjectEditor {
 		return UserAccount::userHasPermission('Administer Series');
 	}
 
-	function canAddNew() {
+	function canAddNew(): bool{
 		return UserAccount::userHasPermission('Administer Series');
+	}
+
+	function getDefaultFilters(array $filterFields): array {
+		return [
+			'displayName' => [
+				'fieldName' => 'displayName',
+				'filterType' => 'text',
+				'filterValue' => '',
+				'field' => $filterFields['displayName'],
+			],
+			'author' => [
+				'fieldName' => 'author',
+				'filterType' => 'text',
+				'filterValue' => '',
+				'field' => $filterFields['author'],
+			],
+		];
 	}
 }
