@@ -139,7 +139,7 @@ function getUpdates25_03_00(): array {
 					lastUpdateOfChangedSeries INT(11) DEFAULT 0,
 					lastUpdateOfAllSeries INT(11) DEFAULT 0
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
-					"INSERT INTO series_indexing_settings VALUES (1,1,0,0);",
+				"INSERT INTO series_indexing_settings VALUES (1,1,0,0);",
 			]
 		], //add_series_tables
 		'add_excluded_column_to_series_member' => [
@@ -165,8 +165,18 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE series ADD INDEX displayName(displayName)',
 				'ALTER TABLE series ADD INDEX author(author)',
 			]
-		], //name
-
+		], //add_series_indexes
+		'update_series_character_sets' => [
+			'title' => 'Update Series Character Sets',
+			'description' => 'Update series tables to use multi-byte character sets',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE series CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci',
+				'ALTER TABLE series_member CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci',
+				'ALTER TABLE series_indexing_settings CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci',
+				'ALTER TABLE series_indexing_log CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci'
+			]
+		], //update_series_character_sets
 
 		'track_event_length_in_minutes' => [
 			'title' => 'Track Event Length In Minutes',
