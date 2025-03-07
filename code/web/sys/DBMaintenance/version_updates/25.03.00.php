@@ -47,6 +47,13 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE themes ADD COLUMN headerLogoApp VARCHAR(100) DEFAULT NULL',
 			]
 		], //theme_app_header_logo
+		'move_uploaded_list_images' => [
+			'title' => 'Move uploaded images',
+			'description' => "Move uploaded images uploaded to their own directory so they don't conflict with uploaded records",
+			'sql'=> [
+				'moveUploadedListImages'
+			]
+		], //move_list_images
 
 		//katherine - Grove
 
@@ -396,4 +403,27 @@ function getUpdates25_03_00(): array {
 		//other
 
 	];
+}
+
+function moveUploadedListImages(&$update) : void {
+	require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
+	$uploadedListCovers = new BookCoverInfo();
+	$uploadedListCovers->setRecordType('list');
+	$uploadedListCovers->setImageSource('upload');
+	$uploadedListCovers->find();
+	global $configArray;
+	$originalPath = $configArray['Site']['coverPath'] . '/original/';
+	$newPath = $configArray['Site']['coverPath'] . '/original/lists/';
+
+	$numCoversCopied = 0;
+	while($uploadedListCovers->fetch()) {
+		$listId = $uploadedListCovers->getRecordId();
+		if (file_exists($originalPath . $listId . '.png') && !file_exists($newPath . $listId . '.png')) {
+			copy($originalPath . $listId . '.png', $newPath . $listId . '.png');
+			$numCoversCopied++;
+		}
+	}
+
+	$update['status'] = "Moved $numCoversCopied List covers so they will not conflict with records";
+	$update['success'] = true;
 }
