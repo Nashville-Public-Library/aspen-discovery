@@ -1577,7 +1577,7 @@ class BookCoverProcessor {
 	}
 
 	private function getSeriesCover($id) {
-		//Build a cover based on the titles within list
+		//Build a cover based on the titles within series
 		require_once ROOT_DIR . '/sys/Covers/SeriesCoverBuilder.php';
 		$coverBuilder = new SeriesCoverBuilder();
 		require_once ROOT_DIR . '/sys/Series/Series.php';
