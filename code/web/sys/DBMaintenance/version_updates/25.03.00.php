@@ -150,6 +150,23 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE series_member ADD COLUMN excluded TINYINT(1) DEFAULT 0;'
 			],
 		], // add_excluded_column_to_series_member
+		'add_series_indexes' => [
+			'title' => 'Add Series Indexes',
+			'description' => 'Add Indexes to series table for efficient querying',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE series_member ADD INDEX groupedWorkPermanentId(groupedWorkPermanentId)',
+				'ALTER TABLE series_member ADD INDEX seriesId(seriesId)',
+    			'ALTER TABLE series_member ADD INDEX volume(volume)',
+				'ALTER TABLE series_member ADD INDEX displayName(displayName)',
+				'ALTER TABLE series_member ADD INDEX author(author)',
+				'ALTER TABLE series ADD INDEX groupedWorkSeriesTitle(groupedWorkSeriesTitle)',
+				'ALTER TABLE series_member ADD INDEX seriesWorkId(seriesId, groupedWorkPermanentId, userAdded)',
+				'ALTER TABLE series ADD INDEX displayName(displayName)',
+				'ALTER TABLE series ADD INDEX author(author)',
+			]
+		], //name
+
 
 		'track_event_length_in_minutes' => [
 			'title' => 'Track Event Length In Minutes',
