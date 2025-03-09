@@ -741,6 +741,21 @@ class Event extends DataObject {
 								$instance->update();
 							}
 						}
+					} else if (in_array('startTime', $this->_changedFields) || in_array('eventLength', $this->_changedFields)) { // If only the time or length has changed, we can just update existing events
+						foreach ($this->_dates as $date) {
+							// Don't create instances in the past
+							if ($date > $todayDate || ($date == $todayDate && $this->startTime > $todayTime)) {
+								$instance = new EventInstance();
+								$instance->eventId = $this->id;
+								$instance->date = $date;
+								$instance->find();
+								if ($instance->fetch()) {
+									$instance->time = $this->startTime;
+									$instance->length = $this->eventLength;
+									$instance->update();
+								}
+							}
+						}
 					}
 				}
 			}
@@ -750,13 +765,12 @@ class Event extends DataObject {
 	private function clearFutureInstances() {
 		$instance = new EventInstance();
 		$instance->eventId = $this->id;
-		$instance->find();
 		$todayDate = date('Y-m-d');
 		$todayTime = date('H:i:s');
 		$instance->whereAdd("date > '$todayDate' OR (date = '$todayDate' and time > '$todayTime')");
-		$instance->deleted = 1;
+		$instance->find();
 		while ($instance->fetch()) {
-			$instance->update();
+			$instance->delete();
 		}
 	}
 
