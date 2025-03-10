@@ -2721,7 +2721,7 @@ class MyAccount_AJAX extends JSON_Action {
 					/** @var User $user */
 					$selectedLinkedUser = $this->setFilterLinkedUser();
 					if ($selectedLinkedUser) {
-						$filterLinkedUser - new User();
+						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
 						if ($filterLinkedUser->find(true)) {
 							$filterLinkedUserSummary = $driver->getAccountSummary($filterLinkedUser);
@@ -7755,7 +7755,11 @@ class MyAccount_AJAX extends JSON_Action {
 					} else {
 						$id = htmlspecialchars($_GET["id"]);
 						global $configArray;
-						$destFullPath = $configArray['Site']['coverPath'] . '/original/' . $id . '.png';
+						$destPath = $configArray['Site']['coverPath'] . '/original/lists/';
+						if (!file_exists($destPath)) {
+							mkdir($destPath, 0755, true);
+						}
+						$destFullPath = $destPath . $id . '.png';
 						$fileType = $uploadedFile["type"];
 						if ($fileType == 'image/png') {
 							if (copy($uploadedFile["tmp_name"], $destFullPath)) {
@@ -7837,7 +7841,11 @@ class MyAccount_AJAX extends JSON_Action {
 
 			$id = htmlspecialchars($_GET["id"]);
 			global $configArray;
-			$destFullPath = $configArray['Site']['coverPath'] . '/original/' . $id . '.png';
+			$destPath = $configArray['Site']['coverPath'] . '/original/lists/';
+			if (!file_exists($destPath)) {
+				mkdir($destPath, 0755, true);
+			}
+			$destFullPath = $destPath . $id . '.png';
 			$ext = pathinfo($filename, PATHINFO_EXTENSION);
 			if ($ext == "jpg" or $ext == "png" or $ext == "gif" or $ext == "jpeg") {
 				$upload = file_put_contents($destFullPath, file_get_contents($url));
@@ -7853,6 +7861,71 @@ class MyAccount_AJAX extends JSON_Action {
 		if ($result['success']) {
 			$this->reloadCover();
 			$result['message'] = 'Your cover has been uploaded successfully';
+		}
+		return $result;
+	}
+
+	function removeUploadedListCover() : array {
+		$result = [
+			'success' => false,
+			'title' => translate(['text'=>'Removing custom list cover','isAdminFacing'=>true]),
+			'message' => translate(['text'=>'Sorry your cover could not be removed','isAdminFacing'=>true]),
+		];
+		if (UserAccount::isLoggedIn() && (UserAccount::userHasPermission('Upload List Covers'))) {
+			$id = $_REQUEST['listId'] ?? null;
+			if (empty($id) || !is_numeric($id)) {
+				$result = [
+					'success' => false,
+					'title' => translate(['text'=>'Error','isAdminFacing'=>true]),
+					'message' => translate(['text'=>'Invalid List Id provided','isAdminFacing'=>true]),
+				];
+			}else{
+				require_once ROOT_DIR . '/sys/UserLists/UserList.php';
+				$userList = new UserList();
+				$userList->id = $id;
+				if ($userList->find(true)) {
+					$activeUser = UserAccount::getActiveUserObj();
+					if ($activeUser->canEditList($userList)){
+						global $configArray;
+						$customCoverPath =  $configArray['Site']['coverPath'] . '/original/lists/' . $id . '.png';
+						if (file_exists($customCoverPath)){
+							$fileRemoved = unlink($customCoverPath);
+						}else{
+							//No file existed, treat this as working
+							$fileRemoved = true;
+						}
+						if ($fileRemoved) {
+							$result = [
+								'success' => true,
+								'title' => translate(['text'=>'Removing Custom Cover','isAdminFacing'=>true]),
+								'message' => translate(['text'=>'The cover was removed successfully','isAdminFacing'=>true]),
+							];
+						}else{
+							$result = [
+								'success' => false,
+								'title' => translate(['text'=>'Error','isAdminFacing'=>true]),
+								'message' => translate(['text'=>'You do not have permissions to edit this list','isAdminFacing'=>true]),
+							];
+						}
+					}else{
+						$result = [
+							'success' => false,
+							'title' => translate(['text'=>'Error','isAdminFacing'=>true]),
+							'message' => translate(['text'=>'You do not have permissions to edit this list','isAdminFacing'=>true]),
+						];
+					}
+				}else{
+					$result = [
+						'success' => false,
+						'title' => translate(['text'=>'Error','isAdminFacing'=>true]),
+						'message' => translate(['text'=>'Incorrect List Id provided','isAdminFacing'=>true]),
+					];
+				}
+			}
+		}
+		if ($result['success']) {
+			$this->reloadCover();
+			$result['message'] = translate(['text'=>'The cover has been removed', 'isAdminFacing' => true]);
 		}
 		return $result;
 	}
