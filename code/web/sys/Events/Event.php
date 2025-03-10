@@ -860,6 +860,7 @@ class Event extends DataObject {
 			$this->_datesPreview = '';
 			$instance = new EventInstance();
 			$instance->eventId = $this->id;
+			$instance->deleted = 0;
 			$instance->find();
 			while ($instance->fetch()) {
 				$date = strtotime($instance->date);
