@@ -228,8 +228,12 @@ AspenDiscovery.CloudLibrary = (function () {
 				url: url,
 				cache: false,
 				success: function (data) {
+					data.dueDate = undefined;
 					if (data.success) {
 						AspenDiscovery.showMessage("Title Renewed", data.message, true);
+
+						// Refresh the account data without page reload.
+						AspenDiscovery.Account.loadMenuData();
 					} else {
 						AspenDiscovery.showMessage("Unable to Renew Title", data.message, true);
 					}
