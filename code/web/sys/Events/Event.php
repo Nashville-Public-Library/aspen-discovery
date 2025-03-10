@@ -533,6 +533,7 @@ class Event extends DataObject {
 
 	public function update($context = '') {
 		$this->dateUpdated = time();
+		$this->setStartDate();
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -547,6 +548,7 @@ class Event extends DataObject {
 		if (empty($this->dateUpdated)) {
 			$this->dateUpdated = time(); // Set to 0 for new events
 		}
+		$this->setStartDate();
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -617,6 +619,12 @@ class Event extends DataObject {
 			return $this->calculateEnd($name);
 		} else {
 			return parent::__get($name);
+		}
+	}
+
+	public function setStartDate() {
+		if ($this->recurrenceOption != 1 && isset($this->startDate) && isset($this->_dates[0]) && strtotime($this->startDate) != strtotime($this->_dates[0])) {
+			$this->startDate = $this->_dates[0];
 		}
 	}
 
