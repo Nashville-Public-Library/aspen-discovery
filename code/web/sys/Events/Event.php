@@ -534,6 +534,10 @@ class Event extends DataObject {
 	public function update($context = '') {
 		$this->dateUpdated = time();
 		$this->setStartDate();
+		if (isset($this->weekDays) && is_array($this->weekDays)) {
+			// convert the array to string before storing in the database
+			$this->weekDays = implode(",", $this->weekDays);
+		}
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -549,6 +553,10 @@ class Event extends DataObject {
 			$this->dateUpdated = time(); // Set to 0 for new events
 		}
 		$this->setStartDate();
+		if (isset($this->weekDays) && is_array($this->weekDays)) {
+			// convert the array to string before storing in the database
+			$this->weekDays = implode( ",", $this->weekDays);
+		}
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -620,6 +628,23 @@ class Event extends DataObject {
 		} else {
 			return parent::__get($name);
 		}
+	}
+
+	public function fetch(): bool|DataObject|null {
+		$return = parent::fetch();
+		if ($return) {
+			if (!empty($this->weekDays) && is_string($this->weekDays) ) {
+				// convert to array retrieving from the database
+				$weekdays= [];
+				foreach (explode(",", $this->weekDays) as $weekDay) {
+					$weekdays[$weekDay] = $weekDay;
+				}
+				$this->weekDays = $weekdays;
+			} else {
+				$this->weekDays = [];
+			}
+		}
+		return $return;
 	}
 
 	public function setStartDate() {
