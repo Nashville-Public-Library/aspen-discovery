@@ -198,6 +198,13 @@ function getUpdates25_03_00(): array {
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
 			]
 		], //event_calendar_display_settings
+		'add_event_column_week_number' => [
+			'title' => 'Add weekNumber column to Event table',
+			'description' => 'Add weekNumber column to Event table',
+			'sql' => [
+				"ALTER TABLE event ADD COLUMN weekNumber TINYINT DEFAULT 1"
+			]
+		], //add_event_column_week_number
 
 		//kirstien - Grove
 

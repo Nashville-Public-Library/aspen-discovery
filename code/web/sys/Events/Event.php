@@ -28,6 +28,7 @@ class Event extends DataObject {
 	public $recurrenceFrequency;
 	public $weekDays;
 	public $monthlyOption;
+	public $weekNumber;
 	public $monthDay;
 	public $monthDate;
 	public $monthOffset;
