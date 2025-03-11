@@ -30,7 +30,7 @@
 			<div class="form-group">
 				<label for="type">Location:</label>
 				<select name="location" id="location" class="form-control">
-					<option {if $locationValue == ''}selected{/if} value="">All Locations</option>
+					<option {if $locationValue == ''}selected{/if} value="">All Locations{$libraryRestriction}</option>
 					{foreach $locations as $id => $location}
 						<option {if $locationValue == $id}selected{/if} value="{$id}">{$location}</option>
 					{/foreach}
