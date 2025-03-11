@@ -357,7 +357,7 @@ abstract class MarcRecordProcessor {
 	}
 
 	void updateGroupedWorkSolrDataBasedOnStandardMarcData(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, ArrayList<ItemInfo> printItems, String identifier, String format, String formatCategory, boolean hasParentRecord) {
-		loadTitles(groupedWork, record, format, formatCategory, hasParentRecord);
+		loadTitles(groupedWork, record, format, formatCategory, hasParentRecord, identifier);
 		loadAuthors(groupedWork, record, identifier, formatCategory);
 		loadSubjects(groupedWork, record);
 
@@ -1544,7 +1544,7 @@ abstract class MarcRecordProcessor {
 		groupedWork.setAuthorDisplay(displayAuthor, formatCategory);
 	}
 
-	private void loadTitles(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, String format, String formatCategory, boolean hasParentRecord) {
+	private void loadTitles(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, String format, String formatCategory, boolean hasParentRecord, String identifier) {
 		//title (full title done by index process by concatenating short and subtitle
 
 		//title short
@@ -1554,8 +1554,24 @@ abstract class MarcRecordProcessor {
 			//noinspection SpellCheckingInspection
 			String subTitle = titleField.getSubfieldsAsString("bfgnp", " ");
 			if (!hasParentRecord) {
+				RecordInfo recordInfo = groupedWork.getRecordInfo(profileType, identifier);
+
+				// Log if recordInfo is null.
+				if (recordInfo == null) {
+					logger.warn("RecordInfo was null for {}:{} when loading titles.", profileType, identifier);
+				}
+
 				//noinspection SpellCheckingInspection
-				groupedWork.setTitle(titleField.getSubfieldsAsString("a"), subTitle, titleField.getSubfieldsAsString("abfgnp", " "), this.getSortableTitle(record), format, formatCategory);
+				groupedWork.setTitle(
+					titleField.getSubfieldsAsString("a"),
+					subTitle,
+					titleField.getSubfieldsAsString("abfgnp", " "),
+					this.getSortableTitle(record),
+					format,
+					formatCategory,
+					false,
+					recordInfo
+				);
 			}
 			//title full
 			authorInTitleField = titleField.getSubfieldsAsString("c");
