@@ -3,7 +3,7 @@
 class WebBuilder_ResourceCategory extends Action
 {
 
-	function launch()
+	function launch() : void
 	{
 		global $interface;
 		global $activeLanguage;
@@ -38,6 +38,10 @@ class WebBuilder_ResourceCategory extends Action
 					'bookCoverUrl' => $webResourceRecordDriver->getBookCoverUrl('medium'),
 				];
 			}
+
+			uasort($webResources, function ($a, $b) {
+				return $a['title'] <=> $b['title'];
+			});
 
 			$interface->assign('webResources', $webResources);
 			$interface->assign('title', $category->name);
