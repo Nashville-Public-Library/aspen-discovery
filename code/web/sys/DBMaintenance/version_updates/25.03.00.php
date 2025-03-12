@@ -208,13 +208,14 @@ function getUpdates25_03_00(): array {
 		'separate_library_events_settings_and_library_events_facet_settings' => [
 			'title' => 'Separate library event settings from library event facet settings',
 			'description' => 'Create a separate table to store library event facet settings so that these can be controlled independently',
+			'continueOnError' => true,
 			'sql' => [
 				"CREATE TABLE library_events_facet_setting (
 					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
 					libraryId INT NOT NULL,
 					eventsFacetGroupId INT NOT NULL
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
-				"INSERT INTO library_events_facet_settings (libraryId, eventsFacetGroupId) SELECT DISTINCT libraryId, eventsFacetSettingsId FROM library_events_setting;"
+				"INSERT INTO library_events_facet_setting (libraryId, eventsFacetGroupId) SELECT DISTINCT libraryId, eventsFacetSettingsId FROM library_events_setting;"
 			]
 		], //separate_library_events_settings_and_library_events_facet_settings
 
