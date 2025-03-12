@@ -260,7 +260,7 @@ class Events_EventGraphs extends Admin_Admin {
 					if ($fieldData[substr($key, -1)]->type == 2) {
 						$optionName = "true";
 					} else {
-						$values = explode(",", $fieldData[substr($key, -1)]->allowableValues);
+						$values = explode("\n", $fieldData[substr($key, -1)]->allowableValues);
 						$optionName = $values[$value];
 					}
 					$title .= $fieldData[substr($key, -1)]->name . ": " . $optionName . ", ";

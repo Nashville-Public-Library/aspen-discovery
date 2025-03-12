@@ -64,7 +64,7 @@
 					<label for="field_{$id}">{$select->name}: </label>
 					<select value="{$id}" id="field_{$id}" name="field_{$id}" class="form-control">
 						<option value="">No selection</option>
-						{foreach explode(",", $select->allowableValues) as $index => $option}
+						{foreach explode("\n", $select->allowableValues) as $index => $option}
 							<option {if array_key_exists("field_{$id}", $fields) && $fields["field_{$id}"] == $index}selected{/if} value="{$index}">{$option}</option>
 						{/foreach}
 					</select>
