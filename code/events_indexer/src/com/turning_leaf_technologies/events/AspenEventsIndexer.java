@@ -108,7 +108,7 @@ public class AspenEventsIndexer {
 				eventFieldStmt.setLong(1, event.getParentEventId());
 				ResultSet eventFieldsRS = eventFieldStmt.executeQuery();
 				while (eventFieldsRS.next()) {
-					String[] allowableValues = eventFieldsRS.getString("allowableValues").split(", ");
+					String[] allowableValues = eventFieldsRS.getString("allowableValues").split("\n");
 					if (allowableValues[0].isEmpty()) {
 						allowableValues = new String[0];
 					}

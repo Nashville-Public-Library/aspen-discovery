@@ -170,7 +170,7 @@ class EventFieldSet extends DataObject {
 					'facetName' => $field->facetName,
 				];
 				if ($type == 'enum') {
-					$structure[$field->id]['values'] = explode(",", $field->allowableValues);
+					$structure[$field->id]['values'] = explode("\n", $field->allowableValues);
 				}
 			}
 		}
