@@ -12376,25 +12376,26 @@ AspenDiscovery.Events = (function(){
 						$("#sublocationIdSelect").html("");
 						$("#propertyRowsublocationId").hide();
 					}
-					if (data.eventTypeIds.length > 0) {
-						$("#eventTypeIdSelect option").each(function () {
-							if (!data.eventTypeIds.includes($(this).val())) {
-								$(this).attr('disabled', 'disabled');
-								$(this).removeAttr('selected');
-								$(this).hide();
-							} else {
-								$(this).removeAttr('disabled');
-								$(this).show();
-							}
+					if (data.eventTypes && data.eventTypes.length > 0) {
+						var eventTypes = JSON.parse(data.eventTypes);
+						$("#eventTypeIdSelect").html("");
+						$("<option/>", {
+							value: '',
+							text: "Choose an event type"
+						}).appendTo("#eventTypeIdSelect");
+						Object.keys(eventTypes).forEach(function (key) {
+							$("<option/>", {
+								value: key,
+								text: eventTypes[key]
+							}).appendTo("#eventTypeIdSelect");
 						});
 						$("#propertyRoweventTypeId").show();
 					} else {
-						AspenDiscovery.showMessage(data.title, data.message);
-						$("#eventTypeIdSelect option").each(function () {
-							$(this).attr('disabled', 'disabled');
-							$(this).removeAttr('selected');
-						});
-						$("#propertyRoweventTypeId").hide();
+						$("#eventTypeIdSelect").html("");
+						$("<option/>", {
+							value: '',
+							text: "No event types available at this location"
+						}).appendTo("#eventTypeIdSelect");
 						$("#propertyRowtitle").hide();
 						$("#propertyRowinfoSection").hide();
 					}

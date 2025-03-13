@@ -48,9 +48,19 @@ class Event extends DataObject {
 	public static function getObjectStructure($context = ''): array {
 		global $configArray;
 		$coverPath = $configArray['Site']['coverPath'];
-		$eventTypes = EventType::getEventTypeList();
-		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
-		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
+		if ($context == 'addNew') {
+			if (UserAccount::userHasPermission('Administer Events for All Locations')) {
+				$locationList = Location::getLocationList(false);
+			} else if (UserAccount::userHasPermission('Administer Events for Home Library Locations')) {
+				$locationList = Location::getLocationList(true);
+			} else {
+				$user = UserAccount::getLoggedInUser();
+				$locationList[$user->homeLocationId] = $user->getHomeLocation()->displayName;
+				$locationList = $locationList + $user->getAdditionalAdministrationLocations();
+			}
+		} else {
+			$locationList = Location::getLocationList(false); // No need to restrict the location list if you aren't adding a new event since it's read only
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -75,15 +85,7 @@ class Event extends DataObject {
 				'values' => [],
 				'hiddenByDefault' => true,
 			],
-			'eventTypeId' => [
-				'property' => 'eventTypeId',
-				'type' => 'enum',
-				'label' => 'Event Type',
-				'description' => 'The type of event',
-				'required' => true,
-				'values' => $eventTypes,
-				'onchange' => "return AspenDiscovery.Events.getEventTypeFields(this.value);"
-			],
+			'eventTypeId' => [],
 			'title' => [
 				'property' => 'title',
 				'type' => 'text',
@@ -289,6 +291,12 @@ class Event extends DataObject {
 			];
 		}
 		if ($context == 'addNew') {
+			$eventTypes = EventType::getEventTypeList(false, array_keys($locationList)[0]);
+			if (empty($eventTypes)) {
+				$eventTypes = ["No event types available at this location"];
+			} else {
+				$eventTypes = ["Choose an event type"] + $eventTypes;
+			}
 			$structure['eventTypeId'] = [
 				'property' => 'eventTypeId',
 				'type' => 'enum',
@@ -305,6 +313,7 @@ class Event extends DataObject {
 			$structure['infoSection']['properties']['cover']['hiddenByDefault'] = true;
 			$structure['infoSection']['properties']['fieldSetFieldSection']['hiddenByDefault'] = true;
 		} else {
+			$eventTypes = EventType::getEventTypeList();
 			$structure['eventTypeId'] = [
 				'property' => 'eventTypeId',
 				'type' => 'enum',
