@@ -91,15 +91,26 @@ AspenDiscovery.Events = (function(){
 					} else {
 						$("#importFile-label-cover").removeAttr('readonly');
 					}
+					if (eventType.eventLength != null) {
+						var minutes = eventType.eventLength % 60;
+						var hours = Math.floor(eventType.eventLength / 60);
+						$("#eventLength_hours").val(hours);
+						$("#eventLength_minutes").val(minutes);
+					}
 					$("#eventLength").val(eventType.eventLength);
 					if (!eventType.lengthCustomizable) {
+						$("#eventLength_minutes").attr('readonly', 'readonly');
+						$("#eventLength_hours").attr('readonly', 'readonly');
 						$("#eventLength").attr('readonly', 'readonly');
 					} else {
 						$("#eventLength").removeAttr('readonly');
+						$("#eventLength_minutes").removeAttr('readonly');
+						$("#eventLength_hours").removeAttr('readonly');
 					}
 					$("#accordion_body_Fields_for_this_Event_Type .panel-body").html(data.typeFields);
 					$("#propertyRowtitle").show();
 					$("#propertyRowinfoSection").show();
+					$("#propertyRowscheduleSection").show();
 					$("#propertyRowinfoSection .propertyRow").show();
 				} else {
 					AspenDiscovery.showMessage('An error occurred ', data.message);
