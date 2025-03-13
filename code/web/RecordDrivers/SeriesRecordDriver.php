@@ -2,13 +2,13 @@
 require_once ROOT_DIR . '/RecordDrivers/IndexRecordDriver.php';
 
 class SeriesRecordDriver extends IndexRecordDriver {
-	private $seriesObject;
-	private $valid = true;
+	private Series|null|false $seriesObject = null;
+	private bool $valid = true;
 
 	public function __construct($record) {
 		// Call the parent's constructor...
 		if (is_string($record)) {
-			/** @var SearchObject_ListsSearcher $searchObject */
+
 			$searchObject = SearchObjectFactory::initSearchObject('Series');
 			disableErrorHandler();
 			try {
@@ -99,11 +99,11 @@ class SeriesRecordDriver extends IndexRecordDriver {
 		if ($showListsAppearingOn) {
 			//Check to see if there are lists the record is on
 			require_once ROOT_DIR . '/sys/UserLists/UserList.php';
-			$appearsOnLists = UserList::getUserListsForRecord('Lists', $this->getId());
+			$appearsOnLists = UserList::getUserListsForRecord('Series', $this->getId());
 			$interface->assign('appearsOnLists', $appearsOnLists);
 		}
 
-		$interface->assign('source', isset($this->fields['source']) ? $this->fields['source'] : '');
+		$interface->assign('source', $this->fields['source'] ?? '');
 
 		return 'RecordDrivers/Series/result.tpl';
 	}
