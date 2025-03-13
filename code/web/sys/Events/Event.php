@@ -91,6 +91,7 @@ class Event extends DataObject {
 				'type' => 'text',
 				'label' => 'Title',
 				'description' => 'The title for this event',
+				'maxLength' => 50,
 			],
 			'infoSection' => [
 				'property' => 'infoSection',
@@ -111,6 +112,7 @@ class Event extends DataObject {
 						'label' => 'Cover',
 						'maxWidth' => 280,
 						'maxHeight' => 280,
+						'maxLength' => 100,
 						'description' => 'The cover for this event',
 						'path' => "$coverPath/aspenEvents/",
 						'hideInLists' => true,
