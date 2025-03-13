@@ -7,7 +7,6 @@ class PalaceProjectSetting extends DataObject {
 	public $id;
 	public $apiUrl;
 	public $libraryId;
-	public $regroupAllRecords;
 	public $runFullUpdate;
 	public $lastUpdateOfChangedRecords;
 	public $lastUpdateOfAllRecords;
@@ -42,13 +41,6 @@ class PalaceProjectSetting extends DataObject {
 				'label' => 'Library ID / Short name',
 				'description' => 'The Library Identifier or Short name ',
 			],
-			'regroupAllRecords' => [
-				'property' => 'regroupAllRecords',
-				'type' => 'checkbox',
-				'label' => 'Regroup all Records',
-				'description' => 'Whether or not all existing records should be regrouped',
-				'default' => 0,
-			],
 			'runFullUpdate' => [
 				'property' => 'runFullUpdate',
 				'type' => 'checkbox',
@@ -62,6 +54,7 @@ class PalaceProjectSetting extends DataObject {
 				'label' => 'Last Update of Changed Records',
 				'description' => 'The timestamp when just changes were loaded',
 				'default' => 0,
+				'readOnly' => true,
 			],
 			'lastUpdateOfAllRecords' => [
 				'property' => 'lastUpdateOfAllRecords',
@@ -69,6 +62,7 @@ class PalaceProjectSetting extends DataObject {
 				'label' => 'Last Update of All Records',
 				'description' => 'The timestamp when just changes were loaded',
 				'default' => 0,
+				'readOnly' => true,
 			],
 			'instructionsForUsage' => [
 				'property' => 'instructionsForUsage',

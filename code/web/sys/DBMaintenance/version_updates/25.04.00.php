@@ -23,6 +23,14 @@ function getUpdates25_04_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'remove_palace_project_regroup_flag' => [
+			'title' => 'Remove Unused Palace Project Regroup Option',
+			'description' => 'Remove regroupAllRecords column from palace_project_settings table as it is never used.',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE palace_project_settings DROP COLUMN IF EXISTS regroupAllRecords'
+			]
+		], //remove_palace_project_regroup_flag
 
 		//alexander - PTFS-Europe
 

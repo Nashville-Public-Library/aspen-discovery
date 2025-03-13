@@ -261,6 +261,10 @@ public class PalaceProjectExportMain {
 					JSONObject initialCrawlableResponseJSON = new JSONObject(response.getMessage());
 					HashMap<String, String> validCollections = getValidCollectionsFromPalaceProject(initialCrawlableResponseJSON, palaceProjectCollections, insertCollectionStmt, settingsId);
 
+					// Track if any collections were processed.
+					boolean anyCollectionsProcessed = false;
+					int collectionsSkippedDueToSettings = 0;
+
 					for (String collectionName : validCollections.keySet()) {
 						//Index the collection if the collection has circulation or the collection has not been updated for 24 hours
 						PalaceProjectCollection collection = palaceProjectCollections.get(collectionName);
@@ -270,19 +274,39 @@ public class PalaceProjectExportMain {
 						if (collection.includeInAspen) {
 							if (collection.hasCirculation || collection.lastIndexed < yesterdayInSeconds) {
 								extractRecordsForPalaceProjectCollection(collectionName, validCollections, headers, collection, titlesForCollection, doFullReload, nowInSeconds);
+								logEntry.addNote("Collection " + collectionName + " is set to be included in Aspen and is set to be in circulation of the Aspen catalog, so process it.");
+								anyCollectionsProcessed = true;
 							}else{
-								//Not time to index, leave things as is.
+								// Not time to index, leave things as is.
+								logEntry.addNote("Collection " + collectionName + " is set to be included in Aspen, but it is not set to be in circulation of the Aspen catalog, so it will not be processed.");
+								collectionsSkippedDueToSettings++;
 							}
 						}else{
-							//Remove all currently indexed products from solr
+							// Remove all currently indexed products from solr.
+							logEntry.addNote("Collection " + collectionName + " is set to be neither included in Aspen nor in circulation, so remove its currently indexed records from Solr.");
 							for (PalaceProjectTitleAvailability titleAvailability : titlesForCollection.values()) {
 								if (!titleAvailability.deleted) {
 									removePalaceProjectTitleFromCollection(titleAvailability.id, titleAvailability.titleId);
 
 								}
 							}
+							collectionsSkippedDueToSettings++;
 						}
 					}
+					// Log if no collections were processed due to settings.
+					if (!anyCollectionsProcessed && !validCollections.isEmpty()) {
+						String collectionMessage = collectionsSkippedDueToSettings == 1
+							? "1 collection was"
+							: collectionsSkippedDueToSettings + " collections were";
+
+						logEntry.addNote("WARNING: No collections were processed because " + collectionMessage +
+							" not marked for circulation or set to be neither included in Aspen nor marked for circulation. " +
+							"Check your Palace Project collection settings in the Aspen Administration interface.");
+					} else if (validCollections.isEmpty()) {
+						logEntry.addNote("WARNING: No collections were found in the Palace Project API response. " +
+							"Check your API configuration and ensure your Palace Project account has active collections.");
+					}
+
 				}
 
 				updatesRun = true;
@@ -350,7 +374,9 @@ public class PalaceProjectExportMain {
 		PreparedStatement updateSettingsStmt = null;
 		if (doFullReload){
 			if (!logEntry.hasErrors()) {
-				updateSettingsStmt = aspenConn.prepareStatement("UPDATE palace_project_settings set lastUpdateOfAllRecords = ? where id = ?");
+				// Update lastUpdateOfAllRecords and reset runFullUpdate flag.
+				updateSettingsStmt = aspenConn.prepareStatement("UPDATE palace_project_settings SET lastUpdateOfAllRecords = ?, runFullUpdate = 0 WHERE id = ?");
+				logEntry.addNote("Disabling Run Full Update option after a successful full update.");
 			} else {
 				//force another full update
 				PreparedStatement reactiveFullUpdateStmt = aspenConn.prepareStatement("UPDATE palace_project_settings set runFullUpdate = 1 where id = ?");
