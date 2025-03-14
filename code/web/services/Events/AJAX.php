@@ -82,6 +82,12 @@ class Events_AJAX extends JSON_Action {
 					'locationIds' => json_encode(array_keys($locations)),
 				];
 			}
+		} else {
+			// Event type value is probably the placeholder prompt
+			$result = [
+				'success' => true,
+				'status' => 'resetForm',
+			];
 		}
 		return $result;
 	}
