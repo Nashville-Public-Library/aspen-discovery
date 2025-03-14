@@ -8427,6 +8427,9 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 		enroll: function (campaignId, userId) {
+			AspenDiscovery.Account.reloadHolds();
+			AspenDiscovery.Account.reloadCheckouts();
+
 			if (Globals.loggedIn) {
 				var url = Globals.path + "/MyAccount/AJAX";
 				var params = {
@@ -9642,7 +9645,7 @@ AspenDiscovery.Admin = (function () {
 			).fail(AspenDiscovery.ajaxFail);
 			return false;
 		},
-		/*showCopyEventsFacetGroupForm: function (id) {
+		showCopyEventsFacetGroupForm: function (id) {
 			var url = Globals.path + "/Admin/AJAX";
 			var params = {
 				method: 'getCopyEventsFacetGroupForm',
@@ -9678,7 +9681,7 @@ AspenDiscovery.Admin = (function () {
 				}
 			).fail(AspenDiscovery.ajaxFail);
 			return false;
-		},*/
+		},
 		showBatchDeleteForm: function (module, toolName, batchDeleteScope) {
 			var selectedObjects = $('.selectedObject:checked');
 			if (batchDeleteScope === 'all' || selectedObjects.length >= 1) {
@@ -12478,6 +12481,7 @@ AspenDiscovery.Events = (function(){
 				$("#endDate").val(startDate.format("YYYY-MM-DD"));
 				$("#endTime").val(startDate.format("HH:mm"));
 			}
+			AspenDiscovery.Events.calculateRecurrenceDates();
 			return false;
 		},
 
@@ -13765,6 +13769,14 @@ AspenDiscovery.Lists = (function(){
 				async: false,
 				contentType: false,
 				processData: false
+			});
+			return false;
+		},
+
+		removeUploadedListCover: function (id){
+			var url = Globals.path + '/MyAccount/AJAX?listId=' + id + '&method=removeUploadedListCover';
+			$.getJSON(url, function (data){
+				AspenDiscovery.showMessage(data.title, data.message);
 			});
 			return false;
 		},
@@ -16662,11 +16674,15 @@ AspenDiscovery.WebBuilder = function () {
 		},
 
 		saveLinkedObject: function(doFullSave){
+			var body = $("#teaser").val();
+			if (body === '') {
+				body = $("#description").val();
+			}
 			var params = {
 				objectId: $("#id").val(),
 				objectName: $("#name").val(),
 				url: $("#url").val(),
-				body: $("#teaser").val(),
+				body: body,
 				image: $("#importFile-label-logo").val(),
 				doFullSave: doFullSave
 			};
@@ -16678,7 +16694,6 @@ AspenDiscovery.WebBuilder = function () {
 					AspenDiscovery.showMessage('Sorry', data.message);
 				}
 			});
-
 		},
 
 		getImageActionFields: function() {

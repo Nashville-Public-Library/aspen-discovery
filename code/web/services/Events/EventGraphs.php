@@ -153,7 +153,9 @@ class Events_EventGraphs extends Admin_Admin {
 			$eventField->groupBy("eventId");
 			$userHours->joinAdd($eventField, 'INNER', 'eventEventField', 'eventId', 'eventId');
 		}
-		if (!empty($eventType) || !empty($location) || !empty($query)) {
+		$restrictByHomeLibrary = !UserAccount::userHasPermission('View Event Reports for All Libraries') || UserAccount::userHasPermission('View Event Reports for Home Library');
+		$interface->assign('libraryRestriction', $restrictByHomeLibrary ? " at Your Home Library" : "");
+		if (!empty($eventType) || !empty($location) || $restrictByHomeLibrary || !empty($query)) {
 			$event = new Event();
 			if (!empty($eventType)) {
 				$event->whereAdd("eventTypeId = " . $event->escape($eventType));
@@ -163,6 +165,9 @@ class Events_EventGraphs extends Admin_Admin {
 				if (!empty($sublocation)) {
 					$event->whereAdd("sublocationId = " . $event->escape($sublocation));
 				}
+			} elseif ($restrictByHomeLibrary) {
+				$homeLibraryLocations = Location::getLocationList(true);
+				$event->whereAddIn('locationId', array_keys($homeLibraryLocations), true,'AND');
 			}
 			$userHours->joinAdd($event, 'INNER', 'event', 'eventId', 'id');
 		}
@@ -255,7 +260,7 @@ class Events_EventGraphs extends Admin_Admin {
 					if ($fieldData[substr($key, -1)]->type == 2) {
 						$optionName = "true";
 					} else {
-						$values = explode(",", $fieldData[substr($key, -1)]->allowableValues);
+						$values = explode("\n", $fieldData[substr($key, -1)]->allowableValues);
 						$optionName = $values[$value];
 					}
 					$title .= $fieldData[substr($key, -1)]->name . ": " . $optionName . ", ";

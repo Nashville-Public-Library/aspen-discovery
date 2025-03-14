@@ -18,7 +18,7 @@ class Events_IndexingSettings extends ObjectEditor {
 	}
 
 	function getPageTitle(): string {
-		return 'Events Indexing Settings';
+		return 'Aspen Events Settings';
 	}
 
 	function getAllObjects($page, $recordsPerPage): array {

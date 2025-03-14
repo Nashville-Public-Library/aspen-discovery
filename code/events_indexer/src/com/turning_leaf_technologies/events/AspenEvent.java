@@ -228,7 +228,7 @@ class AspenEvent {
 		public String getValue() {
 			if (allowableValues.length > 0 && StringUtils.isNumeric(value)) {
 				try {
-					return allowableValues[Integer.parseInt(value)];
+					return allowableValues[Integer.parseInt(value)].trim();
 				}catch (ArrayIndexOutOfBoundsException e) {
 					//MDN 2/6/25 do additional handling and logging if we don't get a good value.
 					return "Unknown";
