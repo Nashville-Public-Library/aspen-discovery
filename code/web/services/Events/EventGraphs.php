@@ -72,6 +72,14 @@ class Events_EventGraphs extends Admin_Admin {
 	}
 
 	function getActiveAdminSection(): string {
+		return 'events';
+	}
+
+	function getModule(): string {
+		return 'Events';
+	}
+
+	function getToolName(): string {
 		return 'Events';
 	}
 

@@ -20,11 +20,15 @@ class Events_AJAX extends JSON_Action {
 		];
 		if (!empty($_REQUEST['locationId'])) {
 			$eventTypeIds = EventType::getEventTypeIdsForLocation($_REQUEST['locationId']);
+			$eventTypes = [];
+			foreach ($eventTypeIds as $eventTypeId) {
+				$eventTypes[$eventTypeId] = EventType::getTypeName($eventTypeId);
+			}
 			$sublocations = Location::getEventSublocations($_REQUEST['locationId']);
 			if (!empty($eventTypeIds)) {
 				$result = [
 					'success' => true,
-					'eventTypeIds' => json_encode($eventTypeIds),
+					'eventTypes' => json_encode($eventTypes),
 					'sublocations' => json_encode($sublocations),
 				];
 			} else {

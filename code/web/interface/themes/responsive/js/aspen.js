@@ -12376,25 +12376,26 @@ AspenDiscovery.Events = (function(){
 						$("#sublocationIdSelect").html("");
 						$("#propertyRowsublocationId").hide();
 					}
-					if (data.eventTypeIds.length > 0) {
-						$("#eventTypeIdSelect option").each(function () {
-							if (!data.eventTypeIds.includes($(this).val())) {
-								$(this).attr('disabled', 'disabled');
-								$(this).removeAttr('selected');
-								$(this).hide();
-							} else {
-								$(this).removeAttr('disabled');
-								$(this).show();
-							}
+					if (data.eventTypes && data.eventTypes.length > 0) {
+						var eventTypes = JSON.parse(data.eventTypes);
+						$("#eventTypeIdSelect").html("");
+						$("<option/>", {
+							value: '',
+							text: "Choose an event type"
+						}).appendTo("#eventTypeIdSelect");
+						Object.keys(eventTypes).forEach(function (key) {
+							$("<option/>", {
+								value: key,
+								text: eventTypes[key]
+							}).appendTo("#eventTypeIdSelect");
 						});
 						$("#propertyRoweventTypeId").show();
 					} else {
-						AspenDiscovery.showMessage(data.title, data.message);
-						$("#eventTypeIdSelect option").each(function () {
-							$(this).attr('disabled', 'disabled');
-							$(this).removeAttr('selected');
-						});
-						$("#propertyRoweventTypeId").hide();
+						$("#eventTypeIdSelect").html("");
+						$("<option/>", {
+							value: '',
+							text: "No event types available at this location"
+						}).appendTo("#eventTypeIdSelect");
 						$("#propertyRowtitle").hide();
 						$("#propertyRowinfoSection").hide();
 					}
@@ -12432,15 +12433,26 @@ AspenDiscovery.Events = (function(){
 					} else {
 						$("#importFile-label-cover").removeAttr('readonly');
 					}
+					if (eventType.eventLength != null) {
+						var minutes = eventType.eventLength % 60;
+						var hours = Math.floor(eventType.eventLength / 60);
+						$("#eventLength_hours").val(hours);
+						$("#eventLength_minutes").val(minutes);
+					}
 					$("#eventLength").val(eventType.eventLength);
 					if (!eventType.lengthCustomizable) {
+						$("#eventLength_minutes").attr('readonly', 'readonly');
+						$("#eventLength_hours").attr('readonly', 'readonly');
 						$("#eventLength").attr('readonly', 'readonly');
 					} else {
 						$("#eventLength").removeAttr('readonly');
+						$("#eventLength_minutes").removeAttr('readonly');
+						$("#eventLength_hours").removeAttr('readonly');
 					}
 					$("#accordion_body_Fields_for_this_Event_Type .panel-body").html(data.typeFields);
 					$("#propertyRowtitle").show();
 					$("#propertyRowinfoSection").show();
+					$("#propertyRowscheduleSection").show();
 					$("#propertyRowinfoSection .propertyRow").show();
 				} else {
 					AspenDiscovery.showMessage('An error occurred ', data.message);

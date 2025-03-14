@@ -218,6 +218,14 @@ function getUpdates25_03_00(): array {
 				"INSERT INTO library_events_facet_setting (libraryId, eventsFacetGroupId) SELECT DISTINCT libraryId, eventsFacetSettingsId FROM library_events_setting;"
 			]
 		], //separate_library_events_settings_and_library_events_facet_settings
+		'update_events_character_sets' => [
+			'title' => 'Update Event Character Sets',
+			'description' => 'Update event table to use multi-byte character sets',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE event CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci'
+			]
+		], //update_events_character_sets
 
 		//kirstien - Grove
 

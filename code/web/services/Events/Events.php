@@ -119,6 +119,6 @@ class Events_Events extends ObjectEditor {
 	}
 
 	public function hasMultiStepAddNew() : bool {
-		return true;
+		return false;
 	}
 }
