@@ -108,6 +108,7 @@ AspenDiscovery.Events = (function(){
 						$("#eventLength_hours").removeAttr('readonly');
 					}
 					$("#accordion_body_Fields_for_this_Event_Type .panel-body").html(data.typeFields);
+					$('#accordion_body_Fields_for_this_Event_Type [data-toggle="tooltip"]').tooltip();
 					$("#propertyRowtitle").show();
 					$("#propertyRowinfoSection").show();
 					$("#propertyRowscheduleSection").show();
