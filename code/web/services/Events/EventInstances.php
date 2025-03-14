@@ -17,11 +17,15 @@ class Events_EventInstances extends ObjectEditor {
 	}
 
 	function getToolName(): string {
-		return 'Events';
+		return 'EventInstances';
 	}
 
 	function getPageTitle(): string {
 		return 'Event Instances';
+	}
+
+	function showReturnToList(): bool {
+		return false;
 	}
 
 	function getAllObjects($page, $recordsPerPage): array {
@@ -77,7 +81,7 @@ class Events_EventInstances extends ObjectEditor {
 		$breadcrumbs = [];
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home', 'Administration Home');
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home#events', 'Events');
-		$breadcrumbs[] = new Breadcrumb('/Events/EventInstances', 'Event Instances');
+		$breadcrumbs[] = new Breadcrumb('/Events/Events', 'Manage Events');
 		return $breadcrumbs;
 	}
 
