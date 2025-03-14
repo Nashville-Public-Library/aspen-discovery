@@ -121,7 +121,6 @@
 		{*column for tool buttons & event description*}
 		<div class="col-sm-9">
 			<div class="btn-group btn-group-sm">
-				<a href="{$recordDriver->getExternalUrl()}" class="btn btn-sm btn-tools" target="_blank" aria-label="{translate text="More Info" isPublicFacing=true inAttribute=true} ({translate text="opens in a new window" isPublicFacing=true inAttribute=true})"><i class="fas fa-external-link-alt" role="presentation"></i> {translate text="More Info" isPublicFacing=true}</a>
 				{if $isStaff && $eventsInLists == 1 || $eventsInLists == 2}
 					<button onclick="return AspenDiscovery.Account.showSaveToListForm(this, 'Events', '{$recordDriver->getUniqueID()|escape}');" class="btn btn-sm btn-tools addToListBtn">{translate text="Add to List" isPublicFacing=true}</button>
 				{/if}
