@@ -252,7 +252,7 @@ public class AspenEventsIndexer {
 			PreparedStatement updateExtractTime;
 			try {
 				if (runFullUpdate) {
-					updateExtractTime = aspenConn.prepareStatement("UPDATE events_indexing_settings set lastUpdateOfAllEvents = ? WHERE id = ?");
+					updateExtractTime = aspenConn.prepareStatement("UPDATE events_indexing_settings set runFullUpdate = 0, lastUpdateOfAllEvents = ? WHERE id = ?");
 				} else {
 					updateExtractTime = aspenConn.prepareStatement("UPDATE events_indexing_settings set lastUpdateOfChangedEvents = ? WHERE id = ?");
 				}
