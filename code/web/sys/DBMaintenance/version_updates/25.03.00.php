@@ -226,7 +226,14 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE event CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci'
 			]
 		], //update_events_character_sets
-
+		'remove_system_variable_to_enable_aspen_events' => [
+			'title' => 'Remove enableAspenEvents from System Variables',
+			'description' => 'Do not require Aspen Events to be turned on in System Variables',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE system_variables DROP COLUMN enableAspenEvents;'
+			]
+		], //remove_system_variable_to_enable_aspen_events
 		//kirstien - Grove
 
 		//kodi - Grove
