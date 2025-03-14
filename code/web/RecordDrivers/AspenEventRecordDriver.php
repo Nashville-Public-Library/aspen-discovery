@@ -275,7 +275,7 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 			global $interface;
 			return $this->getBookcoverUrl('medium', false, "aspenEvent_eventRecord");
 		}
-		return $this->getBookcoverUrl('medium');
+		return null;
 	}
 
 	function getCoverImagePath() {

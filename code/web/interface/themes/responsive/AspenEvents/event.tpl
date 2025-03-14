@@ -11,7 +11,7 @@
 	{*Left Panel Content*}
 	<div class="col-tn-12 col-xs-12 col-sm-4 col-md-3 col-lg-3">
 		{if !empty($recordDriver->getEventCoverUrl())}
-			<div class="panel active">
+			<div class="panel">
 				<div class="panel-body" style="display:flex; justify-content:center">
 					<a href="{$recordDriver->getLinkUrl()}"><img class="img-responsive img-thumbnail {$coverStyle}" src="{$recordDriver->getEventCoverUrl()}" alt="{$recordDriver->getTitle()|escape}" style="max-height: 280px; width: auto"></a>
 				</div>
