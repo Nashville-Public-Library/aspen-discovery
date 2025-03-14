@@ -426,10 +426,14 @@ public class PolarisExportMain {
 	}
 
 	private static void updateBranchInfo(Connection dbConn) {
+		PreparedStatement updateAspenLibraryStmt = null;
 		try{
 			PreparedStatement existingAspenLocationStmt = dbConn.prepareStatement("SELECT libraryId, locationId, isMainBranch from location where code = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement existingAspenLibraryStmt = dbConn.prepareStatement("SELECT libraryId from library where ilsCode = ? and accountProfileId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			PreparedStatement existingLibraryBySubdomainStmt = dbConn.prepareStatement("SELECT libraryId, accountProfileId from library where LOWER(subdomain) = LOWER(?)", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			PreparedStatement checkAccountProfileExistsStmt = dbConn.prepareStatement("SELECT id FROM account_profiles WHERE id = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement addAspenLibraryStmt = dbConn.prepareStatement("INSERT INTO library (accountProfileId, subdomain, displayName, ilsCode, browseCategoryGroupId, groupedWorkDisplaySettingId) VALUES (?, ?, ?, ?, 1, 1)", Statement.RETURN_GENERATED_KEYS);
+			updateAspenLibraryStmt = dbConn.prepareStatement("UPDATE library SET displayName = ?, ilsCode = ? WHERE libraryId = ?");
 			PreparedStatement addAspenLocationStmt = dbConn.prepareStatement("INSERT INTO location (libraryId, displayName, code, browseCategoryGroupId, groupedWorkDisplaySettingId) VALUES (?, ?, ?, -1, -1)", Statement.RETURN_GENERATED_KEYS);
 			PreparedStatement addAspenLocationRecordsOwnedStmt = dbConn.prepareStatement("INSERT INTO location_records_to_include (locationId, indexingProfileId, location, subLocation, markRecordsAsOwned) VALUES (?, ?, ?, '', 1)");
 			PreparedStatement addAspenLocationRecordsToIncludeStmt = dbConn.prepareStatement("INSERT INTO location_records_to_include (locationId, indexingProfileId, location, subLocation, weight) VALUES (?, ?, '.*', '', 1)");
@@ -461,34 +465,90 @@ public class PolarisExportMain {
 						ResultSet existingLibraryRS = existingAspenLibraryStmt.executeQuery();
 						long libraryId = 0;
 						if (!existingLibraryRS.next()) {
-							addAspenLibraryStmt.setLong(1, accountProfileId);
-							addAspenLibraryStmt.setString(2, abbreviation);
-							addAspenLibraryStmt.setString(3, libraryDisplayName);
-							addAspenLibraryStmt.setLong(4, ilsId);
+							// Check if a library with this subdomain already exists.
+							existingLibraryBySubdomainStmt.setString(1, abbreviation);
+							ResultSet existingLibraryBySubdomainRS = existingLibraryBySubdomainStmt.executeQuery();
 
-							try {
+							if (existingLibraryBySubdomainRS.next()) {
+								// Library with this subdomain already exists.
+								long existingLibraryId = existingLibraryBySubdomainRS.getLong("libraryId");
+								Long existingAccountProfileId = existingLibraryBySubdomainRS.getLong("accountProfileId");
+								if (existingLibraryBySubdomainRS.wasNull()) {
+									existingAccountProfileId = null;
+								}
+
+								// Check if the account profile exists.
+								boolean accountProfileExists = false;
+								if (existingAccountProfileId != null) {
+									checkAccountProfileExistsStmt.setLong(1, existingAccountProfileId);
+									ResultSet accountProfileRS = null;
+									try {
+										accountProfileRS = checkAccountProfileExistsStmt.executeQuery();
+										accountProfileExists = accountProfileRS.next();
+									} finally {
+										if (accountProfileRS != null) {
+											accountProfileRS.close();
+										}
+									}
+								}
+
+								// Update the existing library record.
+								updateAspenLibraryStmt.setString(1, libraryDisplayName);
+								updateAspenLibraryStmt.setLong(2, ilsId);
+								updateAspenLibraryStmt.setLong(3, existingLibraryId);
+								updateAspenLibraryStmt.executeUpdate();
+								libraryId = existingLibraryId;
+
+								// Log more detailed info about the duplicate subdomain.
+								if (existingAccountProfileId != null) {
+									if (!accountProfileExists) {
+										logEntry.addNote(String.format(
+											"Found duplicate subdomain '%s' with special/non-existent accountProfileId (%s). Updated existing library record with ID %s. " +
+												"This may be a special branch entry used for member changes.",
+											abbreviation, existingAccountProfileId, libraryId
+										));
+									} else if (existingAccountProfileId.equals(accountProfileId)) {
+										logEntry.addNote(String.format(
+											"Found duplicate subdomain '%s' within the same account profile. Updated existing library record with ID %s.",
+											abbreviation, libraryId
+										));
+									} else {
+										logEntry.addNote(String.format(
+											"Found duplicate subdomain '%s' in a different account profile (%s). Updated existing library record with ID %s.",
+											abbreviation, existingAccountProfileId, libraryId
+										));
+									}
+								} else {
+									logEntry.addNote(String.format(
+										"Found duplicate subdomain '%s' with null account profile. Updated existing library record with ID %s.",
+										abbreviation, libraryId
+									));
+								}
+							} else {
+								// No existing library with this subdomain, insert a new one.
+								addAspenLibraryStmt.setLong(1, accountProfileId);
+								addAspenLibraryStmt.setString(2, abbreviation);
+								addAspenLibraryStmt.setString(3, libraryDisplayName);
+								addAspenLibraryStmt.setLong(4, ilsId);
 								addAspenLibraryStmt.executeUpdate();
 								ResultSet addAspenLibraryRS = addAspenLibraryStmt.getGeneratedKeys();
 								if (addAspenLibraryRS.next()){
 									libraryId = addAspenLibraryRS.getLong(1);
+									logEntry.addNote(String.format("Created new library with subdomain '%s' and ID %s.", abbreviation, libraryId));
 								}
+								addAspenLibraryRS.close();
+							}
+							existingLibraryBySubdomainRS.close();
 
-								//Add records to include for the library
+							// Add records to include for the library.
+							if (libraryId > 0) {
 								addAspenLibraryRecordsToIncludeStmt.setLong(1, libraryId);
 								addAspenLibraryRecordsToIncludeStmt.setLong(2, indexingProfile.getId());
 								addAspenLibraryRecordsToIncludeStmt.executeUpdate();
-							} catch (SQLException e) {
-								if (e.getMessage().contains("Duplicate entry") && e.getMessage().contains("for key 'subdomain'")) {
-									// Log error about duplicate subdomain in Polaris data.
-									logEntry.incErrors("Data duplication in Polaris detected. Attempted to insert library with subdomain '" +
-										abbreviation + "' but it already exists. OrganizationID: " + ilsId +
-										", DisplayName: " + libraryDisplayName);
-								} else {
-									// Re-throw other SQL exceptions.
-									throw e;
-								}
 							}
 						}
+
+						existingLibraryRS.close();
 					}else if (organizationCodeId == 3){
 						long parentOrganizationId = organizationInfo.getLong("ParentOrganizationID");
 						existingAspenLocationStmt.setLong(1, ilsId);
@@ -548,6 +608,15 @@ public class PolarisExportMain {
 			}
 		} catch (Exception e) {
 			logEntry.incErrors("Error updating branch information from Polaris", e);
+		} finally {
+			// Close the updateAspenLibraryStmt.
+			if (updateAspenLibraryStmt != null) {
+				try {
+					updateAspenLibraryStmt.close();
+				} catch (SQLException e) {
+					logger.error("Error closing updateAspenLibraryStmt: {}", e.getMessage());
+				}
+			}
 		}
 	}
 
