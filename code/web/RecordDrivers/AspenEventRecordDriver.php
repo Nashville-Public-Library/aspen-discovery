@@ -195,7 +195,10 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 			if (str_contains($key, "custom_facet")) {
 				continue;
 			}
-			if (is_array($value) && count($value) > 0) {
+			if (is_array($value)) {
+				if (count($value) == 0 || empty($value[0])) {
+					continue;
+				}
 				if (str_contains($key, "url")) {
 					$html .= "<li>$fieldname: <a href='$value[0]'>$value[0]</a></li>";
 				} else if (str_contains($key, "email")) {
@@ -207,7 +210,9 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 				$value = $value == 1 ? "true" : "false";
 				$html .= "<li>$fieldname: " . $value . "</li>";
 			} else {
-				$html .= "<li>$fieldname: $value</li>";
+				if (!empty($value)) {
+					$html .= "<li>$fieldname: $value</li>";
+				}
 			}
 		}
 		return $html;
