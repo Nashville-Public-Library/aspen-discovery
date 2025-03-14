@@ -274,13 +274,15 @@ class EventType extends DataObject {
 		return $typeList;
 	}
 
-	public static function getEventTypeIdsForLocation(string $locationId): array {
+	public static function getEventTypeIdsForLocation(string $locationId, $includeArchived = false): array {
 		$typeIds = [];
 		$typeLocation = new EventTypeLocation();
 		$typeLocation->locationId = $locationId;
 		$typeLocation->find();
 		while ($typeLocation->fetch()) {
-			$typeIds[] = $typeLocation->eventTypeId;
+			if (!$includeArchived && !EventType::isArchived($typeLocation->eventTypeId)) {
+				$typeIds[] = $typeLocation->eventTypeId;
+			}
 		}
 		return $typeIds;
 	}
@@ -290,6 +292,13 @@ class EventType extends DataObject {
 		$type->id = $typeId;
 		$type->find(true);
 		return $type->title;
+	}
+
+	public static function isArchived(string $typeId): bool {
+		$type = new EventType();
+		$type->id = $typeId;
+		$type->find(true);
+		return $type->archived;
 	}
 
 	public function getFieldSetFields() {
