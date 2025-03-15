@@ -132,6 +132,7 @@ class EventInstance extends DataObject {
 		$series = [];
 		$eventInstances = new EventInstance();
 		$eventInstances->eventId = $this->eventId;
+		$eventInstances->deleted = 0;
 		if ($onlyFuture) {
 			$escapedDate = $eventInstances->escape($this->date);
 			$escapedTime = $eventInstances->escape($this->time);
@@ -139,6 +140,7 @@ class EventInstance extends DataObject {
 		} else {
 			$eventInstances->whereAdd("id != " . $this->id);
 		}
+		$eventInstances->orderBy('date');
 		$eventInstances->find();
 		while ($eventInstances->fetch()) {
 			$series[$eventInstances->id] = clone($eventInstances);

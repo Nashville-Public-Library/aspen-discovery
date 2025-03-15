@@ -45,6 +45,20 @@
 				</div>
 			</div>
 		{/if}
+		{if !empty($recordDriver->getOtherEventsInSeries())}
+			<div class="panel active">
+				<div class="panel-heading">
+					{translate text="Other Dates in this Series" isPublicFacing=true}
+				</div>
+				<div class="panel-body">
+					{foreach from=$recordDriver->getOtherEventsInSeries() item=event key=key}
+						<div class="col-xs-12">
+							<a href='/AspenEvents/{$key|escape:'url'}/Event'>{$event|date_format:"%x"}</a>
+						</div>
+					{/foreach}
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	{*Content Right of Panel*}

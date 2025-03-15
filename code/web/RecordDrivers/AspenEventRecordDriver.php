@@ -207,7 +207,7 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 					$html .= "<li>$fieldname: $value[0]</li>";
 				}
 			} else if (str_contains($key, "bool")) {
-				$value = $value == 1 ? "true" : "false";
+				$value = $value == 1 ? "Yes" : "No";
 				$html .= "<li>$fieldname: " . $value . "</li>";
 			} else {
 				if (!empty($value)) {
@@ -239,15 +239,25 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 	}
 
 	public function getAudiences() {
-		if (array_key_exists('age_group', $this->fields)){
-			return $this->fields['age_group'];
+		if (array_key_exists('age_group_facet', $this->fields)){
+			return $this->fields['age_group_facet'];
 		}
 	}
 
 	public function getProgramTypes() {
-		if (array_key_exists('program_type', $this->fields)){
-			return $this->fields['program_type'];
+		if (array_key_exists('program_type_facet', $this->fields)){
+			return $this->fields['program_type_facet'];
 		}
+	}
+	public function getOtherEventsInSeries() {
+		$eventInstance = $this->getEventObject();
+		$series = $eventInstance->getSeries();
+		$idPrefix = substr($this->getId(), 0, - strlen($this->getIdentifier()));
+		$events = [];
+		foreach ($series as $event) {
+			$events[$idPrefix . $event->id] = strtotime($event->date);
+		}
+		return $events;
 	}
 
 	public function getBranch() {
@@ -426,25 +436,11 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 	}
 
 	public function getBypassSetting() {
-		require_once ROOT_DIR . '/sys/Events/AssabetSetting.php';
-		$eventSettings = new AssabetSetting();
-		$eventSettings->id = $this->getSource();
-		if ($eventSettings->find(true)){
-			return $eventSettings->bypassAspenEventPages;
-		}
-
 		return false;
 	}
 
 	public function getAllowInListsSetting() {
-		require_once ROOT_DIR . '/sys/Events/AssabetSetting.php';
-		$eventSettings = new AssabetSetting();
-		$eventSettings->id = $this->getSource();
-		if ($eventSettings->find(true)){
-			return $eventSettings->eventsInLists;
-		}
-
-		return false;
+		return true;
 	}
 
 	public function getSummaryInformation() {
