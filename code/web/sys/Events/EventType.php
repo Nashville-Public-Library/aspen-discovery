@@ -48,7 +48,8 @@ class EventType extends DataObject {
 			],
 			'description' => [
 				'property' => 'description',
-				'type' => 'text',
+				'type' => 'html',
+				'allowableTags' => '<p><em><i><strong><b><a><ul><ol><li><h1><h2><h3><h4><h5><h6><h7><pre><code><hr><table><tbody><tr><th><td><caption><br><div><span><sub><sup>',
 				'label' => 'Description',
 				'description' => 'The default description for this type of event',
 			],
