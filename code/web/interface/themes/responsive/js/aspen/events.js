@@ -48,6 +48,9 @@ AspenDiscovery.Events = (function(){
 							}).appendTo("#eventTypeIdSelect");
 						});
 						$("#propertyRoweventTypeId").show();
+						$("#propertyRowtitle").hide();
+						$("#propertyRowinfoSection").hide();
+						$("#propertyRowscheduleSection").hide();
 					} else {
 						$("#eventTypeIdSelect").html("");
 						$("<option/>", {
@@ -78,6 +81,7 @@ AspenDiscovery.Events = (function(){
 						$("#propertyRowtitle").hide();
 						$("#propertyRowinfoSection").hide();
 						$("#propertyRowscheduleSection").hide();
+						$("#description").text("");
 						return false;
 					} else {
 						eventType = data.eventType;
@@ -87,10 +91,14 @@ AspenDiscovery.Events = (function(){
 						} else {
 							$("#title").removeAttr('readonly');
 						}
-						$("#description").val(eventType.description);
+						var descriptionEditor = tinymce.get("description");
+						$("#description").text(eventType.description);
+						descriptionEditor.setContent(eventType.description);
 						if (!eventType.descriptionCustomizable) {
 							$("#description").attr('readonly', 'readonly');
+							descriptionEditor.setMode("readonly");
 						} else {
+							descriptionEditor.setMode("design");
 							$("#description").removeAttr('readonly');
 						}
 						$("#importFile-label-cover").val(eventType.cover);
@@ -121,6 +129,8 @@ AspenDiscovery.Events = (function(){
 						$("#propertyRowinfoSection").show();
 						$("#propertyRowscheduleSection").show();
 						$("#propertyRowinfoSection .propertyRow").show();
+						descriptionEditor.hide();
+						descriptionEditor.show(); // Prevents editor from being collapsed if it's been hidden
 					}
 				} else {
 					AspenDiscovery.showMessage('An error occurred ', data.message);
