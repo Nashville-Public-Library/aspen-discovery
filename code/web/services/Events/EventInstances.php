@@ -62,7 +62,16 @@ class Events_EventInstances extends ObjectEditor {
 	}
 
 	function getObjectStructure($context = ''): array {
-		return EventInstanceGroup::getObjectStructure($context);
+		$structure = EventInstanceGroup::getObjectStructure($context);
+		if (!empty($_REQUEST['id'])) {
+			$event = new Event();
+			$event->id = $_REQUEST['id'];
+			if ($event->find(true)) {
+				$sublocationList = Location::getEventSublocations($event->locationId);
+				$structure['instances']['structure']['sublocationId']['values'] = $sublocationList;
+			}
+		}
+		return $structure;
 	}
 
 	function getPrimaryKeyColumn(): string {

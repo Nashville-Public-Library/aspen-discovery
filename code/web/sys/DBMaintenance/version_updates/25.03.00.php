@@ -235,6 +235,13 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE system_variables DROP COLUMN enableAspenEvents;'
 			]
 		], //remove_system_variable_to_enable_aspen_events
+		'add_sublocationId_to_event_instances' => [
+			'title' => 'Add sublocation to Event Instances',
+			'description' => 'Add a sublocation field to event instances to allow override of the overall event sublocation',
+			'sql' => [
+				'ALTER TABLE event_instance ADD sublocationId INT'
+			]
+		],
 		//kirstien - Grove
 
 		//kodi - Grove

@@ -1671,7 +1671,7 @@ class Location extends DataObject {
 
 	/**
 	 * Get a list of sublocations where a user can pick up from
-	 * @param ?Location $locationId The location to get sublocations for - don't limit by location if null
+	 * @param ?int $locationId The location to get sublocations for - don't limit by location if null
 	 * @return Sublocation[]
 	 */
 	static function getEventSublocations($locationId): array {
