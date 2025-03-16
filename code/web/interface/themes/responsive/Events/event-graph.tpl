@@ -19,6 +19,14 @@
 				</select>
 			</div>
 			<div class="form-group">
+				<label for="fromDate">Start date:</label>
+				<input class="form-control" type="date" {if !empty($fromDate)}value="{$fromDate}"{/if} id="fromDate" name="fromDate">
+			</div>
+			<div class="form-group">
+				<label for="toDate">End date:</label>
+				<input class="form-control" type="date" {if !empty($toDate)}value="{$toDate}"{/if} id="toDate" name="toDate">
+			</div>
+			<div class="form-group">
 				<label for="type">Event Type:</label>
 				<select name="type" id="type" class="form-control">
 					<option {if $eventTypeValue == ''}selected{/if} value="">All Types</option>

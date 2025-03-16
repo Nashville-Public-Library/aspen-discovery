@@ -15,6 +15,10 @@ class Events_EventGraphs extends Admin_Admin {
 		// Form options
 		$timeframe = $_REQUEST['timeframe'] ?? 'days';
 		$interface->assign('timeframe', $timeframe);
+		$fromDate = $_REQUEST['fromDate'] ?? '';
+		$interface->assign('fromDate', $fromDate);
+		$toDate = $_REQUEST['toDate'] ?? '';
+		$interface->assign('toDate', $toDate);
 		$eventType = $_REQUEST['type'] ?? '';
 		$interface->assign('eventTypeValue', $eventType);
 		$interface->assign('eventTypes', EventType::getEventTypeList(true));
@@ -55,11 +59,11 @@ class Events_EventGraphs extends Admin_Admin {
 		$interface->assign('showCSVExportButton', true);
 		$interface->assign('graphTitle', $title);
 		// $this->assignGraphSpecificTitle($stat);
-		$this->getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields);
+		$this->getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields, $fromDate, $toDate);
 		$interface->assign('stat', $stat);
 		$interface->assign('propName', 'exportToCSV');
 		$title = $interface->getVariable('graphTitle');
-		$this->assignGraphSpecificTitle($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields);
+		$this->assignGraphSpecificTitle($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields, $fromDate, $toDate);
 		$this->display('event-graph.tpl', $title);
 	}
 
@@ -100,6 +104,9 @@ class Events_EventGraphs extends Admin_Admin {
 		$eventType = $_REQUEST['type'] ?? '';
 		$location = $_REQUEST['location'] ?? '';
 		$sublocation = $_REQUEST['sublocation'] ?? '';
+		$fromDate = $_REQUEST['fromDate'] ?? '';
+		$toDate = $_REQUEST['toDate'] ?? '';
+		$eventType = $_REQUEST['type'] ?? '';
 		$fields = array_filter($_REQUEST, function($v, $k) {
 			return str_contains($k, 'field_') && $v != NULL && $v !== '';
 		}, ARRAY_FILTER_USE_BOTH);
@@ -108,7 +115,7 @@ class Events_EventGraphs extends Admin_Admin {
 		}
 		$query = $_REQUEST['query'] ?? '';
 
-		$this->getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields);
+		$this->getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields, $fromDate, $toDate);
 		$dataSeries = $interface->getVariable('dataSeries');
 
 		$filename = "AspenUsageData_{$stat}.csv";
@@ -144,7 +151,7 @@ class Events_EventGraphs extends Admin_Admin {
 		exit();
 	}
 
-	private function getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation = '', $query = '', $fields = []) {
+	private function getAndSetInterfaceDataSeries($stat, $timeframe, $eventType, $location, $sublocation = '', $query = '', $fields = [], $fromDate = '', $toDate = ''): void {
 		global $interface;
 
 		$dataSeries = [];
@@ -153,6 +160,12 @@ class Events_EventGraphs extends Admin_Admin {
 		$userHours->selectAdd();
 		$userHours->whereAdd("event_instance.deleted = 0");
 		$userHours->whereAdd("event_instance.status = 1"); // Exclude cancelled events
+		if ($fromDate != '') {
+			$userHours->whereAdd("event_instance.date >= {$userHours->escape($fromDate)}");
+		}
+		if ($toDate != '') {
+			$userHours->whereAdd("event_instance.date <= {$userHours->escape($toDate)}");
+		}
 		if (!empty($query) || !empty($fields)) {
 			$eventField = new EventEventField();
 			foreach ($fields as $key => $value) {
@@ -244,7 +257,7 @@ class Events_EventGraphs extends Admin_Admin {
 		$interface->assign('translateColumnLabels', false);
 	}
 
-	private function assignGraphSpecificTitle($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields) {
+	private function assignGraphSpecificTitle($stat, $timeframe, $eventType, $location, $sublocation, $query, $fields, $fromDate, $toDate) {
 		global $interface;
 		$title = $interface->getVariable('graphTitle');
 		$title .= " by " . ucfirst(substr($timeframe, 0, -1));
@@ -276,6 +289,9 @@ class Events_EventGraphs extends Admin_Admin {
 			}
 			if (!empty($query)) {
 				$title .= "Search Term: '" . $query . "', ";
+			}
+			if (!empty($fromDate) || !empty($toDate)) {
+				$title .= "Date Range:  " . ($fromDate ?? 'earliest event') . " - " . ($toDate ?? 'latest event') . ", ";
 			}
 			$title = substr($title, 0, -2);
 		}

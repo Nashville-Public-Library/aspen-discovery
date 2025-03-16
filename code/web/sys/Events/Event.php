@@ -189,7 +189,8 @@ class Event extends DataObject {
 				'type' => 'date',
 				'label' => 'Event Date',
 				'description' => 'The date this event starts',
-				'onchange' => "return AspenDiscovery.Events.updateRecurrenceOptions(this.value);"
+				'onchange' => "return AspenDiscovery.Events.updateRecurrenceOptions(this.value);",
+				'min' => date('Y-m-d'),
 			],
 			'startTime' => [
 				'property' => 'startTime',
@@ -431,6 +432,8 @@ class Event extends DataObject {
 			$structure['locationId']['readOnly'] = true;
 			$structure['infoSection']['expandByDefault'] = false;
 			$structure['scheduleSection']['hiddenByDefault'] = false;
+			$sublocations = Location::getEventSublocations(null);
+			$structure['sublocationId']['values'] = $sublocations;
 		}
 		return $structure;
 	}
@@ -582,6 +585,15 @@ class Event extends DataObject {
 			'url' => '/Events/EventInstances?objectAction=edit&id=' . $this->id,
 		];
 
+		return $objectActions;
+	}
+
+	public function getAdditionalListJavascriptActions(): array {
+		$objectActions[] = [
+			'text' => 'Copy',
+			'onClick' => "return AspenDiscovery.Events.showCopyEventsForm('$this->id')",
+			'icon' => 'fas fa-copy',
+		];
 		return $objectActions;
 	}
 
