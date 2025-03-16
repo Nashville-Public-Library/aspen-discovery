@@ -49,6 +49,13 @@
 					<div class="result-value col-tn-6 notranslate">
 						{$recordDriver->getBranch()}
 					</div>
+					{if !empty($recordDriver->getRoom())}
+						<br />
+						<div class="result-label col-tn-2">{translate text="Sublocation" isPublicFacing=true} </div>
+						<div class="result-value col-tn-6 notranslate">
+							{$recordDriver->getRoom()}
+						</div>
+					{/if}
 					{if $private}
 						<div class="result-value col-tn-8">
 							<span class="label label-default">{translate text="Private" isPublicFacing=true}</span>
