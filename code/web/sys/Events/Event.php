@@ -587,6 +587,15 @@ class Event extends DataObject {
 		return $objectActions;
 	}
 
+	public function getAdditionalListJavascriptActions(): array {
+		$objectActions[] = [
+			'text' => 'Copy',
+			'onClick' => "return AspenDiscovery.Events.showCopyEventsForm('$this->id')",
+			'icon' => 'fas fa-copy',
+		];
+		return $objectActions;
+	}
+
 	public function setLibraries($value) {
 		$this->_libraries = $value;
 	}

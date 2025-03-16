@@ -12895,6 +12895,49 @@ AspenDiscovery.Events = (function(){
 					document.body.removeChild(element);
 				}
 			});
+		},
+		showCopyEventsForm: function (eventId) {
+			var url = Globals.path + "/Events/AJAX";
+			var params = {
+				method: 'getCopyEventsForm',
+				eventId: eventId
+			};
+			$.getJSON(url, params,
+				function (data) {
+					if (data.success) {
+						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons);
+					} else {
+						AspenDiscovery.showMessage(data.title, data.message);
+					}
+				}
+			).fail(AspenDiscovery.ajaxFail);
+			return false;
+		},
+		processCopyEventsForm: function () {
+			var url = Globals.path + "/Events/AJAX";
+			var eventName = $('#eventName').val();
+			var eventId = $('#eventId').val();
+			var eventLocation = $('#eventLocation').val();
+			var sublocationId = $('#sublocationIdSelect').val();
+			var eventDate = $('#eventDate').val();
+			var params = {
+				method: 'doCopyEvent',
+				id: eventId,
+				name: eventName,
+				locationId: eventLocation,
+				sublocationId: sublocationId,
+				date: eventDate
+			};
+			$.getJSON(url, params,
+				function (data) {
+					if (data.success) {
+						AspenDiscovery.showMessage(data.title, data.message, true, true);
+					} else {
+						AspenDiscovery.showMessage(data.title, data.message);
+					}
+				}
+			).fail(AspenDiscovery.ajaxFail);
+			return false;
 		}
 	};
 }(AspenDiscovery.Events || {}));
