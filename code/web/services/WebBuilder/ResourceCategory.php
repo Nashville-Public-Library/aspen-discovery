@@ -7,6 +7,7 @@ class WebBuilder_ResourceCategory extends Action
 	{
 		global $interface;
 		global $activeLanguage;
+		global $library;
 
 		require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderCategory.php';
 		$category = new WebBuilderCategory();
@@ -20,8 +21,13 @@ class WebBuilder_ResourceCategory extends Action
 			$webResources = [];
 			$webResourceIds = [];
 			while ($resourcesForCategory->fetch()) {
-				if (!array_key_exists("WebResource:" . $resourcesForCategory->webResourceId, $webResourceIds)) {
-					$webResourceIds["\"WebResource:" . $resourcesForCategory->webResourceId . "\""] = "WebResource:" . $resourcesForCategory->webResourceId;
+				$webResourceLibrary = new libraryWebResource();
+				$webResourceLibrary->webResourceId = $resourcesForCategory->webResourceId;
+				$webResourceLibrary->libraryId = $library->libraryId;
+				if ($webResourceLibrary->find()) {
+					if (!array_key_exists("WebResource:" . $resourcesForCategory->webResourceId, $webResourceIds)) {
+						$webResourceIds["\"WebResource:" . $resourcesForCategory->webResourceId . "\""] = "WebResource:" . $resourcesForCategory->webResourceId;
+					}
 				}
 			}
 			/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */
