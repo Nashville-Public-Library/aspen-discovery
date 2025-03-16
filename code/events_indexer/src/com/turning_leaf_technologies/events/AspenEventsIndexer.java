@@ -76,7 +76,7 @@ public class AspenEventsIndexer {
 				// Get event instance and event info
 				eventsStmt = aspenConn.prepareStatement("SELECT ei.*, e.title, e.description, e.eventTypeId, e.locationId, l.displayName, sl.name AS sublocationName, e.sublocationId, e.cover, e.private FROM event_instance AS ei LEFT JOIN event as e ON e.id = ei.eventID LEFT JOIN location AS l ON e.locationId = l.locationId LEFT JOIN sublocation AS sl on e.sublocationId = sl.id WHERE ei.date < ? AND ei.deleted = 0;");
 			} else {
-				eventsStmt = aspenConn.prepareStatement("SELECT ei.*, e.title, e.description, e.eventTypeId, e.locationId, l.displayName, sl.name AS sublocationName, e.sublocationId, e.cover, e.private FROM event_instance AS ei LEFT JOIN event as e ON e.id = ei.eventID LEFT JOIN location AS l ON e.locationId = l.locationId LEFT JOIN sublocation AS sl on e.sublocationId = sl.id WHERE ei.date < ? AND (e.dateUpdated > ? OR ei.dateUpdated > ?) AND ei.deleted = 0;");
+				eventsStmt = aspenConn.prepareStatement("SELECT ei.*, e.title, e.description, e.eventTypeId, e.locationId, l.displayName, sl.name AS sublocationName, sl2.name AS sublocationOverride, e.sublocationId, e.cover, e.private FROM event_instance AS ei LEFT JOIN event as e ON e.id = ei.eventID LEFT JOIN location AS l ON e.locationId = l.locationId LEFT JOIN sublocation AS sl on e.sublocationId = sl.id LEFT JOIN sublocation AS sl2 ON ei.sublocationId = sl2.id WHERE ei.date < ? AND (e.dateUpdated > ? OR ei.dateUpdated > ?) AND ei.deleted = 0;");
 				deleteEventsStmt = aspenConn.prepareStatement("SELECT id FROM event_instance WHERE deleted = 1 AND dateUpdated > ?;");
 				eventsStmt.setLong(2, lastUpdateOfChangedEvents);
 				eventsStmt.setLong(3, lastUpdateOfChangedEvents);
@@ -252,7 +252,7 @@ public class AspenEventsIndexer {
 			PreparedStatement updateExtractTime;
 			try {
 				if (runFullUpdate) {
-					updateExtractTime = aspenConn.prepareStatement("UPDATE events_indexing_settings set lastUpdateOfAllEvents = ? WHERE id = ?");
+					updateExtractTime = aspenConn.prepareStatement("UPDATE events_indexing_settings set runFullUpdate = 0, lastUpdateOfAllEvents = ? WHERE id = ?");
 				} else {
 					updateExtractTime = aspenConn.prepareStatement("UPDATE events_indexing_settings set lastUpdateOfChangedEvents = ? WHERE id = ?");
 				}

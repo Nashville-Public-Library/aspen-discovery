@@ -415,7 +415,7 @@
 		{elseif $property.type == 'multiemail'}
 			<input type='text' name='{$propName}' id='{$propName}' value='{$propValue|escape}' {if !empty($property.accessibleLabel)}aria-label="{$property.accessibleLabel}"{/if} {if !empty($property.maxLength)}maxlength='{$property.maxLength}'{/if} {if !empty($property.size)}size='{$property.size}'{/if} class='form-control multiemail {if !empty($property.required)}required{/if}' {if !empty($property.readOnly)}readonly{/if}>
 		{elseif $property.type == 'date'}
-			<input type="date" name='{$propName}' id='{$propName}' value='{$propValue|date_format:"%Y-%m-%d"}'	class='form-control' {if !empty($property.required)}required{/if} {if !empty($property.readOnly)}readonly disabled{/if} {if !empty($property.autocomplete)}autocomplete="{$property.autocomplete}"{/if} {if !empty($property.onchange)} onchange="{$property.onchange}"{/if}>
+			<input type="date" name='{$propName}' id='{$propName}' value='{$propValue|date_format:"%Y-%m-%d"}'	class='form-control' {if !empty($property.required)}required{/if} {if !empty($property.min)}min="{$property.min}"{/if} {if !empty($property.max)}max="{$property.max}"{/if} {if !empty($property.readOnly)}readonly disabled{/if} {if !empty($property.autocomplete)}autocomplete="{$property.autocomplete}"{/if} {if !empty($property.onchange)} onchange="{$property.onchange}"{/if}>
 		{elseif $property.type == 'dayMonth'}
 			{include file="DataObjectUtil/dayMonthPicker.tpl"}
 		{elseif $property.type == 'partialDate'}
