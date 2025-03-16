@@ -25,12 +25,14 @@ class EventField extends DataObject {
 				'type' => 'text',
 				'label' => 'Name',
 				'description' => 'A name for the field',
+				'maxLength' => 50,
 			],
 			'description' => [
 				'property' => 'description',
 				'type' => 'text',
 				'label' => 'Description/Instructions for usage',
 				'description' => 'A description or instructions for the field',
+				'maxLength' => 100,
 			],
 			'type' => [
 				'property' => 'type',
@@ -59,6 +61,7 @@ class EventField extends DataObject {
 				'type' => 'text',
 				'label' => 'Default Value',
 				'description' => 'The default value for the field',
+				'maxLength' => 150,
 			],
 			'facetName' => [
 				'property' => 'facetName',

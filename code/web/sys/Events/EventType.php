@@ -38,6 +38,7 @@ class EventType extends DataObject {
 				'type' => 'text',
 				'label' => 'Title',
 				'description' => 'The default title for this type of event',
+				'maxLength' => 50,
 			],
 			'titleCustomizable' => [
 				'property' => 'titleCustomizable',
@@ -66,6 +67,7 @@ class EventType extends DataObject {
 				'label' => 'Cover',
 				'maxWidth' => 280,
 				'maxHeight' => 280,
+				'maxLength' => 150,
 				'description' => 'The default cover image for this type of event',
 				'hideInLists' => true,
 			],
