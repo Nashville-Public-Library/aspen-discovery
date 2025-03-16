@@ -127,7 +127,7 @@
 							{/if}
 						</div>
 					{elseif empty($offline) || $enableEContentWhileOffline}
-						<a class="btn btn-sm btn-action btn-wrap addToYourEventsBtn" style="width:70%" onclick="return AspenDiscovery.Account.saveEvent(this, 'Events', '{$recordDriver->getUniqueID()|escape}', 'assabet');">{translate text="Add to Your Events" isPublicFacing=true}</a>
+						<a class="btn btn-sm btn-action btn-wrap addToYourEventsBtn" style="width:70%" onclick="return AspenDiscovery.Account.saveEvent(this, 'Events', '{$recordDriver->getUniqueID()|escape}', 'aspenEvents');">{translate text="Add to Your Events" isPublicFacing=true}</a>
 					{/if}
 				{/if}
 			</div>

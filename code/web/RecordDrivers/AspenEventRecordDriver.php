@@ -443,6 +443,10 @@ class AspenEventRecordDriver extends IndexRecordDriver {
 		return true;
 	}
 
+	public function getRegistrationModalBody() {
+		return null;
+	}
+
 	public function getSummaryInformation() {
 		return [
 			'id' => $this->getUniqueID(),
