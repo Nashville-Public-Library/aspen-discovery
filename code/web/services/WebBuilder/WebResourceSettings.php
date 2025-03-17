@@ -66,7 +66,7 @@ class WebBuilder_WebResourceSettings extends ObjectEditor {
 		$breadcrumbs = [];
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home', 'Administration Home');
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home#web_builder', 'Web Builder');
-		$breadcrumbs[] = new Breadcrumb('/WebBuilder/WebResources', 'Web Resource Settings');
+		$breadcrumbs[] = new Breadcrumb('/WebBuilder/WebResourceSettings', 'Web Resource Settings');
 		return $breadcrumbs;
 	}
 
