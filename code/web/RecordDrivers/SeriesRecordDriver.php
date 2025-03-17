@@ -89,7 +89,7 @@ class SeriesRecordDriver extends IndexRecordDriver {
 
 		global $solrScope;
 		if ($this->fields["local_time_since_added_$solrScope"]) {
-			$interface->assign('isNew', in_array('Week', $this->fields["local_time_since_added_$solrScope"]));
+			$interface->assign('isNew', $this->checkIfContainsNewTitles());
 		} else {
 			$interface->assign('isNew', false);
 		}
@@ -110,6 +110,20 @@ class SeriesRecordDriver extends IndexRecordDriver {
 
 	public function getMoreDetailsOptions() {
 		return [];
+	}
+
+	public function checkIfContainsNewTitles() {
+		global $solrScope;
+		$series = $this->getSeriesObject();
+		$records = $series->getSeriesRecords(0, 1, 'recordDrivers', 'id desc', false);
+		foreach ($records as $record) {
+			if ($record->fields && isset($record->fields["local_time_since_added_$solrScope"])) {
+				if (in_array('Week', $record->fields["local_time_since_added_$solrScope"])) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	// initially taken From GroupedWorkDriver.php getBrowseResult();
