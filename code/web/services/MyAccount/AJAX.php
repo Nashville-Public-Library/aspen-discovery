@@ -7287,6 +7287,23 @@ class MyAccount_AJAX extends JSON_Action {
 						$userEventsEntry->location = $recordDriver->getBranch();
 						$externalUrl = $recordDriver->getExternalUrl();
 					}
+				} elseif (preg_match('`^aspenEvent_`', $userEventsEntry->sourceId)) {
+					require_once ROOT_DIR . '/RecordDrivers/AspenEventRecordDriver.php';
+					$recordDriver = new AspenEventRecordDriver($userEventsEntry->sourceId);
+					if ($recordDriver->isValid()) {
+						$title = $recordDriver->getTitle();
+						$userEventsEntry->title = mb_substr($title, 0, 50);
+						$eventDate = $recordDriver->getStartDate();
+						$userEventsEntry->eventDate = $eventDate->getTimestamp();
+						if ($recordDriver->isRegistrationRequired()) {
+							$regRequired = 1;
+						} else {
+							$regRequired = 0;
+						}
+						$userEventsEntry->regRequired = $regRequired;
+						$userEventsEntry->location = $recordDriver->getBranch();
+						$externalUrl = $recordDriver->getExternalUrl();
+					}
 				}
 				$existingEntry = false;
 

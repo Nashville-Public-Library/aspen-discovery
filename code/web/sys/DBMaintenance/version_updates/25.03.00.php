@@ -218,7 +218,30 @@ function getUpdates25_03_00(): array {
 				"INSERT INTO library_events_facet_setting (libraryId, eventsFacetGroupId) SELECT DISTINCT libraryId, eventsFacetSettingsId FROM library_events_setting;"
 			]
 		], //separate_library_events_settings_and_library_events_facet_settings
-
+		'update_events_character_sets' => [
+			'title' => 'Update Event Character Sets',
+			'description' => 'Update event and event type tables to use multi-byte character sets',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE event CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci',
+				'ALTER TABLE event_type CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci'
+			]
+		], //update_events_character_sets
+		'remove_system_variable_to_enable_aspen_events' => [
+			'title' => 'Remove enableAspenEvents from System Variables',
+			'description' => 'Do not require Aspen Events to be turned on in System Variables',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE system_variables DROP COLUMN enableAspenEvents;'
+			]
+		], //remove_system_variable_to_enable_aspen_events
+		'add_sublocationId_to_event_instances' => [
+			'title' => 'Add sublocation to Event Instances',
+			'description' => 'Add a sublocation field to event instances to allow override of the overall event sublocation',
+			'sql' => [
+				'ALTER TABLE event_instance ADD sublocationId INT'
+			]
+		],
 		//kirstien - Grove
 
 		//kodi - Grove
