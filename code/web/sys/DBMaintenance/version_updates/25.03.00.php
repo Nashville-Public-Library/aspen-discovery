@@ -398,6 +398,13 @@ function getUpdates25_03_00(): array {
 				"ALTER TABLE web_builder_resource ADD COLUMN generatePlacard TINYINT(1) DEFAULT 0",
 			],
 		], //web_resource_generate_placard
+		'alter_web_builder_custom_web_resource_page_table' => [
+			'title' => 'Alter Custom Web Resource Page Table',
+			'description' => 'Remove addToIndex column - this is handled in the web_builder_web_resources_to_index table.',
+			'sql' => [
+				"ALTER TABLE web_builder_custom_web_resource_page DROP COLUMN addToIndex",
+			],
+		], //alter_web_builder_custom_web_resource_page_table
 
 		// Leo Stoyanov - BWS
 		'use_original_cover_urls_settings' => [

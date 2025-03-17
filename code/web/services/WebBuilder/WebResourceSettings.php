@@ -25,9 +25,6 @@ class WebBuilder_WebResourceSettings extends ObjectEditor {
 		$this->applyFilters($object);
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
 		$userHasExistingObjects = true;
-		if (!UserAccount::userHasPermission('Administer All Web Resources')) {
-			$userHasExistingObjects = $this->limitToObjectsForLibrary($object, 'LibraryWebResource', 'webResourceId');
-		}
 		$objectList = [];
 		if ($userHasExistingObjects) {
 			$object->find();
@@ -73,7 +70,6 @@ class WebBuilder_WebResourceSettings extends ObjectEditor {
 	function canView(): bool {
 		return UserAccount::userHasPermission([
 			'Administer All Web Resources',
-			'Administer Library Web Resources',
 		]);
 	}
 
