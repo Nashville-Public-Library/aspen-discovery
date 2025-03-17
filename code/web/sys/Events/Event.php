@@ -190,7 +190,6 @@ class Event extends DataObject {
 				'label' => 'Event Date',
 				'description' => 'The date this event starts',
 				'onchange' => "return AspenDiscovery.Events.updateRecurrenceOptions(this.value);",
-				'min' => date('Y-m-d'),
 			],
 			'startTime' => [
 				'property' => 'startTime',
@@ -416,6 +415,7 @@ class Event extends DataObject {
 			$structure['title']['hiddenByDefault'] = true;
 			$structure['infoSection']['hiddenByDefault'] = true;
 			$structure['scheduleSection']['hiddenByDefault'] = true;
+			$structure['scheduleSection']['properties']['startDate']['min'] = date('Y-m-d');
 			$structure['infoSection']['properties']['description']['hiddenByDefault'] = true;
 			$structure['infoSection']['properties']['cover']['hiddenByDefault'] = true;
 			$structure['infoSection']['properties']['fieldSetFieldSection']['hiddenByDefault'] = true;
