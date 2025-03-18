@@ -529,7 +529,7 @@
 				<label for='{$propName}' {if !empty($property.description)}aria-describedby="{$propName}Tooltip" {/if}>
 					<input type='checkbox' name='{$propName}' id='{$propName}' {if ($propValue == 1)}checked='checked'{/if} {if !empty($property.readOnly)}readonly disabled{/if}{if !empty($property.onchange)} onchange="{$property.onchange}"{/if} {if !empty($property.required)}required{/if}{if !empty($property.returnValueForUnchecked) && $property.returnValueForUnchecked} onclick='$("#{$propName}Unchecked").val($(this).is(":checked") ? 1 : 0);'{/if}> {translate text=$property.label isAdminFacing=true} {if !empty($property.required)}<span class="label label-danger" style="margin-right: .5em;">{translate text="Required" isAdminFacing=true}</span>{/if}
 					{if !empty($property.returnValueForUnchecked) && $property.returnValueForUnchecked}
-						<input type='hidden' name='{$propName}' id='{$propName}Unchecked' value={$propValue}>
+						<input type='hidden' name='{$propName}' id='{$propName}Unchecked' value='{if !empty($propValue)}{$propValue}{else}0{/if}'>
 					{/if}
 				</label>
 				{include file="DataObjectUtil/fieldLockingInfo.tpl"}
