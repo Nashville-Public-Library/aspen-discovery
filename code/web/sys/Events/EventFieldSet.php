@@ -169,7 +169,6 @@ class EventFieldSet extends DataObject {
 					'description' => $field->description,
 					'default' => $field->defaultValue,
 					'facetName' => $field->facetName,
-					'maxLength' => 100,
 				];
 				if ($type == 'enum') {
 					$structure[$field->id]['values'] = explode("\n", $field->allowableValues);
