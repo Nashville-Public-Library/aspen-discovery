@@ -771,6 +771,17 @@ class Event extends DataObject {
 		return $this->_typeFields[$fieldId] ?? '';
 	}
 
+	public function getAllTypeFields() {
+		$typeFields = [];
+		$field = new EventEventField();
+		$field->eventId = $this->id;
+		$field->find();
+		while ($field->fetch()) {
+			$typeFields[$field->eventFieldId] = $field->value;
+		}
+		return $typeFields;
+	}
+
 	public function getDatesPreview() {
 		if (!isset($this->_dates) && $this->id) {
 			$this->_datesPreview = '';
