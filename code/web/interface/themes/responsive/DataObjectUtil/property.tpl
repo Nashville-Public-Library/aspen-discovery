@@ -527,7 +527,10 @@
 		{elseif $property.type == 'checkbox'}
 			<div class="checkbox" {if !empty($property.forcesReindex) || !empty($property.affectsLiDA) || !empty($property.note)}style="margin-bottom: 0"{/if}>
 				<label for='{$propName}' {if !empty($property.description)}aria-describedby="{$propName}Tooltip" {/if}>
-					<input type='checkbox' name='{$propName}' id='{$propName}' {if ($propValue == 1)}checked='checked'{/if} {if !empty($property.readOnly)}readonly disabled{/if}{if !empty($property.onchange)} onchange="{$property.onchange}"{/if} {if !empty($property.required)}required{/if}> {translate text=$property.label isAdminFacing=true} {if !empty($property.required)}<span class="label label-danger" style="margin-right: .5em;">{translate text="Required" isAdminFacing=true}</span>{/if}
+					<input type='checkbox' name='{$propName}' id='{$propName}' {if ($propValue == 1)}checked='checked'{/if} {if !empty($property.readOnly)}readonly disabled{/if}{if !empty($property.onchange)} onchange="{$property.onchange}"{/if} {if !empty($property.required)}required{/if}{if !empty($property.returnValueForUnchecked) && $property.returnValueForUnchecked} onclick='$("#{$propName}Unchecked").val($(this).is(":checked") ? 1 : 0);'{/if}> {translate text=$property.label isAdminFacing=true} {if !empty($property.required)}<span class="label label-danger" style="margin-right: .5em;">{translate text="Required" isAdminFacing=true}</span>{/if}
+					{if !empty($property.returnValueForUnchecked) && $property.returnValueForUnchecked}
+						<input type='hidden' name='{$propName}' id='{$propName}Unchecked' value={$propValue}>
+					{/if}
 				</label>
 				{include file="DataObjectUtil/fieldLockingInfo.tpl"}
 				{if !empty($property.description)}<a style="margin-right: .5em; margin-left: .25em" id="{$propName}Tooltip" class="text-info" role="tooltip" tabindex="0" data-toggle="tooltip" data-placement="right" data-title="{translate text=$property.description isAdminFacing=true inAttribute=true}"><i class="fas fa-question-circle"></i></a>{/if}

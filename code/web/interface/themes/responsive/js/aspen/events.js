@@ -450,7 +450,17 @@ AspenDiscovery.Events = (function(){
 					resetRecurrenceSections();
 					AspenDiscovery.Events.expandPanel("#accordion_Repeat_Frequency");
 					$("#propertyRowfrequencySection").show();
+					// Get current value of repeat frequency and open appropriate panels
+					$repeatFrequency = $("#recurrenceFrequencySelect").val();
+					if ($repeatFrequency == "2") { // weekly
+						$("#propertyRowweeklySection").show();
+						AspenDiscovery.Events.expandPanel("#propertyRowweeklySection");
+					} else if ($repeatFrequency == "3") { //monthly
+						$("#propertyRowmonthlySection").show();
+						AspenDiscovery.Events.expandPanel("#propertyRowmonthlySection");
+					}
 					$("#propertyRowrepeatEndsSection").show();
+					$("#propertyRowdatesPreview").show();
 					break;
 			}
 			AspenDiscovery.Events.calculateRecurrenceDates();

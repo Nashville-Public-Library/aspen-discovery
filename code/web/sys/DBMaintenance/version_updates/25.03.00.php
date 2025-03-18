@@ -242,6 +242,14 @@ function getUpdates25_03_00(): array {
 				'ALTER TABLE event_instance ADD sublocationId INT'
 			]
 		],
+		'change_event_event_field_and_default_field_value_to_text' => [
+			'title' => 'Change event_event_field value and event_field default value to TEXT',
+			'description' => 'Change the value and default value to TEXT to allow longer entries',
+			'sql' => [
+				'ALTER TABLE event_event_field MODIFY COLUMN value TEXT',
+				'ALTER TABLE event_field MODIFY COLUMN defaultValue TEXT'
+			]
+		],
 		//kirstien - Grove
 
 		//kodi - Grove
