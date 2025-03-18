@@ -190,7 +190,6 @@ class Event extends DataObject {
 				'label' => 'Event Date',
 				'description' => 'The date this event starts',
 				'onchange' => "return AspenDiscovery.Events.updateRecurrenceOptions(this.value);",
-				'min' => date('Y-m-d'),
 			],
 			'startTime' => [
 				'property' => 'startTime',
@@ -416,6 +415,7 @@ class Event extends DataObject {
 			$structure['title']['hiddenByDefault'] = true;
 			$structure['infoSection']['hiddenByDefault'] = true;
 			$structure['scheduleSection']['hiddenByDefault'] = true;
+			$structure['scheduleSection']['properties']['startDate']['min'] = date('Y-m-d');
 			$structure['infoSection']['properties']['description']['hiddenByDefault'] = true;
 			$structure['infoSection']['properties']['cover']['hiddenByDefault'] = true;
 			$structure['infoSection']['properties']['fieldSetFieldSection']['hiddenByDefault'] = true;
@@ -771,6 +771,17 @@ class Event extends DataObject {
 		return $this->_typeFields[$fieldId] ?? '';
 	}
 
+	public function getAllTypeFields() {
+		$typeFields = [];
+		$field = new EventEventField();
+		$field->eventId = $this->id;
+		$field->find();
+		while ($field->fetch()) {
+			$typeFields[$field->eventFieldId] = $field->value;
+		}
+		return $typeFields;
+	}
+
 	public function getDatesPreview() {
 		if (!isset($this->_dates) && $this->id) {
 			$this->_datesPreview = '';
@@ -944,6 +955,8 @@ class Event extends DataObject {
 						} else if ($this->recurrenceFrequency == '3') {
 							$structure['scheduleSection']['properties']['monthlySection']['hiddenByDefault'] = false;
 						}
+						$structure['scheduleSection']['properties']['repeatEndsSection']['hiddenByDefault'] = false;
+						$structure['scheduleSection']['properties']['datesPreview']['hiddenByDefault'] = false;
 						break;
 				}
 				switch ($this->monthlyOption) {

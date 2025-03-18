@@ -2,7 +2,11 @@
 	<input type="hidden" name="eventId" id="eventId" value="{$eventId}"/>
 	<div class="form-group col-xs-12">
 		<label for="eventName" class="control-label">{translate text="Name for New Event" isAdminFacing=true}</label>
-		<input type="text" id="eventName" name="eventName" class="form-control">
+		{if empty($eventTitle)}
+			<input type="text" id="eventName" name="eventName" class="form-control">
+		{else}
+			<input type="text" id="eventName" name="eventName" class="form-control" value="{$eventTitle}" readonly>
+		{/if}
 		<label for="eventLocation" class="control-label">{translate text="Location for New Event" isAdminFacing=true}</label>
 		<select id="eventLocation" name="eventLocation" class="form-control" onchange="AspenDiscovery.Events.getEventTypesForLocation(this.value)">
 			{foreach from=$locationList item=id key=location}

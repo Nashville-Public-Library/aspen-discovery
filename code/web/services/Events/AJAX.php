@@ -210,6 +210,7 @@ class Events_AJAX extends JSON_Action {
 		if (!empty($_REQUEST['eventId'])) {
 			global $interface;
 			require_once ROOT_DIR . '/sys/Events/Event.php';
+			require_once ROOT_DIR . '/sys/Events/EventType.php';
 			$event = new Event();
 			$event->id = $_REQUEST['eventId'];
 			if ($event->find(true)) {
@@ -217,6 +218,14 @@ class Events_AJAX extends JSON_Action {
 				$eventLabel = $event->title;
 				$interface->assign('eventId', $eventId);
 				$interface->assign('eventLabel', $eventLabel);
+
+				$eventType = new EventType();
+				$eventType->id = $event->eventTypeId;
+				if ($eventType->find(true)) {
+					if (!$eventType->titleCustomizable) {
+						$interface->assign('eventTitle', $eventType->title);
+					}
+				}
 
 				$locationsForType = EventType::getLocationIdsForEventType($event->eventTypeId);
 				if (UserAccount::userHasPermission('Administer Events for All Locations')) {
@@ -285,6 +294,9 @@ class Events_AJAX extends JSON_Action {
 				$newEvent = clone $curObj;
 				$newEvent->id = null;
 				$newEvent->title = $name;
+				foreach($curObj->getAllTypeFields() as $key => $value) {
+					$newEvent->_typeFields[$key] = $value;
+				}
 				if (!empty($locationId)) {
 					$newEvent->locationId = $locationId;
 				}
