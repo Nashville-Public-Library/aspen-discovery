@@ -955,6 +955,8 @@ class Event extends DataObject {
 						} else if ($this->recurrenceFrequency == '3') {
 							$structure['scheduleSection']['properties']['monthlySection']['hiddenByDefault'] = false;
 						}
+						$structure['scheduleSection']['properties']['repeatEndsSection']['hiddenByDefault'] = false;
+						$structure['scheduleSection']['properties']['datesPreview']['hiddenByDefault'] = false;
 						break;
 				}
 				switch ($this->monthlyOption) {
