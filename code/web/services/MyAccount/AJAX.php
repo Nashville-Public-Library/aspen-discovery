@@ -9668,11 +9668,11 @@ class MyAccount_AJAX extends JSON_Action {
 					if (count($sublocations) > 1) {
 						$success = true;
 						if ($context === 'myPreferences') {
-							$labelText = 'Preferred Pickup Location';
+							$labelText = 'Preferred Pickup Area';
 						} elseif ($context === 'changePickupLocation') {
-							$labelText = 'Select a new location to pickup your hold';
+							$labelText = 'Select a new area to pickup your hold';
 						} else {
-							$labelText = 'Select your pickup location';
+							$labelText = 'Select your pickup area';
 						}
 						$html .= '<label class="control-label" for="pickupSublocation">' . translate([
 								'text' => $labelText,
