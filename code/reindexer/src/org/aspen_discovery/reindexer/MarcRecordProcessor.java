@@ -1556,7 +1556,7 @@ abstract class MarcRecordProcessor {
 
 		//title alt
 		//noinspection SpellCheckingInspection
-		groupedWork.addAlternateTitles(MarcUtil.getFieldList(record, "130adfgklnpst:240a:246abfgnp:700tnr:730adfgklnpst:740a"));
+		groupedWork.addAlternateTitles(MarcUtil.getFieldList(record, "130adfgklnpst:240a:246abfgnp:700tnr:730adfgklnpst:740a:505t"));
 		//title old
 		groupedWork.addOldTitles(MarcUtil.getFieldList(record, "780ast"));
 		//title new
