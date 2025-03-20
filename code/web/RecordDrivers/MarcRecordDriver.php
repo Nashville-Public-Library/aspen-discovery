@@ -691,6 +691,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 			'a',
 			'c',
 			'd',
+			'q'
 		]);
 		if (empty($author)) {
 			$author = $this->getFirstFieldValue('110', [
