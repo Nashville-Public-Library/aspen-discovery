@@ -36,6 +36,14 @@
 				{if $user->isValidForEContentSource('overdrive')}
 					<li role="presentation"{if $tab=='overdrive'} class="active"{/if}><a href="#overdrive" aria-controls="overdrive" role="tab" data-toggle="tab">{$readerName} <span class="badge"><span class="overdrive-holds-placeholder">&nbsp;</span></span></a></li>
 				{/if}
+				{if $user->isValidForEContentSource('hoopla')}
+					<li role="presentation"{if $tab=='hoopla'} class="active"{/if}>
+						<a href="#hoopla" aria-controls="hoopla" role="tab" data-toggle="tab">
+							{translate text="Hoopla" isPublicFacing=true} 
+							<span class="badge"><span class="hoopla-holds-placeholder">&nbsp;</span></span>
+						</a>
+					</li>
+				{/if}
 				{if $user->isValidForEContentSource('palace_project')}
 					<li role="presentation"{if $tab=='palace_project'} class="active"{/if}><a href="#palace_project" aria-controls="palace_project" role="tab" data-toggle="tab">{translate text="Palace Project" isPublicFacing=true} <span class="badge"><span class="palace_project-holds-placeholder">&nbsp;</span></span></a></li>
 				{/if}
@@ -62,6 +70,11 @@
 				{if $user->isValidForEContentSource('overdrive')}
 					<div role="tabpanel" class="tab-pane{if $tab=='overdrive'} active{/if}" id="overdrive" aria-label="List of Holds on OverDrive Titles"><div id="overdriveHoldsPlaceholder">{translate text="Loading holds from %1%" 1=$readerName isPublicFacing=true}</div></div>
 				{/if}
+				{if $user->isValidForEContentSource('hoopla')}
+					<div role="tabpanel" class="tab-pane{if $tab=='hoopla'} active{/if}" id="hoopla" aria-label="List of Holds on Hoopla Titles">
+						<div id="hooplaHoldsPlaceholder">{translate text="Loading holds from Hoopla" isPublicFacing=true}</div>
+					</div>
+				{/if}
 				{if $user->isValidForEContentSource('cloud_library')}
 					<div role="tabpanel" class="tab-pane{if $tab=='cloud_library'} active{/if}" id="cloud_library" aria-label="List of Holds on cloudLibrary Titles"><div id="cloud_libraryHoldsPlaceholder">{translate text="Loading holds from cloudLibrary" isPublicFacing=true}</div></div>
 				{/if}
@@ -86,6 +99,9 @@
 					});
 					$("a[href='#overdrive']").on('show.bs.tab', function (e) {
 						AspenDiscovery.Account.loadHolds('overdrive');
+					});
+					$("a[href='#hoopla']").on('show.bs.tab', function (e) {
+						AspenDiscovery.Account.loadHolds('hoopla');
 					});
 					$("a[href='#cloud_library']").on('show.bs.tab', function (e) {
 						AspenDiscovery.Account.loadHolds('cloud_library');

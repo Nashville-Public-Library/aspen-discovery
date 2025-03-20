@@ -1,3 +1,4 @@
+
 <?php
 
 class Hoopla_AJAX extends Action {
@@ -160,10 +161,102 @@ class Hoopla_AJAX extends Action {
 	}
 
 	/** @noinspection PhpUnused */
-	function checkOutHooplaTitle() {
+	function getHoldPrompts() {
+		$user = UserAccount::getLoggedInUser();
+		if ($user) {
+			$id = $_REQUEST['id'];
+			$hooplaUsers = $user->getRelatedEcontentUsers('hoopla');
+
+			global $interface;
+			$interface->assign('hooplaId', $id);
+
+			if (count($hooplaUsers) > 1) {
+				$interface->assign('hooplaUsers', $hooplaUsers);
+				return [
+					'success' => true,
+					'promptNeeded' => true,
+					'promptTitle' => translate(['text' => 'Place Hoopla Hold', 'isPublicFacing' => true]),
+					'prompts' => $interface->fetch('Hoopla/ajax-hold-prompt.tpl'),
+					'buttons' => '<button class="btn btn-primary" onclick="return AspenDiscovery.Hoopla.doHold(\'' . $id . '\');">' .
+						translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button>'
+				];
+			} else if (count($hooplaUsers) == 1) {
+				return [
+					'success' => true,
+					'promptNeeded' => false,
+					'patronId' => reset($hooplaUsers)->id
+				];
+			} else {
+				return [
+					'success' => false,
+					'message' => translate(['text' => 'No valid Hoopla account found.', 'isPublicFacing' => true])
+				];
+			}
+		}
+		return ['success' => false, 'message' => 'You must be logged in to place holds'];
+
+	}
+
+	/** @noinspection PhpUnused */
+	function placeHold() {
 		$user = UserAccount::getLoggedInUser();
 		if ($user) {
 			$patronId = $_REQUEST['patronId'];
+			$id = $_REQUEST['id'];
+			$patron = $user->getUserReferredTo($patronId);
+
+			if ($patron) {
+				require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+				$driver = new HooplaDriver();
+				$result = $driver->placeHold($patron, $id);
+				return $result;
+			} else {
+				return [
+					'success' => false,
+					'message' => translate(['text' => 'Invalid patron selected', 'isPublicFacing' => true])
+				];
+			}
+		}
+		return ['success' => false, 'message' => 'You must be logged in to place holds'];
+	}
+
+	function cancelHold() {
+		$user = UserAccount::getLoggedInUser();
+		$id = $_REQUEST['recordId'];
+		if ($user) {
+			$patronId = $_REQUEST['patronId'];
+			$patron = $user->getUserReferredTo($patronId);
+			if ($patron) {
+				require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+				$driver = new HooplaDriver();
+				return $driver->cancelHold($patron, $id);
+			} else {
+				return [
+					'success' => false,
+					'message' => translate([
+						'text' => 'Sorry, it looks like you don\'t have permissions to cancel holds for that user.',
+						'isPublicFacing' => true,
+					]),
+				];
+			}
+		} else {
+			return [
+				'success' => false,
+				'message' => translate([
+					'text' => 'You must be logged in to cancel holds.',
+					'isPublicFacing' => true,
+				]),
+			];
+		}
+	}
+
+	/** @noinspection PhpUnused */
+	function checkOutHooplaTitle() {
+		$user = UserAccount::getLoggedInUser();
+		if ($user) {
+			$patronId = !empty($_REQUEST['patronId']) ? $_REQUEST['patronId'] : $user->id;
+
+			$hooplaType = $_REQUEST['hooplaType'];
 			$patron = $user->getUserReferredTo($patronId);
 			if ($patron) {
 				global $interface;
@@ -182,6 +275,7 @@ class Hoopla_AJAX extends Action {
 				if ($result['success']) {
 					$checkOutStatus = $driver->getAccountSummary($patron);
 					$interface->assign('hooplaPatronStatus', $checkOutStatus);
+					$interface->assign('hooplaType', $hooplaType);
 					$title = empty($result['title']) ? translate([
 						'text' => "Title checked out successfully",
 						'isPublicFacing' => true,

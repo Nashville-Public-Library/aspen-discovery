@@ -96,9 +96,9 @@
 						<div class="row">
 							<div class="col-tn-12">
 								{if $record->numCheckoutsRemaining == 1}
-									{translate text="You can borrow 1 more Hoopla title this month." isPublicFacing=true}
+									{translate text="You can borrow 1 more Hoopla Instant title this month." isPublicFacing=true}
 								{else}
-									{translate text="You can borrow %1% more Hoopla titles this month." 1=$record->numCheckoutsRemaining isPublicFacing=true}
+									{translate text="You can borrow %1% more Hoopla Instant titles this month." 1=$record->numCheckoutsRemaining isPublicFacing=true}
 								{/if}
 							</div>
 						</div>

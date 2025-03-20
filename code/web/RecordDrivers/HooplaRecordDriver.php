@@ -250,15 +250,39 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 				$searchLibrary = Library::getSearchLibrary();
 				if ($searchLibrary->hooplaLibraryID > 0) { // Library is enabled for Hoopla patron action integration
 					$id = $this->id;
-					$title = translate([
-						'text' => 'Check Out Hoopla',
-						'isPublicFacing' => true,
-					]);
-					$this->_actions[] = [
-						'onclick' => "return AspenDiscovery.Hoopla.getCheckOutPrompts('$id')",
-						'title' => $title,
-						'type' => 'hoopla_checkout',
-					];
+					if ($this->getHooplaType() == 'Flex') {
+						if ($isAvailable) {
+							$title = translate([
+								'text' => 'Check Out Hoopla Flex',
+								'isPublicFacing' => true,
+							]);
+							$this->_actions[] = [
+								'onclick' => "return AspenDiscovery.Hoopla.checkOutHooplaTitle('$id', null, 'Flex')",
+								'title' => $title,
+								'type' => 'hoopla_checkout',
+							];
+						} else {
+							$title = translate([
+								'text' => 'Place Hold Hoopla Flex',
+								'isPublicFacing' => true,
+							]);
+							$this->_actions[] = [
+								'onclick' => "return AspenDiscovery.Hoopla.placeHold('$id')",
+								'title' => $title,
+								'type' => 'hoopla_hold',
+							];
+						}
+					} else {
+						$title = translate([
+							'text' => 'Check Out Hoopla Instant',
+							'isPublicFacing' => true,
+						]);
+						$this->_actions[] = [
+							'onclick' => "return AspenDiscovery.Hoopla.getCheckOutPrompts('$id')",
+							'title' => $title,
+							'type' => 'hoopla_checkout',
+						];
+					}
 				}
 			}
 		}
@@ -338,6 +362,16 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 
 	public function getNumHolds(): int {
 		return 0;
+	}
+
+	public function getHooplaType() : string {
+		global $logger;
+		$logger->log("hooplaType: " . $this->hooplaExtract->hooplaType, Logger::LOG_ERROR);
+		if (!empty($this->hooplaExtract->hooplaType)) {
+			return $this->hooplaExtract->hooplaType;
+		} else {
+			return 'Instant';
+		}
 	}
 
 	/**
@@ -505,6 +539,7 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 	function getStatusSummary() : array {
 		$relatedRecord = $this->getRelatedRecord();
 		$statusSummary = [];
+
 		if ($relatedRecord == null) {
 			$statusSummary['status'] = "Unavailable";
 			$statusSummary['available'] = false;
@@ -512,11 +547,30 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 			$statusSummary['showPlaceHold'] = false;
 			$statusSummary['showCheckout'] = false;
 		} else {
-			$statusSummary['status'] = "Available from Hoopla";
-			$statusSummary['available'] = true;
-			$statusSummary['class'] = 'available';
-			$statusSummary['showPlaceHold'] = false;
-			$statusSummary['showCheckout'] = true;
+			// Check if it's a Flex title
+			if ($this->getHooplaType() == 'Flex') {
+				$availableCopies = $relatedRecord->getAvailableCopies();
+			//	$holdsQueueSize = $relatedRecord->getHoldsQueueSize();
+				if ($availableCopies > 0) {
+					$statusSummary['status'] = "Available from Hoopla";
+					$statusSummary['available'] = true;
+					$statusSummary['class'] = 'available';
+					$statusSummary['showPlaceHold'] = false;
+					$statusSummary['showCheckout'] = true;
+				} else {
+					$statusSummary['status'] = "Checked Out";
+					$statusSummary['available'] = false;
+					$statusSummary['class'] = 'checkedOut';
+					$statusSummary['showPlaceHold'] = true;
+					$statusSummary['showCheckout'] = false;
+				}
+			} else {
+				$statusSummary['status'] = "Available from Hoopla";
+				$statusSummary['available'] = true;
+				$statusSummary['class'] = 'available';
+				$statusSummary['showPlaceHold'] = false;
+				$statusSummary['showCheckout'] = true;
+			}
 		}
 		return $statusSummary;
 	}

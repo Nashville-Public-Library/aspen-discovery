@@ -1851,7 +1851,7 @@ class User extends DataObject {
 	public function getHolds($includeLinkedUsers = true, $unavailableSort = 'sortTitle', $availableSort = 'expire', $source = 'all'): array {
 		require_once ROOT_DIR . '/sys/User/Hold.php';
 		//Check to see if we should return cached information, we will reload it if we last fetched it more than
-		//15 minutes ago or if the refresh option is selected
+		//5 minutes ago or if the refresh option is selected
 		$reloadHoldInformation = false;
 		if (($this->holdInfoLastLoaded < time() - 5 * 60) || isset($_REQUEST['refreshHolds'])) {
 			$reloadHoldInformation = true;
@@ -1931,6 +1931,18 @@ class User extends DataObject {
 					$holdsToReturn = array_merge_recursive($holdsToReturn, $vdxRequests);
 				}
 			}
+
+			//Get holds from Hoopla
+			if ($source == 'all' || $source == 'hoopla') {
+				if ($this->isValidForEContentSource('hoopla')) {
+					require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+					$driver = new HooplaDriver();
+					$hooplaHolds = $driver->getHolds($this);
+					$allHolds = array_merge_recursive($allHolds, $hooplaHolds);
+					$holdsToReturn = array_merge_recursive($holdsToReturn, $hooplaHolds);
+				}
+			}
+
 			//Delete all existing holds
 			$hold = new Hold();
 			$hold->userId = $this->id;
@@ -2225,7 +2237,7 @@ class User extends DataObject {
 				'requireLogin' => false,
 				'btnType' => 'btn-info',
 			];
-		} elseif ($source != 'hoopla' && $this->isRecordOnHold($source, $recordId)) {
+		} elseif ($this->isRecordOnHold($source, $recordId)) {
 			$actions[] = [
 				'title' => translate([
 					'text' => 'On Hold for %1%',
