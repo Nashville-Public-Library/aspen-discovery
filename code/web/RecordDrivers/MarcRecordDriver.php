@@ -1625,25 +1625,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		}
 
 		//If this is a periodical we may have additional information
-		$isPeriodical = false;
-		require_once ROOT_DIR . '/sys/Indexing/FormatMapValue.php';
-		foreach ($this->getFormats() as $format) {
-			if ($ils == 'sierra' || $ils == 'millennium') {
-				$formatValue = new FormatMapValue();
-				$formatValue->format = $format;
-				$formatValue->displaySierraCheckoutGrid = 1;
-				if ($formatValue->find(true)) {
-					$isPeriodical = true;
-					break;
-				}
-			}else{
-				if ($format == 'Journal' || $format == 'Newspaper' || $format == 'Print Periodical' || $format == 'Magazine') {
-					$isPeriodical = true;
-					break;
-				}
-			}
-		}
-		if ($isPeriodical) {
+		if ($this->isPeriodical()) {
 			global $library;
 			$interface->assign('showCheckInGrid', $library->getGroupedWorkDisplaySettings()->showCheckInGrid);
 			$issues = $this->loadPeriodicalInformation();
@@ -2396,6 +2378,34 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	public function getCopies() {
 		$this->loadCopies();
 		return $this->holdings;
+	}
+
+	public function isPeriodical() {
+		$ils = 'Unknown';
+		if ($this->getIndexingProfile()->getAccountProfile() != null) {
+			$ils = $this->getIndexingProfile()->getAccountProfile()->ils;
+
+		}
+		//If this is a periodical we may have additional information
+		$isPeriodical = false;
+		require_once ROOT_DIR . '/sys/Indexing/FormatMapValue.php';
+		foreach ($this->getFormats() as $format) {
+			if ($ils == 'sierra' || $ils == 'millennium') {
+				$formatValue = new FormatMapValue();
+				$formatValue->format = $format;
+				$formatValue->displaySierraCheckoutGrid = 1;
+				if ($formatValue->find(true)) {
+					$isPeriodical = true;
+					break;
+				}
+			}else{
+				if ($format == 'Journal' || $format == 'Newspaper' || $format == 'Print Periodical' || $format == 'Magazine') {
+					$isPeriodical = true;
+					break;
+				}
+			}
+		}
+		return $isPeriodical;
 	}
 
 	public function loadPeriodicalInformation() {
