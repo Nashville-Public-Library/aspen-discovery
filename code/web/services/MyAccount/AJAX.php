@@ -3717,7 +3717,7 @@ class MyAccount_AJAX extends JSON_Action {
 		];
 	
 		// Check if we're filtering by a specific user
-		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" | $selectedUser === '[""]');
+		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" || $selectedUser === '[""]');
 	
 		foreach ($allHolds['available'] as $key => $hold) {
 			if ($allUsersSelected || intval($hold->userId) === intval($selectedUser)) {
