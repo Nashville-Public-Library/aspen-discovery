@@ -1,8 +1,8 @@
 <div>
-    <div class="alert alert-info">
-        {translate text="There are currently %1% people waiting for this title." isPublicFacing=true 1=$holdQueueSize}
-    </div>
     {if count($hooplaUsers) > 1}
+        <div class="alert alert-info">
+            {translate text="There are currently %1% people waiting for this title. " isPublicFacing=true 1=$holdQueueSize}
+        </div>
         <div class="form-group">
             <label class="control-label" for="patronId">{translate text="Place hold for account" isPublicFacing=true}</label>
             <div class="controls">
@@ -12,6 +12,18 @@
                     {/foreach}
                 </select>
             </div>
+        </div>
+    {else}
+       <div class="alert alert-info">
+            {translate text="There are currently %1% people waiting for this title. Would you like to place a hold?" isPublicFacing=true 1=$holdQueueSize}
+        </div>
+        <br>
+        <input type="hidden" id="patronId" value="{$hooplaUsers[0]->id}">
+        <div class="form-group">
+            <label for="stopHooplaHoldConfirmation" class="checkbox">
+                <input type="checkbox" name="stopHooplaHoldConfirmation" id="stopHooplaHoldConfirmation"> 
+                {translate text="Don't ask again. (This can be changed under your Account Settings)" isPublicFacing=true}
+            </label>
         </div>
     {/if}
 </div>

@@ -129,6 +129,9 @@ AspenDiscovery.Hoopla = (function(){
 					patronId: patronId,
 					id: id
 				};
+				if ($('#stopHooplaHoldConfirmation').prop('checked')){
+					params['stopHooplaHoldConfirmation'] = true;
+				}
 				$.ajax({
 					url: url,
 					data: params,

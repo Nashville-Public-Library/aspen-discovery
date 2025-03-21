@@ -177,38 +177,29 @@ class Hoopla_AJAX extends Action {
 			$driver = new HooplaDriver();
 			$holdQueueSize = $driver->getHoldQueueSize($id);
 			$interface->assign('holdQueueSize', $holdQueueSize);
-			if (count($hooplaUsers) > 1) {
+			if (count($hooplaUsers) > 0) {
 				$interface->assign('hooplaUsers', $hooplaUsers);
-				$interface->assign('holdQueueSize', $holdQueueSize);
+				if (count($hooplaUsers) == 1) {
+					$singleUser = reset($hooplaUsers);
+					if (!$singleUser->hooplaHoldQueueSizeConfirmation) {
+						return [
+							'success' => true,
+							'promptNeeded' => false,
+							'patronId' => $singleUser->id
+						];
+					}
+					$buttonOnClick = "return AspenDiscovery.Hoopla.doHold('" . $singleUser->id . "', '" . $id . "');";
+				} else {
+					$buttonOnClick = "return AspenDiscovery.Hoopla.doHold($('#patronId').val(), '" . $id . "');";
+				}
+
 				return [
 					'success' => true,
 					'promptNeeded' => true,
 					'promptTitle' => translate(['text' => 'Place Hoopla Flex Hold', 'isPublicFacing' => true]),
 					'prompts' => $interface->fetch('Hoopla/ajax-hold-prompt.tpl'),
-					'buttons' => '<button class="btn btn-primary" onclick="return AspenDiscovery.Hoopla.doHold($(\'#patronId\').val(), \'' . $id . '\');">' . translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button>'
+					'buttons' => '<button class="btn btn-primary" onclick="' . $buttonOnClick . '">' . translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button>'
 				];
-			} else if (count($hooplaUsers) == 1) {
-				$hooplaUser = reset($hooplaUsers);
-				if ($hooplaUser->hooplaHoldQueueSizeConfirmation) {
-					return [
-						'success' => true,
-						'promptNeeded' => true,
-						'promptTitle' => translate(['text' => 'Confirm Hoopla Flex Hold', 'isPublicFacing' => true]),
-						'prompts' => translate([
-							'text' => 'There are currently %1% people waiting for this title. Would you like to place a hold?',
-							1 => $holdQueueSize,
-							'isPublicFacing' => true
-						]),
-						'buttons' => '<button class="btn btn-primary" onclick="return AspenDiscovery.Hoopla.doHold(\'' . $hooplaUser->id . '\', \'' . $id . '\');">' .
-							translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button>'
-					];
-				} else {
-					return [
-						'success' => true,
-						'promptNeeded' => false,
-						'patronId' => reset($hooplaUsers)->id
-					];
-				}
 			} else {
 				return [
 					'success' => false,
@@ -229,6 +220,10 @@ class Hoopla_AJAX extends Action {
 			$patron = $user->getUserReferredTo($patronId);
 
 			if ($patron) {
+				if (isset($_REQUEST['stopHooplaHoldConfirmation'])) {
+					$patron->hooplaHoldQueueSizeConfirmation = 0;
+					$patron->update();
+				}
 				require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
 				$driver = new HooplaDriver();
 				$result = $driver->placeHold($patron, $id);

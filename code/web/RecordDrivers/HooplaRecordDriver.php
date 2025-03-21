@@ -365,8 +365,6 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 	}
 
 	public function getHooplaType() : string {
-		global $logger;
-		$logger->log("hooplaType: " . $this->hooplaExtract->hooplaType, Logger::LOG_ERROR);
 		if (!empty($this->hooplaExtract->hooplaType)) {
 			return $this->hooplaExtract->hooplaType;
 		} else {
