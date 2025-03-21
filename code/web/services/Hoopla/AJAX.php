@@ -28,6 +28,7 @@ class Hoopla_AJAX extends Action {
 				$id,
 			] = explode(':', $id);
 		}
+		$hooplaType = $_REQUEST['hooplaType'];
 		if ($user) {
 			$hooplaUsers = $user->getRelatedEcontentUsers('hoopla');
 
@@ -46,8 +47,10 @@ class Hoopla_AJAX extends Action {
 				}
 
 				if (count($hooplaUsers) > 1) {
+					// For multiple users, show the checkout prompt according to the hooplaType
 					$interface->assign('hooplaUsers', $hooplaUsers);
 					$interface->assign('hooplaUserStatuses', $hooplaUserStatuses);
+					$interface->assign('hooplaType', $hooplaType);
 
 					return [
 						'title' => translate([
@@ -61,12 +64,14 @@ class Hoopla_AJAX extends Action {
 							]) . '</button>',
 					];
 				} elseif (count($hooplaUsers) == 1) {
+					// Single user
 					$hooplaUser = reset($hooplaUsers);
 					if ($hooplaUser->id != $user->id) {
 						$interface->assign('hooplaUser', $hooplaUser); // Display the account name when not using the main user
 					}
 					$checkOutStatus = $hooplaUserStatuses[$hooplaUser->id];
 					if (!$checkOutStatus) {
+						// Always get the checkout status, not sure if this is  still needed?
 						require_once ROOT_DIR . '/RecordDrivers/HooplaRecordDriver.php';
 						$hooplaRecord = new HooplaRecordDriver($id);
 
@@ -90,7 +95,8 @@ class Hoopla_AJAX extends Action {
 								]) . '</a>',
 						];
 					}
-					if ($hooplaUser->hooplaCheckOutConfirmation) {
+					if ($hooplaUser->hooplaCheckOutConfirmation && $hooplaType == 'Instant') {
+						// Instant titles require a prompt to show the remaining checkouts
 						$interface->assign('hooplaPatronStatus', $checkOutStatus);
 						return [
 							'title' => translate([
@@ -104,14 +110,12 @@ class Hoopla_AJAX extends Action {
 								]) . '</button>',
 						];
 					} else {
-						// Go ahead and checkout the title
+						// Flex titles can be checked out directly
 						return [
-							'title' => translate([
-								'text' => 'Checking out Hoopla title',
-								'isPublicFacing' => true,
-							]),
-							'body' => "<script>AspenDiscovery.Hoopla.checkOutHooplaTitle('{$id}', '{$hooplaUser->id}')</script>",
-							'buttons' => '',
+							'flexDirectCheckout' => true,
+							'patronId' => $hooplaUser->id,
+							'id' => $id,
+							'hooplaType' => $hooplaType
 						];
 					}
 				} else {
@@ -170,22 +174,41 @@ class Hoopla_AJAX extends Action {
 			global $interface;
 			$interface->assign('hooplaId', $id);
 
+			$driver = new HooplaDriver();
+			$holdQueueSize = $driver->getHoldQueueSize($id);
+			$interface->assign('holdQueueSize', $holdQueueSize);
 			if (count($hooplaUsers) > 1) {
 				$interface->assign('hooplaUsers', $hooplaUsers);
+				$interface->assign('holdQueueSize', $holdQueueSize);
 				return [
 					'success' => true,
 					'promptNeeded' => true,
-					'promptTitle' => translate(['text' => 'Place Hoopla Hold', 'isPublicFacing' => true]),
+					'promptTitle' => translate(['text' => 'Place Hoopla Flex Hold', 'isPublicFacing' => true]),
 					'prompts' => $interface->fetch('Hoopla/ajax-hold-prompt.tpl'),
-					'buttons' => '<button class="btn btn-primary" onclick="return AspenDiscovery.Hoopla.doHold(\'' . $id . '\');">' .
-						translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button>'
+					'buttons' => '<button class="btn btn-primary" onclick="return AspenDiscovery.Hoopla.doHold($(\'#patronId\').val(), \'' . $id . '\');">' . translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button>'
 				];
 			} else if (count($hooplaUsers) == 1) {
-				return [
-					'success' => true,
-					'promptNeeded' => false,
-					'patronId' => reset($hooplaUsers)->id
-				];
+				$hooplaUser = reset($hooplaUsers);
+				if ($hooplaUser->hooplaHoldQueueSizeConfirmation) {
+					return [
+						'success' => true,
+						'promptNeeded' => true,
+						'promptTitle' => translate(['text' => 'Confirm Hoopla Flex Hold', 'isPublicFacing' => true]),
+						'prompts' => translate([
+							'text' => 'There are currently %1% people waiting for this title. Would you like to place a hold?',
+							1 => $holdQueueSize,
+							'isPublicFacing' => true
+						]),
+						'buttons' => '<button class="btn btn-primary" onclick="return AspenDiscovery.Hoopla.doHold(\'' . $hooplaUser->id . '\', \'' . $id . '\');">' .
+							translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button>'
+					];
+				} else {
+					return [
+						'success' => true,
+						'promptNeeded' => false,
+						'patronId' => reset($hooplaUsers)->id
+					];
+				}
 			} else {
 				return [
 					'success' => false,

@@ -257,7 +257,7 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 								'isPublicFacing' => true,
 							]);
 							$this->_actions[] = [
-								'onclick' => "return AspenDiscovery.Hoopla.checkOutHooplaTitle('$id', null, 'Flex')",
+								'onclick' => "return AspenDiscovery.Hoopla.getCheckOutPrompts('$id', 'Flex')",
 								'title' => $title,
 								'type' => 'hoopla_checkout',
 							];
@@ -278,7 +278,7 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 							'isPublicFacing' => true,
 						]);
 						$this->_actions[] = [
-							'onclick' => "return AspenDiscovery.Hoopla.getCheckOutPrompts('$id')",
+							'onclick' => "return AspenDiscovery.Hoopla.getCheckOutPrompts('$id', 'Instant')",
 							'title' => $title,
 							'type' => 'hoopla_checkout',
 						];

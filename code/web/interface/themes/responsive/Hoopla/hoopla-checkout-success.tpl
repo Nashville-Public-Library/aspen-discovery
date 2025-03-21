@@ -10,9 +10,9 @@
 				{translate text="Your Hoopla Flex title was checked out successfully." isPublicFacing=true}
 			{else}
 				{if $hooplaPatronStatus->numCheckedOut == 1}
-					{translate text="You have 1 Hoopla Instant title currently checked out." isPublicFacing=true}
+					{translate text="You have 1 Hoopla title currently checked out." isPublicFacing=true}
 				{else}
-					{translate text="You have %1% Hoopla Instant titles currently checked out." 1=$hooplaPatronStatus->numCheckedOut isPublicFacing=true}
+					{translate text="You have %1% Hoopla titles currently checked out." 1=$hooplaPatronStatus->numCheckedOut isPublicFacing=true}
 				{/if}
 				<br>
 				{if $hooplaPatronStatus->numCheckoutsRemaining == 1}

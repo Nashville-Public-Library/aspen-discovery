@@ -107,7 +107,7 @@ class HooplaScope extends DataObject {
 				'type' => 'checkbox',
 				'label' => 'Include Instant',
 				'description' => 'Whether or not Instant are included',
-				'default' => 0,
+				'default' => 1,
 				'forcesReindex' => true,
 			],
 			'includeFlex' => [

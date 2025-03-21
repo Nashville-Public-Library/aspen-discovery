@@ -25,6 +25,14 @@
 							{if $profile->hooplaCheckOutConfirmation==0}{translate text="No" isPublicFacing=true}{else}{translate text="Yes" isPublicFacing=true}{/if}
 						{/if}
 					</div>
+					<div class="form-group propertyRow">
+						<label for="hooplaHoldQueueSizeConfirmation" class="control-label">{translate text='Display hold queue size before placing holds' isPublicFacing=true}</label>&nbsp;
+						{if $edit == true}
+							<input type="checkbox" name="hooplaHoldQueueSizeConfirmation" id="hooplaHoldQueueSizeConfirmation" {if $profile->hooplaHoldQueueSizeConfirmation==1}checked='checked'{/if} data-switch="">
+						{else}
+							{if $profile->hooplaHoldQueueSizeConfirmation==0}{translate text="No" isPublicFacing=true}{else}{translate text="Yes" isPublicFacing=true}{/if}
+						{/if}
+					</div>
 					{if empty($offline) && $edit == true}
 						<div class="form-group propertyRow">
 							<button type="submit" name="updateHoopla" class="btn btn-sm btn-primary">{translate text="Update Hoopla Options" isPublicFacing=true}</button>

@@ -9,11 +9,13 @@
 						{assign var="userId" value=$tmpUser->id}
 							<option value="{$tmpUser->id}">
 								{$tmpUser->getNameAndLibraryLabel()|escape}
-								{if !empty($hooplaUserStatuses[$userId])}
-									{assign var="hooplaPatronStatus" value=$hooplaUserStatuses[$userId]}
-									&nbsp;{translate text="(%1% check outs remaining this month)" 1=$hooplaPatronStatus->numCheckoutsRemaining isPublicFacing=true}
-								{else}
-									&nbsp;{translate text="(no Hoopla account)" isPublicFacing=true}
+								{if $hooplaType == 'Instant'}
+									{if !empty($hooplaUserStatuses[$userId])}
+										{assign var="hooplaPatronStatus" value=$hooplaUserStatuses[$userId]}
+										&nbsp;{translate text="(%1% check outs remaining this month)" 1=$hooplaPatronStatus->numCheckoutsRemaining isPublicFacing=true}
+									{else}
+										&nbsp;{translate text="(no Hoopla account)" isPublicFacing=true}
+									{/if}
 								{/if}
 							</option>
 						{/foreach}

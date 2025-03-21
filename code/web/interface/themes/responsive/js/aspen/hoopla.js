@@ -5,10 +5,6 @@ AspenDiscovery.Hoopla = (function(){
 				if (typeof patronId === 'undefined') {
 					patronId = $('#patronId', '#pickupLocationOptions').val();
 				}			
-				if (typeof hooplaType === 'undefined') {
-					hooplaType = 'Instant';
-				}
-
 				var url = Globals.path + '/Hoopla/'+ hooplaId + '/AJAX';
 				var params = {
 					'method' : 'checkOutHooplaTitle',
@@ -19,19 +15,13 @@ AspenDiscovery.Hoopla = (function(){
 					params['stopHooplaConfirmation'] = true;
 				}
 				$.getJSON(url, params, function (data) {
-					if (data.success) {
+					if (data.buttons) {
 						AspenDiscovery.showMessageWithButtons(data.title, data.message, data.buttons);
-						AspenDiscovery.Account.loadMenuData();
-
-					} else if (data.noCopies) {
-						AspenDiscovery.closeLightbox(function (){
-							var ret = confirm(data.message);
-							if (ret === true) {
-								AspenDiscovery.Hoopla.placeHold(hooplaId);
-							}
-						});
 					} else {
 						AspenDiscovery.showMessage(data.title, data.message);
+					}
+					if (data.success) {
+						AspenDiscovery.Account.loadMenuData();
 					}
 				}).fail(AspenDiscovery.ajaxFail)
 			}else{
@@ -42,15 +32,23 @@ AspenDiscovery.Hoopla = (function(){
 			return false;
 		},
 
-		getCheckOutPrompts: function (hooplaId) {
+		getCheckOutPrompts: function (hooplaId, hooplaType) {
 			if (Globals.loggedIn) {
 				var url = Globals.path + "/Hoopla/" + hooplaId + "/AJAX?method=getCheckOutPrompts";
-				$.getJSON(url, function (data) {
-					AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons);
+				var params = {
+					'method' : 'getCheckOutPrompts',
+					hooplaType : hooplaType
+				};
+				$.getJSON(url, params, function (data) {
+					if (data.flexDirectCheckout) {
+						AspenDiscovery.Hoopla.checkOutHooplaTitle(hooplaId, data.patronId, data.hooplaType);
+					} else {
+						AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons);
+					}
 				}).fail(AspenDiscovery.ajaxFail);
 			} else {
 				AspenDiscovery.Account.ajaxLogin(null, function () {
-					AspenDiscovery.Hoopla.getCheckOutPrompts(hooplaId);
+					AspenDiscovery.Hoopla.getCheckOutPrompts(hooplaId, hooplaType);
 				}, false);
 			}
 			return false;
@@ -124,30 +122,39 @@ AspenDiscovery.Hoopla = (function(){
 
 
 		doHold: function(patronId, id) {
-			var url = Globals.path + "/Hoopla/AJAX?method=placeHold&patronId=" + patronId + "&id=" + id;
-			$.ajax({
-				url: url,
-				cache: false,
-				success: function(data) {
-					AspenDiscovery.closeLightbox(function() {
-						if (data.success) {
-							AspenDiscovery.showMessage(data.title, data.message);
-							AspenDiscovery.Account.loadMenuData();
-						} else if (data.available) {
-							var ret = confirm(data.message);
-							if (ret === true) {
-								AspenDiscovery.Hoopla.checkOutHooplaTitle(id, patronId, 'Flex');
+			if (Globals.loggedIn) {
+				var url = Globals.path + "/Hoopla/AJAX";
+				var params = {
+					method: 'placeHold',
+					patronId: patronId,
+					id: id
+				};
+				$.ajax({
+					url: url,
+					data: params,
+					cache: false,
+					success: function(data) {
+						AspenDiscovery.closeLightbox(function() {
+							if (data.buttons) {
+								AspenDiscovery.showMessageWithButtons(data.title, data.message, data.buttons);
+							} else {
+								AspenDiscovery.showMessage("Error", data.message);
 							}
-						} else {
-							AspenDiscovery.showMessage("Error", data.message);
-						}
-					});
-				},
-				dataType: 'json',
-				error: function() {
-					AspenDiscovery.showMessage("Error", "An error occurred placing your hold. Please try again in a few minutes.");
-				}
-			});
+							if (data.success) {
+								AspenDiscovery.Account.loadMenuData();
+							}
+						});
+					},
+					dataType: 'json',
+					error: function() {
+						AspenDiscovery.showMessage("Error", "An error occurred placing your hold. Please try again in a few minutes.");
+					}
+				});
+			} else {
+				AspenDiscovery.Account.ajaxLogin(null, function() {
+					AspenDiscovery.Hoopla.doHold(patronId, id);
+				});
+			}
 			return false;
 		},
 

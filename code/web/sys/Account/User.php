@@ -33,6 +33,7 @@ class User extends DataObject {
 	public $overdriveEmail;
 	public $promptForOverdriveEmail; //Semantics of this have changed to not prompting for hold settings
 	public $hooplaCheckOutConfirmation;
+	public $hooplaHoldQueueSizeConfirmation;
 	public $promptForAxis360Email;
 	public $axis360Email;
 	public $preferredLibraryInterface;
@@ -1400,6 +1401,11 @@ class User extends DataObject {
 			$this->__set('hooplaCheckOutConfirmation', 1);
 		} else {
 			$this->__set('hooplaCheckOutConfirmation', 0);
+		}
+		if (isset($_REQUEST['hooplaHoldQueueSizeConfirmation']) && ($_REQUEST['hooplaHoldQueueSizeConfirmation'] == 'yes' || $_REQUEST['hooplaHoldQueueSizeConfirmation'] == 'on')) {
+			$this->__set('hooplaHoldQueueSizeConfirmation', 1);
+		} else {
+			$this->__set('hooplaHoldQueueSizeConfirmation', 0);
 		}
 		$this->update();
 	}
