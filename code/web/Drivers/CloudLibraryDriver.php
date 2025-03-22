@@ -138,18 +138,37 @@ class CloudLibraryDriver extends AbstractEContentDriver {
 			];
 		}
 
-		// Perform check-in first as required for renewals.
-		$returnResult = $this->returnCheckout($patron, $recordId);
-		if (!$returnResult['success']) {
-			// If check-in fails, return the error message.
-			return $returnResult;
+		// Perform check-in first (as recommended by CloudLibrary support)
+		$checkInResult = $this->returnCheckout($patron, $recordId);
+		if (!$checkInResult['success']) {
+			return [
+				'success' => false,
+				'message' => translate([
+					'text' => 'Failed to check in the title for renewal: ' . $checkInResult['message'],
+					'isPublicFacing' => true,
+				])
+			];
 		}
 
 		// Use a small delay to ensure the CloudLibrary system has time to process the return.
 		usleep(500000); // 500ms delay
 
-		// After successful check-in, perform the checkout (i.e., renew the title).
-		return $this->checkOutTitle($patron, $recordId, true);
+		// Pass true to fromRenew so the appropriate success messages are shown.
+		$result = $this->checkOutTitle($patron, $recordId, true);
+
+		// If successful, get the new due date.
+		if ($result['success']) {
+			// Get the updated checkout information
+			$checkouts = $this->getCheckouts($patron);
+			foreach ($checkouts as $checkout) {
+				if ($checkout->recordId == $recordId) {
+					$result['dueDate'] = date('M j, Y', $checkout->dueDate);
+					break;
+				}
+			}
+		}
+
+		return $result;
 	}
 
 	/**

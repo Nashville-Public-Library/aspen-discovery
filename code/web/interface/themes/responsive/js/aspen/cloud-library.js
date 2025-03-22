@@ -223,28 +223,107 @@ AspenDiscovery.CloudLibrary = (function () {
 		},
 
 		renewCheckout: function (patronId, recordId) {
+			var $checkoutRow = $('.cloudLibraryCheckout_' + recordId);
+			var $renewButton = $checkoutRow.find('a').filter(function() {
+				return $(this).text().indexOf('Renew Checkout') >= 0;
+			});
+
+			var originalButtonText = $renewButton.html();
+			$renewButton.html('<i class="fas fa-spinner fa-spin"></i> Renewing...');
+			$renewButton.addClass('disabled').attr('disabled', 'disabled');
+
+			var $expiresRow = $checkoutRow.find('.row').filter(function() {
+				var label = $(this).find('.result-label').text().trim();
+				return label === 'Expires' || label.indexOf('Expires') === 0;
+			});
+
+			$expiresRow.css('background-color', '#f0f0f0');
+			var pulseEffect = setInterval(function() {
+				$expiresRow.fadeTo(700, 0.7).fadeTo(700, 1);
+			}, 1400);
+
 			var url = Globals.path + "/CloudLibrary/AJAX?method=renewCheckout&patronId=" + patronId + "&recordId=" + recordId;
 			$.ajax({
 				url: url,
 				cache: false,
 				success: function (data) {
-					data.dueDate = undefined;
+					clearInterval(pulseEffect);
+					$expiresRow.stop(true, true).css('opacity', '1');
+
+					$renewButton.html(originalButtonText);
+					$renewButton.removeClass('disabled').removeAttr('disabled');
+
 					if (data.success) {
 						AspenDiscovery.showMessage("Title Renewed", data.message, true);
 
-						// Refresh the account data without page reload.
 						AspenDiscovery.Account.loadMenuData();
-					} else {
-						AspenDiscovery.showMessage("Unable to Renew Title", data.message, true);
-					}
 
+						if (data.dueDate) {
+							var $dueDateElement = $expiresRow.find('.result-value');
+
+							if ($dueDateElement.length) {
+								$dueDateElement.text(data.dueDate);
+
+								$expiresRow.css('background-color', '#dff0d8');
+								setTimeout(function() {
+									$expiresRow.css('background-color', '');
+								}, 5000);
+
+								$renewButton.closest('.btn-group').find('a').filter(function() {
+									return $(this).text().indexOf('Renew Checkout') >= 0;
+								}).hide();
+
+								setTimeout(function() {
+									// Determine which tab we're currently on
+									var currentSource = 'cloud_library';
+									if (AspenDiscovery.Account.currentCheckoutsSource) {
+										currentSource = AspenDiscovery.Account.currentCheckoutsSource;
+									}
+
+									var sort = $('#accountSort_' + currentSource).length ?
+										$('#accountSort_' + currentSource + ' option:selected').val() : 'title';
+									var $coversEl = $('#hideCovers_' + currentSource);
+									var showCovers = $coversEl.length ? !$coversEl.is(':checked') : true;
+
+									AspenDiscovery.Account.loadCheckouts(currentSource, sort, showCovers);
+								}, 2000);
+							}
+						}
+					} else {
+						// Use the API title when available, otherwise use a fallback
+						var errorTitle = data.api && data.api.title ? data.api.title : "Unable to Renew Title";
+						AspenDiscovery.showMessage(errorTitle, data.message, true);
+
+						// Highlight the row with an error color briefly
+						$expiresRow.css('background-color', '#f2dede');
+						setTimeout(function() {
+							$expiresRow.css('background-color', '');
+						}, 3000);
+					}
 				},
 				dataType: 'json',
-				async: false,
+				async: true, // Make asynchronous
 				error: function () {
-					AspenDiscovery.showMessage("Error Renewing Checkout", "An error occurred processing your request in cloudLibrary.  Please try again in a few minutes.", false);
+					// Clear the pulse effect
+					clearInterval(pulseEffect);
+					$expiresRow.stop(true, true).css('opacity', '1');
+
+					// Restore button state
+					$renewButton.html(originalButtonText);
+					$renewButton.removeClass('disabled').removeAttr('disabled');
+
+					// Highlight the row with an error color briefly
+					$expiresRow.css('background-color', '#f2dede');
+					setTimeout(function() {
+						$expiresRow.css('background-color', '');
+					}, 3000);
+
+					AspenDiscovery.showMessage("Error Renewing Checkout", "An error occurred processing your request in cloudLibrary. Please try again in a few minutes.", false);
 				}
 			});
+
+			// Prevent default anchor behavior
+			return false;
 		},
 
 		returnCheckout: function (patronId, recordId) {
