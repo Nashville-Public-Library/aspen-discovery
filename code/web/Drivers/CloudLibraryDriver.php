@@ -110,9 +110,9 @@ class CloudLibraryDriver extends AbstractEContentDriver {
 	 * Renew a title by checking it in first and then checking it out again.
 	 *
 	 * @param User $patron   The patron requesting the renewal.
-	 * @param string $recordId The record (item) id.
-	 * @param mixed  $itemId   Optional additional item id (if needed).
-	 * @param mixed  $itemIndex Optional index (if needed).
+	 * @param string $recordId The record id.
+	 * @param mixed  $itemId   Optional additional item id.
+	 * @param mixed  $itemIndex Optional index.
 	 * @return array           Array containing success status and messages.
 	 */
 	function renewCheckout(User $patron, $recordId, $itemId = null, $itemIndex = null): array
@@ -138,7 +138,7 @@ class CloudLibraryDriver extends AbstractEContentDriver {
 			];
 		}
 
-		// Perform check-in first (as recommended by CloudLibrary support)
+		// Perform check-in first (as recommended by CloudLibrary support).
 		$checkInResult = $this->returnCheckout($patron, $recordId);
 		if (!$checkInResult['success']) {
 			return [
@@ -150,15 +150,13 @@ class CloudLibraryDriver extends AbstractEContentDriver {
 			];
 		}
 
-		// Use a small delay to ensure the CloudLibrary system has time to process the return.
+		// Because there is no API request that exists for atomic, renewal operations, use a small
+		// delay to ensure the CloudLibrary system has time to check in the title before checking it back out.
 		usleep(500000); // 500ms delay
 
-		// Pass true to fromRenew so the appropriate success messages are shown.
 		$result = $this->checkOutTitle($patron, $recordId, true);
 
-		// If successful, get the new due date.
 		if ($result['success']) {
-			// Get the updated checkout information
 			$checkouts = $this->getCheckouts($patron);
 			foreach ($checkouts as $checkout) {
 				if ($checkout->recordId == $recordId) {

@@ -274,7 +274,6 @@ AspenDiscovery.CloudLibrary = (function () {
 								}).hide();
 
 								setTimeout(function() {
-									// Determine which tab we're currently on
 									var currentSource = 'cloud_library';
 									if (AspenDiscovery.Account.currentCheckoutsSource) {
 										currentSource = AspenDiscovery.Account.currentCheckoutsSource;
@@ -290,11 +289,9 @@ AspenDiscovery.CloudLibrary = (function () {
 							}
 						}
 					} else {
-						// Use the API title when available, otherwise use a fallback
 						var errorTitle = data.api && data.api.title ? data.api.title : "Unable to Renew Title";
 						AspenDiscovery.showMessage(errorTitle, data.message, true);
 
-						// Highlight the row with an error color briefly
 						$expiresRow.css('background-color', '#f2dede');
 						setTimeout(function() {
 							$expiresRow.css('background-color', '');
@@ -302,17 +299,14 @@ AspenDiscovery.CloudLibrary = (function () {
 					}
 				},
 				dataType: 'json',
-				async: true, // Make asynchronous
+				async: true,
 				error: function () {
-					// Clear the pulse effect
 					clearInterval(pulseEffect);
 					$expiresRow.stop(true, true).css('opacity', '1');
 
-					// Restore button state
 					$renewButton.html(originalButtonText);
 					$renewButton.removeClass('disabled').removeAttr('disabled');
 
-					// Highlight the row with an error color briefly
 					$expiresRow.css('background-color', '#f2dede');
 					setTimeout(function() {
 						$expiresRow.css('background-color', '');
