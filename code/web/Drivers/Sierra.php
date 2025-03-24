@@ -1162,13 +1162,13 @@ class Sierra extends Millennium {
 					];
 				}
 				$sorter = function ($a, $b){
-					if ($a['shelfLocation'] == $b['shelfLocation']) {
+					if ($a['location'] == $b['location']) {
 						if ($a['callNumber'] == $b['callNumber']) {
 							return 0;
 						}
 						return strnatcasecmp($b['callNumber'], $a['callNumber']);
 					}
-					return strnatcasecmp($a['shelfLocation'], $b['shelfLocation']);
+					return strnatcasecmp($a['location'], $b['location']);
 				};
 				uasort($items, $sorter);
 				$hold_result['items'] = $items;
