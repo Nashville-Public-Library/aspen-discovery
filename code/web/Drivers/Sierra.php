@@ -1161,6 +1161,16 @@ class Sierra extends Millennium {
 						'status' => $status,
 					];
 				}
+				$sorter = function ($a, $b){
+					if ($a['shelfLocation'] == $b['shelfLocation']) {
+						if ($a['callNumber'] == $b['callNumber']) {
+							return 0;
+						}
+						return strnatcasecmp($b['callNumber'], $a['callNumber']);
+					}
+					return strnatcasecmp($a['shelfLocation'], $b['shelfLocation']);
+				};
+				uasort($items, $sorter);
 				$hold_result['items'] = $items;
 			}
 		}
