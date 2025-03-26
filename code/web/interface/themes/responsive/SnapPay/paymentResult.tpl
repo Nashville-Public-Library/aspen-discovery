@@ -10,7 +10,7 @@
 	{include file='ilsMessages.tpl' messages=$ilsMessages}
 {/if}
 
-<h1>{translate text='Payment Completed' isPublicFacing=true}</h1>
+<h1>{translate text='Payment Result' isPublicFacing=true}</h1>
 {if !empty($error)}
 	<div class="row">
 		<div class="col-xs-12">
