@@ -48,12 +48,20 @@ class SnapPay_Complete extends Action {
 				}
 			}
 		}
-		if ($error === true) {
+		if ($error === true && strpos($message, 'SnapPay server returned message: Action cancelled') > 0) {
+			$interface->assign('error', $message);
+			$logger->log($message, Logger::LOG_ERROR);
+			if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
+				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
+			}
+			$this->display('paymentResult.tpl', 'Payment Cancelled');
+		} elseif ($error === true) {
 			$interface->assign('error', $message);
 			$logger->log($message, Logger::LOG_ERROR);
 			if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
 			}
+			$this->display('paymentResult.tpl', 'Payment Error');
 		} else {
 			if (empty($message)) {
 				$message = "SnapPay Payment completed with no message for Payment Reference ID $paymentId.";
@@ -63,8 +71,8 @@ class SnapPay_Complete extends Action {
 			if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 				$mailer->send($emailNotificationsAddresses, "$serverName SnapPay Payment", $message);
 			}
+			$this->display('paymentResult.tpl', 'Payment Completed');
 		}
-		$this->display('../MyAccount/paymentCompleted.tpl', 'Payment Completed');
 	}
 
 	function validateSnapPayHMAC(string $signatureFromSnapPay, $hppHMACParamValue): string {
