@@ -3846,7 +3846,7 @@ class MyAccount_AJAX extends JSON_Action {
 					$availableHoldSortOptions['location'] = 'Pickup Location';
 				}
 
-				if (count($user->getlinkedUsers()) > 0) {
+				if (count($user->getLinkedUsers()) > 0) {
 					$unavailableHoldSortOptions['libraryAccount'] = 'Library Account';
 					$availableHoldSortOptions['libraryAccount'] = 'Library Account';
 				}
