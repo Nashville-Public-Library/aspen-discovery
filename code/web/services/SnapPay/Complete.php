@@ -48,7 +48,7 @@ class SnapPay_Complete extends Action {
 				}
 			}
 		}
-		if ($error === true && strpos($message, 'SnapPay server returned message: Action cancelled') > 0) {
+		if ($error === true && $result['cancelled'] === true) {
 			$interface->assign('error', $message);
 			$logger->log($message, Logger::LOG_ERROR);
 			if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions

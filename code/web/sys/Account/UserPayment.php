@@ -1183,6 +1183,9 @@ class UserPayment extends DataObject {
 							$userPayment->message .= $userPayment->id;
 						} else {
 							$userPayment->error = true;
+							if (!empty($completePayment['message']) && strpos($completePayment['message'], 'Action cancelled') > 0) {
+								$userPayment->cancelled = true;
+							}
 							$userPayment->message .= translate(
 								[
 									'text' => $completePayment['message'],
