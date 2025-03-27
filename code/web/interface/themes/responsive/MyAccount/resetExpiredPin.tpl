@@ -39,7 +39,7 @@
 			<div class="form-group">
 				<div class="col-xs-8 col-xs-offset-4">
 					<input id="resetPinSubmit" name="submit" class="btn btn-primary" type="submit"
-						   value="{translate text="Reset My PIN" isPublicFacing=true}">
+						   value="{translate text="Reset My PIN" isPublicFacing=true inAttribute=true}">
 				</div>
 			</div>
 		{/if}

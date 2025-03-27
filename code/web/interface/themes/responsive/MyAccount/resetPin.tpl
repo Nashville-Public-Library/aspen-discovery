@@ -26,7 +26,7 @@
 				<input type="password" name="pin2" id="pin2" value="" minlength="{$pinValidationRules.minLength}" maxlength="{$pinValidationRules.maxLength}" class="form-control required {if !empty($pinValidationRules.onlyDigitsAllowed)}digits{/if}">
 			</div>
 			<div class="form-group propertyRow">
-				<input id="resetPinSubmit" name="submit" class="btn btn-primary" type="submit" value="{translate text="Reset My Pin" isPublicFacing=true}">
+				<input id="resetPinSubmit" name="submit" class="btn btn-primary" type="submit" value="{translate text="Reset My Pin" isPublicFacing=true inAttribute=true}">
 			</div>
 		</form>
 	</div>
