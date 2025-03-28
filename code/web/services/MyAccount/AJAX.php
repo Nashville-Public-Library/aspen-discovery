@@ -612,7 +612,7 @@ class MyAccount_AJAX extends JSON_Action {
 				'text' => "Are you sure you want to cancel this hold?",
 				'isPublicFacing' => true,
 			]),
-			'buttons' => "<button type='button' class='tool btn btn-primary' onclick='AspenDiscovery.Account.cancelHold(\"$patronId\", \"$recordId\", \"$cancelId\", \"$isIll\")'>$cancelButtonLabel</button>",
+			'buttons' => "<button type='button' class='tool btn btn-primary confirmCancelButton' onclick='AspenDiscovery.Account.cancelHold(\"$patronId\", \"$recordId\", \"$cancelId\", \"$isIll\")'>$cancelButtonLabel</button>",
 		];
 	}
 
