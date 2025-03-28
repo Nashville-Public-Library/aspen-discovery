@@ -21,6 +21,13 @@ function getUpdates25_04_00(): array {
 				'ALTER TABLE ptype ADD COLUMN allowLocalIll TINYINT DEFAULT  1'
 			]
 		], //restrict_local_ill_by_patron_type
+		'force_regrouping_all_works_25_04' => [
+			'title' => 'Force Regrouping All Works 25.04',
+			'description' => 'Force Regrouping All Works',
+			'sql' => [
+				"UPDATE system_variables set regroupAllRecordsDuringNightlyIndex = 1",
+			],
+		], //force_regrouping_all_works_25_04
 
 		//katherine - Grove
 
