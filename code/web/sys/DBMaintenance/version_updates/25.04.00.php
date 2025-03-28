@@ -28,6 +28,13 @@ function getUpdates25_04_00(): array {
 				"UPDATE system_variables set regroupAllRecordsDuringNightlyIndex = 1",
 			],
 		], //force_regrouping_all_works_25_04
+		'make_local_ill_form_note_optional' => [
+			'title' => 'Make Local ILL Form Note Optional',
+			'description' => 'Make Local ILL Form Note Optional',
+			'sql' => [
+				'ALTER TABLE local_ill_form ADD COLUMN showNote TINYINT DEFAULT  1'
+			]
+		], //make_local_ill_form_note_optional
 
 		//katherine - Grove
 
