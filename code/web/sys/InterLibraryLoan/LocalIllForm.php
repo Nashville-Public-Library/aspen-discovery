@@ -184,12 +184,21 @@ class LocalIllForm extends DataObject {
 		require_once ROOT_DIR . '/sys/Utils/StringUtils.php';
 		$title = ($marcRecordDriver != null ? StringUtils::removeTrailingPunctuation($marcRecordDriver->getTitle()) : '');
 		$relatedRecord = $marcRecordDriver->getRelatedRecord();
-		$volumeData = $relatedRecord->getVolumeData();
-		if ($volumeId != null && $volumeData != null) {
-			foreach ($volumeData as $volume) {
-				if ($volume->volumeId == $volumeId) {
-					$title .= ' ' . $volume->displayLabel;
-					break;
+		$volumeData = $relatedRecord->getUnsuppressedVolumeData();
+		$volumeDataLocal = $relatedRecord->getUnsuppressedLocallyOwnedVolumes();
+		$showSelectVolume = false;
+		if (!empty($volumeData)) {
+			$showSelectVolume = true;
+			foreach ($volumeData as $key => $volume) {
+				if (!empty($volumeId)) {
+					if ($volume->volumeId == $volumeId) {
+						$title .= ' ' . $volume->displayLabel;
+						$showSelectVolume = false;
+						break;
+					}
+				}
+				if (!in_array($key, $volumeDataLocal)) {
+					$volume->setNeedsIllRequest(true);
 				}
 			}
 		}
@@ -285,6 +294,60 @@ class LocalIllForm extends DataObject {
 				'description' => 'The volume Id for the hold',
 				'required' => false,
 				'default' => $volumeId
+			];
+		}elseif ($showSelectVolume) {
+			$volumeOptions = [
+				"unselected" => translate(['text'=>"Please select a volume from the list below", 'isPublicFacing'=>true])
+			];
+
+			$numItemsWithoutVolumes = 0;
+			foreach ($relatedRecord->getItems() as $item) {
+				if (empty($item->volumeId)) {
+					$numItemsWithoutVolumes++;
+				}
+			}
+			$alwaysPlaceVolumeHoldWhenVolumesArePresent = $marcRecordDriver->getCatalogDriver()->alwaysPlaceVolumeHoldWhenVolumesArePresent();
+			if ($numItemsWithoutVolumes > 0 && $alwaysPlaceVolumeHoldWhenVolumesArePresent) {
+				$blankVolume = new IlsVolumeInfo();
+				$blankVolume->displayLabel = translate([
+					'text' => 'Untitled Volume',
+					'isPublicFacing' => true,
+				]);
+				$blankVolume->volumeId = '';
+				$blankVolume->recordId = $marcRecordDriver->getIdWithSource();
+				$blankVolume->relatedItems = '';
+				$blankVolume->setHasLocalItems(false);
+				foreach ($relatedRecord->getItems() as $item) {
+					if (empty($item->volumeId)) {
+						if ($item->libraryOwned || $item->locallyOwned) {
+							$blankVolume->setHasLocalItems(true);
+						}
+						$blankVolume->relatedItems .= $item->itemId . '|';
+					}
+				}
+				$volumeData[] = $blankVolume;
+			}
+
+			global $library;
+			foreach ($volumeData as $volume) {
+				if (!$volume->needsIllRequest()) {
+					$volumeLabel = $volume->displayLabel;
+					if ($volume->hasLocalItems()) {
+						$volumeLabel .=  '(' . translate([ 'text'=>"Owned by %1%", '1'=>$library->displayName, 'isPublicFacing'=>true]) . ')';
+					}
+				}else{
+					$volumeLabel =  translate([ 'text'=>"%1% (Not Requestable)", '1'=>$volume->displayLabel, 'isPublicFacing'=>true]);
+				}
+				$volumeOptions[$volume->volumeId] = $volumeLabel;
+			}
+
+			$fields['volumeId'] = [
+				'property' => 'volumeId',
+				'type' => 'enum',
+				'label' => 'Volume',
+				'description' => 'The volume to request',
+				'required' => false,
+				'values' => $volumeOptions
 			];
 		}
 		return $fields;
