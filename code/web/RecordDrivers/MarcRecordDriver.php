@@ -1625,11 +1625,13 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		}
 
 		//If this is a periodical we may have additional information
+		$isPeriodical = false;
 		if ($this->isPeriodical()) {
 			global $library;
 			$interface->assign('showCheckInGrid', $library->getGroupedWorkDisplaySettings()->showCheckInGrid);
 			$issues = $this->loadPeriodicalInformation();
 			$interface->assign('periodicalIssues', $issues);
+			$isPeriodical = true;
 		}
 		$links = $this->getLinks();
 		if (Library::getActiveLibrary()->libKeySettingId != -1  && !empty($links[0]['url'])) {
