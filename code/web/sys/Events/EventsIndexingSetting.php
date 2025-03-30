@@ -1,4 +1,5 @@
 <?php
+require_once ROOT_DIR . '/sys/Events/LocationEventsSetting.php';
 class EventsIndexingSetting extends DataObject {
 	public $__table = 'events_indexing_settings';    // table name
 	public $id;
@@ -6,10 +7,12 @@ class EventsIndexingSetting extends DataObject {
 	public $numberOfDaysToIndex;
 
 	private $_libraries;
+	private $_locations;
 //	public $lastUpdateOfAllEvents;
 //	public $lastUpdateOfChangedEvents;
 	public static function getObjectStructure($context = ''): array {
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Events for All Locations'));
+		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
 
 		return [
 			'id' => [
@@ -51,7 +54,14 @@ class EventsIndexingSetting extends DataObject {
 				'label' => 'Libraries',
 				'description' => 'Define libraries that use these settings',
 				'values' => $libraryList,
-				'hideInLists' => true,
+			],
+			'locations' => [
+				'property' => 'locations',
+				'type' => 'multiSelect',
+				'listStyle' => 'checkboxSimple',
+				'label' => 'Locations',
+				'description' => 'Define locations that use this type',
+				'values' => $locationList,
 			],
 		];
 	}
@@ -65,6 +75,7 @@ class EventsIndexingSetting extends DataObject {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
+			$this->saveLocations();
 		}
 		return $ret;
 	}
@@ -78,6 +89,7 @@ class EventsIndexingSetting extends DataObject {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
+			$this->saveLocations();
 		}
 		return $ret;
 	}
@@ -85,6 +97,8 @@ class EventsIndexingSetting extends DataObject {
 	public function __get($name) {
 		if ($name == "libraries") {
 			return $this->getLibraries();
+		} else if ($name == "locations") {
+			return $this->getLocations();
 		} else {
 			return parent::__get($name);
 		}
@@ -93,6 +107,8 @@ class EventsIndexingSetting extends DataObject {
 	public function __set($name, $value) {
 		if ($name == "libraries") {
 			$this->_libraries = $value;
+		} else if ($name == "locations") {
+			$this->_locations = $value;
 		} else {
 			parent::__set($name, $value);
 		}
@@ -102,6 +118,7 @@ class EventsIndexingSetting extends DataObject {
 		$ret = parent::delete($useWhere);
 		if ($ret && !empty($this->id)) {
 			$this->clearLibraries();
+			$this->clearLocations();
 		}
 		return $ret;
 	}
@@ -139,7 +156,43 @@ class EventsIndexingSetting extends DataObject {
 	private function clearLibraries() {
 		//Delete links to the libraries
 		$libraryEventSetting = new LibraryEventsSetting();
-		$libraryEventSetting->settingSource = 'assabet';
+		$libraryEventSetting->settingSource = 'aspenEvents';
+		$libraryEventSetting->settingId = $this->id;
+		return $libraryEventSetting->delete(true);
+	}
+
+	public function getLocations() {
+		if (!isset($this->_locations) && $this->id) {
+			$this->_locations = [];
+			$location = new LocationEventsSetting();
+			$location->settingId = $this->id;
+			$location->find();
+			while ($location->fetch()) {
+				$this->_locations[$location->locationId] = $location->locationId;
+			}
+		}
+		return $this->_locations;
+	}
+
+	public function saveLocations() {
+		if (isset($this->_locations) && is_array($this->_locations)) {
+			$this->clearLocations();
+
+			foreach ($this->_locations as $locationId) {
+				$locationEventsSetting = new LocationEventsSetting();
+
+				$locationEventsSetting->settingId = $this->id;
+				$locationEventsSetting->locationId = $locationId;
+				$locationEventsSetting->insert();
+			}
+			unset($this->_locations);
+		}
+	}
+
+	private function clearLocations() {
+		//Delete links to the libraries
+		$libraryEventSetting = new LocationEventsSetting();
+		$libraryEventSetting->settingSource = 'aspenEvents';
 		$libraryEventSetting->settingId = $this->id;
 		return $libraryEventSetting->delete(true);
 	}

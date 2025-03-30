@@ -37,6 +37,17 @@ function getUpdates25_04_00(): array {
 		], //make_local_ill_form_note_optional
 
 		//katherine - Grove
+		'add_location_to_aspen_events_settings' => [
+			'title' => 'Add Location to Aspen Events Settings',
+			'description' => 'Add location_events_setting table so that settings can be linked to specific locations',
+			'sql' => [
+				"CREATE TABLE location_events_setting (
+					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					settingId INT NOT NULL,
+					locationId INT NOT NULL
+				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
+			]
+		], //add_location_to_aspen_events_settings
 
 		//kirstien - Grove
 
