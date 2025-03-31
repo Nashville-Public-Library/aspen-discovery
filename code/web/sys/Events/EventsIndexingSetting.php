@@ -3,6 +3,7 @@ require_once ROOT_DIR . '/sys/Events/LocationEventsSetting.php';
 class EventsIndexingSetting extends DataObject {
 	public $__table = 'events_indexing_settings';    // table name
 	public $id;
+	public $name;
 	public $runFullUpdate;
 	public $numberOfDaysToIndex;
 
@@ -20,6 +21,12 @@ class EventsIndexingSetting extends DataObject {
 				'type' => 'label',
 				'label' => 'Id',
 				'description' => 'The unique id',
+			],
+			'name' => [
+				'property' => 'name',
+				'type' => 'text',
+				'label' => 'Name',
+				'description' => 'A name for the settings',
 			],
 			'runFullUpdate' => [
 				'property' => 'runFullUpdate',

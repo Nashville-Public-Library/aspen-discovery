@@ -46,6 +46,7 @@ function getUpdates25_04_00(): array {
 					settingId INT NOT NULL,
 					locationId INT NOT NULL
 				) ENGINE INNODB CHARACTER SET utf8 COLLATE utf8_general_ci",
+				"ALTER TABLE events_indexing_settings ADD COLUMN name VARCHAR(100)"
 			]
 		], //add_location_to_aspen_events_settings
 
