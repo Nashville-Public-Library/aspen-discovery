@@ -301,6 +301,34 @@ class SAMLAuthentication{
 
 	private function aspenLogin(User $user) {
 		if($this->ssoAuthOnly) {
+			if ($user->source === 'admin_sso') {
+				global $logger;
+
+				// Check if we have a fallback patron type configured
+				$fallbackPType = null;
+				if (!empty($this->config->ssoCategoryIdFallback)) {
+					$fallbackPType = $this->config->ssoCategoryIdFallback;
+				}
+
+				// If the staff settings are configured, check if this user should be staff
+				if(!empty($this->config->samlStaffPTypeAttr) && !empty($this->config->samlStaffPTypeAttrValue)
+					&& ($this->config->samlStaffPType != '-1' || $this->config->samlStaffPType != -1)) {
+
+					// We can't check attributes here since we don't have access to them at this point
+					// But we can still apply the staff patron type if it's configured
+					$staffPType = $this->config->samlStaffPType;
+					if (!empty($staffPType)) {
+						$fallbackPType = $staffPType;
+					}
+				}
+
+				// Update the user's patron type if we have a fallback and it differs from current
+				if (!empty($fallbackPType) && $user->patronType !== $fallbackPType) {
+					$logger->log("Updating patron type for SSO user {$user->id} from {$user->patronType} to {$fallbackPType}", Logger::LOG_DEBUG);
+					$user->patronType = $fallbackPType;
+					$user->update();
+				}
+			}
 			$login = UserAccount::loginWithAspen($user);
 		} else {
 			$_REQUEST['username'] = empty($user->ils_username) ? $user->ils_barcode : $user->ils_username;
