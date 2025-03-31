@@ -12,7 +12,7 @@ class LocalIllForm extends DataObject {
 	public $defaultMaxFee;
 	public $showMaximumFee;
 	public $feeInformationText;
-	//We always show the Note field.
+	public $showNote;
 	//We always show Pickup Library
 
 	protected $_locations;
@@ -73,6 +73,12 @@ class LocalIllForm extends DataObject {
 				'label' => 'Fee Information Text',
 				'description' => 'Text to be displayed to give additional information about the fees charged.',
 				'maxLength' => 5000,
+			],
+			'showNote' => [
+				'property' => 'showNote',
+				'type' => 'checkbox',
+				'label' => 'Show Note?',
+				'description' => 'Whether or not the user should be allowed to enter a note',
 			],
 
 			'locations' => [
@@ -268,15 +274,17 @@ class LocalIllForm extends DataObject {
 			'required' => true,
 			'default' => $user->getHomeLocationCode(),
 		];
-		$fields['note'] = [
-			'property' => 'note',
-			'type' => 'text',
-			'label' => 'Note',
-			'description' => 'Any additional information you want us to have about this request (40 characters maximum)',
-			'required' => false,
-			'default' => '',
-			'maxLength' => 40
-		];
+		if ($this->showNote) {
+			$fields['note'] = [
+				'property' => 'note',
+				'type' => 'text',
+				'label' => 'Note',
+				'description' => 'Any additional information you want us to have about this request (40 characters maximum)',
+				'required' => false,
+				'default' => '',
+				'maxLength' => 40
+			];
+		}
 		$fields['catalogKey'] = [
 			'property' => 'catalogKey',
 			'type' => 'hidden',
