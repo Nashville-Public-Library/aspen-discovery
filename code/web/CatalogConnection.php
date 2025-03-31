@@ -430,7 +430,9 @@ class CatalogConnection {
 			$userToResetPin->ils_barcode = $barcode;
 			if (!$userToResetPin->find(true)) {
 				$accountProfileDriver = $accountProfileInfo['driver'];
-				$userToResetPin = $accountProfileDriver->findNewUser($barcode, '');
+				require_once ROOT_DIR . '/CatalogFactory.php';
+				$catalogConnectionInstance = CatalogFactory::getCatalogConnectionInstance($accountProfileDriver, $accountProfile);
+				$userToResetPin = $catalogConnectionInstance->findNewUser($barcode, '');
 			}
 		}elseif ($accountProfile->authenticationMethod == 'db') {
 			//Check anything we do database authentication for
@@ -1938,6 +1940,20 @@ class CatalogConnection {
 					]),
 					'title' => translate([
 						'text' => 'No Requests Left',
+						'isPublicFacing' => true,
+					]),
+				];
+			}
+			$patronPType = $patron->getPTypeObj();
+			if ($patronPType == null || $patronPType->allowLocalIll === 0) {
+				return [
+					'success' => false,
+					'message' => translate([
+						'text' => 'Sorry, your account is not allowed to make requests from other libraries.',
+						'isPublicFacing' => true,
+					]),
+					'title' => translate([
+						'text' => 'Requests not allowed',
 						'isPublicFacing' => true,
 					]),
 				];
