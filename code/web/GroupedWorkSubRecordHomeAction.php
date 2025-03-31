@@ -31,10 +31,11 @@ abstract class GroupedWorkSubRecordHomeAction extends Action {
 			$breadcrumbs[] = new Breadcrumb($this->lastSearch, 'Catalog Search Results');
 		}
 		if (!empty($this->recordDriver) && $this->recordDriver->isValid()) {
-			if ($this->recordDriver->getGroupedWorkDriver() != null && $this->recordDriver->getGroupedWorkDriver()->isValid()) {
-				$breadcrumbs[] = new Breadcrumb($this->recordDriver->getGroupedWorkDriver()->getRecordUrl(), $this->recordDriver->getGroupedWorkDriver()->getTitle(), false);
+			$groupedWorkDriver = $this->recordDriver->getGroupedWorkDriver();
+			if (!empty($groupedWorkDriver) && $groupedWorkDriver->isValid()) {
+				$breadcrumbs[] = new Breadcrumb($groupedWorkDriver->getRecordUrl(), $groupedWorkDriver->getTitle(), false);
+				$breadcrumbs[] = new Breadcrumb('', $this->recordDriver->getPrimaryFormat(), false);
 			}
-			$breadcrumbs[] = new Breadcrumb('', $this->recordDriver->getPrimaryFormat(), false);
 		}
 		return $breadcrumbs;
 	}
