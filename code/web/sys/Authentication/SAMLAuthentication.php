@@ -304,25 +304,22 @@ class SAMLAuthentication{
 			if ($user->source === 'admin_sso') {
 				global $logger;
 
-				// Check if we have a fallback patron type configured
+				// Check if there is a fallback patron type configured.
 				$fallbackPType = null;
 				if (!empty($this->config->ssoCategoryIdFallback)) {
 					$fallbackPType = $this->config->ssoCategoryIdFallback;
 				}
 
-				// If the staff settings are configured, check if this user should be staff
+				// If the staff settings are configured, check if this user should be assigned to a staff patron type.
 				if(!empty($this->config->samlStaffPTypeAttr) && !empty($this->config->samlStaffPTypeAttrValue)
 					&& ($this->config->samlStaffPType != '-1' || $this->config->samlStaffPType != -1)) {
-
-					// We can't check attributes here since we don't have access to them at this point
-					// But we can still apply the staff patron type if it's configured
 					$staffPType = $this->config->samlStaffPType;
 					if (!empty($staffPType)) {
 						$fallbackPType = $staffPType;
 					}
 				}
 
-				// Update the user's patron type if we have a fallback and it differs from current
+				// Update the user's patron type if there is a fallback and it differs from current.
 				if (!empty($fallbackPType) && $user->patronType !== $fallbackPType) {
 					$logger->log("Updating patron type for SSO user {$user->id} from {$user->patronType} to {$fallbackPType}", Logger::LOG_DEBUG);
 					$user->patronType = $fallbackPType;
