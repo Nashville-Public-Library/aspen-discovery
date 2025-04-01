@@ -302,8 +302,6 @@ class SAMLAuthentication{
 	private function aspenLogin(User $user) {
 		if($this->ssoAuthOnly) {
 			if ($user->source === 'admin_sso') {
-				global $logger;
-
 				// Check if there is a fallback patron type configured.
 				$fallbackPType = null;
 				if (!empty($this->config->ssoCategoryIdFallback)) {
@@ -321,7 +319,6 @@ class SAMLAuthentication{
 
 				// Update the user's patron type if there is a fallback and it differs from current.
 				if (!empty($fallbackPType) && $user->patronType !== $fallbackPType) {
-					$logger->log("Updating patron type for SSO user {$user->id} from {$user->patronType} to {$fallbackPType}", Logger::LOG_DEBUG);
 					$user->patronType = $fallbackPType;
 					$user->update();
 				}
