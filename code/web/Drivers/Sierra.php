@@ -2875,7 +2875,13 @@ class Sierra extends Millennium {
 					$library = new Library();
 					$library->ilsCode = $entry->id;
 					if ($library->browseCategoryGroupId == null) {
-						$library->browseCategoryGroupId = 1;
+						$browseCategoryGroup = new BrowseCategoryGroup();
+						if (!$browseCategoryGroup->find(true)) {
+							$numErrors++;
+							continue;
+						}else{
+							$library->browseCategoryGroupId = $browseCategoryGroup->id;
+						}
 					}
 					if (!$library->find(true)){
 						$library->subdomain = $entry->id;
