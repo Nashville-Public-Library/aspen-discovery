@@ -40,6 +40,7 @@ function getTalpaUpdates() {
 					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
 					groupedRecordPermanentId CHAR(40),
 					lt_workcode INT(11) UNSIGNED,
+					checked TINYINT(1) SIGNED DEFAULT 0,
 					INDEX(`groupedRecordPermanentId`),
 					INDEX(`lt_workcode`)
 				) ENGINE = InnoDB"

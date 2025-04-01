@@ -52,7 +52,7 @@ $results = $aspen_db -> query('SELECT *
 										FROM grouped_work gw
 										LEFT JOIN talpa_ltwork_to_groupedwork ltg
 											ON gw.permanent_id = ltg.groupedRecordPermanentId
-										WHERE ltg.groupedRecordPermanentId IS NULL
+										WHERE ltg.groupedRecordPermanentId IS NULL AND checked = 0
 								');
 
 $permanent_ids = array();
@@ -67,9 +67,14 @@ if ($results) {
 	while ($result = $results->fetch()) {
 		$seenN++;
 		$permanent_ids[] = $result['permanent_id'];
+		$ids[] = $result['id'];
 
 		if( count($permanent_ids) > $BATCH_SIZE ) {
 			$logger->log("getting works for batch ". $batchN. ' of size:'. $BATCH_SIZE, Logger::LOG_DEBUG);
+
+			// mark that we have checked these works
+			$sql = 'UPDATE talpa_ltwork_to_groupedwork SET checked=1 WHERE id IN ('. implode(',', $ids). ')';
+			$results_update = $aspen_db -> query($sql);
 
 			foreach ($permanent_ids as $permanent_id) {
 				$groupedWork = new GroupedWork();
@@ -242,6 +247,7 @@ if ($results) {
 			// reset aggregator arrays
 			$retA = array();
 			$permanent_ids = array();
+			$ids = array();
 		} // if we have enough in batch
 
 	} // each row needing LT work
