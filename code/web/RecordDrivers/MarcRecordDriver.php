@@ -1661,11 +1661,25 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		$interface->assign('showLastCheckIn', $showLastCheckIn);
 		$interface->assign('showFormatInHoldings', count($this->getFormats()) > 1);
 		$interface->assign('holdingsHaveUrls', $this->holdingsHaveUrls);
-		$moreDetailsOptions['copies'] = [
-			'label' => 'Copies',
-			'body' => $interface->fetch('Record/view-holdings.tpl'),
-			'openByDefault' => true,
-		];
+
+		// Check if there are any non-eContent holdings to display.
+		$hasNonEContentHoldings = false;
+		foreach ($this->holdings as $holding) {
+			if (empty($holding['isEContent'])) {
+				$hasNonEContentHoldings = true;
+				break;
+			}
+		}
+
+		// Only add copies section if there are non-eContent holdings to display.
+		if ($hasNonEContentHoldings) {
+			$moreDetailsOptions['copies'] = [
+				'label' => 'Copies',
+				'body' => $interface->fetch('Record/view-holdings.tpl'),
+				'openByDefault' => true,
+			];
+		}
+
 		//Other editions if applicable (only if we aren't the only record!)
 		$groupedWorkDriver = $this->getGroupedWorkDriver();
 		if ($groupedWorkDriver != null) {
@@ -1708,7 +1722,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		//Check to see if the record has children
 		$childRecords = $this->getChildRecords();
 		if (count($childRecords) > 0) {
-			if (count($this->holdings) == 0) {
+			if (count($this->holdings) == 0 && array_key_exists('copies', $moreDetailsOptions)) {
 				unset($moreDetailsOptions['copies']);
 			}
 			$interface->assign('childRecords', $childRecords);
@@ -1742,7 +1756,9 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		$marcHoldings = $this->getMarcHoldings();
 		if (count($marcHoldings) > 0) {
 			//Check to see if the copies are empty and if so remove copies section
-			if (empty($this->holdingSections) && (!$isPeriodical || empty($interface->getVariable('periodicalIssues')))){
+			if (empty($this->holdingSections) &&
+				(!$isPeriodical || empty($interface->getVariable('periodicalIssues'))) &&
+				array_key_exists('copies', $moreDetailsOptions)) {
 				unset($moreDetailsOptions['copies']);
 			}
 
