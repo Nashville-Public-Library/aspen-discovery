@@ -234,7 +234,9 @@ class FormatMapValue extends DataObject {
 	}
 
 	/**
-	 * Override delete to ensure regrouping is triggered when format map values are deleted.
+	 * Override delete to ensure format map deletions trigger regrouping because
+	 * the forcesRegroup flag exists on properties inside FormatMapValue objects,
+	 * not on the parent relationship in IndexingProfile, which the standard deletion process cannot detect.
 	 *
 	 * @param bool $useWhere
 	 * @return int
@@ -243,7 +245,10 @@ class FormatMapValue extends DataObject {
 		// Check if we're deleting a specific record (i.e., not a bulk delete).
 		if (!$useWhere && !empty($this->id)) {
 			// Trigger regrouping if a format value is being deleted.
-			$this->handlePropertyChangeEffects('format', $this->format, null, ['forcesRegroup' => true], 'deleted');
+			$objectStructure = self::getObjectStructure();
+			if (isset($objectStructure['format'])) {
+				$this->handlePropertyChangeEffects('format', $this->format, null, $objectStructure['format'], 'deleted');
+			}
 		}
 
 		// Call parent delete to perform the actual deletion.
