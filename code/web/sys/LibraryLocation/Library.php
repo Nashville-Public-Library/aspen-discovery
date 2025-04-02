@@ -4989,11 +4989,11 @@ class Library extends DataObject {
 
 	protected $_eventFacetSettings = null;
 
-	public function getEventFacetSettings() : ?LibraryEventsSetting {
+	public function getEventFacetSettings() {
 		if ($this->_eventFacetSettings == null) {
 			try {
-				require_once ROOT_DIR . '/sys/Events/LibraryEventsSetting.php';
-				$eventsFacetSetting = new LibraryEventsSetting();
+				require_once ROOT_DIR . '/sys/Events/LibraryEventsFacetSetting.php';
+				$eventsFacetSetting = new LibraryEventsFacetSetting();
 				$eventsFacetSetting->libraryId = $this->libraryId;
 				if ($eventsFacetSetting->find(true)) {
 					$this->_eventFacetSettings = $eventsFacetSetting;
@@ -5456,7 +5456,15 @@ class Library extends DataObject {
 					}
 					if ($theme->headerLogoApp) {
 						$apiInfo['headerLogoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
+						[
+							$width,
+							$height,
+						] = @getimagesize(ROOT_DIR . '/files/original/' . $theme->headerLogoApp);
+						$apiInfo['headerLogoWidth'] = $width;
+						$apiInfo['headerLogoHeight'] = $height;
 					}
+					$apiInfo['headerLogoAlignmentApp'] = $theme->headerLogoAlignmentApp;
+					$apiInfo['headerLogoBackgroundColorApp'] = $theme->headerLogoBackgroundColorApp;
 					$apiInfo['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
 					$apiInfo['primaryForegroundColor'] = $theme->primaryForegroundColor;
 					$apiInfo['secondaryBackgroundColor'] = $theme->secondaryBackgroundColor;

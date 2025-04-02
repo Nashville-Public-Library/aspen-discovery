@@ -1555,7 +1555,7 @@ class BookCoverProcessor {
 	}
 
 	private function getListCover($id) {
-		//Build a cover based on the titles within list
+		//Build a cover based on the titles within a list
 		require_once ROOT_DIR . '/sys/Covers/ListCoverBuilder.php';
 		$coverBuilder = new ListCoverBuilder();
 		require_once ROOT_DIR . '/sys/UserLists/UserList.php';
@@ -1577,7 +1577,7 @@ class BookCoverProcessor {
 	}
 
 	private function getSeriesCover($id) {
-		//Build a cover based on the titles within list
+		//Build a cover based on the titles within series
 		require_once ROOT_DIR . '/sys/Covers/SeriesCoverBuilder.php';
 		$coverBuilder = new SeriesCoverBuilder();
 		require_once ROOT_DIR . '/sys/Series/Series.php';
@@ -1941,10 +1941,16 @@ class BookCoverProcessor {
 	}
 
 	private function getUploadedListCover($id) {
-		$uploadedImage = $this->bookCoverPath . '/original/' . $id . '.png';
-		$source = $this->bookCoverInfo->imageSource;
-		if ($source == 'upload' && file_exists($uploadedImage)) {
+		$uploadedImage = $this->bookCoverPath . '/original/lists/' . $id . '.png';
+		$source = $this->bookCoverInfo->imageSource ?? '';
+		if (($source == 'upload' || $source == '') && file_exists($uploadedImage)) {
 			return $this->processImageURL($source, $uploadedImage);
+		}
+
+		// If not found, check the original directory as fallback (DIS-568).
+		$originalImage = $this->bookCoverPath . '/original/' . $id . '.png';
+		if (($source == 'upload' || $source == '') && file_exists($originalImage)) {
+			return $this->processImageURL($source, $originalImage);
 		}
 		return false;
 	}
@@ -2012,10 +2018,13 @@ class BookCoverProcessor {
 				$id,
 			] = explode(':', $id);
 		}
-		$uploadedImage = $this->bookCoverPath . '/original/' . $id . '.png';
-		if (file_exists($uploadedImage)) {
-			return $this->processImageURL('upload', $uploadedImage);
+		if ($this->bookCoverInfo->getRecordType() != 'series' && $this->bookCoverInfo->getRecordType() != 'seriesMember' && $this->bookCoverInfo->getRecordType() != 'list') {
+			$uploadedImage = $this->bookCoverPath . '/original/' . $id . '.png';
+			if (file_exists($uploadedImage)) {
+				return $this->processImageURL('upload', $uploadedImage);
+			}
 		}
+
 		return false;
 	}
 

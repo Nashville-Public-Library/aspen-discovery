@@ -538,7 +538,7 @@ class Greenhouse_ImportAspenData extends Admin_Admin {
 					$message .= '<br/>';
 				}
 
-				$message .= "Importing Side Load $sideLoads->name to sideload_$sideLoadName.tar.gz";
+				$message .= "Importing Side Load $sideLoads->name from sideload_$sideLoadName.tar.gz";
 				if (!file_exists($sideLoads->marcPath)) {
 					mkdir($sideLoads->marcPath, 0774, true);
 					chgrp($sideLoads->marcPath, 'aspen_apache');
@@ -547,12 +547,12 @@ class Greenhouse_ImportAspenData extends Admin_Admin {
 				if ($configArray['System']['operatingSystem'] == 'windows') {
 					$output = [];
 					if (file_exists("c:/data/aspen-discovery/$serverName/import/sideload_$sideLoadName.tar.gz")) {
-						exec("tar -xzf c:/data/aspen-discovery/$serverName/import/sideload_$sideLoadName.tar.gz $sideLoads->marcPath", $output);
+						exec("tar -xzf c:/data/aspen-discovery/$serverName/import/sideload_$sideLoadName.tar.gz -C $sideLoads->marcPath", $output);
 					}
 				} else {
 					$output = [];
 					if (file_exists("/data/aspen-discovery/$serverName/import/sideload_$sideLoadName.tar.gz")) {
-						exec("tar -xzf /data/aspen-discovery/$serverName/import/sideload_$sideLoadName.tar.gz $sideLoads->marcPath", $output);
+						exec("tar -xzf /data/aspen-discovery/$serverName/import/sideload_$sideLoadName.tar.gz -C $sideLoads->marcPath", $output);
 						//$message .= "<br/><pre>cd $sideLoads->marcPath; tar -czf /data/aspen-discovery/$serverName/import/sideload_$sideLoadName.tar.gz *</pre>";
 						//$message .= "<br/>Output" . implode("<br/>", $output);
 					}

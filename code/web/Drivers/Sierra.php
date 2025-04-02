@@ -647,7 +647,9 @@ class Sierra extends Millennium {
 					$itemId = ".i" . $itemIdShort . $this->getCheckDigit($itemIdShort);
 					$bibId = $this->getBibIdForItem($itemId, $itemIdShort);
 
-					$curCheckout->callNumber = $entry->callNumber;
+					if (!empty($entry->callNumber)) {
+						$curCheckout->callNumber = $entry->callNumber;
+					}
 
 					$curCheckout->itemId = $itemId;
 					if ($bibId != false) {
@@ -1159,6 +1161,16 @@ class Sierra extends Millennium {
 						'status' => $status,
 					];
 				}
+				$sorter = function ($a, $b){
+					if ($a['location'] == $b['location']) {
+						if ($a['callNumber'] == $b['callNumber']) {
+							return 0;
+						}
+						return strnatcasecmp($b['callNumber'], $a['callNumber']);
+					}
+					return strnatcasecmp($a['location'], $b['location']);
+				};
+				uasort($items, $sorter);
 				$hold_result['items'] = $items;
 			}
 		}
