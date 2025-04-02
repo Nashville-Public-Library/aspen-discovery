@@ -67,6 +67,14 @@ function getUpdates25_04_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'fix_nyt_user_home_location' => [
+			'title' => 'Fix NYT User Home Location',
+			'description' => 'Set nyt_user home location to -1 to ensure NYT lists are visible in consortia when "Lists from library list publishers Only" is selected.',
+			'continueOnError' => true,
+			'sql' => [
+				"UPDATE user SET homeLocationId = -1 WHERE username = 'nyt_user' AND source = 'admin'",
+			],
+		], //fix_nyt_user_home_location
 
 		//alexander - PTFS-Europe
 
