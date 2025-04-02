@@ -428,7 +428,7 @@ AspenDiscovery.Record = (function () {
 					<div id="volumeSelectionError" class="alert alert-danger mt-3" role="alert">
 						Please select a volume before attempting to place a hold.
 					</div>
-			  	`;
+				`;
 				$('#volumeSelection').prepend(errorHtml);
 				return false;
 			}
