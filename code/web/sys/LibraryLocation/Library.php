@@ -5456,7 +5456,15 @@ class Library extends DataObject {
 					}
 					if ($theme->headerLogoApp) {
 						$apiInfo['headerLogoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
+						[
+							$width,
+							$height,
+						] = @getimagesize(ROOT_DIR . '/files/original/' . $theme->headerLogoApp);
+						$apiInfo['headerLogoWidth'] = $width;
+						$apiInfo['headerLogoHeight'] = $height;
 					}
+					$apiInfo['headerLogoAlignmentApp'] = $theme->headerLogoAlignmentApp;
+					$apiInfo['headerLogoBackgroundColorApp'] = $theme->headerLogoBackgroundColorApp;
 					$apiInfo['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
 					$apiInfo['primaryForegroundColor'] = $theme->primaryForegroundColor;
 					$apiInfo['secondaryBackgroundColor'] = $theme->secondaryBackgroundColor;
