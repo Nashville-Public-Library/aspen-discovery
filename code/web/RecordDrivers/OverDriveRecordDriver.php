@@ -177,6 +177,7 @@ class OverDriveRecordDriver extends GroupedWorkSubDriver {
 				$seriesData = [
 					'seriesTitle' => $seriesName,
 					'fromNovelist' => false,
+					'fromSeriesIndex' => false
 				];
 			}
 		}
@@ -190,12 +191,11 @@ class OverDriveRecordDriver extends GroupedWorkSubDriver {
 	public function getStaffView() : string {
 		global $interface;
 
-		$this->getGroupedWorkDriver()->assignGroupedWorkStaffView();
-
 		$interface->assign('bookcoverInfo', $this->getBookcoverInfo());
 
 		$groupedWorkDriver = $this->getGroupedWorkDriver();
 		if ($groupedWorkDriver != null) {
+			$this->getGroupedWorkDriver()->assignGroupedWorkStaffView();
 			if ($groupedWorkDriver->isValid()) {
 				$interface->assign('hasValidGroupedWork', true);
 				$this->getGroupedWorkDriver()->assignGroupedWorkStaffView();
