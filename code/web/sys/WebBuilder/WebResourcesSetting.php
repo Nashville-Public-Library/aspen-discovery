@@ -8,7 +8,6 @@ class WebResourcesSetting extends DataObject
 	public $__table = 'web_builder_web_resources_settings';    // table name
 	public $id;
 	public $name;
-	public $webResourceSettingId;
 	public $indexAtoZ;
 
 	private $_libraries;

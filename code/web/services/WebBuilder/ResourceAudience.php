@@ -7,6 +7,7 @@ class WebBuilder_ResourceAudience extends Action
 	{
 		global $interface;
 		global $activeLanguage;
+		global $library;
 
 		require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderAudience.php';
 		$audience = new WebBuilderAudience();
@@ -20,8 +21,13 @@ class WebBuilder_ResourceAudience extends Action
 			$webResources = [];
 			$webResourceIds = [];
 			while ($resourcesForAudience->fetch()) {
-				if (!array_key_exists("WebResource:" . $resourcesForAudience->webResourceId, $webResourceIds)) {
-					$webResourceIds["\"WebResource:" . $resourcesForAudience->webResourceId . "\""] = "WebResource:" . $resourcesForAudience->webResourceId;
+				$webResourceLibrary = new libraryWebResource();
+				$webResourceLibrary->webResourceId = $resourcesForAudience->webResourceId;
+				$webResourceLibrary->libraryId = $library->libraryId;
+				if ($webResourceLibrary->find()) {
+					if (!array_key_exists("WebResource:" . $resourcesForAudience->webResourceId, $webResourceIds)) {
+						$webResourceIds["\"WebResource:" . $resourcesForAudience->webResourceId . "\""] = "WebResource:" . $resourcesForAudience->webResourceId;
+					}
 				}
 			}
 			/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */

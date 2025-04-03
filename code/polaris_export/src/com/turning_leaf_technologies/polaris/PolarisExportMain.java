@@ -184,7 +184,7 @@ public class PolarisExportMain {
 					if (authenticationResponse.isSuccess()) {
 						loadPolarisVersion();
 						if (!extractSingleWork) {
-							updateBranchInfo(dbConn);
+							importLibraryBranchData(dbConn);
 							updateSublocationInfo(dbConn);
 							updatePatronCodes(dbConn);
 							updateTranslationMaps(dbConn);
@@ -425,10 +425,11 @@ public class PolarisExportMain {
 		}
 	}
 
-	private static void updateBranchInfo(Connection dbConn) {
+	private static void importLibraryBranchData(Connection dbConn) {
 		try{
 			PreparedStatement existingAspenLocationStmt = dbConn.prepareStatement("SELECT libraryId, locationId, isMainBranch from location where code = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement existingAspenLibraryStmt = dbConn.prepareStatement("SELECT libraryId from library where ilsCode = ? and accountProfileId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			PreparedStatement existingAspenLibraryBySubdomainStmt = dbConn.prepareStatement("SELECT libraryId from library where subdomain = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement addAspenLibraryStmt = dbConn.prepareStatement("INSERT INTO library (accountProfileId, subdomain, displayName, ilsCode, browseCategoryGroupId, groupedWorkDisplaySettingId) VALUES (?, ?, ?, ?, 1, 1)", Statement.RETURN_GENERATED_KEYS);
 			PreparedStatement addAspenLocationStmt = dbConn.prepareStatement("INSERT INTO location (libraryId, displayName, code, browseCategoryGroupId, groupedWorkDisplaySettingId) VALUES (?, ?, ?, -1, -1)", Statement.RETURN_GENERATED_KEYS);
 			PreparedStatement addAspenLocationRecordsOwnedStmt = dbConn.prepareStatement("INSERT INTO location_records_to_include (locationId, indexingProfileId, location, subLocation, markRecordsAsOwned) VALUES (?, ?, ?, '', 1)");
@@ -446,10 +447,10 @@ public class PolarisExportMain {
 			//Get a list of all libraries
 			String getOrganizationsUrl = "/PAPIService/REST/public/v1/1033/100/1/organizations/all";
 			WebServiceResponse organizationsResponse = callPolarisAPI(getOrganizationsUrl, null, "GET", "application/json", null);
-			if (organizationsResponse.isSuccess()){
+			if (organizationsResponse.isSuccess()) {
 				JSONObject organizations = organizationsResponse.getJSONResponse();
 				JSONArray organizationRows = organizations.getJSONArray("OrganizationsGetRows");
-				for (int i = 0; i < organizationRows.length(); i++){
+				for (int i = 0; i < organizationRows.length(); i++) {
 					JSONObject organizationInfo = organizationRows.getJSONObject(i);
 					long ilsId = organizationInfo.getLong("OrganizationID");
 					String libraryDisplayName = organizationInfo.getString("DisplayName");
@@ -461,22 +462,29 @@ public class PolarisExportMain {
 						ResultSet existingLibraryRS = existingAspenLibraryStmt.executeQuery();
 						long libraryId = 0;
 						if (!existingLibraryRS.next()) {
-							addAspenLibraryStmt.setLong(1, accountProfileId);
-							addAspenLibraryStmt.setString(2, abbreviation);
-							addAspenLibraryStmt.setString(3, libraryDisplayName);
-							addAspenLibraryStmt.setLong(4, ilsId);
-							addAspenLibraryStmt.executeUpdate();
-							ResultSet addAspenLibraryRS = addAspenLibraryStmt.getGeneratedKeys();
-							if (addAspenLibraryRS.next()){
-								libraryId = addAspenLibraryRS.getLong(1);
-							}
+							// Check if subdomain already exists.
+							existingAspenLibraryBySubdomainStmt.setString(1, abbreviation);
+							ResultSet existingSubdomainRS = existingAspenLibraryBySubdomainStmt.executeQuery();
+							if (existingSubdomainRS.next()) {
+								logEntry.addNote("Skipping library " + libraryDisplayName + " with ID " + ilsId + " because subdomain '" + abbreviation + "' is already in use.");
+							} else {
+								addAspenLibraryStmt.setLong(1, accountProfileId);
+								addAspenLibraryStmt.setString(2, abbreviation);
+								addAspenLibraryStmt.setString(3, libraryDisplayName);
+								addAspenLibraryStmt.setLong(4, ilsId);
+								addAspenLibraryStmt.executeUpdate();
+								ResultSet addAspenLibraryRS = addAspenLibraryStmt.getGeneratedKeys();
+								if (addAspenLibraryRS.next()){
+									libraryId = addAspenLibraryRS.getLong(1);
+								}
 
-							//Add records to include for the library
-							addAspenLibraryRecordsToIncludeStmt.setLong(1, libraryId);
-							addAspenLibraryRecordsToIncludeStmt.setLong(2, indexingProfile.getId());
-							addAspenLibraryRecordsToIncludeStmt.executeUpdate();
+								//Add records to include for the library.
+								addAspenLibraryRecordsToIncludeStmt.setLong(1, libraryId);
+								addAspenLibraryRecordsToIncludeStmt.setLong(2, indexingProfile.getId());
+								addAspenLibraryRecordsToIncludeStmt.executeUpdate();
+							}
 						}
-					}else if (organizationCodeId == 3){
+					} else if (organizationCodeId == 3) {
 						long parentOrganizationId = organizationInfo.getLong("ParentOrganizationID");
 						existingAspenLocationStmt.setLong(1, ilsId);
 						ResultSet existingLocationRS = existingAspenLocationStmt.executeQuery();

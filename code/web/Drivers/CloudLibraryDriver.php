@@ -107,14 +107,66 @@ class CloudLibraryDriver extends AbstractEContentDriver {
 	}
 
 	/**
-	 * Renew a single title currently checked out to the user
+	 * Renew a title by checking it in first and then checking it out again.
 	 *
-	 * @param $patron     User
-	 * @param $recordId   string
-	 * @return mixed
+	 * @param User $patron   The patron requesting the renewal.
+	 * @param string $recordId The record id.
+	 * @param mixed  $itemId   Optional additional item id.
+	 * @param mixed  $itemIndex Optional index.
+	 * @return array           Array containing success status and messages.
 	 */
-	function renewCheckout($patron, $recordId, $itemId = null, $itemIndex = null) {
-		return $this->checkOutTitle($patron, $recordId, true);
+	function renewCheckout(User $patron, $recordId, $itemId = null, $itemIndex = null): array
+	{
+		// Check if the item has any active holds or reserves.
+		if ($this->itemHasHoldsOrReserves($patron, $recordId)) {
+			return [
+				'success' => false,
+				'message' => translate([
+					'text' => 'This title has active holds or reserves and cannot be renewed at this time.',
+					'isPublicFacing' => true,
+				]),
+				'api' => [
+					'title' => translate([
+						'text' => 'Renewal not permitted',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'This title has active holds or reserves and cannot be renewed.',
+						'isPublicFacing' => true,
+					]),
+				],
+			];
+		}
+
+		// Perform check-in first (as recommended by CloudLibrary support).
+		$checkInResult = $this->returnCheckout($patron, $recordId);
+		if (!$checkInResult['success']) {
+			return [
+				'success' => false,
+				'message' => translate([
+					'text' => 'Failed to check in the title for renewal: ' . $checkInResult['message'],
+					'isPublicFacing' => true,
+				])
+			];
+		}
+
+		// Because there is no API request that exists for atomic, renewal operations, use a small
+		// delay to ensure the CloudLibrary system has time to check in the title before checking it back out.
+		usleep(500000); // 500ms delay
+
+		$result = $this->checkOutTitle($patron, $recordId, true);
+
+		if ($result['success']) {
+			$checkouts = $this->getCheckouts($patron);
+			foreach ($checkouts as $checkout) {
+				if ($checkout->recordId == $recordId) {
+					$result['dueDate'] = date('M j, Y', $checkout->dueDate);
+					break;
+				}
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -1035,4 +1087,30 @@ class CloudLibraryDriver extends AbstractEContentDriver {
 
 		return $redirectUrl;
 	}
+
+	/**
+	 * Check if an item has any active holds or reserves using the cloudLibrary API.
+	 *
+	 * @param User $patron   The patron requesting the renewal.
+	 * @param string $itemId   The cloudLibrary item id.
+	 * @return bool            True if holds or reserves exist, false otherwise.
+	 */
+	private function itemHasHoldsOrReserves(User $patron, string $itemId): bool {
+		$settings = $this->getSettings($patron);
+		$apiPath = "/cirrus/library/{$settings->libraryId}/circulation/item/{$itemId}";
+		$response = $this->callCloudLibraryUrl($settings, $apiPath, 'GET');
+		if ($this->curlWrapper->getResponseCode() == 200) {
+			$xml = simplexml_load_string($response);
+			// Check if any holds exist.
+			if (isset($xml->Holds) && count($xml->Holds->Patron) > 0) {
+				return true;
+			}
+			// Check if any reserves exist.
+			if (isset($xml->Reserves) && count($xml->Reserves->Patron) > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }

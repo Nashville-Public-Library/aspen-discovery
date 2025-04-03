@@ -19,6 +19,33 @@
 		{/if}
 	</div>
 </div>
+
+<script type="text/javascript">
+
+	var currentUrl = window.location.href;
+	var urlParams = new URLSearchParams(window.location.search);
+
+
+	var talpaResult = urlParams.get('talpaResult');
+	var lookfor = urlParams.get('lookfor');
+	var author = urlParams.get('author');
+	var isbn = urlParams.get('isbn')
+
+	if(typeof talpaResult != 'undefined')
+		{
+			if(title) {
+				$('#title').val(lookfor);
+			}
+			if(author) {
+				$('#author').val(author);
+			}
+			if(isbn) {
+				$('#isbn').val(isbn);
+			}
+		}
+
+</script>
+
 <script type="text/javascript">
 	$("#materialsRequestForm").validate();
 </script>

@@ -46,6 +46,7 @@ public class PalaceProjectExportMain {
 	private static PreparedStatement updateCollectionLastIndexedStmt;
 	private static PreparedStatement getAvailabilityForTitleStmt;
 	private static PreparedStatement getTitlesToRemoveFromCollectionStmt;
+	private static PreparedStatement deleteCollectionStmt;
 
 	//Record grouper
 	private static GroupedWorkIndexer groupedWorkIndexer;
@@ -260,6 +261,9 @@ public class PalaceProjectExportMain {
 				} else {
 					JSONObject initialCrawlableResponseJSON = new JSONObject(response.getMessage());
 					HashMap<String, String> validCollections = getValidCollectionsFromPalaceProject(initialCrawlableResponseJSON, palaceProjectCollections, insertCollectionStmt, settingsId);
+
+					// Process deleted collections.
+					processDeletedCollections(palaceProjectCollections, validCollections, getTitlesForCollectionStmt);
 
 					// Track if any collections were processed.
 					boolean anyCollectionsProcessed = false;
@@ -545,6 +549,43 @@ public class PalaceProjectExportMain {
 		return validCollections;
 	}
 
+	/**
+	 * Processes collections that exist in Aspen but are no longer present in Palace Project API response.
+	 * Removes titles from these collections and deletes the collection from the database.
+	 *
+	 * @param palaceProjectCollections Collections that exist in Aspen
+	 * @param validCollections Collections that were found in the Palace Project API
+	 * @param getTitlesForCollectionStmt Prepared statement to get titles for a collection
+	 * @throws SQLException If a database error occurs
+	 */
+	private static void processDeletedCollections(
+		HashMap<String, PalaceProjectCollection> palaceProjectCollections,
+		HashMap<String, String> validCollections,
+		PreparedStatement getTitlesForCollectionStmt) throws SQLException {
+
+		// Create defensive copies of the key sets to avoid modifying the original collections.
+		// Directly modifying the keySet() of a HashMap, which is backed by the map itself,
+		// can lead to unpredictable behavior in Java.
+		List<String> allAspenCollections = new ArrayList<>(palaceProjectCollections.keySet());
+		List<String> validSetCopy = new ArrayList<>(validCollections.keySet());
+		allAspenCollections.removeAll(validSetCopy);
+
+		for (String deletedCollectionName : allAspenCollections) {
+			PalaceProjectCollection deletedColl = palaceProjectCollections.get(deletedCollectionName);
+			if (!deletedColl.includeInAspen) {
+				logEntry.addNote("Deleting titles from deleted collection " + deletedCollectionName +
+					", and removing the collection because it is no longer in the Palace Project.");
+				HashMap<Long, PalaceProjectTitleAvailability> titlesForCollection =
+					getTitlesForCollection(getTitlesForCollectionStmt, deletedColl);
+				for (PalaceProjectTitleAvailability titleAvailability : titlesForCollection.values()) {
+					removePalaceProjectTitleFromCollection(titleAvailability.id, titleAvailability.titleId);
+				}
+				deleteCollectionStmt.setLong(1, deletedColl.id);
+				deleteCollectionStmt.executeUpdate();
+			}
+		}
+	}
+
 	private static HashMap<Long, PalaceProjectTitleAvailability> getTitlesForCollection(PreparedStatement getTitlesForCollectionStmt, PalaceProjectCollection collection) {
 		HashMap<Long, PalaceProjectTitleAvailability> titlesForCollection = new HashMap<>();
 		try {
@@ -589,10 +630,10 @@ public class PalaceProjectExportMain {
 				PalaceProjectTitle existingTitle = null;
 				if (getExistingPalaceProjectTitleRS.next()) {
 					existingTitle = new PalaceProjectTitle(
-							getExistingPalaceProjectTitleRS.getLong("id"),
-							palaceProjectId,
-							getExistingPalaceProjectTitleRS.getLong("rawChecksum"),
-							getExistingPalaceProjectTitleRS.getLong("rawResponseLength")
+						getExistingPalaceProjectTitleRS.getLong("id"),
+						palaceProjectId,
+						getExistingPalaceProjectTitleRS.getLong("rawChecksum"),
+						getExistingPalaceProjectTitleRS.getLong("rawResponseLength")
 					);
 				}
 				boolean recordUpdated = false;
@@ -754,6 +795,7 @@ public class PalaceProjectExportMain {
 				updateCollectionLastIndexedStmt = aspenConn.prepareStatement("UPDATE palace_project_collections SET lastIndexed = ? where id =?");
 				getAvailabilityForTitleStmt = aspenConn.prepareStatement("SELECT COUNT(*) as availabilityCount from palace_project_title_availability WHERE titleId = ? and deleted = 0", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 				getTitlesToRemoveFromCollectionStmt = aspenConn.prepareStatement("SELECT palace_project_title_availability.id, titleId FROM palace_project_title_availability inner JOIN palace_project_collections on collectionId = palace_project_collections.id where collectionId = ? AND lastSeen < lastIndexed", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+				deleteCollectionStmt = aspenConn.prepareStatement("DELETE FROM palace_project_collections WHERE id = ?");
 			}else{
 				logger.error("Aspen database connection information was not provided");
 				System.exit(1);
