@@ -35,6 +35,16 @@ function getUpdates25_04_00(): array {
 				'ALTER TABLE local_ill_form ADD COLUMN showNote TINYINT DEFAULT  1'
 			]
 		], //make_local_ill_form_note_optional
+		'theme_app_header_options' => [
+			'title' => 'Theme - App Header Options',
+			'description' => 'Add additional options for configuring the app header',
+			'continueOnError' => true,
+			'sql' => [
+				'ALTER TABLE themes ADD COLUMN headerLogoAlignmentApp TINYINT(1) DEFAULT 2',
+				"ALTER TABLE themes ADD COLUMN headerLogoBackgroundColorApp char(7) DEFAULT '#ffffff'",
+				"ALTER TABLE themes ADD COLUMN headerLogoBackgroundColorAppDefault TINYINT(1) DEFAULT 1"
+			]
+		], //theme_app_header_options
 
 		//katherine - Grove
 		'add_location_to_aspen_events_settings' => [
@@ -57,6 +67,14 @@ function getUpdates25_04_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'fix_nyt_user_home_location' => [
+			'title' => 'Fix NYT User Home Location',
+			'description' => 'Set nyt_user home location to -1 to ensure NYT lists are visible in consortia when "Lists from library list publishers Only" is selected.',
+			'continueOnError' => true,
+			'sql' => [
+				"UPDATE user SET homeLocationId = -1 WHERE username = 'nyt_user' AND source = 'admin'",
+			],
+		], //fix_nyt_user_home_location
 
 		//alexander - PTFS-Europe
 
