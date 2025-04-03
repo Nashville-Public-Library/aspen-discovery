@@ -71,8 +71,14 @@ class SearchObjectFactory {
 			case 'summon' :
 				$engine = 'Summon';
 				break;
+			case 'talpa' :
+				$engine = 'Talpa';
+				break;
 			case 'series' :
 				$engine = 'Series';
+				break;
+			case 'course_reserves':
+				$engine = 'CourseReserves';
 				break;
 			default:
 				$systemVariables = SystemVariables::getSystemVariables();
@@ -142,6 +148,9 @@ class SearchObjectFactory {
 				break;
 			case 'series' :
 				$source = 'Series';
+				break;
+			case 'course_reserves':
+				$source = 'CourseReserves';
 				break;
 			default:
 				$source = 'GroupedWork';

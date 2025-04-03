@@ -391,6 +391,11 @@ class Koha extends AbstractIlsDriver {
 						$error = str_replace('</h3>', '</h4>', $error);
 						$result['success'] = true;
 						$result['messages'][] = trim($error);
+					} elseif (preg_match('%<div class="alert alert-error">(.*?)</div>%s', $postResults, $messageInformation)) {
+						$error = $messageInformation[1];
+						$error = str_replace('<h3>', '<h4>', $error);
+						$error = str_replace('</h3>', '</h4>', $error);
+						$result['messages'][] = trim($error);
 					} elseif (preg_match('%<div class="alert">(.*?)</div>%s', $postResults, $messageInformation)) {
 						$error = $messageInformation[1];
 						$result['messages'][] = trim($error);
@@ -5814,6 +5819,7 @@ class Koha extends AbstractIlsDriver {
 			}
 		}
 		$preferenceRS->close();
+
 		return $allowed;
 	}
 
@@ -5880,9 +5886,20 @@ class Koha extends AbstractIlsDriver {
 
 		//Get the list of notices to display information for
 		/** @noinspection SqlResolve */
+		$systemPreferencesSql = "SELECT variable,value FROM systempreferences WHERE variable='ILLModule' OR variable='MembershipExpiryDaysNotice' OR variable='AutoRenewalNotices' OR variable='UseRecalls';";
+		$systemPreferencesRS = mysqli_query($this->dbConnection,$systemPreferencesSql);
+		$preferences = [];
+		while($systemPreference = $systemPreferencesRS->fetch_assoc()){
+			$variable = $systemPreference['variable'];
+			$value = $systemPreference['value'];
+			$preferences[$variable] = $value;
+		}
+		$systemPreferencesRS->close();
+
+
+
 		$messageAttributesSql = "SELECT * FROM message_attributes";
 		$messageAttributesRS = mysqli_query($this->dbConnection, $messageAttributesSql);
-		$messageAttributes = [];
 		while ($messageType = $messageAttributesRS->fetch_assoc()) {
 			switch ($messageType['message_name']) {
 				case "Item_Due":
@@ -5921,7 +5938,32 @@ class Koha extends AbstractIlsDriver {
 			$messageAttributes[] = $messageType;
 		}
 		$messageAttributesRS->close();
-		$interface->assign('messageAttributes', $messageAttributes);
+		$activeMessagesAttributes = [];
+		
+		foreach($messageAttributes as $messageAttribute){
+
+			# Check if the ILL Module is enabled and if the attribute's name starts with 'ill_.
+			$isDisableILLModule = !$preferences['ILLModule'] && str_starts_with($messageAttribute['message_name'],"Ill_");
+
+			# Check if MembershipExpiryDaysNotice preference is set.
+			# Also checks if the attribute's name is "Auto_Renewals"
+			# If it is enable then the user will be notified about his account expiration.
+			$isDisableExpiryNotice = $messageAttribute['message_name'] == "Patron_Expiry" && !$preferences['MembershipExpiryDaysNotice'];
+
+			# Check if AutoRenewalNotices preference is set according to patron messaging preferences.
+			# Also checks if the attribute's name is "Auto_Renewals"
+			# Notify to the user about renewals.
+			$isDisableAutoRenewal = $messageAttribute['message_name'] == "Auto_Renewals" && $preferences['AutoRenewalNotices'] != 'preferences';
+
+			# Check if patron use recalls and if the attribute's name starts with 'Recall_.
+			$isDisableUseRecalls = !$preferences['UseRecalls'] && str_starts_with($messageAttribute['message_name'],"Recall_");
+
+			if ($isDisableILLModule || $isDisableExpiryNotice || $isDisableAutoRenewal || $isDisableUseRecalls) {
+				continue;
+			}
+			$activeMessagesAttributes [] = $messageAttribute;			
+		}
+		$interface->assign('messageAttributes', $activeMessagesAttributes);
 
 		//Get messaging settings for the user
 		/** @noinspection SqlResolve */

@@ -146,6 +146,17 @@ AspenDiscovery.Record = (function () {
 						return false;
 					}
 				}
+				var volumeId;
+				var volumeIdField = $('#volumeId');
+				var volumeIdSelectField = $('#volumeIdSelect option:selected');
+				var volumeSelected = false;
+				if (volumeIdSelectField !== undefined) {
+					volumeId = volumeIdSelectField.val()
+					volumeSelected = true;
+				} else if (volumeIdField !== undefined) {
+					volumeId = volumeIdField.val();
+					volumeSelected = true;
+				}
 				var params = {
 					'method': 'submitLocalIllRequest',
 					title: $('#title').val(),
@@ -158,7 +169,8 @@ AspenDiscovery.Record = (function () {
 					pickupLocation: $('#pickupLocationSelect').val(),
 					catalogKey: $('#catalogKey').val(),
 					note: $('#note').val(),
-					volumeId: $('#volumeId').val()
+					volumeId: volumeId,
+					volumeSelected: volumeSelected
 				};
 				var url = Globals.path + "/" + module + "/" + id + "/AJAX?method=submitLocalIllRequest";
 				$.getJSON(url, params, function (data) {
@@ -396,9 +408,28 @@ AspenDiscovery.Record = (function () {
 		},
 
 		placeVolumeHold: function () {
-			var selectedVolume = $("#selectedVolume option:selected").val() ;
-			if (selectedVolume === 'unselected'){
-				alert("You must select a volume before continuing");
+			const $volumeSelect = $("#selectedVolume");
+			const selectedVolume = $volumeSelect.find("option:selected").val();
+			const $holdTypeBib = $("#holdTypeBib");
+
+			$('#holdTypeBib').off('change.volumeValidation');
+			$('#selectedVolume').off('change.volumeValidation');
+			$("#volumeSelectionError").remove();
+
+			$volumeSelect.on("change.volumeValidation", (e) => {
+				if (e.target.value !== "unselected" || $holdTypeBib.is(':checked')) {
+					$("#volumeSelectionError").remove();
+				}
+			});
+
+			// Only validate volume selection when "Specific Volume" radio is checked.
+			if (selectedVolume === 'unselected' && (!$holdTypeBib.length || !$holdTypeBib.is(':checked'))){
+				const errorHtml = `
+					<div id="volumeSelectionError" class="alert alert-danger mt-3" role="alert">
+						Please select a volume before attempting to place a hold.
+					</div>
+				`;
+				$('#volumeSelection').prepend(errorHtml);
 				return false;
 			}
 
@@ -434,7 +465,7 @@ AspenDiscovery.Record = (function () {
 			if (holdType.length > 0) {
 				params['holdType'] = holdType.val();
 			} else {
-				if ($('#holdTypeBib').is(':checked')) {
+				if ($holdTypeBib.is(':checked')) {
 					params['holdType'] = 'bib';
 				} else {
 					params['holdType'] = 'volume';

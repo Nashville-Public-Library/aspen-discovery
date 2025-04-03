@@ -39,6 +39,9 @@ class SearchSources {
 			case 'series':
 				$searchObject = SearchObjectFactory::initSearchObject('Series');
 				break;
+			case 'talpa':
+				$searchObject = SearchObjectFactory::initSearchObject("Talpa");
+				break;
 			case 'catalog':
 			default:
 				/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */ $searchObject = SearchObjectFactory::initSearchObject();
@@ -96,6 +99,7 @@ class SearchSources {
 		$searchEbscohost = array_key_exists('EBSCOhost', $enabledModules) && $library->ebscohostSearchSettingId != -1;
 		$searchSummon = array_key_exists('Summon', $enabledModules) && $library->summonSettingsId != -1;
 		$searchOpenArchives = array_key_exists('Open Archives', $enabledModules) && $library->enableOpenArchives == 1;
+		$searchTalpa = array_key_exists('Talpa Search', $enabledModules) && $library->enableTalpaSearch == 1;
 		$searchCourseReserves = $library->enableCourseReserves == 2;
 		$searchSeries = array_key_exists('Series', $enabledModules) && $library->useSeriesSearchIndex == 1;
 
@@ -307,6 +311,19 @@ class SearchSources {
 				'name' => 'Genealogy Records',
 				'description' => 'Genealogy Records',
 				'catalogType' => 'genealogy',
+				'hasAdvancedSearch' => false,
+			];
+		}
+		if ($searchTalpa) {
+			require_once ROOT_DIR . '/sys/Talpa/TalpaSettings.php';
+			$talpaSettings = new TalpaSettings();
+			if (!$talpaSettings->find(true)) {
+				$talpaSettings = null;
+			}
+			$searchOptions['talpa'] = [
+				'name' => $talpaSettings->talpaSearchSourceString?:'Talpa Search',
+				'description' => $talpaSettings->talpaSearchSourceString?:'Talpa Search',
+				'catalogType' => 'talpa',
 				'hasAdvancedSearch' => false,
 			];
 		}

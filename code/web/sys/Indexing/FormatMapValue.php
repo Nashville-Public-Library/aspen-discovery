@@ -63,6 +63,7 @@ class FormatMapValue extends DataObject {
 				'maxLength' => '255',
 				'required' => false,
 				'forcesReindex' => true,
+				'forcesRegroup' => true,
 				'onchange' => 'return AspenDiscovery.Admin.calculateGroupingCategories(this);',
 			],
 			'formatCategory' => [
@@ -73,6 +74,7 @@ class FormatMapValue extends DataObject {
 				'values' => $formatCategories,
 				'required' => true,
 				'forcesReindex' => true,
+				'forcesRegroup' => true,
 				'onchange' => 'return AspenDiscovery.Admin.calculateGroupingCategories(this);',
 			],
 			'groupingCategory' => [
@@ -80,6 +82,7 @@ class FormatMapValue extends DataObject {
 				'type' => 'dynamic_label',
 				'label' => 'Grouping Category',
 				'description' => 'The Grouping Category for the format',
+				'readOnly' => true,
 			],
 			'formatBoost' => [
 				'property' => 'formatBoost',
@@ -228,5 +231,27 @@ class FormatMapValue extends DataObject {
 			}
 		}
 		return parent::__get($name);
+	}
+
+	/**
+	 * Override delete to ensure format map deletions trigger regrouping because
+	 * the forcesRegroup flag exists on properties inside FormatMapValue objects,
+	 * not on the parent relationship in IndexingProfile, which the standard deletion process cannot detect.
+	 *
+	 * @param bool $useWhere
+	 * @return int
+	 */
+	public function delete($useWhere = false) : int {
+		// Check if we're deleting a specific record (i.e., not a bulk delete).
+		if (!$useWhere && !empty($this->id)) {
+			// Trigger regrouping if a format value is being deleted.
+			$objectStructure = self::getObjectStructure();
+			if (isset($objectStructure['format'])) {
+				$this->handlePropertyChangeEffects('format', $this->format, null, $objectStructure['format'], 'deleted');
+			}
+		}
+
+		// Call parent delete to perform the actual deletion.
+		return parent::delete($useWhere);
 	}
 }

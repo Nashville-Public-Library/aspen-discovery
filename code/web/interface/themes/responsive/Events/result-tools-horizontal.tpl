@@ -17,7 +17,7 @@
 							{if $upcomingInstanceCount > 1}
 								<div class="btn-group">
 									<button data-toggle="dropdown" class="btn btn-sm btn-tools btn-default dropdown-toggle" aria-haspopup="true" aria-expanded="false" id="export_{$recordDriver->getUniqueID()|escape}">
-										{translate text="Export" isPublicFacing=true}
+										{translate text="Export" isPublicFacing=true}&nbsp;
 										<span class="caret"></span>
 									</button>
 									<ul class="dropdown-menu" aria-labelledby="export_{$recordDriver->getUniqueID()|escape}">

@@ -528,9 +528,19 @@ class GreenhouseAPI extends AbstractAPI {
 						}
 						if($theme->headerLogoApp) {
 							$themeArray['headerLogo'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
+							[
+								$width,
+								$height,
+							] = @getimagesize(ROOT_DIR . '/files/original/' . $theme->headerLogoApp);
+							$themeArray['headerLogoWidth'] = $width;
+							$themeArray['headerLogoHeight'] = $height;
 						}else{
 							$themeArray['headerLogo'] = '';
+							$themeArray['headerLogoWidth'] = 0;
+							$themeArray['headerLogoHeight'] = 0;
 						}
+						$themeArray['headerLogoAlignment'] = $theme->headerLogoAlignmentApp;
+						$themeArray['headerLogoBackgroundColor'] = $theme->headerLogoAlignmentApp;
 						$themeArray['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
 						$themeArray['primaryForegroundColor'] = $theme->primaryForegroundColor;
 						$themeArray['secondaryBackgroundColor'] = $theme->secondaryBackgroundColor;
