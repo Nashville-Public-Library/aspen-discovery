@@ -465,7 +465,7 @@ AspenDiscovery.Record = (function () {
 			if (holdType.length > 0) {
 				params['holdType'] = holdType.val();
 			} else {
-				if (holdTypeBib.is(':checked')) {
+				if ($holdTypeBib.is(':checked')) {
 					params['holdType'] = 'bib';
 				} else {
 					params['holdType'] = 'volume';
