@@ -51,6 +51,9 @@ jobs:
           file: docker/Dockerfile
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           tags: |
+            aspendiscovery/aspen:latest
+            ghcr.io/aspen-discovery/aspen:latest
+            quay.io/aspen-discovery/aspen:latest
             aspendiscovery/aspen:${{ env.GIT_TAG }}
             ghcr.io/aspen-discovery/aspen:${{ env.GIT_TAG }}
             quay.io/aspen-discovery/aspen:${{ env.GIT_TAG }}
@@ -103,6 +106,9 @@ jobs:
           file: docker/files/solr/Dockerfile
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           tags: |
+            aspendiscovery/solr:latest
+            ghcr.io/aspen-discovery/solr:latest
+            quay.io/aspen-discovery/solr:latest
             aspendiscovery/solr:${{ env.GIT_TAG }}
             ghcr.io/aspen-discovery/solr:${{ env.GIT_TAG }}
             quay.io/aspen-discovery/solr:${{ env.GIT_TAG }}
@@ -155,6 +161,9 @@ jobs:
           file: docker/files/tunnel/Dockerfile
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           tags: |
+            aspendiscovery/tunnel:latest
+            ghcr.io/aspen-discovery/tunnel:latest
+            quay.io/aspen-discovery/tunnel:latest
             aspendiscovery/tunnel:${{ env.GIT_TAG }}
             ghcr.io/aspen-discovery/tunnel:${{ env.GIT_TAG }}
             quay.io/aspen-discovery/tunnel:${{ env.GIT_TAG }}

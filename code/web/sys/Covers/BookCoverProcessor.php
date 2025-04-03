@@ -158,6 +158,12 @@ class BookCoverProcessor {
 				if ($this->getEbraryCover($this->id)) {
 					return true;
 				}
+			} elseif (stripos($this->type, 'talpa') !== false) {
+				$this->isn = $this->id;
+				if ($this->getCoverFromProvider()) {
+					return true;
+				}
+
 			} elseif (stripos($this->type, 'zinio') !== false) {
 				if ($this->getZinioCover($this->type . ':' . $this->id)) {
 					return true;
@@ -1942,9 +1948,15 @@ class BookCoverProcessor {
 
 	private function getUploadedListCover($id) {
 		$uploadedImage = $this->bookCoverPath . '/original/lists/' . $id . '.png';
-		$source = $this->bookCoverInfo->imageSource;
+		$source = $this->bookCoverInfo->imageSource ?? '';
 		if (($source == 'upload' || $source == '') && file_exists($uploadedImage)) {
 			return $this->processImageURL($source, $uploadedImage);
+		}
+
+		// If not found, check the original directory as fallback (DIS-568).
+		$originalImage = $this->bookCoverPath . '/original/' . $id . '.png';
+		if (($source == 'upload' || $source == '') && file_exists($originalImage)) {
+			return $this->processImageURL($source, $originalImage);
 		}
 		return false;
 	}
