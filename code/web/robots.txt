@@ -51,6 +51,7 @@ Disallow: /Record/Search/
 Disallow: /Search/AJAX
 Disallow: /SideLoads/*/AJAX*
 Disallow: /SideLoads/AJAX
+Disallow: /SnapPay/Complete
 Disallow: /cgi-bin/
 Disallow: /images/fiveStar/
 
