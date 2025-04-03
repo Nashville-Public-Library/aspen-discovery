@@ -374,6 +374,33 @@ class Search_Results extends ResultsAction {
 		} else {
 			$interface->assign('showShareItLink', false);
 		}
+		global $enabledModules;
+		if (array_key_exists('Talpa Search', $enabledModules)) {
+			require_once ROOT_DIR . '/sys/SearchObject/SearchObjectFactory.php';
+			$_talpaSearchObject = SearchObjectFactory::initSearchObject("Talpa");
+			$_talpaSearchObject->setSearchSource('talpa');
+			$_talpaSearchObject->setBasicQuery($searchObject->getQuery(), 'title');
+			$talpaSearchUrl = $_talpaSearchObject->renderSearchUrl();
+			$talpaSearchUrl = str_replace('/Search/Results','/Union/Search', $talpaSearchUrl);
+			$interface->assign('talpaSearchLink', $talpaSearchUrl);
+
+			//Retrieve Talpa Display settings to use in result.tpl
+
+			require_once ROOT_DIR . '/sys/Talpa/TalpaSettings.php';
+			if ($library->talpaSettingsId != -1) {
+				$talpaSettings = new TalpaSettings();
+				$talpaSettings->id = $library->talpaSettingsId;
+				if (!$talpaSettings->find(true)) {
+					$talpaSettings = null;
+				} else {
+					$interface->assign('talpaTryItButton', $talpaSettings->talpaTryItButton);
+					$interface->assign('tryThisSearchInTalpaText', $talpaSettings->tryThisSearchInTalpaText?:'Try this search in Talpa');
+					$interface->assign('tryThisSearchInTalpaSidebarSwitch', $talpaSettings->tryThisSearchInTalpaSidebarSwitch);
+					$interface->assign('tryThisSearchInTalpaNoResultsSwitch', $talpaSettings->tryThisSearchInTalpaNoResultsSwitch);
+					$interface->assign('talpaExplainerText', $talpaSettings->talpaExplainerText);
+				}
+			}
+		}
 
 		// Save the ID of this search to the session so we can return to it easily:
 		$_SESSION['lastSearchId'] = $searchObject->getSearchId();

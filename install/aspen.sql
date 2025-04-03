@@ -7338,6 +7338,12 @@ CREATE TABLE `xpresspay_settings` (
   `paymentTypeCode` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;DROP TABLE IF EXISTS talpa_settings;
+CREATE TABLE `talpa_settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `talpaApiToken` varchar(50) DEFAULT '',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 DROP TABLE IF EXISTS year_in_review_settings;
 CREATE TABLE `year_in_review_settings` (
