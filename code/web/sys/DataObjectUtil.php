@@ -562,8 +562,11 @@ class DataObjectUtil {
 						}
 					}
 
-					$deleted = isset($deletions[$id]) ? $deletions[$id] : false;
+					$deleted = $deletions[$id] ?? false;
 					if ($deleted == 'true') {
+						if ($subObject->getPrimaryKeyValue() > 0) {
+							$object->handlePropertyChangeEffects($propertyName, $subObject, null, $property, 'deleted', 'oneToMany entry');
+						}
 						$subObject->_deleteOnSave = true;
 					} else {
 						//Update properties of each associated object
@@ -600,6 +603,7 @@ class DataObjectUtil {
 									'label',
 									'foreignKey',
 									'oneToMany',
+									'dynamic_label',
 								])) {
 									//echo("Invalid Property Type " . $subProperty['type']);
 									$logger->log("Invalid Property Type " . $subProperty['type'], Logger::LOG_DEBUG);

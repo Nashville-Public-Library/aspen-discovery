@@ -875,7 +875,7 @@ abstract class DataObject implements JsonSerializable {
 	protected function saveOneToManyOptions($oneToManySettings, $keyOther) {
 		/** @var DataObject $oneToManyDBObject */
 		foreach ($oneToManySettings as $oneToManyDBObject) {
-			if ($oneToManyDBObject->_deleteOnSave == true) {
+			if ($oneToManyDBObject->_deleteOnSave) {
 				if ($oneToManyDBObject->getPrimaryKeyValue() > 0) {
 					$oneToManyDBObject->delete();
 				}
@@ -984,12 +984,7 @@ abstract class DataObject implements JsonSerializable {
 				}
 			}
 			$this->$propertyName = $newValue;
-			if ($propertyStructure != null && !empty($propertyStructure['forcesReindex'])) {
-				require_once ROOT_DIR . '/sys/SystemVariables.php';
-				global $logger;
-				SystemVariables::forceNightlyIndex();
-				$logger->log("Forcing Nightly Index because $propertyName on " . get_class($this) . ' - ' . $this->getPrimaryKeyValue() . " was changed to $newValue by user " . UserAccount::getActiveUserId(), Logger::LOG_ALERT);
-			}
+			$this->handlePropertyChangeEffects($propertyName, $oldValue, $newValue, $propertyStructure, 'changed');
 			//Add the change to the history unless tracking the history is off (passwords)
 			if ($propertyStructure != null && $propertyStructure['type'] != 'password' && $propertyStructure['type'] != 'storedPassword') {
 				if ($this->objectHistoryEnabled()) {
@@ -1435,5 +1430,47 @@ abstract class DataObject implements JsonSerializable {
 		return [];
 	}
 
+	/**
+	 * Handle various side effects that may need to occur when a property changes.
+	 *
+	 * @param string $propertyName The name of the property that was changed.
+	 * @param mixed $oldValue The previous value of the property.
+	 * @param mixed $newValue The new value of the property.
+	 * @param ?array $propertyStructure The property structure containing metadata.
+	 * @param string $operation The operation being performed (changed, deleted, etc.).
+	 * @param ?string $additionalInfo Optional additional context information.
+	 * @return void
+	 */
+	public function handlePropertyChangeEffects(string $propertyName, mixed $oldValue, mixed $newValue, ?array $propertyStructure, string $operation, ?string $additionalInfo = null): void {
+		if ($propertyStructure != null) {
+			if (!empty($propertyStructure['forcesReindex'])) {
+				require_once ROOT_DIR . '/sys/SystemVariables.php';
+				global $logger;
+				SystemVariables::forceNightlyIndex();
 
+				$objectType = get_class($this);
+				$objectId = $this->getPrimaryKeyValue() ?: 'new';
+				$safeOldValue = is_array($oldValue) ? 'array' : (is_object($oldValue) ? 'object' : ($oldValue ?? 'empty'));
+				$safeNewValue = is_array($newValue) ? 'array' : (is_object($newValue) ? 'object' : ($newValue ?? 'empty'));
+				$userId = UserAccount::getActiveUserId() ?: 'system';
+				$additionalContext = $additionalInfo ? " ($additionalInfo)" : '';
+
+				$logger->log("Forcing nightly index because $propertyName on $objectType ($objectId) was $operation from '$safeOldValue' to '$safeNewValue' by user $userId$additionalContext.", Logger::LOG_ALERT);
+			}
+			if (!empty($propertyStructure['forcesRegroup'])) {
+				require_once ROOT_DIR . '/sys/SystemVariables.php';
+				global $logger;
+				SystemVariables::forceRegrouping();
+
+				$objectType = get_class($this);
+				$objectId = $this->getPrimaryKeyValue() ?: 'new';
+				$safeOldValue = is_array($oldValue) ? 'array' : (is_object($oldValue) ? 'object' : ($oldValue ?? 'empty'));
+				$safeNewValue = is_array($newValue) ? 'array' : (is_object($newValue) ? 'object' : ($newValue ?? 'empty'));
+				$userId = UserAccount::getActiveUserId() ?: 'system';
+				$additionalContext = $additionalInfo ? " ($additionalInfo)" : '';
+
+				$logger->log("Forcing regrouping because $propertyName on $objectType ($objectId) was $operation from '$safeOldValue' to '$safeNewValue' by user $userId$additionalContext.", Logger::LOG_ALERT);
+			}
+		}
+	}
 }
