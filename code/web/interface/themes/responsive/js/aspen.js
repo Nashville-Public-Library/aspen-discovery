@@ -12011,24 +12011,101 @@ AspenDiscovery.CloudLibrary = (function () {
 		},
 
 		renewCheckout: function (patronId, recordId) {
+			var $checkoutRow = $('.cloudLibraryCheckout_' + recordId);
+			var $renewButton = $checkoutRow.find('a').filter(function() {
+				return $(this).text().indexOf('Renew Checkout') >= 0;
+			});
+
+			var originalButtonText = $renewButton.html();
+			$renewButton.html('<i class="fas fa-spinner fa-spin"></i> Renewing...');
+			$renewButton.addClass('disabled').attr('disabled', 'disabled');
+
+			var $expiresRow = $checkoutRow.find('.row').filter(function() {
+				var label = $(this).find('.result-label').text().trim();
+				return label === 'Expires' || label.indexOf('Expires') === 0;
+			});
+
+			$expiresRow.css('background-color', '#f0f0f0');
+			var pulseEffect = setInterval(function() {
+				$expiresRow.fadeTo(700, 0.7).fadeTo(700, 1);
+			}, 1400);
+
 			var url = Globals.path + "/CloudLibrary/AJAX?method=renewCheckout&patronId=" + patronId + "&recordId=" + recordId;
 			$.ajax({
 				url: url,
 				cache: false,
 				success: function (data) {
+					clearInterval(pulseEffect);
+					$expiresRow.stop(true, true).css('opacity', '1');
+
+					$renewButton.html(originalButtonText);
+					$renewButton.removeClass('disabled').removeAttr('disabled');
+
 					if (data.success) {
 						AspenDiscovery.showMessage("Title Renewed", data.message, true);
-					} else {
-						AspenDiscovery.showMessage("Unable to Renew Title", data.message, true);
-					}
 
+						AspenDiscovery.Account.loadMenuData();
+
+						if (data.dueDate) {
+							var $dueDateElement = $expiresRow.find('.result-value');
+
+							if ($dueDateElement.length) {
+								$dueDateElement.text(data.dueDate);
+
+								$expiresRow.css('background-color', '#dff0d8');
+								setTimeout(function() {
+									$expiresRow.css('background-color', '');
+								}, 5000);
+
+								$renewButton.closest('.btn-group').find('a').filter(function() {
+									return $(this).text().indexOf('Renew Checkout') >= 0;
+								}).hide();
+
+								setTimeout(function() {
+									var currentSource = 'cloud_library';
+									if (AspenDiscovery.Account.currentCheckoutsSource) {
+										currentSource = AspenDiscovery.Account.currentCheckoutsSource;
+									}
+
+									var sort = $('#accountSort_' + currentSource).length ?
+										$('#accountSort_' + currentSource + ' option:selected').val() : 'title';
+									var $coversEl = $('#hideCovers_' + currentSource);
+									var showCovers = $coversEl.length ? !$coversEl.is(':checked') : true;
+
+									AspenDiscovery.Account.loadCheckouts(currentSource, sort, showCovers);
+								}, 2000);
+							}
+						}
+					} else {
+						var errorTitle = data.api && data.api.title ? data.api.title : "Unable to Renew Title";
+						AspenDiscovery.showMessage(errorTitle, data.message, true);
+
+						$expiresRow.css('background-color', '#f2dede');
+						setTimeout(function() {
+							$expiresRow.css('background-color', '');
+						}, 3000);
+					}
 				},
 				dataType: 'json',
-				async: false,
+				async: true,
 				error: function () {
-					AspenDiscovery.showMessage("Error Renewing Checkout", "An error occurred processing your request in cloudLibrary.  Please try again in a few minutes.", false);
+					clearInterval(pulseEffect);
+					$expiresRow.stop(true, true).css('opacity', '1');
+
+					$renewButton.html(originalButtonText);
+					$renewButton.removeClass('disabled').removeAttr('disabled');
+
+					$expiresRow.css('background-color', '#f2dede');
+					setTimeout(function() {
+						$expiresRow.css('background-color', '');
+					}, 3000);
+
+					AspenDiscovery.showMessage("Error Renewing Checkout", "An error occurred processing your request in cloudLibrary. Please try again in a few minutes.", false);
 				}
 			});
+
+			// Prevent default anchor behavior
+			return false;
 		},
 
 		returnCheckout: function (patronId, recordId) {
@@ -12376,27 +12453,32 @@ AspenDiscovery.Events = (function(){
 						$("#sublocationIdSelect").html("");
 						$("#propertyRowsublocationId").hide();
 					}
-					if (data.eventTypeIds.length > 0) {
-						$("#eventTypeIdSelect option").each(function () {
-							if (!data.eventTypeIds.includes($(this).val())) {
-								$(this).attr('disabled', 'disabled');
-								$(this).removeAttr('selected');
-								$(this).hide();
-							} else {
-								$(this).removeAttr('disabled');
-								$(this).show();
-							}
+					if (data.eventTypes && data.eventTypes.length > 0) {
+						var eventTypes = JSON.parse(data.eventTypes);
+						$("#eventTypeIdSelect").html("");
+						$("<option/>", {
+							value: '',
+							text: "Choose an event type"
+						}).appendTo("#eventTypeIdSelect");
+						Object.keys(eventTypes).forEach(function (key) {
+							$("<option/>", {
+								value: key,
+								text: eventTypes[key]
+							}).appendTo("#eventTypeIdSelect");
 						});
 						$("#propertyRoweventTypeId").show();
-					} else {
-						AspenDiscovery.showMessage(data.title, data.message);
-						$("#eventTypeIdSelect option").each(function () {
-							$(this).attr('disabled', 'disabled');
-							$(this).removeAttr('selected');
-						});
-						$("#propertyRoweventTypeId").hide();
 						$("#propertyRowtitle").hide();
 						$("#propertyRowinfoSection").hide();
+						$("#propertyRowscheduleSection").hide();
+					} else {
+						$("#eventTypeIdSelect").html("");
+						$("<option/>", {
+							value: '',
+							text: "No event types available at this location"
+						}).appendTo("#eventTypeIdSelect");
+						$("#propertyRowtitle").hide();
+						$("#propertyRowinfoSection").hide();
+						$("#propertyRowscheduleSection").hide();
 					}
 				} else {
 					AspenDiscovery.showMessage('An error occurred ', data.message);
@@ -12413,35 +12495,62 @@ AspenDiscovery.Events = (function(){
 
 			$.getJSON(url, params, function (data) {
 				if (data.success) {
-					eventType = data.eventType;
-					$("#title").val(eventType.title);
-					if (!eventType.titleCustomizable) {
-						$("#title").attr('readonly', 'readonly');
+					if (data.status == "resetForm") {
+						$("#eventTypeIdSelect").val("");
+						$("#propertyRowtitle").hide();
+						$("#propertyRowinfoSection").hide();
+						$("#propertyRowscheduleSection").hide();
+						$("#description").text("");
+						return false;
 					} else {
-						$("#title").removeAttr('readonly');
+						eventType = data.eventType;
+						$("#title").val(eventType.title);
+						if (!eventType.titleCustomizable) {
+							$("#title").attr('readonly', 'readonly');
+						} else {
+							$("#title").removeAttr('readonly');
+						}
+						var descriptionEditor = tinymce.get("description");
+						$("#description").text(eventType.description);
+						descriptionEditor.setContent(eventType.description);
+						if (!eventType.descriptionCustomizable) {
+							$("#description").attr('readonly', 'readonly');
+							descriptionEditor.setMode("readonly");
+						} else {
+							descriptionEditor.setMode("design");
+							$("#description").removeAttr('readonly');
+						}
+						$("#importFile-label-cover").val(eventType.cover);
+						if (!eventType.coverCustomizable) {
+							$("#importFile-label-cover").attr('readonly', 'readonly');
+						} else {
+							$("#importFile-label-cover").removeAttr('readonly');
+						}
+						if (eventType.eventLength != null) {
+							var minutes = eventType.eventLength % 60;
+							var hours = Math.floor(eventType.eventLength / 60);
+							$("#eventLength_hours").val(hours);
+							$("#eventLength_minutes").val(minutes);
+						}
+						$("#eventLength").val(eventType.eventLength);
+						if (!eventType.lengthCustomizable) {
+							$("#eventLength_minutes").attr('readonly', 'readonly');
+							$("#eventLength_hours").attr('readonly', 'readonly');
+							$("#eventLength").attr('readonly', 'readonly');
+						} else {
+							$("#eventLength").removeAttr('readonly');
+							$("#eventLength_minutes").removeAttr('readonly');
+							$("#eventLength_hours").removeAttr('readonly');
+						}
+						$("#accordion_body_Fields_for_this_Event_Type .panel-body").html(data.typeFields);
+						$('#accordion_body_Fields_for_this_Event_Type [data-toggle="tooltip"]').tooltip();
+						$("#propertyRowtitle").show();
+						$("#propertyRowinfoSection").show();
+						$("#propertyRowscheduleSection").show();
+						$("#propertyRowinfoSection .propertyRow").show();
+						descriptionEditor.hide();
+						descriptionEditor.show(); // Prevents editor from being collapsed if it's been hidden
 					}
-					$("#description").val(eventType.description);
-					if (!eventType.descriptionCustomizable) {
-						$("#description").attr('readonly', 'readonly');
-					} else {
-						$("#description").removeAttr('readonly');
-					}
-					$("#importFile-label-cover").val(eventType.cover);
-					if (!eventType.coverCustomizable) {
-						$("#importFile-label-cover").attr('readonly', 'readonly');
-					} else {
-						$("#importFile-label-cover").removeAttr('readonly');
-					}
-					$("#eventLength").val(eventType.eventLength);
-					if (!eventType.lengthCustomizable) {
-						$("#eventLength").attr('readonly', 'readonly');
-					} else {
-						$("#eventLength").removeAttr('readonly');
-					}
-					$("#accordion_body_Fields_for_this_Event_Type .panel-body").html(data.typeFields);
-					$("#propertyRowtitle").show();
-					$("#propertyRowinfoSection").show();
-					$("#propertyRowinfoSection .propertyRow").show();
 				} else {
 					AspenDiscovery.showMessage('An error occurred ', data.message);
 				}
@@ -12760,7 +12869,17 @@ AspenDiscovery.Events = (function(){
 					resetRecurrenceSections();
 					AspenDiscovery.Events.expandPanel("#accordion_Repeat_Frequency");
 					$("#propertyRowfrequencySection").show();
+					// Get current value of repeat frequency and open appropriate panels
+					$repeatFrequency = $("#recurrenceFrequencySelect").val();
+					if ($repeatFrequency == "2") { // weekly
+						$("#propertyRowweeklySection").show();
+						AspenDiscovery.Events.expandPanel("#propertyRowweeklySection");
+					} else if ($repeatFrequency == "3") { //monthly
+						$("#propertyRowmonthlySection").show();
+						AspenDiscovery.Events.expandPanel("#propertyRowmonthlySection");
+					}
 					$("#propertyRowrepeatEndsSection").show();
+					$("#propertyRowdatesPreview").show();
 					break;
 			}
 			AspenDiscovery.Events.calculateRecurrenceDates();
@@ -12863,6 +12982,49 @@ AspenDiscovery.Events = (function(){
 					document.body.removeChild(element);
 				}
 			});
+		},
+		showCopyEventsForm: function (eventId) {
+			var url = Globals.path + "/Events/AJAX";
+			var params = {
+				method: 'getCopyEventsForm',
+				eventId: eventId
+			};
+			$.getJSON(url, params,
+				function (data) {
+					if (data.success) {
+						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons);
+					} else {
+						AspenDiscovery.showMessage(data.title, data.message);
+					}
+				}
+			).fail(AspenDiscovery.ajaxFail);
+			return false;
+		},
+		processCopyEventsForm: function () {
+			var url = Globals.path + "/Events/AJAX";
+			var eventName = $('#eventName').val();
+			var eventId = $('#eventId').val();
+			var eventLocation = $('#eventLocation').val();
+			var sublocationId = $('#sublocationIdSelect').val();
+			var eventDate = $('#eventDate').val();
+			var params = {
+				method: 'doCopyEvent',
+				id: eventId,
+				name: eventName,
+				locationId: eventLocation,
+				sublocationId: sublocationId,
+				date: eventDate
+			};
+			$.getJSON(url, params,
+				function (data) {
+					if (data.success) {
+						AspenDiscovery.showMessage(data.title, data.message, true, true);
+					} else {
+						AspenDiscovery.showMessage(data.title, data.message);
+					}
+				}
+			).fail(AspenDiscovery.ajaxFail);
+			return false;
 		}
 	};
 }(AspenDiscovery.Events || {}));
@@ -15032,6 +15194,17 @@ AspenDiscovery.Record = (function () {
 						return false;
 					}
 				}
+				var volumeId;
+				var volumeIdField = $('#volumeId');
+				var volumeIdSelectField = $('#volumeIdSelect option:selected');
+				var volumeSelected = false;
+				if (volumeIdSelectField !== undefined) {
+					volumeId = volumeIdSelectField.val()
+					volumeSelected = true;
+				} else if (volumeIdField !== undefined) {
+					volumeId = volumeIdField.val();
+					volumeSelected = true;
+				}
 				var params = {
 					'method': 'submitLocalIllRequest',
 					title: $('#title').val(),
@@ -15044,7 +15217,8 @@ AspenDiscovery.Record = (function () {
 					pickupLocation: $('#pickupLocationSelect').val(),
 					catalogKey: $('#catalogKey').val(),
 					note: $('#note').val(),
-					volumeId: $('#volumeId').val()
+					volumeId: volumeId,
+					volumeSelected: volumeSelected
 				};
 				var url = Globals.path + "/" + module + "/" + id + "/AJAX?method=submitLocalIllRequest";
 				$.getJSON(url, params, function (data) {
@@ -15282,9 +15456,28 @@ AspenDiscovery.Record = (function () {
 		},
 
 		placeVolumeHold: function () {
-			var selectedVolume = $("#selectedVolume option:selected").val() ;
-			if (selectedVolume === 'unselected'){
-				alert("You must select a volume before continuing");
+			const $volumeSelect = $("#selectedVolume");
+			const selectedVolume = $volumeSelect.find("option:selected").val();
+			const $holdTypeBib = $("#holdTypeBib");
+
+			$('#holdTypeBib').off('change.volumeValidation');
+			$('#selectedVolume').off('change.volumeValidation');
+			$("#volumeSelectionError").remove();
+
+			$volumeSelect.on("change.volumeValidation", (e) => {
+				if (e.target.value !== "unselected" || $holdTypeBib.is(':checked')) {
+					$("#volumeSelectionError").remove();
+				}
+			});
+
+			// Only validate volume selection when "Specific Volume" radio is checked.
+			if (selectedVolume === 'unselected' && (!$holdTypeBib.length || !$holdTypeBib.is(':checked'))){
+				const errorHtml = `
+					<div id="volumeSelectionError" class="alert alert-danger mt-3" role="alert">
+						Please select a volume before attempting to place a hold.
+					</div>
+				`;
+				$('#volumeSelection').prepend(errorHtml);
 				return false;
 			}
 
@@ -15320,7 +15513,7 @@ AspenDiscovery.Record = (function () {
 			if (holdType.length > 0) {
 				params['holdType'] = holdType.val();
 			} else {
-				if ($('#holdTypeBib').is(':checked')) {
+				if ($holdTypeBib.is(':checked')) {
 					params['holdType'] = 'bib';
 				} else {
 					params['holdType'] = 'volume';
@@ -15744,6 +15937,17 @@ AspenDiscovery.Searches = (function(){
 				}).appendTo('#searchForm');
 			}
 		}
+
+		// talpa loading indicator, shown inline in #lookfor
+		$('#searchForm').on('submit', function(ev)
+		{
+			var searchTypeElement = $("#searchSource");
+			if(searchTypeElement.val() == 'talpa') {
+				$('#lookfor').addClass('talpa_search_loading');
+			}
+
+			this.submit();
+		})
 	});
 	return{
 		searchGroups: [],
@@ -15943,6 +16147,10 @@ AspenDiscovery.Searches = (function(){
 					catalogType = selectedSearchType.data("catalog_type");
 					hasAdvancedSearch = selectedSearchType.data("advanced_search");
 					advancedSearchLabel = selectedSearchType.data("advanced_search_label");
+
+					if(searchTypeElement.val() == 'talpa'){
+						var searchBox = $("#lookfor");
+					}
 				}
 			}
 			var url = "/Search/AJAX";
@@ -16171,6 +16379,28 @@ AspenDiscovery.Summon = (function(){
 		}
 	}
 }(AspenDiscovery.Summon || {}));
+AspenDiscovery.Talpa = (function(){
+	return {
+		updateTalpaButtonFields: function(){
+			console.info('updating talpa button fields');
+			var buttonType = $("#talpaTryItButtonSelect option:selected").val();
+
+			if(buttonType==0)
+			{
+				$("#propertyRowtryThisSearchInTalpaText").hide();
+				$("#propertyRowtryThisSearchInTalpaSidebarSwitch").hide();
+				$("#propertyRowtryThisSearchInTalpaNoResultsSwitch").hide();
+			}
+			else
+			{
+				$("#propertyRowtryThisSearchInTalpaText").show();
+				$("#propertyRowtryThisSearchInTalpaSidebarSwitch").show();
+				$("#propertyRowtryThisSearchInTalpaNoResultsSwitch").show();
+			}
+			return false;
+		}
+	};
+}(AspenDiscovery.Talpa || {}));
 /**
  * Create a title scroller object for display
  * 

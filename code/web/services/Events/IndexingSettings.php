@@ -71,10 +71,7 @@ class Events_IndexingSettings extends ObjectEditor {
 	}
 
 	function canView(): bool {
-		if (SystemVariables::getSystemVariables()->enableAspenEvents) {
-			return UserAccount::userHasPermission(['Administer Events for All Locations']);
-		}
-		return false;
+		return UserAccount::userHasPermission(['Administer Events for All Locations']);
 	}
 
 	function canBatchEdit(): bool {

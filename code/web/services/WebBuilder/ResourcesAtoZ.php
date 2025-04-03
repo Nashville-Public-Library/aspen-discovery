@@ -22,7 +22,7 @@ class WebBuilder_ResourcesAtoZ extends Action
 		global $library;
 
 		$webResourceSetting = new WebResourcesSetting();
-		$webResourceSetting->webResourceSettingId = $library->webResourceSettingId;
+		$webResourceSetting->id = $library->webResourcesSettingId;
 
 		//get valid starting letters
 		$startingLetters = new WebResource();
