@@ -10,6 +10,8 @@ import org.aspen_discovery.reindexer.AbstractGroupedWorkSolr;
 import org.aspen_discovery.reindexer.ItemInfo;
 import org.aspen_discovery.reindexer.RecordInfo;
 import org.marc4j.marc.DataField;
+import org.marc4j.marc.Subfield;
+import org.marc4j.marc.ControlField;
 
 import java.util.*;
 
@@ -19,6 +21,8 @@ import java.util.*;
  * May take
  */
 public class IlsRecordFormatClassifier extends MarcRecordFormatClassifier {
+	private boolean missingSubfieldNoted = false;
+
 	public IlsRecordFormatClassifier(Logger logger) {
 		super(logger);
 	}
@@ -30,7 +34,21 @@ public class IlsRecordFormatClassifier extends MarcRecordFormatClassifier {
 		if (settings.getFormatSource().equals("item")) {
 			List<DataField> itemFields = MarcUtil.getDataFields(record, indexingProfile.getItemTagInt());
 			for (DataField itemField : itemFields) {
-				String itemIdentifier = itemField.getSubfield(((IndexingProfile) settings).getItemRecordNumberSubfield()).getData();
+				Subfield recordNumberSubfield = itemField.getSubfield(((IndexingProfile) settings).getItemRecordNumberSubfield());
+				if (recordNumberSubfield == null) {
+					String subfieldCode = ((IndexingProfile) settings).getItemRecordNumberSubfield() + "";
+					ControlField recordIdField = (ControlField) record.getVariableField("001");
+					String recordId = recordIdField != null ? recordIdField.getData() : "unknown";
+
+					logger.warn("Missing item record number subfield {} in item field {} for record {}.", subfieldCode, itemField.getTag(), recordId);
+
+					if (!missingSubfieldNoted) {
+						logEntry.addNote("WARNING: At least one missing item record number subfield found. Check the associated ILS's export logs for details.");
+						missingSubfieldNoted = true;
+					}
+					continue;
+				}
+				String itemIdentifier = recordNumberSubfield.getData();
 				FormatInfo itemFormatInfo = this.getFormatInfoForItem(groupedWork, itemIdentifier, itemField, settings, logEntry, logger);
 				if (itemFormatInfo != null) {
 					formats.add(itemFormatInfo);
