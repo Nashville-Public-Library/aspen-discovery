@@ -2438,7 +2438,7 @@ AspenDiscovery.Admin = (function () {
 							if (ptypeValue === selectedFallbackType && !fallbackWarning) {
 								$fallbackSelect.closest(".form-group").after(`
 									<div id="fallback_warning" class="alert alert-bs53-danger mt-2">
-										<strong>Warning:</strong> The selected fallback patron type "${ptypeLabel}" does not exist in the admin_sso profile.
+										<strong>Warning:</strong> The selected fallback patron type "${ptypeLabel}" is not assigned to the admin_sso profile.
 										This patron type must be assigned to the admin_sso profile for SSO users to receive the correct permissions.
 									</div>
 								`);
@@ -2451,7 +2451,7 @@ AspenDiscovery.Admin = (function () {
 				let warningHtml = `
 					<div id="ssoAuthOnly_warning" class="alert alert-bs53-warning mt-2">
 						<strong>Important:</strong> When "Only authenticate users with single sign-on" is enabled, 
-						you must ensure that patron types used by SSO users assigned to the admin_sso account profile.`;
+						you must ensure that patron types used by SSO users are assigned to the admin_sso account profile.`;
 
 				if (missingLabels.size > 0) {
 					warningHtml += `
