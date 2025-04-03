@@ -15841,6 +15841,17 @@ AspenDiscovery.Searches = (function(){
 				}).appendTo('#searchForm');
 			}
 		}
+
+		// talpa loading indicator, shown inline in #lookfor
+		$('#searchForm').on('submit', function(ev)
+		{
+			var searchTypeElement = $("#searchSource");
+			if(searchTypeElement.val() == 'talpa') {
+				$('#lookfor').addClass('talpa_search_loading');
+			}
+
+			this.submit();
+		})
 	});
 	return{
 		searchGroups: [],
@@ -16040,6 +16051,10 @@ AspenDiscovery.Searches = (function(){
 					catalogType = selectedSearchType.data("catalog_type");
 					hasAdvancedSearch = selectedSearchType.data("advanced_search");
 					advancedSearchLabel = selectedSearchType.data("advanced_search_label");
+
+					if(searchTypeElement.val() == 'talpa'){
+						var searchBox = $("#lookfor");
+					}
 				}
 			}
 			var url = "/Search/AJAX";
@@ -16268,6 +16283,28 @@ AspenDiscovery.Summon = (function(){
 		}
 	}
 }(AspenDiscovery.Summon || {}));
+AspenDiscovery.Talpa = (function(){
+	return {
+		updateTalpaButtonFields: function(){
+			console.info('updating talpa button fields');
+			var buttonType = $("#talpaTryItButtonSelect option:selected").val();
+
+			if(buttonType==0)
+			{
+				$("#propertyRowtryThisSearchInTalpaText").hide();
+				$("#propertyRowtryThisSearchInTalpaSidebarSwitch").hide();
+				$("#propertyRowtryThisSearchInTalpaNoResultsSwitch").hide();
+			}
+			else
+			{
+				$("#propertyRowtryThisSearchInTalpaText").show();
+				$("#propertyRowtryThisSearchInTalpaSidebarSwitch").show();
+				$("#propertyRowtryThisSearchInTalpaNoResultsSwitch").show();
+			}
+			return false;
+		}
+	};
+}(AspenDiscovery.Talpa || {}));
 /**
  * Create a title scroller object for display
  * 

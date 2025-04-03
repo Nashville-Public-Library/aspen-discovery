@@ -8,7 +8,7 @@
 						<img src="{$libKeyCoverImageUrl}" class="listResultImage img-thumbnail {$coverStyle}" alt="{translate text='Cover Image' inAttribute=true isPublicFacing=true}">
 					{else}
 						<img src="{$bookCoverUrlMedium}" class="listResultImage img-thumbnail {$coverStyle}" alt="{translate text='Cover Image' inAttribute=true isPublicFacing=true}">
-					{/if} 
+					{/if}
 				</a>
 			{/if}
 		</div>
@@ -23,7 +23,7 @@
 				</a>
 			</div>
 		</div>
-		{if $retracted}
+		{if !empty($retracted)}
 			<div class="alert alert-warning btn" id="retraction-warning" role="alert" aria-live="polite">
 				<strong><a href="{$libKeyUrl}" target="_blank"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" aria-label="{translate text="Retracted" isPublicFacing=true inAttribute=true} ({translate text="opens in a new window" isPublicFacing=true inAttribute=true})"></span> {translate text='Retracted' isPublicFacing=true}</a> <i class="fas fa-external-link-alt" role="presentation"></i></strong>
 			</div>
