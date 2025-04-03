@@ -46,7 +46,7 @@ class TalpaSettings extends DataObject {
 			],
 			'talpaApiToken' => [
 				'property' => 'talpaApiToken',
-				'type' => 'text',
+				'type' => 'storedPassword',
 				'label' => 'Talpa API Token',
 				'description' => 'The API token to use when connecting to Talpa',
 				'hideInLists' => true,
@@ -62,7 +62,7 @@ class TalpaSettings extends DataObject {
 				'default' => 'Talpa Search',
 			],
 
-//Try this search in Talpa
+			//Try this search in Talpa
 			'tryThisSearchInTalpaSection' => [
 				'property' => 'tryThisSearchInTalpa',
 				'type' => 'section',

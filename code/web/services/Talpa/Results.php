@@ -51,14 +51,15 @@ class Talpa_Results extends ResultsAction {
 				$interface->assign('includeTalpaOtherResultsSwitch',$talpaSettings->includeTalpaOtherResultsSwitch?:1);
 			}
 		}
-			if (!isset($_REQUEST['lookfor']) || empty($_REQUEST['lookfor'])) {
+		if (!isset($_REQUEST['lookfor']) || empty($_REQUEST['lookfor'])) {
 			$_REQUEST['lookfor'] = 'The Man with the Yellow Hat';
 		}
 
-
-		preg_match('/availability_toggle:"(.*?)"/', $_REQUEST['filter'][0], $matches);
-		$locationFilter = $matches[1];
-		$interface->assign('availability_toggle', $locationFilter);
+		if (isset($_REQUEST['filter']) && isset($_REQUEST['filter'][0])) {
+			preg_match('/availability_toggle:"(.*?)"/', $_REQUEST['filter'][0], $matches);
+			$locationFilter = $matches[1];
+			$interface->assign('availability_toggle', $locationFilter);
+		}
 		$interface->assign('showNotInterested', false);
 
 		//Include Search Engine
@@ -184,7 +185,7 @@ class Talpa_Results extends ResultsAction {
 
 		// Save the URL of this search to the session so we can return to it easily; used in Home.php to assign lastSearch interface variable for returning to results list from an individual item.
 		$baseSearchUrl = $searchObject->renderSearchUrl();
-		$currentQueryId = $_REQUEST['queryId'];
+		$currentQueryId = $_REQUEST['queryId'] ?? null;
 		$lastQueryId = $_SESSION['last_query_id'];
 		$lastSearchURL = $baseSearchUrl.'&queryId='.($currentQueryId?:$lastQueryId);
 		$_SESSION['lastSearchURL'] = $lastSearchURL;

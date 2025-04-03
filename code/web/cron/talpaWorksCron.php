@@ -20,14 +20,21 @@ global $logger;
 global $library;
 
 global $library;
+global $enabledModules;
+if (!array_key_exists('Talpa', $enabledModules)) {
+	return;
+}
+
 if ($library->talpaSettingsId != -1) {
 	$talpaSettings = new TalpaSettings();
 	$talpaSettings->id = $library->talpaSettingsId;
 	if (!$talpaSettings->find(true)) {
 		$talpaSettings = null;
+		$logger->log("Talpa settings were not found, quitting", Logger::LOG_NOTICE);
+		exit();
 	}
 }
-$token = $talpaSettings -> talpaApiToken;
+$token = $talpaSettings->talpaApiToken;
 
 
 $logger->log("Running Talpa ISBNs cron", Logger::LOG_NOTICE);
@@ -35,24 +42,24 @@ $logger->log("Running Talpa ISBNs cron", Logger::LOG_NOTICE);
 $noIsbns = 0;
 $noIsbnA = array();
 //Get all Grouped works:
-$results = $aspen_db -> query('SELECT COUNT(1) AS total
+$results = $aspen_db->query('SELECT COUNT(1) AS total
 										FROM grouped_work gw
 										LEFT JOIN talpa_ltwork_to_groupedwork ltg
 											ON gw.permanent_id = ltg.groupedRecordPermanentId
-										WHERE ltg.groupedRecordPermanentId IS NULL
+										WHERE LENGTH(gw.permanent_id) > 36 AND ltg.groupedRecordPermanentId IS NULL AND (checked = 0 OR checked IS NULL)
 								');
 
 if ($results) {
 	while ($result = $results->fetch()) {
-		$logger->log('found '. $result['total'] . ' permanent IDs needing assocating with librarything works', Logger::LOG_NOTICE);
+		$logger->log('found '. $result['total'] . ' permanent IDs needing associating with librarything works', Logger::LOG_NOTICE);
 	}
 }
 
-$results = $aspen_db -> query('SELECT *
+$results = $aspen_db->query('SELECT gw.permanent_id, ltg.id
 										FROM grouped_work gw
 										LEFT JOIN talpa_ltwork_to_groupedwork ltg
 											ON gw.permanent_id = ltg.groupedRecordPermanentId
-										WHERE ltg.groupedRecordPermanentId IS NULL AND checked = 0
+										WHERE LENGTH(gw.permanent_id) > 36 AND ltg.groupedRecordPermanentId IS NULL AND (checked = 0 OR checked IS NULL)
 								');
 
 $permanent_ids = array();
@@ -67,14 +74,18 @@ if ($results) {
 	while ($result = $results->fetch()) {
 		$seenN++;
 		$permanent_ids[] = $result['permanent_id'];
-		$ids[] = $result['id'];
+		if (!empty($result['id'])) {
+			$ids[] = $result['id'];
+		}
 
 		if( count($permanent_ids) > $BATCH_SIZE ) {
 			$logger->log("getting works for batch ". $batchN. ' of size:'. $BATCH_SIZE, Logger::LOG_DEBUG);
 
 			// mark that we have checked these works
-			$sql = 'UPDATE talpa_ltwork_to_groupedwork SET checked=1 WHERE id IN ('. implode(',', $ids). ')';
-			$results_update = $aspen_db -> query($sql);
+			if (!empty($ids)) {
+				$sql = 'UPDATE talpa_ltwork_to_groupedwork SET checked=1 WHERE id IN (' . implode(',', $ids) . ')';
+				$results_update = $aspen_db->query($sql);
+			}
 
 			foreach ($permanent_ids as $permanent_id) {
 				$groupedWork = new GroupedWork();
@@ -83,7 +94,7 @@ if ($results) {
 					$groupedWorkDriver = new GroupedWorkDriver($groupedWork->permanent_id);
 
 					//All Fields
-					$fields = $groupedWorkDriver -> getFields();
+					$fields = $groupedWorkDriver->getFields();
 
 
 					$isbnA = array();
@@ -128,15 +139,14 @@ if ($results) {
 					}
 					if($isbnA) {
 						$retA[$permanent_id]['isbnA'] = $isbnA;
-					}
-					else{ //We can't use it.
+					} else{ //We can't use it.
 						$noIsbnA[]= $permanent_id;
 						$noIsbns++;
 						continue;
 					}
 
 					//Title and Author
-					$primaryAuthor = $groupedWorkDriver  -> getPrimaryAuthor();
+					$primaryAuthor = $groupedWorkDriver->getPrimaryAuthor();
 					if(!$primaryAuthor) {
 						$primaryAuthor = isset($fields['author2Str'])? $fields['author2Str']:'';
 					}
@@ -148,7 +158,7 @@ if ($results) {
 						$auth2A = $fields['auth_author2'];
 					}
 					$retA[$permanent_id]['secondary_author_or_contributorA'] = $auth2A;
-					$title = $groupedWorkDriver -> getTitle();
+					$title = $groupedWorkDriver->getTitle();
 					if(!$title){
 						$title =isset($fields['title_display']) ? $fields['title_display'] : '';
 					}
@@ -168,16 +178,17 @@ if ($results) {
 					$retA[$permanent_id]['contributorsA'][] = $groupedWorkDriver->getContributors();
 
 					//UPCs
-					$retA[$permanent_id]['upcA'][] = $groupedWorkDriver -> getUpcs();
+					$retA[$permanent_id]['upcA'][] = $groupedWorkDriver->getUpcs();
 
 					//ISSNS
-					$retA[$permanent_id]['issnA'][] = $groupedWorkDriver -> getISSNs();
+					$retA[$permanent_id]['issnA'][] = $groupedWorkDriver->getISSNs();
 
-				}
+					$groupedWorkDriver = null;
 
-				else {
+				} else {
 					$logger->log('failed to fetch info for grouped work '.$permanent_id, Logger::LOG_ERROR);
 				}
+				$groupedWork = null;
 			}
 			$batchN++;
 
@@ -198,7 +209,7 @@ if ($results) {
 				curl_setopt($curlConnection, CURLOPT_TIMEOUT, 60);
 				curl_setopt($curlConnection, CURLOPT_RETURNTRANSFER, true);
 
-// Set cURL options to use POST and send data in the request body
+				// Set cURL options to use POST and send data in the request body
 				curl_setopt($curlConnection, CURLOPT_POST, true);
 				curl_setopt($curlConnection, CURLOPT_POSTFIELDS, http_build_query($data));
 
@@ -215,31 +226,30 @@ if ($results) {
 					$notFoundA = $resA['notFoundA'];
 					$logger->log('Work API returned  '.count($mappedWorkIDs).' mapped workids. Not found: '.count($notFoundA), Logger::LOG_DEBUG);
 
-//save to the talpa_lt_to_groupedwork table
-					if($mappedWorkIDs)
-					{
+					//save to the talpa_lt_to_groupedwork table
+					if($mappedWorkIDs) {
 						foreach ($mappedWorkIDs as $permanent_id => $lt_workcode) {
 							$talpaData = new TalpaData();
-							$talpaData->whereAdd();
-							$talpaData->whereAdd('groupedRecordPermanentId="'.$permanent_id.'"');
+							$talpaData->groupedRecordPermanentId = $permanent_id;
 							if ($talpaData->find(true)) {
 								$talpaData->lt_workcode=$lt_workcode;
+								$talpaData->checked = 1;
 								$talpaData->update();
 								$updatedN++;
 							} else {
-								$talpaData -> lt_workcode = $lt_workcode;
-								$talpaData -> groupedRecordPermanentId = $permanent_id;
+								$talpaData->lt_workcode = $lt_workcode;
+								$talpaData->groupedRecordPermanentId = $permanent_id;
+								$talpaData->checked = 1;
 								$talpaData->insert();
 								$insertedN++;
 							}
+							$talpaData->__destruct();
+							$talpaData = null;
 						}
-					}
-					else
-					{
+					} else {
 						$logger->log("no works to update", Logger::LOG_DEBUG);
 					}
-				}
-				else {
+				} else {
 					$logger->log("something went wrong with the response", Logger::LOG_DEBUG);
 				}
 			} // foreach chunksA
@@ -258,6 +268,3 @@ $endTime = time();
 $logger->log("seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN, Logger::LOG_NOTICE);
 $logger->log("total time: ".($endTime - $startTime), Logger::LOG_NOTICE);
 
-
-
-?>

@@ -56,7 +56,7 @@
 		{/if}
 	{/foreach}
 
-	{if $filterListApplied == 'talpa_result'}
+	{if !empty($filterListApplied) && $filterListApplied == 'talpa_result'}
 		<h4 style="text-align: center; font-weight: bold;">{$talpaOtherResultsExplainerText} </h4>
 
 	{/if}

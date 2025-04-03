@@ -4,6 +4,7 @@ require_once ROOT_DIR . '/RecordDrivers/RecordInterface.php';
 
 class TalpaRecordDriver extends RecordInterface {
 	private $record;
+	private $isn;
 	/**
 	 * Constructor.  We build the object using all the data retrieved
 	 * @param array|File_MARC_Record||string   $recordData     Data to construct the driver from
@@ -15,7 +16,7 @@ class TalpaRecordDriver extends RecordInterface {
 			$TalpaSearcher = SearchObjectFactory::initSearchObject("Talpa");
 			$this->record = $TalpaSearcher->retrieveRecord($record);
 		}else{
-		$this->record= $record;
+			$this->record= $record;
 		}
 	}
 
@@ -39,13 +40,7 @@ class TalpaRecordDriver extends RecordInterface {
 
 	public function isValid()
 	{
-		$isbns = $this->record['isbns'];
-		if($isbns) {
-			return true;
-		}
-		else{
-			return false;
-		}
+		return !empty($this->record['isbns']);
 	}
 
 	public function getBookcoverUrl($size='medium', $absolutePath = false) {
@@ -117,7 +112,8 @@ class TalpaRecordDriver extends RecordInterface {
 					require_once ROOT_DIR.'/RecordDrivers/GroupedWorkDriver.php';
 					$groupedWorkDriver = new GroupedWorkDriver($talpaData->groupedRecordPermanentId);
 					if ($groupedWorkDriver->isValid()) {
-						$interface->assign('summID', $groupedWorkDriver->getId());
+						$interface->assign('summId', $groupedWorkDriver->getId());
+						$interface->assign('talpaResult', 0);
 						$interface->assign('groupedWorkDriver', $groupedWorkDriver);
 
 						$relatedRecords = $groupedWorkDriver->getRelatedRecords();
@@ -223,7 +219,8 @@ class TalpaRecordDriver extends RecordInterface {
 
 		}
 		else{ //Not a library result
-			$this->isn = $this ->record['isbns'][0];
+			$interface->assign('summId', $this->record['work_id']);
+			$this->isn = $this->record['isbns'][0];
 //			$interface->assign('summUrl', 'https://www.librarything.com/work/'.$this->record['work_id']);
 			$interface->assign('summTitle', $this->record['title']);
 			$interface->assign('bookCoverUrlMedium',$this->getBookcoverUrl());

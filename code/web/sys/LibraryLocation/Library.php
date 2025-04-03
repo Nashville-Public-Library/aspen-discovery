@@ -4322,7 +4322,7 @@ class Library extends DataObject {
 			$scopingSetting = $searchSource;
 			if ($scopingSetting == null) {
 				return null;
-			} elseif ($scopingSetting == 'local' || $scopingSetting == 'econtent' || $scopingSetting == 'library' || $scopingSetting == 'location' || $scopingSetting == 'websites' || $scopingSetting == 'lists' || $scopingSetting == 'series' || $scopingSetting == 'open_archives' || $scopingSetting == 'course_reserves') {
+			} elseif ($scopingSetting == 'local' || $scopingSetting == 'econtent' || $scopingSetting == 'library' || $scopingSetting == 'location' || $scopingSetting == 'websites' || $scopingSetting == 'lists' || $scopingSetting == 'series' || $scopingSetting == 'open_archives' || $scopingSetting == 'course_reserves' || $scopingSetting == 'talpa') {
 				Library::$searchLibrary[$searchSource] = Library::getActiveLibrary();
 			} elseif ($scopingSetting == 'marmot' || $scopingSetting == 'unscoped') {
 				//Get the default library

@@ -1,6 +1,8 @@
 {strip}
 	<div id="groupedRecord{$summId|escape}" class="resultsList">
-		<a id="record{$summId|escape}"></a>
+		{if isset($summId)}
+			<a id="record{$summId|escape}"></a>
+		{/if}
 		{if isset($summExplain)}
 			<div class="hidden" id="scoreExplanationValue{$summId|escape}">{$summExplain}</div>
 		{/if}
@@ -172,7 +174,7 @@
 						{/if}
 
 
-						{if !empty($showArInfo) && $summArInfo && !$talpaResult}
+						{if !empty($showArInfo) && !empty($summArInfo) && !$talpaResult}
 
 							<div class="result-label col-sm-4 col-xs-12">{translate text='Accelerated Reader' isPublicFacing=true} </div>
 							<div class="result-value col-sm-8 col-xs-12">
@@ -181,7 +183,7 @@
 
 						{/if}
 
-						{if !empty($showLexileInfo) && $summLexileInfo && !$talpaResult}
+						{if !empty($showLexileInfo) && !empty($summLexileInfo) && !$talpaResult}
 
 							<div class="result-label col-sm-4 col-xs-12">{translate text='Lexile measure' isPublicFacing=true} </div>
 							<div class="result-value col-sm-8 col-xs-12">
@@ -190,7 +192,7 @@
 
 						{/if}
 
-						{if !empty($showFountasPinnell) && $summFountasPinnell && !$talpaResult}
+						{if !empty($showFountasPinnell) && !empty($summFountasPinnell) && !$talpaResult}
 
 							<div class="result-label col-sm-4 col-xs-12">{translate text='Fountas &amp; Pinnell' isPublicFacing=true} </div>
 							<div class="result-value col-sm-8 col-xs-12">
@@ -200,7 +202,7 @@
 						{/if}
 
 						{if !empty($showPhysicalDescriptions)}
-							{if $alwaysShowSearchResultsMainDetails || $summPhysicalDesc && !$talpaResult}
+							{if ($alwaysShowSearchResultsMainDetails || $summPhysicalDesc) && !$talpaResult}
 
 								<div class="result-label col-sm-4 col-xs-12">{translate text='Physical Desc' isPublicFacing=true} </div>
 								<div class="result-value col-sm-8 col-xs-12">
@@ -215,7 +217,7 @@
 						{/if}
 
 
-						{if !empty($showLanguages) && $summLanguage && !$talpaResult}
+						{if !empty($showLanguages) && !empty($summLanguage) && !$talpaResult}
 
 							<div class="result-label col-sm-4 col-xs-12">{translate text="Language" isPublicFacing=true} </div>
 							<div class="result-value col-sm-8 col-xs-12">

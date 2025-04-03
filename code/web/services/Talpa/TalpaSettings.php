@@ -72,7 +72,7 @@ class Talpa_TalpaSettings extends ObjectEditor {
 	}
 
 	function canView(): bool {
-		return UserAccount::userHasPermission('View Dashboards');
+		return UserAccount::userHasPermission('Administer Third Party Enrichment API Keys');
 	}
 }
 

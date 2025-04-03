@@ -8,7 +8,7 @@ function getTalpaUpdates() {
 			'sql' => [
 				"INSERT INTO modules (name, indexName, backgroundProcess) VALUES ('Talpa Search', '', '')",
 			],
-		],
+		], //create_talpa_module
 		'createSettingsForTalpa' => [
 			'title' => 'Create Talpa settings',
 			'description' => 'Create settings to store information for Talpa Search Integrations',
@@ -30,7 +30,7 @@ function getTalpaUpdates() {
 				) ENGINE=INNODB",
 				'ALTER TABLE library ADD COLUMN talpaSettingsId INT(11) DEFAULT -1',
 			],
-		],
+		], //createSettingsForTalpa
 		'createWorkMappingForTalpa' => [
 			'title' => 'Create groupedWorkID mapping table for Talpa Search',
 			'description' => 'Allows Talpa to return grouped work results in Talpa Search module.',
@@ -45,6 +45,6 @@ function getTalpaUpdates() {
 					INDEX(`lt_workcode`)
 				) ENGINE = InnoDB"
 			]
-		]
+		], //createWorkMappingForTalpa
 	];
 }

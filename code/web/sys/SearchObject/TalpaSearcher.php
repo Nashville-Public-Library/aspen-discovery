@@ -84,6 +84,12 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	protected $bookMark;
 	protected $debug = false;
 
+	// Facets
+	protected $facetLimit = 30;
+	protected $facetOffset = null;
+	protected $facetPrefix = null;
+	protected $facetSort = null;
+
 	protected $lightWeightRes = false;
 	protected $sort = null;
 	  /**
@@ -297,6 +303,8 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 //var_dump(is_array($recordData));
 		if (is_array($recordData)) {
 			$this->lastSearchResults = $recordData;
+			$this->lastSearchResults['response']['talpa_result_count'] = 0;
+			$this->lastSearchResults['response']['global_count'] = 0;
 			$resultsList = $recordData['response']['resultlist'];
 
 			for ($x = 0; $x < count($resultsList); $x++) {
@@ -371,8 +379,12 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		$summary['page'] = $this->page;
 		$summary['perPage'] = $this->limit;
 
-		preg_match('/availability_toggle:"(.*?)"/', $_REQUEST['filter'][0], $matches);
-		$locationFilter = $matches[1];
+		if (!empty($_REQUEST['filter']) && !empty($_REQUEST['filter'][0])) {
+			preg_match('/availability_toggle:"(.*?)"/', $_REQUEST['filter'][0], $matches);
+			$locationFilter = $matches[1];
+		} else{
+			$locationFilter = 'global';
+		}
 		if(($locationFilter == 'global' || !$locationFilter) && (int)$this->lastSearchResults['response']['global_count']>=1) {
 			$this->resultsTotal = (int)$this->lastSearchResults['response']['global_count'];
 
@@ -435,10 +447,14 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		$timer->logTime("Starting to load record html");
 
 		if (isset($this->lastSearchResults)) {
-			preg_match('/availability_toggle:"(.*?)"/', $_REQUEST['filter'][0], $matches);
-			$locationFilter = $matches[1];
+			if (!empty($_REQUEST['filter']) && !empty($_REQUEST['filter'][0])) {
+				preg_match('/availability_toggle:"(.*?)"/', $_REQUEST['filter'][0], $matches);
+				$locationFilter = $matches[1];
+			}else{
+				$locationFilter = null;
+			}
 
-			$_resultlist = $this->lastSearchResults['response']['resultlist'];
+			$_resultList = $this->lastSearchResults['response']['resultlist'];
 			//used in getSearchResult() to generate item url to return to talpa search results page
 			$interface->assign('searchSource', 'talpa');
 
@@ -446,10 +462,10 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 			$inLibraryResults = array();
 			$talpaResults = array();
-			foreach ($_resultlist as $record) {
-				if($record['inLibraryB']){
+			foreach ($_resultList as $record) {
+				if(!empty($record['inLibraryB'])){
 					$inLibraryResults[] = $record;
-				}elseif($record['hasIsbnB'] && $talpaSettings->includeTalpaOtherResultsSwitch){
+				}elseif(!empty($record['hasIsbnB']) && $talpaSettings->includeTalpaOtherResultsSwitch){
 					$talpaResults[] = $record;
 				}
 			}
@@ -458,7 +474,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			$talpaSettings = $this->getSettings();
 			$searchString = $talpaSettings->talpaSearchSourceString?:'Talpa Search';
 			$_SESSION['talpaBreadcrumb'] = $searchString.': Other Results';
-			if(($locationFilter=='global' || !$locationFilter) && $this->lastSearchResults['response']['global_count']>=1){
+			if (($locationFilter=='global' || !$locationFilter) && $this->lastSearchResults['response']['global_count']>=1){
 				$resultlist = $inLibraryResults;
 				$_SESSION['talpaBreadcrumb'] = $searchString.': Library Results';
 				$inLibraryB=true;
@@ -467,6 +483,8 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 			} elseif (!$locationFilter && count($inLibraryResults)==0) {
 				$resultlist = $talpaResults;
+			} else{
+				$resultlist = [];
 			}
 			$this->lastSearchResults['response']['global_count']++;
 			for ($x = 0; $x < count($resultlist); $x++) {
@@ -654,12 +672,20 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		$currentResults = $this->lastSearchResults['response']['resultlist'];
 
 		$allFacets=array();
-		$facetCounts = array();
+		$facetCounts = array(
+			'global' => [
+				'count' => 0
+			],
+			'talpa_result' => [
+				'count' => 0
+			],
+		);
 		$talpaSettings = $this ->getSettings();
 
 		foreach ($currentResults as $resultKey => $result){
-			$inLibraryB = $result['inLibraryB'];
-			$talpaResultB = $result['hasIsbnB'] && $talpaSettings->includeTalpaOtherResultsSwitch; //if library allows Other Results
+			$inLibraryB = !empty($result['inLibraryB']) ? $result['inLibraryB'] : 0;
+			$hasIsbnB = !empty($result['hasIsbnB']) ? $result['hasIsbnB'] : 0;
+			$talpaResultB = $hasIsbnB && $talpaSettings->includeTalpaOtherResultsSwitch; //if library allows Other Results
 
 			if($inLibraryB)
 			{
@@ -670,14 +696,13 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 					$facetCounts['global']['count']++;
 					$allFacets['availability_toggle'][]= array('global', 1);
 				}
-				foreach ($availableAt as $location){
-					if(preg_match('mpl#', $location)){
-						$allFacets['available_at'][]= array($location, 1);
-					}
-
-				}
-			}
-			elseif ($talpaResultB) {
+//				foreach ($availableAt as $location){
+//					if(preg_match('mpl#', $location)){
+//						$allFacets['available_at'][]= array($location, 1);
+//					}
+//
+//				}
+			} elseif ($talpaResultB) {
 //				$allFacets['availability_toggle']['talpa_result']['count']++;
 				$facetCounts['talpa_result']['count']++;
 				$allFacets['availability_toggle'][]= array('talpa_result', 1);
@@ -685,14 +710,10 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 		}
 
-		if(empty($this->filterList ))
-		{
-			if($facetCounts['global']['count'] >=1)
-			{
+		if(empty($this->filterList )) {
+			if ($facetCounts['global']['count'] >=1) {
 				$this->filterList['availability_toggle'][0] = 'global';
-			}
-			else
-			{
+			} else {
 				$this->filterList['availability_toggle'][0] = 'talpa_result';
 			}
 		}
@@ -930,8 +951,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		$queryString = $this->searchTerms[0]['lookfor']?:'The man with the yellow hat';
 		$queryString = urlencode($queryString);
 
-		if(!$settings->talpaApiToken)
-		{
+		if(!$settings->talpaApiToken) {
 			$msg = $settings->talpaSearchSourceString.' settings are not configured by your library: missing API token.';
 //					implode('<br />', $errors); //add this in for debugging, but not for public display.
 			throw new Exception($msg);
@@ -1328,9 +1348,11 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			} else {
 				$facets = $searchLibrary->getGroupedWorkDisplaySettings()->getFacets();
 			}
+			$searchVersion = SystemVariables::getSystemVariables()->searchVersion;
 			foreach ($facets as &$facet) {
 				//Adjust facet name for local scoping
-				$facet->facetName = $this->getScopedFieldName($facet->getFacetName($this->searchVersion));
+
+				$facet->facetName = $this->getScopedFieldName($facet->getFacetName($searchVersion));
 
 				global $action;
 				if ($action == 'Advanced') {
@@ -1352,8 +1374,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	protected function getFieldsToReturn() {
 		if (isset($_REQUEST['allFields'])) {
 			$fieldsToReturn = '*,score';
-		} elseif ($this->fieldsToReturn != null) {
-			$fieldsToReturn = $this->fieldsToReturn;
 		} else {
 			$fieldsToReturn = SearchObject_GroupedWorkSearcher2::$fields_to_return;
 			global $solrScope;
