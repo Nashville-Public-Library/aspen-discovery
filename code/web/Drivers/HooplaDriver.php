@@ -820,7 +820,9 @@ class HooplaDriver extends AbstractEContentDriver {
 		$hold->title = $rawHold->title;
 		$hold->position = $rawHold->holdsQueuePosition;
 		$hold->createDate = $rawHold->inserted;
-		$hold->expirationDate = $rawHold->reserveUntil;
+		if (isset($rawHold->reserveUntil)) {
+			$hold->expirationDate = $rawHold->reserveUntil;
+		}
 		$hold->cancelable = true;
 		$hold->kind = $rawHold->kind;
 		$hold->userId = $user->id;
