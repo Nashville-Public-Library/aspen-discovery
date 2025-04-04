@@ -1683,5 +1683,76 @@ class Admin_AJAX extends JSON_Action {
 		$aspenUsageGraph = new Admin_UsageGraphs();
 		$aspenUsageGraph->buildCSV();
 	}
+	/**
+	 * Retrieves patron types for the admin_sso account profile and
+	 * all relevant primary ILS account profiles associated with the current SSO Setting
+	 * to help identify which patron types are missing in the admin_sso profile.
+	 */
+	/** @noinspection PhpUnused */
+	function getSSOPatronTypesForProfiles(): array
+	{
+		$ssoSettingId = $_REQUEST['ssoSettingId'] ?? null;
+
+		require_once ROOT_DIR . '/sys/Authentication/SSOSetting.php';
+		require_once ROOT_DIR . '/sys/Account/AccountProfile.php';
+		require_once ROOT_DIR . '/sys/Account/PType.php';
+		require_once ROOT_DIR . '/sys/LibraryLocation/Library.php';
+
+		// Get the admin_sso account profile.
+		$adminSSOProfile = new AccountProfile();
+		$adminSSOProfile->name = 'admin_sso';
+		$adminSSOProfileId = null;
+		if ($adminSSOProfile->find(true)) {
+			$adminSSOProfileId = $adminSSOProfile->id;
+		}
+
+		$result = [
+			'success'           => true,
+			'adminSSOProfileId' => $adminSSOProfileId,
+			'adminSSOPatronTypes' => [],
+			'adminSSOExists'    => ($adminSSOProfileId !== null),
+			'primaryProfilesData' => [], // Will store { profileId: { ptypeValue: label, ... } }.
+			'checkedDefaultProfile' => false
+		];
+
+		// Get patron types for admin_sso profile.
+		if ($adminSSOProfileId) {
+			$result['adminSSOPatronTypes'] = PType::getPatronTypeList(false, true, $adminSSOProfileId);
+		}
+
+		// Load the SSOSetting to find associated libraries.
+		$ssoSetting = new SSOSetting();
+		$ssoSetting->id = $ssoSettingId;
+		if (!$ssoSetting->find(true)) {
+			return ['success' => false, 'message' => 'SSOSetting not found.'];
+		}
+
+		$associatedLibraryIds = $ssoSetting->__get("libraries");
+		$primaryProfileIds = [];
+		if (!empty($associatedLibraryIds)) {
+			foreach ($associatedLibraryIds as $libraryId) {
+				$library = new Library();
+				$library->libraryId = $libraryId;
+				if ($library->find(true) && !empty($library->accountProfileId)) {
+					$primaryProfileIds[$library->accountProfileId] = $library->accountProfileId; // Use keys for uniqueness.
+				}
+			}
+		} else {
+			// If no libraries are explicitly linked, default to the global library's profile.
+			global $library;
+			if (!empty($library->accountProfileId)) {
+				$primaryProfileIds[$library->accountProfileId] = $library->accountProfileId;
+				$result['checkedDefaultProfile'] = true;
+			}
+		}
+
+		// Get patron types for each unique primary profile.
+		foreach ($primaryProfileIds as $profileId) {
+			// If -1 is passed for the $profileId, then all patron types will be returned.
+			$result['primaryProfilesData'][$profileId] = PType::getPatronTypeList(false, true, $profileId);
+		}
+
+		return $result;
+	}
 
 }
