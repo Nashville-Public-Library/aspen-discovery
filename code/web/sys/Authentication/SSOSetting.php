@@ -206,6 +206,7 @@ class SSOSetting extends DataObject {
 				'label' => 'Only authenticate users with single sign-on',
 				'description' => 'Whether or not users are authenticated only by single sign-on',
 				'note' => 'Aspen will not authenticate with the ILS when a user logs in with single sign-on. <em>This has potential security implications</em>',
+				'onchange' => 'return AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes();',
 			],
             'forceReAuth' => [
                 'property' => 'forceReAuth',

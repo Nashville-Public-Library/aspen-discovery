@@ -84,6 +84,6 @@ class SSOSettings extends ObjectEditor {
 	}
 
 	function getInitializationJs(): string {
-		return 'AspenDiscovery.Admin.getSSOFields();';
+		return 'AspenDiscovery.Admin.getSSOFields(); AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes();';
 	}
 }
