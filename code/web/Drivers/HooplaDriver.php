@@ -317,7 +317,14 @@ class HooplaDriver extends AbstractEContentDriver {
 			/** @var Memcache $memCache */ global $memCache;
 			$accessToken = $memCache->get(self::memCacheKey);
 			if (empty($accessToken)) {
-				$this->renewAccessToken();
+				if (!empty($this->hooplaSettings->accessToken) && !empty($this->hooplaSettings->tokenExpirationTime) && $this->hooplaSettings->tokenExpirationTime > (time())) {
+					$this->accessToken = $this->hooplaSettings->accessToken;
+					global $logger;
+					$logger->log("accessToken: " . $this->accessToken, Logger::LOG_ERROR);
+					$logger->log("tokenExpirationTime: " . $this->hooplaSettings->tokenExpirationTime, Logger::LOG_ERROR);
+				} else {
+					$this->renewAccessToken();
+				}
 			} else {
 				$this->accessToken = $accessToken;
 			}
@@ -360,6 +367,9 @@ class HooplaDriver extends AbstractEContentDriver {
 				$json = json_decode($response);
 				if (!empty($json->access_token)) {
 					$this->accessToken = $json->access_token;
+					$this->hooplaSettings->accessToken = $json->access_token;
+					$this->hooplaSettings->tokenExpirationTime = time() + $json->expires_in; 
+					$this->hooplaSettings->update();
 
 					/** @var Memcache $memCache */ global $memCache;
 					global $configArray;

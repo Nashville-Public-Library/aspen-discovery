@@ -401,9 +401,13 @@ public class HooplaExportMain {
 				boolean indexByDay = getSettingsRS.getBoolean("indexByDay");
 				boolean isRegroupAllRecords = getSettingsRS.getBoolean("regroupAllRecords");
 				long settingsId = getSettingsRS.getLong("id");
+				String accessToken = getSettingsRS.getString("accessToken");
+				long tokenExpirationTime = getSettingsRS.getLong("tokenExpirationTime");
 
-				/////// THIS PART NEED TO MODIFY, BECAUSE WE NEED TO STORE TOKEN
-				String accessToken = getAccessToken(apiUsername, apiPassword);
+				if (accessToken == null || tokenExpirationTime < (System.currentTimeMillis() / 1000)) {
+					accessToken = getAccessToken(apiUsername, apiPassword, settingsId);
+				}
+
 				if (accessToken == null) {
 					logEntry.incErrors("Could not load access token");
 					return true;
@@ -572,7 +576,7 @@ public class HooplaExportMain {
 									} catch (InterruptedException e) {
 										logEntry.incErrors("Error sleeping for 2 minutes", e);
 									}
-									accessToken = getAccessToken(apiUsername, apiPassword);
+									accessToken = getAccessToken(apiUsername, apiPassword, settingsId);
 									headers.put("Authorization", "Bearer " + accessToken);
 								}
 							}else {
@@ -749,8 +753,9 @@ public class HooplaExportMain {
 				String apiUsername = getSettingsRS.getString("apiUsername");
 				String apiPassword = getSettingsRS.getString("apiPassword");
 				String hooplaLibraryId = getSettingsRS.getString("libraryId");
+				long settingsId = getSettingsRS.getLong("id");
 
-				String accessToken = getAccessToken(apiUsername, apiPassword);
+				String accessToken = getAccessToken(apiUsername, apiPassword, settingsId);
 				if (accessToken == null) {
 					logEntry.incErrors("Could not load access token");
 					return;
@@ -985,38 +990,52 @@ public class HooplaExportMain {
 		getGroupedWorkIndexer().processGroupedWork(groupedWorkId);
 	}
 
-	private static String getAccessToken(String username, String password) {
+	private static String getAccessToken(String username, String password, long settingsId) {
 		if (username == null || password == null){
 			logger.error("Please set HooplaAPIUser and HooplaAPIPassword in settings");
 			logEntry.addNote("Please set HooplaAPIUser and HooplaAPIPassword in settings");
-		} else {
-			int numTries = 1;
-			while (numTries <= 3) {
-				numTries++;
-				String getTokenUrl = hooplaAPIBaseURL + "/v2/token";
-				WebServiceResponse response = NetworkUtils.postToURL(getTokenUrl, null, "application/json", null, logger, username + ":" + password);
-				if (response.isSuccess()) {
+			return null;
+		}
+		int numTries = 0;
+		while (numTries <= 3) {
+			numTries++;
+			String getTokenUrl = hooplaAPIBaseURL + "/v2/token";
+			WebServiceResponse response = NetworkUtils.postToURL(getTokenUrl, null, "application/json", null, logger, username + ":" + password);
+
+			if (response.isSuccess()) {
+				try {
+					JSONObject responseJSON = new JSONObject(response.getMessage());
+					String  accessToken =  responseJSON.getString("access_token");
+					long tokenExpirationTime = (System.currentTimeMillis() / 1000) + responseJSON.getLong("expires_in");
+
 					try {
-						JSONObject responseJSON = new JSONObject(response.getMessage());
-						return responseJSON.getString("access_token");
-					} catch (JSONException e) {
-						if (numTries == 3) {
-							logEntry.addNote("Could not parse JSON for token " + response.getMessage());
-							logger.error("Could not parse JSON for token " + response.getMessage(), e);
-							return null;
-						} else {
-							try {
-								Thread.sleep(1000 * 60 * 2);
-							} catch (InterruptedException ex) {
-								logEntry.incErrors("Thread was interrupted while sleeping");
-							}
+						PreparedStatement updateTokenStmt = aspenConn.prepareStatement(
+							"UPDATE hoopla_settings SET accessToken = ?, tokenExpirationTime = ? WHERE id = ?"
+						);
+						updateTokenStmt.setString(1, accessToken);
+						updateTokenStmt.setLong(2, tokenExpirationTime);
+						updateTokenStmt.setLong(3, settingsId);
+						updateTokenStmt.executeUpdate();
+						return accessToken;
+					} catch (SQLException e) {
+						logEntry.incErrors("Error storing token", e);
+					}
+				} catch (JSONException e) {
+					if (numTries == 3) {
+						logEntry.addNote("Could not parse JSON for token " + response.getMessage());
+						logger.error("Could not parse JSON for token " + response.getMessage(), e);
+						return null;
+					} else {
+						try {
+							Thread.sleep(1000 * 60 * 2);
+						} catch (InterruptedException ex) {
+							logEntry.incErrors("Thread was interrupted while sleeping");
 						}
 					}
 				}
 			}
-
-			logEntry.addNote("Could not get access token in 3 tries");
 		}
+		logEntry.addNote("Could not get access token in 3 tries");
 		return null;
 	}
 

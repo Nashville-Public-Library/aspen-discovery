@@ -8,8 +8,8 @@ class HooplaSetting extends DataObject {
 	public $libraryId;
 	public $apiUsername;
 	public $apiPassword;
-	public /** @noinspection PhpUnused */
-		$apiToken;
+	public $accessToken;
+	public $tokenExpirationTime;
 	public $regroupAllRecords;
 	public $runFullUpdateInstant;
 	public $indexByDay;
