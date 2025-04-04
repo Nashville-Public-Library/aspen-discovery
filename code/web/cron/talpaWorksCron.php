@@ -21,7 +21,7 @@ global $logger;
 
 global $library;
 global $enabledModules;
-if (!array_key_exists('Talpa', $enabledModules)) {
+if (!array_key_exists('Talpa Search', $enabledModules)) {
 	$logger->log("Talpa module not enabled, quitting", Logger::LOG_NOTICE);
 	return;
 }
