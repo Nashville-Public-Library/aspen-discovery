@@ -12011,24 +12011,101 @@ AspenDiscovery.CloudLibrary = (function () {
 		},
 
 		renewCheckout: function (patronId, recordId) {
+			var $checkoutRow = $('.cloudLibraryCheckout_' + recordId);
+			var $renewButton = $checkoutRow.find('a').filter(function() {
+				return $(this).text().indexOf('Renew Checkout') >= 0;
+			});
+
+			var originalButtonText = $renewButton.html();
+			$renewButton.html('<i class="fas fa-spinner fa-spin"></i> Renewing...');
+			$renewButton.addClass('disabled').attr('disabled', 'disabled');
+
+			var $expiresRow = $checkoutRow.find('.row').filter(function() {
+				var label = $(this).find('.result-label').text().trim();
+				return label === 'Expires' || label.indexOf('Expires') === 0;
+			});
+
+			$expiresRow.css('background-color', '#f0f0f0');
+			var pulseEffect = setInterval(function() {
+				$expiresRow.fadeTo(700, 0.7).fadeTo(700, 1);
+			}, 1400);
+
 			var url = Globals.path + "/CloudLibrary/AJAX?method=renewCheckout&patronId=" + patronId + "&recordId=" + recordId;
 			$.ajax({
 				url: url,
 				cache: false,
 				success: function (data) {
+					clearInterval(pulseEffect);
+					$expiresRow.stop(true, true).css('opacity', '1');
+
+					$renewButton.html(originalButtonText);
+					$renewButton.removeClass('disabled').removeAttr('disabled');
+
 					if (data.success) {
 						AspenDiscovery.showMessage("Title Renewed", data.message, true);
-					} else {
-						AspenDiscovery.showMessage("Unable to Renew Title", data.message, true);
-					}
 
+						AspenDiscovery.Account.loadMenuData();
+
+						if (data.dueDate) {
+							var $dueDateElement = $expiresRow.find('.result-value');
+
+							if ($dueDateElement.length) {
+								$dueDateElement.text(data.dueDate);
+
+								$expiresRow.css('background-color', '#dff0d8');
+								setTimeout(function() {
+									$expiresRow.css('background-color', '');
+								}, 5000);
+
+								$renewButton.closest('.btn-group').find('a').filter(function() {
+									return $(this).text().indexOf('Renew Checkout') >= 0;
+								}).hide();
+
+								setTimeout(function() {
+									var currentSource = 'cloud_library';
+									if (AspenDiscovery.Account.currentCheckoutsSource) {
+										currentSource = AspenDiscovery.Account.currentCheckoutsSource;
+									}
+
+									var sort = $('#accountSort_' + currentSource).length ?
+										$('#accountSort_' + currentSource + ' option:selected').val() : 'title';
+									var $coversEl = $('#hideCovers_' + currentSource);
+									var showCovers = $coversEl.length ? !$coversEl.is(':checked') : true;
+
+									AspenDiscovery.Account.loadCheckouts(currentSource, sort, showCovers);
+								}, 2000);
+							}
+						}
+					} else {
+						var errorTitle = data.api && data.api.title ? data.api.title : "Unable to Renew Title";
+						AspenDiscovery.showMessage(errorTitle, data.message, true);
+
+						$expiresRow.css('background-color', '#f2dede');
+						setTimeout(function() {
+							$expiresRow.css('background-color', '');
+						}, 3000);
+					}
 				},
 				dataType: 'json',
-				async: false,
+				async: true,
 				error: function () {
-					AspenDiscovery.showMessage("Error Renewing Checkout", "An error occurred processing your request in cloudLibrary.  Please try again in a few minutes.", false);
+					clearInterval(pulseEffect);
+					$expiresRow.stop(true, true).css('opacity', '1');
+
+					$renewButton.html(originalButtonText);
+					$renewButton.removeClass('disabled').removeAttr('disabled');
+
+					$expiresRow.css('background-color', '#f2dede');
+					setTimeout(function() {
+						$expiresRow.css('background-color', '');
+					}, 3000);
+
+					AspenDiscovery.showMessage("Error Renewing Checkout", "An error occurred processing your request in cloudLibrary. Please try again in a few minutes.", false);
 				}
 			});
+
+			// Prevent default anchor behavior
+			return false;
 		},
 
 		returnCheckout: function (patronId, recordId) {
@@ -15379,9 +15456,28 @@ AspenDiscovery.Record = (function () {
 		},
 
 		placeVolumeHold: function () {
-			var selectedVolume = $("#selectedVolume option:selected").val() ;
-			if (selectedVolume === 'unselected'){
-				alert("You must select a volume before continuing");
+			const $volumeSelect = $("#selectedVolume");
+			const selectedVolume = $volumeSelect.find("option:selected").val();
+			const $holdTypeBib = $("#holdTypeBib");
+
+			$('#holdTypeBib').off('change.volumeValidation');
+			$('#selectedVolume').off('change.volumeValidation');
+			$("#volumeSelectionError").remove();
+
+			$volumeSelect.on("change.volumeValidation", (e) => {
+				if (e.target.value !== "unselected" || $holdTypeBib.is(':checked')) {
+					$("#volumeSelectionError").remove();
+				}
+			});
+
+			// Only validate volume selection when "Specific Volume" radio is checked.
+			if (selectedVolume === 'unselected' && (!$holdTypeBib.length || !$holdTypeBib.is(':checked'))){
+				const errorHtml = `
+					<div id="volumeSelectionError" class="alert alert-danger mt-3" role="alert">
+						Please select a volume before attempting to place a hold.
+					</div>
+				`;
+				$('#volumeSelection').prepend(errorHtml);
 				return false;
 			}
 
@@ -15417,7 +15513,7 @@ AspenDiscovery.Record = (function () {
 			if (holdType.length > 0) {
 				params['holdType'] = holdType.val();
 			} else {
-				if ($('#holdTypeBib').is(':checked')) {
+				if ($holdTypeBib.is(':checked')) {
 					params['holdType'] = 'bib';
 				} else {
 					params['holdType'] = 'volume';
