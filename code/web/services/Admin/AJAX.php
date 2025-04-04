@@ -1692,9 +1692,6 @@ class Admin_AJAX extends JSON_Action {
 	function getSSOPatronTypesForProfiles(): array
 	{
 		$ssoSettingId = $_REQUEST['ssoSettingId'] ?? null;
-		if (empty($ssoSettingId)) {
-			return ['success' => false, 'message' => 'SSOSetting ID not provided.'];
-		}
 
 		require_once ROOT_DIR . '/sys/Authentication/SSOSetting.php';
 		require_once ROOT_DIR . '/sys/Account/AccountProfile.php';
@@ -1732,20 +1729,16 @@ class Admin_AJAX extends JSON_Action {
 
 		$associatedLibraryIds = $ssoSetting->__get("libraries");
 		$primaryProfileIds = [];
-		global $logger;
 		if (!empty($associatedLibraryIds)) {
-			$logger->log("1", Logger::LOG_ERROR);
 			foreach ($associatedLibraryIds as $libraryId) {
 				$library = new Library();
 				$library->libraryId = $libraryId;
 				if ($library->find(true) && !empty($library->accountProfileId)) {
-					$logger->log("$library->accountProfileId", Logger::LOG_ERROR);
 					$primaryProfileIds[$library->accountProfileId] = $library->accountProfileId; // Use keys for uniqueness.
 				}
 			}
 		} else {
 			// If no libraries are explicitly linked, default to the global library's profile.
-			$logger->log("2", Logger::LOG_ERROR);
 			global $library;
 			if (!empty($library->accountProfileId)) {
 				$primaryProfileIds[$library->accountProfileId] = $library->accountProfileId;

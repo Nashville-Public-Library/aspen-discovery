@@ -2324,7 +2324,7 @@ AspenDiscovery.Admin = (function () {
 			return true;
 		},
 
-		checkSSOAuthOnlyPatronTypes: function () {
+		checkSSOAuthOnlyPatronTypes: function (changedTarget) {
 			const $ssoCheckbox = $("#ssoAuthOnly");
 			const isSSOEnabled = $ssoCheckbox.is(':checked');
 			const ssoSettingId = $("input[name='id']").val();
@@ -2348,9 +2348,8 @@ AspenDiscovery.Admin = (function () {
 				$staffTypeSelect = $();
 			}
 
-			// Check if LDAP is selected as the service, and if so, exit early.
-			if (ssoService === 'ldap') {
-				// Remove previous warnings if they exist
+			// Check if LDAP is selected as the service or no service selected, and if so, exit early.
+			if (ssoService === 'ldap' || ssoService === '0') {
 				$(warningId).remove();
 				$(fallbackWarningId).remove();
 				$(staffWarningId).remove();
@@ -2358,9 +2357,17 @@ AspenDiscovery.Admin = (function () {
 			}
 
 			// Remove previous warnings and listeners.
-			$(warningId).remove();
-			$(fallbackWarningId).remove();
-			$(staffWarningId).remove();
+			if (changedTarget === 'fallback') {
+				$(fallbackWarningId).remove();
+			}
+			else if (changedTarget === 'staff') {
+				$(staffWarningId).remove();
+			}
+			else {
+				$(fallbackWarningId).remove();
+				$(staffWarningId).remove();
+				$(warningId).remove();
+			}
 			$fallbackSelect.off('change.ssoWarning');
 			samlStaffPTypeSelect.off('change.ssoWarning');
 			oAuthStaffPTypeSelect.off('change.ssoWarning');
@@ -2371,27 +2378,40 @@ AspenDiscovery.Admin = (function () {
 				setTimeout(() => AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes(), 100);
 			});
 
-			if (!isSSOEnabled || !ssoSettingId) return true;
+			if (!isSSOEnabled) return true;
 
 			// Show loading message.
-			$formGroup.after(`
-				<div id="ssoAuthOnly_warning" class="alert alert-bs53-warning mt-2">
-					<strong>Checking patron type configuration...</strong>
-				</div>
-			`);
+			if (!changedTarget) {
+				$formGroup.after(`
+					<div id="ssoAuthOnly_warning" class="alert alert-warning mt-2">
+						<strong>Checking patron type configuration...</strong>
+					</div>
+				`);
+			}
 
-			// Add change listeners with debounce.
-			const debounceCheck = () => setTimeout(() => AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes(), 100);
-			$fallbackSelect.on('change.ssoWarning', debounceCheck);
-			$staffTypeSelect.on('change.ssoWarning', debounceCheck);
+			$fallbackSelect.on('change.ssoWarning', function () {
+				setTimeout(() => AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes('fallback'), 100);
+			});
+
+			$staffTypeSelect.on('change.ssoWarning', function () {
+				setTimeout(() => AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes('staff'), 100);
+			});
 
 			$.getJSON(`${Globals.path}/Admin/AJAX`, {
 				method: 'getSSOPatronTypesForProfiles',
 				ssoSettingId: ssoSettingId
 			}).done(function (response) {
-				$(warningId).remove();
-				$(fallbackWarningId).remove();
-				$(staffWarningId).remove();
+				if (changedTarget === 'fallback') {
+					$(fallbackWarningId).remove();
+				}
+				else if (changedTarget === 'staff') {
+					$(staffWarningId).remove();
+				}
+				else {
+					$(fallbackWarningId).remove();
+					$(staffWarningId).remove();
+					$(warningId).remove();
+				}
 
 				if (!response.success) {
 					showError(response.message || 'Could not retrieve patron type information.');
@@ -2411,8 +2431,6 @@ AspenDiscovery.Admin = (function () {
 
 				const adminPatronTypeKeys = Object.keys(adminSSOPatronTypes || {});
 				const missingLabels = new Set();
-				let staffWarning = '';
-				let fallbackWarning = '';
 
 				const selectedStaffType = $staffTypeSelect.val();
 				const selectedFallbackType = $fallbackSelect.val();
@@ -2422,9 +2440,9 @@ AspenDiscovery.Admin = (function () {
 						if (!adminPatronTypeKeys.includes(ptypeValue)) {
 							missingLabels.add(ptypeLabel);
 
-							if (ptypeValue === selectedStaffType && !staffWarning && $staffTypeSelect.length > 0) {
+							if ((!changedTarget || changedTarget === 'staff') && ptypeValue === selectedStaffType && $staffTypeSelect.length > 0) {
 								$staffTypeSelect.closest(".form-group").after(`
-									<div id="staff_warning" class="alert alert-bs53-danger mt-2">
+									<div id="staff_warning" class="alert alert-danger mt-2">
 										<strong>Warning:</strong> The selected staff patron type "${ptypeLabel}" does not exist in the admin_sso profile.
 										This patron type must be assigned to the admin_sso profile with the "Treat as Staff" option enabled and its respective staff role assigned for proper staff permissions.
 										${ssoService === 'saml'
@@ -2435,9 +2453,9 @@ AspenDiscovery.Admin = (function () {
 								`);
 							}
 
-							if (ptypeValue === selectedFallbackType && !fallbackWarning) {
+							if ((!changedTarget || changedTarget === 'fallback') && ptypeValue === selectedFallbackType) {
 								$fallbackSelect.closest(".form-group").after(`
-									<div id="fallback_warning" class="alert alert-bs53-danger mt-2">
+									<div id="fallback_warning" class="alert alert-danger mt-2">
 										<strong>Warning:</strong> The selected fallback patron type "${ptypeLabel}" is not assigned to the admin_sso profile.
 										This patron type must be assigned to the admin_sso profile for SSO users to receive the correct permissions.
 									</div>
@@ -2447,40 +2465,42 @@ AspenDiscovery.Admin = (function () {
 					}
 				}
 
-				const availablePatronTypes = Object.values(adminSSOPatronTypes || {});
-				let warningHtml = `
-					<div id="ssoAuthOnly_warning" class="alert alert-bs53-warning mt-2">
-						<strong>Important:</strong> When "Only authenticate users with single sign-on" is enabled, 
-						you must ensure that patron types used by SSO users are assigned to the admin_sso account profile.`;
+				if (!changedTarget) {
+					const availablePatronTypes = Object.values(adminSSOPatronTypes || {});
+					let warningHtml = `
+						<div id="ssoAuthOnly_warning" class="alert alert-warning mt-2">
+							<strong>Important:</strong> When "Only authenticate users with single sign-on" is enabled, 
+							you must ensure that patron types used by SSO users are assigned to the admin_sso account profile.`;
 
-				if (missingLabels.size > 0) {
+					if (missingLabels.size > 0) {
+						warningHtml += `
+							<div class="mt-2">
+								The following patron types from other primary account profile(s) are not assigned to the admin_sso profile: 
+								${[...missingLabels].join(", ")}.
+							</div>`;
+					}
+
+					if (availablePatronTypes.length > 0) {
+						warningHtml += `
+							<div class="mt-2">
+								<strong>Available patron type(s) assigned to the admin_sso profile:</strong> ${availablePatronTypes.join(", ")}.
+							</div>`;
+					} else {
+						warningHtml += `
+							<div class="mt-2">
+								<strong>No patron types are assigned to the admin_sso profile.</strong>
+							</div>`;
+					}
+
 					warningHtml += `
 						<div class="mt-2">
-							The following patron types from other primary account profile(s) are not assigned to the admin_sso profile: 
-							${[...missingLabels].join(", ")}.
-						</div>`;
+							<strong>Solution:</strong> Create at least one matching patron type assigned to the admin_sso profile that should have the same permissions 
+							as its counterpart in other account profile(s).
+						</div>
+					</div>`;
+
+					$formGroup.after(warningHtml);
 				}
-
-				if (availablePatronTypes.length > 0) {
-					warningHtml += `
-						<div class="mt-2">
-							<strong>Available patron type(s) assigned to the admin_sso profile:</strong> ${availablePatronTypes.join(", ")}.
-						</div>`;
-				} else {
-					warningHtml += `
-						<div class="mt-2">
-							<strong>No patron types are assigned to the admin_sso profile.</strong>
-						</div>`;
-				}
-
-				warningHtml += `
-					<div class="mt-2">
-						<strong>Solution:</strong> Create at least one matching patron type assigned to the admin_sso profile that should have the same permissions 
-						as its counterpart in other account profile(s).
-					</div>
-				</div>`;
-
-				$formGroup.after(warningHtml);
 			}).fail(function () {
 				showError('Could not connect to the server to verify patron types.');
 			});
@@ -2489,7 +2509,7 @@ AspenDiscovery.Admin = (function () {
 
 			function showError(message) {
 				$formGroup.after(`
-					<div id="ssoAuthOnly_warning" class="alert alert-bs53-warning mt-2">
+					<div id="ssoAuthOnly_warning" class="alert alert-warning mt-2">
 						<p><strong>${message}</strong></p>
 						<strong>Important:</strong> When "Only authenticate users with single sign-on" is enabled, 
 						you must ensure that patron types used by SSO users are assigned to the admin_sso account profile. 
