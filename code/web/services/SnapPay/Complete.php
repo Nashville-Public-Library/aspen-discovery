@@ -21,6 +21,13 @@ class SnapPay_Complete extends Action {
 			$mailer = new Mailer();
 			$emailNotificationsAddresses = $snapPaySetting->emailNotificationsAddresses;
 		}
+		// Check if the session ID in the cookie differs from the one in the request
+		if (isset($_REQUEST['udf9'])) {
+			if(!isset($_COOKIE['aspen_session']) || $_COOKIE['aspen_session'] !== $_REQUEST['udf9']) {
+				// Update the session ID in the cookie
+				setcookie('aspen_session', $_REQUEST['udf9'], 0, '/');
+			}
+		}
 		if (empty($_REQUEST['udf1'])) {
 			$error = true;
 			$message = 'No Transaction ID was provided from SnapPay.';

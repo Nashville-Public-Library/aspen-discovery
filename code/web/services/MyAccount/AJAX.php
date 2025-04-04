@@ -6341,6 +6341,7 @@ class MyAccount_AJAX extends JSON_Action {
 
 				$postParams = [
 					'udf1' => $payment->id,
+					'udf9' => $_COOKIE['aspen_session'],
 					'accountid' => $snapPaySetting->accountId,
 					'customerid' => $patron->id,
 					// TO DO: ensure correct ID
