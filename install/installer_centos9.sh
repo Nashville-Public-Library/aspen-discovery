@@ -9,9 +9,11 @@ dnf check-update
 dnf -y install wget
 dnf -y install curl
 dnf -y install httpd
+dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+/usr/bin/crb enable
 dnf -y install http://rpms.remirepo.net/enterprise/remi-release-9.rpm
 dnf -y install dnf-utils
-dnf config-manager --enable remi-php83
+dnf module enable php:remi-8.3
 dnf -y install php php-mcrypt php-gd php-curl php-mysql php-zip php-fileinfo php-soap
 dnf -y install php-xml
 dnf -y install bind-utils
@@ -22,11 +24,13 @@ dnf -y install php-pgsql
 dnf -y install php-imagick
 dnf -y install php-ldap
 service httpd start
-chkconfig httpd on
+# start httpd on boot
+systemctl enable httpd
 # New PHP ini file
 # - Change max_memory to 256M
 # - Increase max file size to 75M
 # - Increase max post size to 75M
+# - Set session.gc_probability to 1
 mv /etc/php.ini /etc/php.ini.old
 cp php.ini /etc/php.ini
 php_ini="/etc/php.ini"
@@ -61,7 +65,7 @@ systemctl daemon-reload
 systemctl start rngd
 
 dnf -y install epel-release
-dnf -y install certbot python2-certbot-apache
+dnf -y install certbot python3-certbot-apache
 
 echo "Generate new root password for mariadb at: https://passwordsgenerator.net/ and store in passbolt"
 mariadb-secure-installation
