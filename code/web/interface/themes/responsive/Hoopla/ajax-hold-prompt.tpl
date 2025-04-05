@@ -13,12 +13,12 @@
                 </select>
             </div>
         </div>
-    {else}
+    {else if count($hooplaUsers) == 1}
        <div class="alert alert-info">
             {translate text="There are currently %1% people waiting for this title. Would you like to place a hold?" isPublicFacing=true 1=$holdQueueSize}
         </div>
         <br>
-        <input type="hidden" id="patronId" value="{$hooplaUsers[0]->id}">
+        <input type="hidden" id="patronId" value="{$singleUser->id}">
         <div class="form-group">
             <label for="stopHooplaHoldConfirmation" class="checkbox">
                 <input type="checkbox" name="stopHooplaHoldConfirmation" id="stopHooplaHoldConfirmation"> 

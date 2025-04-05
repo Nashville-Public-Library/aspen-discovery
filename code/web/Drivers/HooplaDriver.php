@@ -516,38 +516,63 @@ class HooplaDriver extends AbstractEContentDriver {
 								'message' => translate([
 									'text' => 'Registration required for Hoopla access',
 									'isPublicFacing' => true,
-								])
+								]),
 							]
 						];
-					} else if ($hooplaType == 'Flex' && $checkoutResponse['httpCode'] == 412) {
-						// prompt user to place a hold for Flex titles
-						return [
-							'success' => false,
-							'noCopies' => true,
-							'title' => translate([
-								'text' => 'Title Not Available',
-								'isPublicFacing' => true,
-							]),
-							'message' => translate([
-								'text' => 'No copies available right now, would you like to place a hold instead?',
-								'isPublicFacing' => true,
-							]),
-							'buttons' => '<button class="btn btn-primary" onclick="AspenDiscovery.Hoopla.doHold(\'' . $patron->id . '\', \'' . $titleId . '\')">' . translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button> ',
-							'api' => [
+					} else if ($checkoutResponse['httpCode'] == 412) {
+						if ($hooplaType == 'Flex') {
+							// prompt user to place a hold for Flex titles
+							return [
+								'success' => false,
+								'noCopies' => true,
 								'title' => translate([
-									'text' => 'Unable to checkout title',
+									'text' => 'Title Not Available',
 									'isPublicFacing' => true,
 								]),
 								'message' => translate([
-									'text' => 'Title currently unavailable, would you like to place a hold instead?',
+									'text' => 'No copies available right now, would you like to place a hold instead?',
 									'isPublicFacing' => true,
 								]),
-								'action' => translate([
-									'text' => 'Place Hold',
+								'buttons' => '<button class="btn btn-primary" onclick="AspenDiscovery.Hoopla.doHold(\'' . $patron->id . '\', \'' . $titleId . '\')">' . translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button> ',
+								'api' => [
+									'title' => translate([
+										'text' => 'Unable to checkout title',
+										'isPublicFacing' => true,
+									]),
+									'message' => translate([
+										'text' => 'Title currently unavailable, would you like to place a hold instead?',
+										'isPublicFacing' => true,
+									]),
+									'action' => translate([
+										'text' => 'Place Hold',
+										'isPublicFacing' => true,
+									])
+								]
+							];
+					 	} else {
+							return [
+								'success' => false,
+								'noCopies' => true,
+								'title' => translate([
+									'text' => 'Title Not Available',
 									'isPublicFacing' => true,
-								])
-							]
-						];
+								]),
+								'message' => translate([
+									'text' => 'This title is currently unavailable. Please contact your library for more information.',
+									'isPublicFacing' => true,
+								]),
+								'api' => [
+									'title' => translate([
+										'text' => 'Unable to checkout title',
+										'isPublicFacing' => true,
+									]),
+									'message' => translate([
+										'text' => 'This title is currently unavailable. Please contact your library for more information.',
+										'isPublicFacing' => true,
+									]),
+								]
+							];
+						}
 					}
 
 				} else {

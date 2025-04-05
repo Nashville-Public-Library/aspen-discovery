@@ -58,7 +58,7 @@ class Hoopla_AJAX extends Action {
 							'isPublicFacing' => true,
 						]),
 						'body' => $interface->fetch('Hoopla/ajax-checkout-prompt.tpl'),
-						'buttons' => '<button class="btn btn-primary" type= "button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\');">' . translate([
+						'buttons' => '<button class="btn btn-primary" type= "button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', $(\'#patronId\').val(), \'' . $hooplaType . '\');">' . translate([
 								'text' => 'Check Out',
 								'isPublicFacing' => true,
 							]) . '</button>',
@@ -86,7 +86,7 @@ class Hoopla_AJAX extends Action {
 								'isPublicFacing' => true,
 							]),
 							'body' => $interface->fetch('Hoopla/ajax-hoopla-single-user-checkout-prompt.tpl'),
-							'buttons' => '<button id="theHooplaButton" class="btn btn-default" type="button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', ' . $hooplaUser->id . ')">' . translate([
+							'buttons' => '<button id="theHooplaButton" class="btn btn-default" type="button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', ' . ', \'' . $hooplaType . '\');">' . translate([
 									'text' => 'I registered, Check Out now',
 									'isPublicFacing' => true,
 								]) . '</button>' . '<a class="btn btn-primary" role="button" href="' . $hooplaRegistrationUrl . '" target="_blank" title="Register at Hoopla" aria-label="Register at Hoopla ('.translate(['text' => 'opens in a new window', 'isPublicFacing' => true, 'inAttribute' => true]) .')" onclick="$(\'#theHooplaButton+a,#theHooplaButton\').toggleClass(\'btn-primary btn-default\');">' . translate([
@@ -104,7 +104,7 @@ class Hoopla_AJAX extends Action {
 								'isPublicFacing' => true,
 							]),
 							'body' => $interface->fetch('Hoopla/ajax-hoopla-single-user-checkout-prompt.tpl'),
-							'buttons' => '<button class="btn btn-primary" type="button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', ' . $hooplaUser->id . ')">' . translate([
+							'buttons' => '<button class="btn btn-primary" type="button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', ' . $hooplaUser->id . ', \'' . $hooplaType . '\');">' . translate([
 									'text' => 'Check Out',
 									'isPublicFacing' => true,
 								]) . '</button>',
@@ -181,6 +181,7 @@ class Hoopla_AJAX extends Action {
 				$interface->assign('hooplaUsers', $hooplaUsers);
 				if (count($hooplaUsers) == 1) {
 					$singleUser = reset($hooplaUsers);
+					$interface->assign('singleUser', $singleUser);
 					if (!$singleUser->hooplaHoldQueueSizeConfirmation) {
 						return [
 							'success' => true,
