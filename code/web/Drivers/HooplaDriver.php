@@ -949,7 +949,7 @@ class HooplaDriver extends AbstractEContentDriver {
 							'buttons' => '<a class="btn btn-primary" href="/MyAccount/Holds" role="button">' . translate(['text' => 'View My Holds', 'isPublicFacing' => true]) . '</a>',
 							'api' => [
 								'title' => translate(['text' => 'Hold Placed Successfully', 'isPublicFacing' => true]),
-								'message' => translate(['text' => 'Your hold was placed successfully', 'isPublicFacing' => true]),
+								'message' => translate(['text' => 'Your hold was placed successfully. You are number %1% in the queue.', 1 => $holdResponse['body']->holdsQueuePosition, 'isPublicFacing' => true]),
 								'action' => translate(['text' => 'View My Holds', 'isPublicFacing' => true])
 							]
 						];
@@ -1007,6 +1007,28 @@ class HooplaDriver extends AbstractEContentDriver {
 									1 => $registrationUrl,
 									'isPublicFacing' => true,
 								])
+							]
+						];
+					} else {
+						return [
+							'success' => false,
+							'title' => translate([
+								'text' => 'Unable to place hold',
+								'isPublicFacing' => true,
+							]),
+							'message' => translate([
+								'text' => 'There was an error placing your hold. Please try again later.',
+								'isPublicFacing' => true,
+							]),
+							'api' => [
+								'title' => translate([
+									'text' => 'Unable to place hold',
+									'isPublicFacing' => true,
+								]),
+								'message' => translate([
+									'text' => 'There was an error placing your hold. Please try again later.',
+									'isPublicFacing' => true,
+								]),
 							]
 						];
 					}
