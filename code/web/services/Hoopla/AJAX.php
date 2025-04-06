@@ -283,14 +283,15 @@ class Hoopla_AJAX extends Action {
 					$interface->assign('hooplaUser', $patron); // Display the account name when not using the main user
 				}
 
+				if (isset($_REQUEST['stopHooplaConfirmation'])) {
+					$patron->hooplaCheckOutConfirmation = 0;
+					$patron->update();
+				}
+
 				$id = $_REQUEST['id'];
 				require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
 				$driver = new HooplaDriver();
 				$result = $driver->checkOutTitle($patron, $id);
-				if (!empty($_REQUEST['stopHooplaConfirmation'])) {
-					$patron->hooplaCheckOutConfirmation = 0;
-					$patron->update();
-				}
 				if ($result['success']) {
 					$checkOutStatus = $driver->getAccountSummary($patron);
 					$interface->assign('hooplaPatronStatus', $checkOutStatus);
