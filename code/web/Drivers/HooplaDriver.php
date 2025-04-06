@@ -514,9 +514,10 @@ class HooplaDriver extends AbstractEContentDriver {
 									'isPublicFacing' => true,
 								]),
 								'message' => translate([
-									'text' => 'Registration required for Hoopla access',
+									'text' => 'We are unable to find a hoopla digital account for your library card. Please register at %1%',
+									1 => $registrationUrl,
 									'isPublicFacing' => true,
-								]),
+								])
 							]
 						];
 					} else if ($checkoutResponse['httpCode'] == 412) {
@@ -540,13 +541,9 @@ class HooplaDriver extends AbstractEContentDriver {
 										'isPublicFacing' => true,
 									]),
 									'message' => translate([
-										'text' => 'Title currently unavailable, would you like to place a hold instead?',
+										'text' => 'Title currently unavailable, please try again after 5 minutes',
 										'isPublicFacing' => true,
 									]),
-									'action' => translate([
-										'text' => 'Place Hold',
-										'isPublicFacing' => true,
-									])
 								]
 							];
 					 	} else {
@@ -978,13 +975,9 @@ class HooplaDriver extends AbstractEContentDriver {
 									'isPublicFacing' => true,
 								]),
 								'message' => translate([
-									'text' => 'Title currently available, would you like to check it out instead?',
+									'text' => 'Title currently available, please try again after 5 minutes',
 									'isPublicFacing' => true,
 								]),
-								'action' => translate([
-									'text' => 'Check Out',
-									'isPublicFacing' => true,
-								])
 							]
 						];
 					} else if ($holdResponse['httpCode'] == 403) {
@@ -1010,11 +1003,8 @@ class HooplaDriver extends AbstractEContentDriver {
 									'isPublicFacing' => true,
 								]),
 								'message' => translate([
-									'text' => 'We are unable to find a hoopla digital account for your library card. Please register to continue.',
-									'isPublicFacing' => true,
-								]),
-								'action' => translate([
-									'text' => 'Register at Hoopla',
+									'text' => 'We are unable to find a hoopla digital account for your library card. Please register at %1%',
+									1 => $registrationUrl,
 									'isPublicFacing' => true,
 								])
 							]
@@ -1077,7 +1067,14 @@ class HooplaDriver extends AbstractEContentDriver {
 					'text' => 'Hold already cancelled or doesn\'t exist',
 					'isPublicFacing' => true,
 				]);
-
+				$result['api']['title'] = translate([
+					'text' => 'Unable to cancel hold',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['message'] = translate([
+					'text' => 'Hold already cancelled or doesn\'t exist',
+					'isPublicFacing' => true,
+				]);
 				$patron->clearCachedAccountSummaryForSource('hoopla');
 				$patron->forceReloadOfHolds();
 			} else if ($cancelResponse['httpCode'] == 200) {
@@ -1087,12 +1084,27 @@ class HooplaDriver extends AbstractEContentDriver {
 					'text' => 'Your Hoopla hold was cancelled successfully',
 					'isPublicFacing' => true,
 				]);
-
+				$result['api']['title'] = translate([
+					'text' => 'Hold Cancelled Successfully',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['message'] = translate([
+					'text' => 'Your Hoopla hold was cancelled successfully',
+					'isPublicFacing' => true,
+				]);
 				$patron->clearCachedAccountSummaryForSource('hoopla');
 				$patron->forceReloadOfHolds();
 			} else {
 				$result['message'] = translate([
-					'text' => 'Failed to cancel hold.',
+					'text' => 'Could not cancel Hoopla hold.',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['title'] = translate([
+					'text' => 'Unable to cancel hold',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['message'] = translate([
+					'text' => 'Could not cancel Hoopla hold.',
 					'isPublicFacing' => true,
 				]);
 			}

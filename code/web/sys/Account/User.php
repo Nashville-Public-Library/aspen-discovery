@@ -5125,6 +5125,14 @@ class User extends DataObject {
 				'success' => $result['success'],
 				'message' => $result['api']['message'],
 			];
+		} elseif ($source == 'hoopla') {
+			require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+			$driver = new HooplaDriver();
+			$result = $driver->placeHold($this, $selectedRequestCandidate->sourceId);
+			return [
+				'success' => $result['success'],
+				'message' => $result['api']['message'],
+			];
 		} else {
 			return [
 				'success' => false,

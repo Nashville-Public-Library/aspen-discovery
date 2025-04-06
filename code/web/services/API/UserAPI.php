@@ -850,14 +850,23 @@ class UserAPI extends AbstractAPI {
 				$driver = new HooplaDriver();
 				$hooplaSummary = $driver->getAccountSummary($user);
 				$userData->numCheckedOut_Hoopla = (int)$hooplaSummary->numCheckedOut;
+				$userData->numHolds_Hoopla = (int)$hooplaSummary->getNumHolds();
+				$userData->numHoldsAvailable_Hoopla = (int)$hooplaSummary->numAvailableHolds;
 				$numCheckedOut += (int)$hooplaSummary->numCheckedOut;
+				$numHolds += (int)$hooplaSummary->getNumHolds();
+				$numHoldsAvailable += (int)$hooplaSummary->numAvailableHolds;
+
 
 				if ($linkedUsers && $user->getLinkedUsers() != null) {
 					/** @var User $user */
 					foreach ($user->getLinkedUsers() as $linkedUser) {
 						$linkedUserSummary_Hoopla = $driver->getAccountSummary($linkedUser);
 						$userData->numCheckedOut_Hoopla += (int)$linkedUserSummary_Hoopla->numCheckedOut;
+						$userData->numHolds_Hoopla += (int)$linkedUserSummary_Hoopla->getNumHolds();
+						$userData->numHoldsAvailable_Hoopla += (int)$linkedUserSummary_Hoopla->numAvailableHolds;
 						$numCheckedOut += (int)$linkedUserSummary_Hoopla->numCheckedOut;
+						$numHolds += (int)$linkedUserSummary_Hoopla->getNumHolds();
+						$numHoldsAvailable += (int)$linkedUserSummary_Hoopla->numAvailableHolds;
 					}
 				}
 			}
@@ -2060,6 +2069,8 @@ class UserAPI extends AbstractAPI {
 					return $this->placeAxis360Hold();
 				} elseif ($source == 'palace_project') {
 					return $this->placePalaceProjectHold();
+				} elseif ($source == 'hoopla') {
+					return $this->placeHooplaHold();
 				} else {
 					return [
 						'success' => false,
@@ -3109,6 +3120,60 @@ class UserAPI extends AbstractAPI {
 		}
 	}
 
+	function placeHooplaHold(): array {
+		$id = $_REQUEST['recordId'] ?? $_REQUEST['itemId'];
+		$user = $this->getUserForApiCall();
+
+
+		if ($user && !($user instanceof AspenError)) {
+			require_once ROOT_DIR . '/RecordDrivers/HooplaRecordDriver.php';
+			$recordDriver = new HooplaRecordDriver($id);
+
+			require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+			$driver = new HooplaDriver();
+			$result = $driver->placeHold($user, $id);
+			$action = $result['api']['action'] ?? null;
+			return [
+				'success' => $result['success'],
+				'title' => $result['api']['title'],
+				'message' => $result['api']['message'],
+				'action' => $action,
+			];
+		} else {
+			return [
+				'success' => false,
+				'title' => 'Error',
+				'message' => 'Unable to validate user',
+			];
+		}
+	}
+
+	function cancelHooplaHold(): array {
+		$id = $_REQUEST['recordId'] ?? $_REQUEST['itemId'];
+		$user = $this->getUserForApiCall();
+
+		if ($user && !($user instanceof AspenError)) {
+			require_once ROOT_DIR . '/RecordDrivers/HooplaRecordDriver.php';
+			$recordDriver = new HooplaRecordDriver($id);
+
+			require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+			$driver = new HooplaDriver();
+			$result = $driver->cancelHold($user, $id);
+			return [
+				'success' => $result['success'],
+				'title' => $result['api']['title'],
+				'message' => $result['api']['message'],
+			];
+		} else {
+			return [
+				'success' => false,
+				'title' => 'Error',
+				'message' => 'Unable to validate user',
+			];
+		}
+	}
+
+
 	function placeAxis360Hold(): array {
 		$id = $_REQUEST['itemId'];
 
@@ -3419,6 +3484,8 @@ class UserAPI extends AbstractAPI {
 				return $this->cancelAxis360Hold();
 			} elseif ($source == 'palace_project') {
 				return $this->cancelPalaceProjectHold();
+			} elseif ($source == 'hoopla') {
+				return $this->cancelHooplaHold();
 			} else {
 				return [
 					'success' => false,
