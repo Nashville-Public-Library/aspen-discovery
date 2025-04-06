@@ -250,35 +250,24 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 				$searchLibrary = Library::getSearchLibrary();
 				if ($searchLibrary->hooplaLibraryID > 0) { // Library is enabled for Hoopla patron action integration
 					$id = $this->id;
-					if ($this->getHooplaType() == 'Flex') {
-						if ($isAvailable) {
-							$title = translate([
-								'text' => 'Check Out Hoopla Flex',
-								'isPublicFacing' => true,
-							]);
-							$this->_actions[] = [
-								'onclick' => "return AspenDiscovery.Hoopla.getCheckOutPrompts('$id', 'Flex')",
-								'title' => $title,
-								'type' => 'hoopla_checkout',
-							];
-						} else {
-							$title = translate([
-								'text' => 'Place Hold Hoopla Flex',
-								'isPublicFacing' => true,
-							]);
-							$this->_actions[] = [
-								'onclick' => "return AspenDiscovery.Hoopla.placeHold('$id')",
-								'title' => $title,
-								'type' => 'hoopla_hold',
-							];
-						}
-					} else {
+					$hooplaType = $this->getHooplaType();
+					if (!$isAvailable) {
 						$title = translate([
-							'text' => 'Check Out Hoopla Instant',
+							'text' => 'Place Hold Hoopla',
 							'isPublicFacing' => true,
 						]);
 						$this->_actions[] = [
-							'onclick' => "return AspenDiscovery.Hoopla.getCheckOutPrompts('$id', 'Instant')",
+							'onclick' => "return AspenDiscovery.Hoopla.placeHold('$id')",
+							'title' => $title,
+							'type' => 'hoopla_hold',
+						];
+					} else {
+						$title = translate([
+							'text' => 'Check Out Hoopla',
+							'isPublicFacing' => true,
+						]);
+						$this->_actions[] = [
+							'onclick' => "return AspenDiscovery.Hoopla.getCheckOutPrompts('$id', '$hooplaType')",
 							'title' => $title,
 							'type' => 'hoopla_checkout',
 						];
