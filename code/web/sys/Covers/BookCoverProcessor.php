@@ -1952,12 +1952,6 @@ class BookCoverProcessor {
 		if (($source == 'upload' || $source == '') && file_exists($uploadedImage)) {
 			return $this->processImageURL($source, $uploadedImage);
 		}
-
-		// If not found, check the original directory as fallback (DIS-568).
-		$originalImage = $this->bookCoverPath . '/original/' . $id . '.png';
-		if (($source == 'upload' || $source == '') && file_exists($originalImage)) {
-			return $this->processImageURL($source, $originalImage);
-		}
 		return false;
 	}
 

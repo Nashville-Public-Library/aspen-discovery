@@ -83,6 +83,13 @@ function getUpdates25_04_00(): array {
 				"UPDATE user SET homeLocationId = -1 WHERE username = 'nyt_user' AND source = 'admin'",
 			],
 		], //fix_nyt_user_home_location
+		'move_list_images' => [
+			'title' => 'Properly Move All List Images',
+			'description' => "Move all list images to their own directory so they don't conflict with uploaded records' covers.",
+			'sql'=> [
+				'moveUploadedListImages'
+			]
+		], //move_list_images
 
 		//alexander - PTFS-Europe
 
