@@ -38,7 +38,7 @@
 				{assign var="hideCoversFormDisplayed" value=true}
 			{/if}
 		</div>
-		{if empty($offline) && $sectionKey != 'available'}
+		{if empty($offline) && $sectionKey != 'available'  && count($recordList.$sectionKey) >=5}
 			{include file="./holdsListActions.tpl" sectionKey=$sectionKey source=$source showCovers=$showCovers}
 			<br>
 		{/if}
@@ -75,7 +75,7 @@
 		{/if}
 	{/if}
 {/foreach}
-{if empty($offline) && $sectionKey != 'available'}
+{if empty($offline) && $sectionKey != 'available'  && count($recordList.$sectionKey) > 0}
 	<br>
 	{include file="./holdsListActions.tpl" sectionKey=$sectionKey source=$source showCovers=$showCovers}
 {/if}
