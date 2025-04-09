@@ -45,6 +45,15 @@ function getUpdates25_04_00(): array {
 				"ALTER TABLE themes ADD COLUMN headerLogoBackgroundColorAppDefault TINYINT(1) DEFAULT 1"
 			]
 		], //theme_app_header_options
+		'increase_series_member_field_lengths' => [
+			'title' => 'Increase Series Member Field Lengths',
+			'description' => 'Increase Series Member Field Lengths',
+			'continueOnError' => true,
+			'sql' => [
+				'ALTER TABLE series_member CHANGE COLUMN displayName displayName VARCHAR(750)',
+				'ALTER TABLE series_member CHANGE COLUMN volume volume VARCHAR(100)',
+			]
+		], //increase_series_member_field_lengths
 
 		//katherine - Grove
 		'add_location_to_aspen_events_settings' => [
