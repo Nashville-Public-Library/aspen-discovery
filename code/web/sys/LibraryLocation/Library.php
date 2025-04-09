@@ -302,7 +302,7 @@ class Library extends DataObject {
 
 	public $econtentLocationsToInclude;
 	public $showCardExpirationDate;
-	public $showPatronCategory;
+	public $showPatronTypeOnCard;
 	public $showExpirationWarnings;
 	public /** @noinspection PhpUnused */
 		$loginFormUsernameLabel;
@@ -1270,16 +1270,16 @@ class Library extends DataObject {
 						'property' => 'showCardExpirationDate',
 						'type' => 'checkbox',
 						'label' => 'Show Card Expiration Date',
-						'description' => 'Whether or not the user should be shown their cards expiration date on the My Library Card Page.',
+						'description' => 'Whether or not the user should be shown their cards expiration date of the My Library Card page.',
 						'hideInLists' => true,
 						'default' => 1,
 						'permissions' => ['Library ILS Options'],
 					],
-					'showPatronCategory' => [
-						'property' => 'showPatronCategory',
+					'showPatronTypeOnCard' => [
+						'property' => 'showPatronTypeOnCard',
 						'type' => 'checkbox',
-						'label' => 'Show Patron Category (i.e., Patron Type)',
-						'description' => 'Whether or not the patron category should be displayed under the barcode on the My Library Card Page.',
+						'label' => 'Show Patron Type on Library Card',
+						'description' => 'Whether or not the patron type should be displayed under the barcode of the My Library Card page.',
 						'hideInLists' => true,
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],
