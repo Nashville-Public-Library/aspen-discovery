@@ -1270,7 +1270,7 @@ class Library extends DataObject {
 						'property' => 'showCardExpirationDate',
 						'type' => 'checkbox',
 						'label' => 'Show Card Expiration Date',
-						'description' => 'Whether or not the user should be shown their cards expiration date of the My Library Card page.',
+						'description' => 'Whether or not the user should be shown their cards expiration date on the My Library Card page.',
 						'hideInLists' => true,
 						'default' => 1,
 						'permissions' => ['Library ILS Options'],
