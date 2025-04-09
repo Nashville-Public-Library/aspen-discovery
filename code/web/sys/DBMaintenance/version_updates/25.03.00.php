@@ -494,7 +494,6 @@ function moveUploadedListImages(&$update) : void {
 	require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
 	$uploadedListCovers = new BookCoverInfo();
 	$uploadedListCovers->setRecordType('list');
-	$uploadedListCovers->setImageSource('upload');
 	$uploadedListCovers->find();
 	global $configArray;
 	$originalPath = $configArray['Site']['coverPath'] . '/original/';
