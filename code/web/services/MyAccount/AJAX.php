@@ -3098,7 +3098,7 @@ class MyAccount_AJAX extends JSON_Action {
 
 		$selectedCheckouts = isset($_REQUEST['selectedCheckouts']) ? json_decode($_REQUEST['selectedCheckouts'], true) : [];
 		if (!empty($selectedCheckouts)) {
-			$allCheckedOut = $this->filterCheckoutsBySelected($allCheckedOut, $selectedCheckouts);
+			$allCheckedOut = $this->filterCheckoutsBySelected($allCheckedOut, $selectedCheckouts, $selectedUser);
 		} else {
 			$allCheckedOut = $this->filterCheckoutsByUser($allCheckedOut, $selectedUser);
 		}
@@ -3796,7 +3796,7 @@ class MyAccount_AJAX extends JSON_Action {
 		return $filteredHolds;
 	}
 
-	public function filterCheckoutsBySelected(array $allCheckedOut, $selectedCheckouts): array {
+	public function filterCheckoutsBySelected(array $allCheckedOut, $selectedCheckouts, string $selectedUser): array {
 		if (!empty($selectedCheckouts) && !is_array($selectedCheckouts)) {
 			$selectedCheckoutsArray = [];
 			parse_str($selectedCheckouts, $parsedCheckouts);
@@ -3818,6 +3818,10 @@ class MyAccount_AJAX extends JSON_Action {
 	
 		foreach ($allCheckedOut as $key => $checkout) {
 			$checkout->recordId = $this->normalizeRecordId($checkout->recordId);
+
+			if ($checkout->userId != $selectedUser) {
+				continue;
+			}
 			$matchFound = false;
 			foreach ($selectedCheckouts as $selectedCheckout) {
 				if (strval($checkout->recordId) === strval($selectedCheckout['recordId'])) {
