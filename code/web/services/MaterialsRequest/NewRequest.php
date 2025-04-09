@@ -81,7 +81,7 @@ class MaterialsRequest_NewRequest extends MyAccount {
 				}
 			}
 		}
-		if(!empty($_REQUEST['talpaOther'])) {
+		if( isset($_REQUEST['talpaOther'] )) {
 			$request->author = $_REQUEST['author'];
 			$request->publicationYear = $_REQUEST['publicationYear'];
 		}
