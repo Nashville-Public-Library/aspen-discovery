@@ -2558,12 +2558,12 @@ class MyAccount_AJAX extends JSON_Action {
 				$ilsSummary->setMaterialsRequests($user->getNumMaterialsRequests());
 				if ($user->getLinkedUsers() != null) {
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
 						if ($filterLinkedUser->find(true)) {
 							$filterLinkedUserSummary = $filterLinkedUser->getCatalogDriver()->getAccountSummary($filterLinkedUser);
-
 							$ilsSummary->numAvailableHolds = $filterLinkedUserSummary->numAvailableHolds;
 							$ilsSummary->numUnavailableHolds = $filterLinkedUserSummary->numUnavailableHolds;
 						}
@@ -2576,13 +2576,25 @@ class MyAccount_AJAX extends JSON_Action {
 
 						}
 					}
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $filterLinkedUserCheckouts->getCatalogDriver()->getAccountSummary($filterLinkedUserCheckouts);
+							$ilsSummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+							$ilsSummary->numOverdue = $filterLinkedUserCheckoutsSummary->numOverdue;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $linkedUser->getCatalogDriver()->getAccountSummary($linkedUser);
+							$ilsSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+							$ilsSummary->numOverdue += $linkedUserSummary->numOverdue;
+						}
+					}
 					foreach ($user->getLinkedUsers() as $linkedUser) {
 						$linkedUserSummary = $linkedUser->getCatalogDriver()->getAccountSummary($linkedUser);
 						$ilsSummary->totalFines += $linkedUserSummary->totalFines;
-						$ilsSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
-						$ilsSummary->numOverdue += $linkedUserSummary->numOverdue;
 						$ilsSummary->setMaterialsRequests($ilsSummary->getMaterialsRequests() + $linkedUser->getNumMaterialsRequests());
-
 					}
 				}
 				$timer->logTime("Loaded ILS Summary for User and linked users");
@@ -2664,6 +2676,7 @@ class MyAccount_AJAX extends JSON_Action {
 					/** @var User $user */
 
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
@@ -2679,9 +2692,18 @@ class MyAccount_AJAX extends JSON_Action {
 							$cloudLibrarySummary->numAvailableHolds += $linkedUserSummary->numAvailableHolds;
 						}
 					}
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						$cloudLibrarySummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$cloudLibrarySummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							$cloudLibrarySummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+						}
 					}
 				}
 				$timer->logTime("Loaded cloudLibrary Summary for User and linked users");
@@ -2720,6 +2742,7 @@ class MyAccount_AJAX extends JSON_Action {
 				if ($user->getLinkedUsers() != null) {
 					/** @var User $user */
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
@@ -2735,9 +2758,19 @@ class MyAccount_AJAX extends JSON_Action {
 							$axis360Summary->numAvailableHolds += $linkedUserSummary->numAvailableHolds;
 						}
 					}
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						$axis360Summary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$axis360Summary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							$axis360Summary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+
+						}
 					}
 				}
 				$timer->logTime("Loaded Boundless Summary for User and linked users");
@@ -2776,11 +2809,22 @@ class MyAccount_AJAX extends JSON_Action {
 
 				if ($user->getLinkedUsers() != null) {
 					/** @var User $user */
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						if ($linkedUserSummary != false) {
-							$hooplaSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
-							$hooplaSummary->numCheckoutsRemaining += $linkedUserSummary->numCheckoutsRemaining;
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$hooplaSummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+							$hooplaSummary->numCheckoutsRemaining = $filterLinkedUserCheckoutsSummary->numCheckoutsRemaining;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							if ($linkedUserSummary != false) {
+								$hooplaSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+								$hooplaSummary->numCheckoutsRemaining += $linkedUserSummary->numCheckoutsRemaining;
+							}
 						}
 					}
 				}
@@ -2819,6 +2863,7 @@ class MyAccount_AJAX extends JSON_Action {
 					/** @var User $user */
 
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
@@ -2834,10 +2879,19 @@ class MyAccount_AJAX extends JSON_Action {
 							$overDriveSummary->numUnavailableHolds += $linkedUserSummary->numUnavailableHolds;
 						}
 					}
-					
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						$overDriveSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$overDriveSummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							$overDriveSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+						}
 					}
 				}
 				$timer->logTime("Loaded " . $readerName . " Summary for User and linked users");
@@ -2873,6 +2927,7 @@ class MyAccount_AJAX extends JSON_Action {
 				if ($user->getLinkedUsers() != null) {
 					/** @var User $user */
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
@@ -2888,9 +2943,18 @@ class MyAccount_AJAX extends JSON_Action {
 							$palaceProjectSummary->numUnavailableHolds += $linkedUserSummary->numUnavailableHolds;
 						}
 					}
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						$palaceProjectSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$palaceProjectSummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							$palaceProjectSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+						}
 					}
 				}
 				$timer->logTime("Loaded Palace Project Summary for User and linked users");
@@ -3018,6 +3082,10 @@ class MyAccount_AJAX extends JSON_Action {
 
 	/** @noinspection PhpUnused */
 	public function exportCheckouts() {
+		if (session_status() == PHP_SESSION_NONE) {
+			session_start();
+		}
+		
 		$source = $_REQUEST['source'];
 		$user = UserAccount::getActiveUserObj();
 		$allCheckedOut = $user->getCheckouts(true, $source);
@@ -3025,6 +3093,16 @@ class MyAccount_AJAX extends JSON_Action {
 		if ($selectedSortOption == null) {
 			$selectedSortOption = 'dueDate';
 		}
+
+		$selectedUser = $this->setFilterLinkedUserCheckouts();
+
+		$selectedCheckouts = isset($_REQUEST['selectedCheckouts']) ? json_decode($_REQUEST['selectedCheckouts'], true) : [];
+		if (!empty($selectedCheckouts)) {
+			$allCheckedOut = $this->filterCheckoutsBySelected($allCheckedOut, $selectedCheckouts, $selectedUser);
+		} else {
+			$allCheckedOut = $this->filterCheckoutsByUser($allCheckedOut, $selectedUser);
+		}
+
 		$allCheckedOut = $this->sortCheckouts($selectedSortOption, $allCheckedOut);
 
 		$hasLinkedUsers = count($user->getLinkedUsers()) > 0;
@@ -3033,7 +3111,6 @@ class MyAccount_AJAX extends JSON_Action {
 		$showRenewed = $user->showTimesRenewed();
 		$showRenewalsRemaining = $user->showRenewalsRemaining();
 		$showWaitList = $user->showWaitListInCheckouts();
-
 
 		try {
 			// Redirect output to a client's web browser
@@ -3585,6 +3662,15 @@ class MyAccount_AJAX extends JSON_Action {
 					'isPublicFacing' => true,
 				]);
 			} else {
+
+				if ($user->getHomeLibrary() != null) {
+					$allowSelectingCheckoutsToExport = $user->getHomeLibrary()->allowSelectingCheckoutsToExport;
+				} else {
+					$allowSelectingCheckoutsToExport = $library->allowSelectingCheckoutsToExport;
+				}
+				$interface->assign('allowSelectingCheckoutsToExport', $allowSelectingCheckoutsToExport);
+
+
 				if (count($user->getLinkedUsers()) > 0) {
 					$sortOptions['libraryAccount'] = 'Library Account';
 				}
@@ -3600,7 +3686,9 @@ class MyAccount_AJAX extends JSON_Action {
 				$interface->assign('showNotInterested', false);
 
 				// Get My Transactions
-				$allCheckedOut = $user->getCheckouts(true, $source);
+				$selectedUser = $this->setFilterLinkedUserCheckouts();
+
+				$allCheckedOut = $this->filterCheckoutsByUser($user->getCheckouts(true, $source), $selectedUser);
 
 				foreach ($allCheckedOut as $checkout) {
 					if ($checkout->canRenew == 1) {
@@ -3707,6 +3795,46 @@ class MyAccount_AJAX extends JSON_Action {
 	
 		return $filteredHolds;
 	}
+
+	public function filterCheckoutsBySelected(array $allCheckedOut, $selectedCheckouts, string $selectedUser): array {
+		if (!empty($selectedCheckouts) && !is_array($selectedCheckouts)) {
+			$selectedCheckoutsArray = [];
+			parse_str($selectedCheckouts, $parsedCheckouts);
+
+			if (isset($parsedCheckouts['selected'])) {
+				foreach ($parsedCheckouts['selected'] as $checkoutKey => $value) {
+
+					if (preg_match('/(\d+)\|([a-zA-Z0-9:._-]+)\|?/', $checkoutKey, $matches)) {
+						$selectedCheckoutsArray[] = [
+							'recordId' => $this->normalizeRecordId($matches[2]),
+						];
+					}
+				}
+			}
+			$selectedCheckouts = $selectedCheckoutsArray;
+
+		}
+		$filteredCheckouts = [];
+	
+		foreach ($allCheckedOut as $key => $checkout) {
+			$checkout->recordId = $this->normalizeRecordId($checkout->recordId);
+
+			if ($checkout->userId != $selectedUser) {
+				continue;
+			}
+			$matchFound = false;
+			foreach ($selectedCheckouts as $selectedCheckout) {
+				if (strval($checkout->recordId) === strval($selectedCheckout['recordId'])) {
+					$matchFound = true;
+					break;
+				}
+			}
+			if ($matchFound) {
+				$filteredCheckouts[$key] = $checkout;
+			}
+		}
+		return $filteredCheckouts;
+	}
 	
 
 	public function filterHolds(array $allHolds, string $selectedUser): array {
@@ -3734,8 +3862,21 @@ class MyAccount_AJAX extends JSON_Action {
 		return $filteredHolds;
 	}
 
-	public function setFilterLinkedUser() : string {
+	public function filterCheckoutsByUser(array $allCheckedOut, string $selectedUser): array {
+		$filteredCheckouts = [];
+	
+		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" || $selectedUser === '[""]');
+	
+		foreach ($allCheckedOut as $key => $checkout) {
+			if ($allUsersSelected || intval($checkout->userId) === intval($selectedUser)) {
+				$filteredCheckouts[$key] = $checkout;
+			}
+		}
+	
+		return $filteredCheckouts;
+	}
 
+	public function setFilterLinkedUser() : string {		
 		$selectedUser = '';
 		if (isset($_REQUEST['selectedUser'])) {
 			$selectedUser = $_REQUEST['selectedUser'];
@@ -3747,6 +3888,24 @@ class MyAccount_AJAX extends JSON_Action {
 	
 		} elseif (isset($_SESSION['selectedUser'])) {
 			$selectedUser = $_SESSION['selectedUser'];
+		}
+		return (string)$selectedUser;
+	}
+
+	public function setFilterLinkedUserCheckouts() : string {	
+
+		$selectedUser = '';
+		if (isset($_REQUEST['selectedUserCheckouts'])) {
+			$selectedUser = $_REQUEST['selectedUserCheckouts'];
+			if ($selectedUser == "") {
+				$_SESSION['selectedUserCheckouts'] = '';
+			} else {
+				$_SESSION['selectedUserCheckouts'] = $selectedUser;
+			}
+	
+		} elseif (isset($_SESSION['selectedUserCheckouts'])) {
+
+			$selectedUser = $_SESSION['selectedUserCheckouts'];
 		}
 		return (string)$selectedUser;
 	}
