@@ -8587,6 +8587,7 @@ class Koha extends AbstractIlsDriver {
 
 		$this->apiCurlWrapper->curl_connect($url);
 		$this->apiCurlWrapper->curlSendPage($url, 'PUT' , json_encode($body));
+		$this->apiCurlWrapper->resetCurlConnectionOptions();
 
 		if ($this->apiCurlWrapper->getResponseCode() == 200) {
 			$result['success'] = true;
@@ -8630,6 +8631,7 @@ class Koha extends AbstractIlsDriver {
 
 		$this->apiCurlWrapper->curl_connect($url);
 		$response = $this->apiCurlWrapper->curlGetPage($url);
+		$this->apiCurlWrapper->resetCurlConnectionOptions();
 
 		if ($this->apiCurlWrapper->getResponseCode() == 200) {
 			return json_decode($response, true);
@@ -8672,6 +8674,7 @@ class Koha extends AbstractIlsDriver {
 		
 		$this->apiCurlWrapper->curl_connect($url);
 		$response = $this->apiCurlWrapper->curlGetPage($url);
+		$this->apiCurlWrapper->resetCurlConnectionOptions();
 
 		if ($this->apiCurlWrapper->getResponseCode() == 200) {
 			return json_decode($response, true);
