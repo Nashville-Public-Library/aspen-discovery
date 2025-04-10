@@ -24,7 +24,7 @@ function getUpdates25_05_00(): array {
 
 		// Leo Stoyanov - BWS
 
-		//alexander - PTFS-Europe
+		//alexander - Open Fifth
 		'allow_filtering_of_linked_users_in_checkouts' => [
 			'title' => 'Allow Filtering of Linked Users in Checkouts',
 			'description' => 'Allow libraries the option of allowing users to filter their checkouts by linked user',
