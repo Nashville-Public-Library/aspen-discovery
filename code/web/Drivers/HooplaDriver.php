@@ -549,22 +549,21 @@ class HooplaDriver extends AbstractEContentDriver {
 					 	} else {
 							return [
 								'success' => false,
-								'noCopies' => true,
 								'title' => translate([
-									'text' => 'Title Not Available',
+									'text' => 'Checkout Unavailable',
 									'isPublicFacing' => true,
 								]),
 								'message' => translate([
-									'text' => 'This title is currently unavailable. Please contact your library for more information.',
+									'text' => $checkoutResponse['body']->message,
 									'isPublicFacing' => true,
 								]),
 								'api' => [
 									'title' => translate([
-										'text' => 'Unable to checkout title',
+										'text' => 'Checkout Unavailable',
 										'isPublicFacing' => true,
 									]),
 									'message' => translate([
-										'text' => 'This title is currently unavailable. Please contact your library for more information.',
+										'text' => $checkoutResponse['body']->message,
 										'isPublicFacing' => true,
 									]),
 								]
