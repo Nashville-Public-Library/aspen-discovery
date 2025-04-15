@@ -7712,26 +7712,34 @@ class MyAccount_AJAX extends JSON_Action {
 	/** @noinspection PhpUnused */
 	function reloadCover() {
 		require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
-		$listId = htmlspecialchars($_GET["id"]);
-		$listEntry = new UserListEntry();
-		$listEntry->listId = $listId;
+		if (isset($_REQUEST['id'])) {
+			$listId = htmlspecialchars($_GET["id"]);
+			$listEntry = new UserListEntry();
+			$listEntry->listId = $listId;
 
-		require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
-		$bookCoverInfo = new BookCoverInfo();
-		$bookCoverInfo->recordType = 'list';
-		$bookCoverInfo->recordId = $listEntry->listId;
-		if ($bookCoverInfo->find(true)) {
-			$bookCoverInfo->imageSource = '';
-			$bookCoverInfo->thumbnailLoaded = 0;
-			$bookCoverInfo->mediumLoaded = 0;
-			$bookCoverInfo->largeLoaded = 0;
-			$bookCoverInfo->update();
+			require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
+			$bookCoverInfo = new BookCoverInfo();
+			$bookCoverInfo->recordType = 'list';
+			$bookCoverInfo->recordId = $listEntry->listId;
+			if ($bookCoverInfo->find(true)) {
+				$bookCoverInfo->imageSource = '';
+				$bookCoverInfo->thumbnailLoaded = 0;
+				$bookCoverInfo->mediumLoaded = 0;
+				$bookCoverInfo->largeLoaded = 0;
+				$bookCoverInfo->update();
+			}
+
+			return [
+				'success' => true,
+				'message' => 'Covers have been reloaded.  You may need to refresh the page to clear your local cache.',
+			];
+		}else{
+			return [
+				'success' => false,
+				'message' => 'ID of the cover to reload was not supplied.',
+			];
 		}
 
-		return [
-			'success' => true,
-			'message' => 'Covers have been reloaded.  You may need to refresh the page to clear your local cache.',
-		];
 	}
 
 	/** @noinspection PhpUnused */
@@ -7882,6 +7890,7 @@ class MyAccount_AJAX extends JSON_Action {
 		return $result;
 	}
 
+	/** @noinspection PhpUnused */
 	function removeUploadedListCover() : array {
 		$result = [
 			'success' => false,
@@ -7941,6 +7950,7 @@ class MyAccount_AJAX extends JSON_Action {
 			}
 		}
 		if ($result['success']) {
+			$_GET['id'] = $_REQUEST['listId'];
 			$this->reloadCover();
 			$result['message'] = translate(['text'=>'The cover has been removed', 'isAdminFacing' => true]);
 		}
