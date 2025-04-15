@@ -17,6 +17,7 @@ public class RecordInfo {
 	private long formatBoost = 1;
 
 	private String edition;
+	private String audience;
 	private String primaryLanguage;
 	private String publisher;
 	private String publicationDate;
@@ -62,6 +63,14 @@ public class RecordInfo {
 
 	public String getEdition(){
 		return edition;
+	}
+
+	void setAudience(String audience) {
+		this.audience = audience;
+	}
+
+	public String getAudience() {
+		return audience;
 	}
 
 	void setPrimaryLanguage(String primaryLanguage) {
@@ -121,6 +130,7 @@ public class RecordInfo {
 					getPrimaryFormat() + "|" +
 					getPrimaryFormatCategory() + "|" +
 					Util.getCleanDetailValue(edition) + "|" +
+					Util.getCleanDetailValue(audience) + "|" +
 					Util.getCleanDetailValue(primaryLanguage) + "|" +
 					Util.getCleanDetailValue(publisher) + "|" +
 					Util.getCleanDetailValue(placeOfPublication) + "|" +
@@ -343,6 +353,7 @@ public class RecordInfo {
 		this.formatCategories = (HashSet<String>)recordInfo.formatCategories.clone();
 		this.formatBoost = recordInfo.formatBoost;
 		this.edition = recordInfo.edition;
+		this.audience = recordInfo.audience;
 		this.primaryLanguage = recordInfo.primaryLanguage;
 		this.publisher = recordInfo.publisher;
 		this.placeOfPublication = recordInfo.placeOfPublication;
