@@ -123,6 +123,8 @@ public class GroupedWorkIndexer {
 	private PreparedStatement addLanguageStmt;
 	private PreparedStatement getEditionStmt;
 	private PreparedStatement addEditionStmt;
+	private PreparedStatement getAudienceStmt;
+	private PreparedStatement addAudienceStmt;
 	private PreparedStatement getPublisherStmt;
 	private PreparedStatement addPublisherStmt;
 	private PreparedStatement getPublicationDateStmt;
@@ -301,6 +303,8 @@ public class GroupedWorkIndexer {
 			addLanguageStmt = dbConn.prepareStatement("INSERT INTO indexed_language (language) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
 			getEditionStmt = dbConn.prepareStatement("SELECT id from indexed_edition where edition = ?", ResultSet.TYPE_FORWARD_ONLY,  ResultSet.CONCUR_READ_ONLY);
 			addEditionStmt = dbConn.prepareStatement("INSERT INTO indexed_edition (edition) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
+			getAudienceStmt = dbConn.prepareStatement("SELECT id from indexed_audience where audience = ?", ResultSet.TYPE_FORWARD_ONLY,  ResultSet.CONCUR_READ_ONLY);
+			addAudienceStmt = dbConn.prepareStatement("INSERT INTO indexed_audience (audience) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
 			getPublisherStmt = dbConn.prepareStatement("SELECT id from indexed_publisher where publisher = ?", ResultSet.TYPE_FORWARD_ONLY,  ResultSet.CONCUR_READ_ONLY);
 			addPublisherStmt = dbConn.prepareStatement("INSERT INTO indexed_publisher (publisher) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
 			getPublicationDateStmt = dbConn.prepareStatement("SELECT id from indexed_publication_date where publicationDate = ?", ResultSet.TYPE_FORWARD_ONLY,  ResultSet.CONCUR_READ_ONLY);
@@ -2007,6 +2011,46 @@ public class GroupedWorkIndexer {
 				}
 			}
 			editionIds.put(edition, id);
+		}
+		return id;
+	}
+
+	private final MaxSizeHashMap<String, Long> audienceIds = new MaxSizeHashMap<>(1000);
+	private long getAudienceId(String audience, int numTries) {
+		if (audience == null){
+			return -1;
+		}
+		if (audience.length() > 255) {
+			audience = audience.substring(0, 255);
+		}
+		Long id = audienceIds.get(audience);
+		if (id == null){
+			try {
+				getAudienceStmt.setString(1, audience);
+				ResultSet getAudienceRS = getAudienceStmt.executeQuery();
+				if (getAudienceRS.next()){
+					id = getAudienceRS.getLong("id");
+				}else {
+					addAudienceStmt.setString(1, audience);
+					addAudienceStmt.executeUpdate();
+					ResultSet addAudienceRS = addAudienceStmt.getGeneratedKeys();
+					if (addAudienceRS.next()) {
+						id = addAudienceRS.getLong(1);
+					} else {
+						logEntry.incErrors("Could not add audience");
+						id = -1L;
+					}
+				}
+			} catch (SQLException e) {
+				//Another thread already created it, call it again
+				if (numTries == 1) {
+					return getAudienceId(audience, numTries + 1);
+				}else {
+					logEntry.incErrors("Error getting audience id for audience (" + audience.length() + "): " + audience, e);
+					id = -1L;
+				}
+			}
+			audienceIds.put(audience, id);
 		}
 		return id;
 	}
