@@ -553,6 +553,18 @@ abstract class MarcRecordProcessor {
 		groupedWork.addEditions(editions);
 	}
 
+	void loadAudiences(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, HashSet<RecordInfo> ilsRecords) {
+		Set<String> audiences = MarcUtil.getFieldList(record, "521a");
+		if (!audiences.isEmpty()) {
+			String audience = audiences.iterator().next();
+			for (RecordInfo ilsRecord : ilsRecords) {
+				ilsRecord.setAudience(audience);
+			}
+		}
+		groupedWork.addAudiences(audiences);
+	}
+
+
 	void loadPhysicalDescription(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, HashSet<RecordInfo> ilsRecords) {
 		Set<String> physicalDescriptions = MarcUtil.getFieldList(record, "300abcefg:530abcd");
 		if (!physicalDescriptions.isEmpty()){
