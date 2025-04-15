@@ -149,6 +149,19 @@
 					{/if}
 				{/if}
 
+				{if !empty($showAudience)}
+					{if $alwaysShowSearchResultsMainDetails || $summAudience}
+						<div class="result-label col-sm-4 col-xs-12">{translate text='Audience' isPublicFacing=true} </div>
+						<div class="result-value col-sm-8 col-xs-12">
+						{if !empty($summAudience)}
+							{$summAudience}
+						{elseif $alwaysShowSearchResultsMainDetails}
+							{translate text="Not Supplied" isPublicFacing=true}
+						{/if}
+						</div>
+					{/if}
+				{/if}
+
 				{if !empty($showArInfo) && $summArInfo}
 
 						<div class="result-label col-sm-4 col-xs-12">{translate text='Accelerated Reader' isPublicFacing=true} </div>

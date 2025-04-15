@@ -2072,6 +2072,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$summPlaceOfPublication = null;
 		$summPhysicalDesc = null;
 		$summEdition = null;
+		$summAudience = null;
 		$summLanguage = null;
 		$isFirst = true;
 		global $library;
@@ -2083,6 +2084,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				$summPlaceOfPublication= $relatedRecord->placeOfPublication;
 				$summPhysicalDesc = $relatedRecord->physical;
 				$summEdition = $relatedRecord->edition;
+				$summAudience = $relatedRecord->audience;
 				$summLanguage = $relatedRecord->language;
 			} else {
 				if ($summPublisher != $relatedRecord->publisher) {
@@ -2115,6 +2117,12 @@ class GroupedWorkDriver extends IndexRecordDriver {
 						'isPublicFacing' => true,
 					]) : null;
 				}
+				if ($summAudience != $relatedRecord->audience) {
+					$summAudience = $alwaysShowMainDetails ? translate([
+						'text' => 'Varies, see individual formats and editions',
+						'isPublicFacing' => true,
+					]) : null;
+				}
 				if ($summLanguage != $relatedRecord->language) {
 					$summLanguage = $alwaysShowMainDetails ? translate([
 						'text' => 'Varies, see individual formats and editions',
@@ -2129,6 +2137,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$interface->assign('summPlaceOfPublication', $summPlaceOfPublication);
 		$interface->assign('summPhysicalDesc', $summPhysicalDesc);
 		$interface->assign('summEdition', $summEdition);
+		$interface->assign('summAudience', $summAudience);
 		$interface->assign('summLanguage', $summLanguage);
 		$timer->logTime("Finished assignment of data based on related records");
 
