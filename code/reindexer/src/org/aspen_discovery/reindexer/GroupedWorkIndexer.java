@@ -270,10 +270,10 @@ public class GroupedWorkIndexer {
 			addScopeStmt = dbConn.prepareStatement("INSERT INTO scope (name, isLibraryScope, isLocationScope) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
 			updateScopeStmt = dbConn.prepareStatement("UPDATE scope set isLibraryScope = ?, isLocationScope = ? WHERE id = ?");
 			removeScopeStmt = dbConn.prepareStatement("DELETE FROM scope where id = ?");
-			updateRecordForWorkStmt = dbConn.prepareStatement("UPDATE grouped_work_records SET groupedWorkId = ?, editionId = ?, publisherId = ?, publicationDateId = ?, placeOfPublicationId = ?, physicalDescriptionId = ?, formatId = ?, formatCategoryId = ?, languageId = ?, isClosedCaptioned = ?, hasParentRecord = ?, hasChildRecord = ? where id = ?");
 			getExistingRecordsForWorkStmt = dbConn.prepareStatement("SELECT id, sourceId, recordIdentifier, groupedWorkId, editionId, publisherId, publicationDateId, placeOfPublicationId, physicalDescriptionId, formatId, formatCategoryId, languageId, isClosedCaptioned, hasParentRecord, audienceId, hasChildRecord from grouped_work_records where groupedWorkId = ?", ResultSet.TYPE_FORWARD_ONLY,  ResultSet.CONCUR_READ_ONLY);
 			addRecordForWorkStmt = dbConn.prepareStatement("INSERT INTO grouped_work_records (groupedWorkId, sourceId, recordIdentifier, editionId, publisherId, publicationDateId, placeOfPublicationId, physicalDescriptionId, formatId, formatCategoryId, languageId, isClosedCaptioned, hasParentRecord, hasChildRecord, audienceId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
 					"ON DUPLICATE KEY UPDATE groupedWorkId = VALUES(groupedWorkId), editionId = VALUES(editionId), publisherId = VALUES(publisherId), publicationDateId = VALUES(publicationDateId), placeOfPublicationId = VALUES(placeOfPublicationId), physicalDescriptionId = VALUES(physicalDescriptionId), formatId = VALUES(formatId), formatCategoryId = VALUES(formatCategoryId), languageId = VALUES(languageId), isClosedCaptioned = VALUES(isClosedCaptioned), hasParentRecord = VALUES(hasParentRecord), hasChildRecord = VALUES(hasChildRecord), audienceId = VALUES(audienceId)", PreparedStatement.RETURN_GENERATED_KEYS);
+			updateRecordForWorkStmt = dbConn.prepareStatement("UPDATE grouped_work_records SET groupedWorkId = ?, editionId = ?, publisherId = ?, publicationDateId = ?, placeOfPublicationId = ?, physicalDescriptionId = ?, formatId = ?, formatCategoryId = ?, languageId = ?, isClosedCaptioned = ?, hasParentRecord = ?, hasChildRecord = ?, audienceId = ? where id = ?");
 			removeRecordForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where id = ?");
 			getIdForRecordStmt = dbConn.prepareStatement("SELECT id from grouped_work_records where sourceId = ? and recordIdentifier = ?", ResultSet.TYPE_FORWARD_ONLY,  ResultSet.CONCUR_READ_ONLY);
 			getExistingVariationsForWorkStmt = dbConn.prepareStatement("SELECT * from grouped_work_variation where groupedWorkId = ?", ResultSet.TYPE_FORWARD_ONLY,  ResultSet.CONCUR_READ_ONLY);
@@ -1786,6 +1786,7 @@ public class GroupedWorkIndexer {
 				boolean isClosedCaptioned = recordInfo.isClosedCaptioned();
 				boolean hasParentRecord = recordInfo.hasParentRecord();
 				boolean hasChildRecord = recordInfo.hasChildRecord();
+				long audienceId = getAudienceId(recordInfo.getAudience(), 1);
 				if (groupedWorkId != existingRecord.groupedWorkId) { hasChanges = true; }
 				if (editionId != existingRecord.editionId) { hasChanges = true; }
 				if (publisherId != existingRecord.publisherId) { hasChanges = true; }
@@ -1798,6 +1799,7 @@ public class GroupedWorkIndexer {
 				if (isClosedCaptioned != existingRecord.isClosedCaptioned) { hasChanges = true; }
 				if (hasParentRecord != existingRecord.hasParentRecord) { hasChanges = true; }
 				if (hasChildRecord != existingRecord.hasChildRecord) { hasChanges = true; }
+				if (audienceId != existingRecord.audienceId) { hasChanges = true; }
 				if (hasChanges){
 					updateRecordForWorkStmt.setLong(1, groupedWorkId);
 					updateRecordForWorkStmt.setLong(2, editionId);
@@ -1811,7 +1813,8 @@ public class GroupedWorkIndexer {
 					updateRecordForWorkStmt.setBoolean(10, isClosedCaptioned);
 					updateRecordForWorkStmt.setBoolean(11, hasParentRecord);
 					updateRecordForWorkStmt.setBoolean(12, hasChildRecord);
-					updateRecordForWorkStmt.setLong(13, existingRecord.id);
+					updateRecordForWorkStmt.setLong(13, audienceId);
+					updateRecordForWorkStmt.setLong(14, existingRecord.id);
 					updateRecordForWorkStmt.executeUpdate();
 				}
 			}
