@@ -10,6 +10,7 @@ class Grouping_Record {
 	public $format;
 	public $formatCategory;
 	public $edition;
+	public $audience;
 	public $language;
 	public $publisher;
 	public $publicationDate;
@@ -76,6 +77,7 @@ class Grouping_Record {
 			$this->formatCategory = $recordDetails['formatCategory'];
 			$this->databaseId = $recordDetails['id'];
 			$this->edition = $recordDetails['edition'];
+			$this->audience = $recordDetails['audience'];
 			$this->publisher = $recordDetails['publisher'];
 			$this->publicationDate = $recordDetails['publicationDate'];
 			$this->placeOfPublication = $recordDetails['placeOfPublication'];
@@ -103,6 +105,7 @@ class Grouping_Record {
 			$this->publicationDate = $recordDetails[6];
 			$this->physical = $recordDetails[7];
 			$this->placeOfPublication = $recordDetails[8];
+			$this->audience = $recordDetails[15];
 		}
 
 		if (empty($this->language)) {

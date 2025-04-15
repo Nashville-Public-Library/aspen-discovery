@@ -95,6 +95,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$summPlaceOfPublication =  null;
 		$summPhysicalDesc = null;
 		$summEdition = null;
+		$summAudience = null;
 		$summLanguage = null;
 		$summClosedCaptioned = null;
 		$isFirst = true;
@@ -105,6 +106,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				$summPlaceOfPublication = $relatedRecord->placeOfPublication;
 				$summPhysicalDesc = $relatedRecord->physical;
 				$summEdition = $relatedRecord->edition;
+				$summAudience = $relatedRecord->audience;
 				$summLanguage = $relatedRecord->language;
 				$summClosedCaptioned = $relatedRecord->closedCaptioned;
 			} else {
@@ -123,6 +125,9 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				if ($summEdition != $relatedRecord->edition) {
 					$summEdition = null;
 				}
+				if ($summAudience != $relatedRecord->audience) {
+					$summAudience = null;
+				}
 				if ($summLanguage != $relatedRecord->language) {
 					$summLanguage = null;
 				}
@@ -137,6 +142,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$interface->assign('summPlaceOfPublication', $summPlaceOfPublication);
 		$interface->assign('summPhysicalDesc', $summPhysicalDesc);
 		$interface->assign('summEdition', $summEdition);
+		$interface->assign('summAudience', $summAudience);
 		$interface->assign('summLanguage', $summLanguage);
 		$interface->assign('summClosedCaptioned', $summClosedCaptioned);
 		$interface->assign('summArInfo', $this->getAcceleratedReaderDisplayString());
@@ -3254,7 +3260,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 			$records = [];
 		} else {
 			$uniqueRecordIdsString = implode(',', $uniqueRecordIds);
-			$recordQuery = "SELECT grouped_work_records.id, recordIdentifier, isClosedCaptioned, indexed_record_source.source, indexed_record_source.subSource, indexed_edition.edition, indexed_publisher.publisher, indexed_publication_date.publicationDate, indexed_place_of_publication.placeOfPublication, indexed_physical_description.physicalDescription, indexed_format.format, indexed_format_category.formatCategory, indexed_language.language, hasParentRecord, hasChildRecord FROM grouped_work_records
+			$recordQuery = "SELECT grouped_work_records.id, recordIdentifier, isClosedCaptioned, indexed_record_source.source, indexed_record_source.subSource, indexed_edition.edition, indexed_publisher.publisher, indexed_publication_date.publicationDate, indexed_place_of_publication.placeOfPublication, indexed_physical_description.physicalDescription, indexed_format.format, indexed_format_category.formatCategory, indexed_language.language, indexed_audience.audience, hasParentRecord, hasChildRecord FROM grouped_work_records
 								  LEFT JOIN indexed_record_source ON sourceId = indexed_record_source.id
 								  LEFT JOIN indexed_edition ON editionId = indexed_edition.id
 								  LEFT JOIN indexed_publisher ON publisherId = indexed_publisher.id
@@ -3264,6 +3270,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 								  LEFT JOIN indexed_format on formatId = indexed_format.id
 								  LEFT JOIN indexed_format_category on formatCategoryId = indexed_format_category.id
 								  LEFT JOIN indexed_language on languageId = indexed_language.id
+								  LEFT JOIN indexed_audience ON audienceId = indexed_audience.id
 								  where grouped_work_records.id IN ($uniqueRecordIdsString)";
 			$results = $aspen_db->query($recordQuery, PDO::FETCH_ASSOC);
 			$records = $results->fetchAll();
