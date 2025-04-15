@@ -101,6 +101,7 @@ class GroupedWorkDisplaySetting extends DataObject {
 		'showArInfo' => 'Show Accelerated Reader Information',
 		'showLexileInfo' => 'Show Lexile Information',
 		'showFountasPinnell' => 'Show Fountas &amp; Pinnell Information  (This data must be present in MARC records)',
+		'showAudience' => 'Audience',
 	];
 
 	// Use this to set which details will be shown in the Main Details section of the record view.
