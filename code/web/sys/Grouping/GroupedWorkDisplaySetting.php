@@ -116,6 +116,7 @@ class GroupedWorkDisplaySetting extends DataObject {
 		'showArInfo' => 'Show Accelerated Reader Information',
 		'showLexileInfo' => 'Show Lexile Information',
 		'showFountasPinnell' => 'Show Fountas &amp; Pinnell Information  (This data must be present in MARC records)',
+		'showAudience' => 'Audience',
 	];
 
 	private $_libraries;
