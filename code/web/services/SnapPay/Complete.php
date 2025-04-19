@@ -21,57 +21,68 @@ class SnapPay_Complete extends Action {
 			$mailer = new Mailer();
 			$emailNotificationsAddresses = $snapPaySetting->emailNotificationsAddresses;
 		}
-		if (empty($_REQUEST['udf1'])) {
-			$error = true;
-			$message = 'No Transaction ID was provided from SnapPay.';
-		} else {
-			$paymentId = $_REQUEST['udf1'];
-			$hppHMACParamValue = '';
-			$params = explode(',', $_REQUEST['hpphmacresponseparameters']);
-			foreach ($params as $param) {
-				if ($param != 'nonce' && $param != 'timestamp') {
-					$hppHMACParamValue .= $_REQUEST[$param];
-				}
-			}
-			$validated = $this->validateSnapPayHMAC($_REQUEST['signature'], $hppHMACParamValue);
-			if ($validated != 'Valid signature.') {
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			if (empty($_GET['u'])) { // Payment Reference ID from the query string
 				$error = true;
-				$message = "Invalid signature returned from SnapPay for Payment Reference ID $paymentId.";
+				$message = 'No Payment Reference ID was provided in the URL.';
+			}
+			if (empty($_POST['udf1'])) {
+				$error = true;
+				$message = 'No Transaction ID was provided from SnapPay.';
 			} else {
-				require_once ROOT_DIR . '/sys/Account/UserPayment.php';
-				$result = UserPayment::completeSnapPayPayment();
-				$message = $result['message'];
-				if ($result['error'] === true) {
+				if ($_GET['u'] !== $_POST['udf1']) {
 					$error = true;
+					$message = 'Payment Reference ID from SnapPay does not match Payment Reference ID in the URL. '. $_GET['u'] . ' !== ' . $_POST['udf1'];
+				}
+				$params = explode(',', $_POST['hpphmacresponseparameters']);
+				foreach ($params as $param) {
+					if ($param != 'nonce' && $param != 'timestamp') {
+						$hppHMACParamValue .= $_POST[$param];
+					}
+				}
+				$validated = $this->validateSnapPayHMAC($_POST['signature'], $hppHMACParamValue);
+				if ($validated != 'Valid signature.') {
+					$error = true;
+					$message = "Invalid signature returned from SnapPay for Payment Reference ID $paymentId.";
 				} else {
-					$error = false;
+					require_once ROOT_DIR . '/sys/Account/UserPayment.php';
+					$result = UserPayment::completeSnapPayPayment();
+					$message = $result['message'];
+					if ($result['error'] === true) {
+						$error = true;
+					} else {
+						$error = false;
+					}
 				}
 			}
-		}
-		if ($error === true && $result['cancelled'] === true) {
-			$interface->assign('error', $message);
-			$logger->log($message, Logger::LOG_ERROR);
-			if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
+			if ($error === true && $result['cancelled'] === true) {
+				$interface->assign('error', $message);
+				$logger->log($message, Logger::LOG_ERROR);
+				if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
+					$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
+				}
+				$this->display('paymentResult.tpl', 'Payment Cancelled');
+			} elseif ($error === true) {
+				$interface->assign('error', $message);
+				$logger->log($message, Logger::LOG_ERROR);
+				if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
+					$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
+				}
+				$this->display('paymentResult.tpl', 'Payment Error');
+			} else {
+				if (empty($message)) {
+					$message = "SnapPay Payment completed with no message for Payment Reference ID $paymentId.";
+				}
+				$interface->assign('message', $message);
+				$logger->log($message, Logger::LOG_DEBUG);
+				if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
+					$mailer->send($emailNotificationsAddresses, "$serverName SnapPay Payment", $message);
+				}
+				$this->display('paymentResult.tpl', 'Payment Completed');
 			}
-			$this->display('paymentResult.tpl', 'Payment Cancelled');
-		} elseif ($error === true) {
-			$interface->assign('error', $message);
-			$logger->log($message, Logger::LOG_ERROR);
-			if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
-			}
-			$this->display('paymentResult.tpl', 'Payment Error');
 		} else {
-			if (empty($message)) {
-				$message = "SnapPay Payment completed with no message for Payment Reference ID $paymentId.";
-			}
-			$interface->assign('message', $message);
-			$logger->log($message, Logger::LOG_DEBUG);
-			if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-				$mailer->send($emailNotificationsAddresses, "$serverName SnapPay Payment", $message);
-			}
-			$this->display('paymentResult.tpl', 'Payment Completed');
+			$error = true;
+			$message = 'Invalid request method. Only POST requests are allowed.';
 		}
 	}
 

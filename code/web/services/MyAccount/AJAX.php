@@ -6552,7 +6552,7 @@ class MyAccount_AJAX extends JSON_Action {
 					// TO DO: allow N too
 					'enableemailreceipt' => 'Y',
 					// TO DO: allow N too
-					'redirectionurl' => $configArray['Site']['url'] . "/SnapPay/Complete",
+					'redirectionurl' => $configArray['Site']['url'] . "/SnapPay/Complete?u=" . $payment->id,
 					// TO DO: documentation: FISERV pdf has 'redirectionurl'; error has 'redirecturl'; 'redirectionurl ' is correct
 					'signature' => $HmacValue,
 					// TO DO: documentation: FISERV pdf has 'signature'; error has 'Signature'; 'signature' is correct
