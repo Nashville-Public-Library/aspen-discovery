@@ -1,24 +1,26 @@
 	<div class="holdsWithSelected{$sectionKey}">
+		{assign var="sectionLabel" value=""}
+		{if $sectionKey == "unavailable"}
+			{assign var="sectionLabel" value="Pending"}
+		{elseif $sectionKey == "interlibrary_loan"}
+			{assign var="sectionLabel" value="ILL"}
+		{else}
+			{assign var="sectionLabel" value=""}
+		{/if}
 		<form id="withSelectedHoldsFormBottom{$sectionKey}" action="{$fullPath}">
 			<div class="btn-group">
-				<a href="#" onclick="AspenDiscovery.Account.confirmCancelHoldSelected()" class="btn btn-sm btn-default btn-warning">{translate text="Cancel Selected" isPublicFacing=true}</a>
-				<a href="#" onclick="AspenDiscovery.Account.confirmCancelHoldAll()" class="btn btn-sm btn-default btn-warning">{translate text="Cancel All" isPublicFacing=true}</a>
+				<a href="#" onclick="AspenDiscovery.Account.confirmCancelHoldSelected()" class="btn btn-sm btn-default btn-warning" aria-describedby="{translate text="Click here to cancel selected holds in the $sectionLabel section"}">{translate text="Cancel Selected $sectionLabel" isPublicFacing=true}</a>
+				<a href="#" onclick="AspenDiscovery.Account.confirmCancelHoldAll()" class="btn btn-sm btn-default btn-warning" aria-describedby="{translate text="Click here to cancel all holds in the $sectionLabel section"}">{translate text="Cancel All $sectionLabel" isPublicFacing=true}</a>
 				{if !empty($allowFreezeAllHolds)}
-					<a href="#" onclick="AspenDiscovery.Account.confirmFreezeHoldSelected('', '', '', {if !empty($suspendRequiresReactivationDate)}true{else}false{/if})" class="btn btn-sm btn-default">{translate text="Freeze Selected" isPublicFacing=true}</a>
-					<a href="#" onclick="AspenDiscovery.Account.confirmFreezeHoldAll('{$userId}', {if !empty($suspendRequiresReactivationDate)}true{else}false{/if})" class="btn btn-sm btn-default">{translate text="Freeze All" isPublicFacing=true}</a>
-					<a href="#" onclick="AspenDiscovery.Account.confirmThawHoldSelected()" class="btn btn-sm btn-default">{translate text="Thaw Selected" isPublicFacing=true}</a>
-					<a href="#" onclick="AspenDiscovery.Account.confirmThawHoldAll('{$userId}')" class="btn btn-sm btn-default">{translate text="Thaw All" isPublicFacing=true}</a>
+					<a href="#" onclick="AspenDiscovery.Account.confirmFreezeHoldSelected('', '', '', {if !empty($suspendRequiresReactivationDate)}true{else}false{/if})" class="btn btn-sm btn-default" aria-describedby="{translate text="Click here to freeze selected holds in the $sectionLabel section"}">{translate text="Freeze Selected $sectionLabel" isPublicFacing=true}</a>
+					<a href="#" onclick="AspenDiscovery.Account.confirmFreezeHoldAll('{$userId}', {if !empty($suspendRequiresReactivationDate)}true{else}false{/if})" class="btn btn-sm btn-default" aria-describedby="{translate text="CLick here to freeze all holds in the $sectionLabel section"}">{translate text="Freeze All $sectionLabel" isPublicFacing=true}</a>
+					<a href="#" onclick="AspenDiscovery.Account.confirmThawHoldSelected()" class="btn btn-sm btn-default" aria-describedby="{translate text="Click here to thaw selected holds in the $sectionLabel section"}">{translate text="Thaw Selected $sectionLabel" isPublicFacing=true}</a>
+					<a href="#" onclick="AspenDiscovery.Account.confirmThawHoldAll('{$userId}')" class="btn btn-sm btn-default" aria-describedby="{translate text="Click here to thaw all holds in the $sectionLabel section"}">{translate text="Thaw All $sectionLabel" isPublicFacing=true}</a>
 				{/if}
-
 				{if $allowSelectingHoldsToExport}
-					<a href="#" onclick="return AspenDiscovery.Account.exportOnlySelectedHolds('{$source}', $('#availableHoldSort_{$source} option:selected').val(), $('#unavailableHoldSort_{$source} option:selected').val());" class="btn btn-sm btn-default">{translate text="Export Selected to CSV" isPublicFacing=true}</a>
+					<a href="#" onclick="return AspenDiscovery.Account.exportOnlySelectedHolds('{$source}', $('#{$sectionKey}HoldSort_{$source} option:selected').val()" class="btn btn-sm btn-default" aria-describedby="{translate text="Click here to export selected holds in the $sectionLabel section to CSV"}">{translate text="Export Selected $sectionLabel to CSV" isPublicFacing=true}</a>
 				{/if}
-			</div>
-			<div class="btn-group">
-				<input type="hidden" name="withSelectedAction" value="">
-				<div id="holdsUpdateSelected{$sectionKey}Bottom" class="holdsUpdateSelected{$sectionKey}">
-					<button type="submit" class="btn btn-sm btn-default" id="exportToExcel" name="exportToExcel" onclick="return AspenDiscovery.Account.exportHolds('{$source}', $('#availableHoldSort_{$source} option:selected').val(), $('#unavailableHoldSort_{$source} option:selected').val());">{translate text="Export to CSV" isPublicFacing=true}</button>
-				</div>
+				<a href="#" onclick="return AspenDiscovery.Account.exportHolds('{$source}', $('#{$sectionKey}HoldSort_{$source} option:selected').val());" class="btn btn-sm btn-default" aria-describedby="{translate text="Click here to export all holds in the $sectionLabel section to CSV"}">{translate text="Export All $sectionLabel to CSV" isPublicFacing=true}</a>
 			</div>
 		</form>
 	</div>
