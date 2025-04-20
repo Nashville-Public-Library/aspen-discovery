@@ -21,6 +21,11 @@ class SnapPay_Complete extends Action {
 			$mailer = new Mailer();
 			$emailNotificationsAddresses = $snapPaySetting->emailNotificationsAddresses;
 		}
+		// attempt to restore user session if it has been lost
+		if(!UserAccount::$isLoggedIn) {
+			$session = new Session();
+			$session->setSessionId($_POST['udf9']);
+		}
 		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			if (empty($_GET['u'])) { // Payment Reference ID from the query string
 				$error = true;

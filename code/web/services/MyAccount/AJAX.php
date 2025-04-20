@@ -6367,6 +6367,15 @@ class MyAccount_AJAX extends JSON_Action {
 					'email' => $patron->email,
 					'phone' => $patron->phone,
 				];
+// Create udf9 value from the current sessionId
+				$sessionVariable = $_COOKIE['aspen_session'] ?? '';
+// Check if the session variable matches the pattern
+				if (preg_match('/^[0-9a-z]{26}$/', $sessionVariable, $matches)) {
+					$postParams['udf9'] = $matches[0];
+				} else {
+					$postParams['udf9'] = '';
+				}
+
 				return [
 					'success' => true,
 					'message' => 'Redirecting to payment processor',
