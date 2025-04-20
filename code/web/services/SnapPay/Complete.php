@@ -35,6 +35,7 @@ class SnapPay_Complete extends Action {
 					$message = 'Payment Reference ID from SnapPay does not match Payment Reference ID in the URL. '. $_GET['u'] . ' !== ' . $_POST['udf1'];
 				}
 				$params = explode(',', $_POST['hpphmacresponseparameters']);
+				$hppHMACParamValue = '';
 				foreach ($params as $param) {
 					if ($param != 'nonce' && $param != 'timestamp') {
 						$hppHMACParamValue .= $_POST[$param];
