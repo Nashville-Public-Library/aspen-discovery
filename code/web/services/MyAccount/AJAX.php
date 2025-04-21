@@ -6469,7 +6469,7 @@ class MyAccount_AJAX extends JSON_Action {
 				$sessionValue = $matches[0];
 			}
 			setcookie('aspen_session', $sessionValue, [
-				'expires' => time() + 3600, // 1 hour expiration
+				'expires' => 0,
 				'path' => '/',
 				'domain' => '',
 				'secure' => true, // Required for SameSite=None
