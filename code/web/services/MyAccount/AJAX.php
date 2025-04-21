@@ -6468,14 +6468,7 @@ class MyAccount_AJAX extends JSON_Action {
 			if (preg_match('/^[0-9a-z]{26}$/', $sessionVariable, $matches)) {
 				$sessionValue = $matches[0];
 			}
-			setcookie('aspen_session', $sessionValue, [
-				'expires' => 0,
-				'path' => '/',
-				'domain' => '',
-				'secure' => true, // Required for SameSite=None
-				'httponly' => true,
-				'samesite' => 'None'
-			]);
+
 			global $activeLanguage;
 			$currencyCode = 'USD';
 			$variables = new SystemVariables();
@@ -6554,6 +6547,7 @@ class MyAccount_AJAX extends JSON_Action {
 
 				$postParams = [
 					'udf1' => $payment->id,
+					'udf9' => $sessionValue,
 					'accountid' => $snapPaySetting->accountId,
 					'customerid' => $patron->id,
 					// TO DO: ensure correct ID
