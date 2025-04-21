@@ -24,8 +24,12 @@ class SnapPay_Complete extends Action {
 		if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) {
 			// attempt to restore user session if it has been lost
 			if(!UserAccount::$isLoggedIn) {
-				if (isset($_POST['udf9']) && !empty($_POST['udf9'])) {
-					$session = new Session();
+				global $session;
+				require_once ROOT_DIR . '/sys/Session/MySQLSession.php';
+				session_name('aspen_session');
+				$session = new MySQLSession();
+				$session->id = $_POST['udf9'] ?? null;
+				if (isset($session->id) && $session->find(true)) {
 					$session->setSessionId($_POST['udf9']);
 				}
 			}
