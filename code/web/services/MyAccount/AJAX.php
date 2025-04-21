@@ -6461,21 +6461,6 @@ class MyAccount_AJAX extends JSON_Action {
 		if (array_key_exists('success', $result) && $result['success'] === false) {
 			return $result;
 		} else {
-			// Get the current sessionId to set cookie SameSite=None AND pass to SnapPay as udf9
-			$sessionVariable = $_COOKIE['aspen_session'] ?? '';
-			$sessionValue = '';
-			// Check if the session variable matches the pattern
-			if (preg_match('/^[0-9a-z]{26}$/', $sessionVariable, $matches)) {
-				$sessionValue = $matches[0];
-			}
-			setcookie('aspen_session', $sessionValue, [
-				'expires' => 0,
-				'path' => '/',
-				'domain' => '',
-				'secure' => true, // Required for SameSite=None
-				'httponly' => true,
-				'samesite' => 'None'
-			]);
 			global $activeLanguage;
 			$currencyCode = 'USD';
 			$variables = new SystemVariables();
