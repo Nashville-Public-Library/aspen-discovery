@@ -21,12 +21,14 @@ class SnapPay_Complete extends Action {
 			$mailer = new Mailer();
 			$emailNotificationsAddresses = $snapPaySetting->emailNotificationsAddresses;
 		}
-		// attempt to restore user session if it has been lost
-		if(!UserAccount::$isLoggedIn) {
-			$session = new Session();
-			$session->setSessionId($_POST['udf9']);
-		}
-		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) {
+			// attempt to restore user session if it has been lost
+			if(!UserAccount::$isLoggedIn) {
+				if (isset($_POST['udf9']) && !empty($_POST['udf9'])) {
+					$session = new Session();
+					$session->setSessionId($_POST['udf9']);
+				}
+			}
 			if (empty($_GET['u'])) { // Payment Reference ID from the query string
 				$error = true;
 				$message = 'No Payment Reference ID was provided in the URL.';
@@ -89,6 +91,12 @@ class SnapPay_Complete extends Action {
 		} else {
 			$error = true;
 			$message = 'Invalid request method. Only POST requests are allowed.';
+			$interface->assign('error', $message);
+			$logger->log($message, Logger::LOG_ERROR);
+			if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
+				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
+			}
+			$this->display('paymentResult.tpl', 'Payment Error');
 		}
 	}
 
