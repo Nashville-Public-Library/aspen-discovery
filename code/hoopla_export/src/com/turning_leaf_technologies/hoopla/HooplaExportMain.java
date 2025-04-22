@@ -398,7 +398,6 @@ public class HooplaExportMain {
 				String apiUsername = getSettingsRS.getString("apiUsername");
 				String apiPassword = getSettingsRS.getString("apiPassword");
 				String hooplaLibraryId = getSettingsRS.getString("libraryId");
-				boolean indexByDay = getSettingsRS.getBoolean("indexByDay");
 				boolean isRegroupAllRecords = getSettingsRS.getBoolean("regroupAllRecords");
 				long settingsId = getSettingsRS.getLong("id");
 				String accessToken = getSettingsRS.getString("accessToken");
@@ -421,7 +420,7 @@ public class HooplaExportMain {
 					long lastUpdateOfChangedRecordsInstant = getSettingsRS.getLong("lastUpdateOfChangedRecordsInstant");
 					long lastUpdateOfAllRecordsInstant = getSettingsRS.getLong("lastUpdateOfAllRecordsInstant");
 
-					boolean instantUpdated = exportHooplaContent(settingsId, doFullReloadInstant, indexByDay, lastUpdateOfChangedRecordsInstant, lastUpdateOfAllRecordsInstant, hooplaAPIBaseURL, hooplaLibraryId, accessToken, "Instant", apiUsername, apiPassword);
+					boolean instantUpdated = exportHooplaContent(settingsId, doFullReloadInstant, lastUpdateOfChangedRecordsInstant, lastUpdateOfAllRecordsInstant, hooplaAPIBaseURL, hooplaLibraryId, accessToken, "Instant", apiUsername, apiPassword);
 					updatesRun |= instantUpdated;
 
 				}
@@ -434,7 +433,7 @@ public class HooplaExportMain {
 					long lastUpdateOfChangedRecordsFlex = getSettingsRS.getLong("lastUpdateOfChangedRecordsFlex");
 					long lastUpdateOfAllRecordsFlex = getSettingsRS.getLong("lastUpdateOfAllRecordsFlex");
 
-					boolean flexUpdated = exportHooplaContent(settingsId, doFullReloadFlex, indexByDay, lastUpdateOfChangedRecordsFlex, lastUpdateOfAllRecordsFlex, hooplaAPIBaseURL, hooplaLibraryId, accessToken, "Flex", apiUsername, apiPassword);
+					boolean flexUpdated = exportHooplaContent(settingsId, doFullReloadFlex, lastUpdateOfChangedRecordsFlex, lastUpdateOfAllRecordsFlex, hooplaAPIBaseURL, hooplaLibraryId, accessToken, "Flex", apiUsername, apiPassword);
 
 
 
@@ -460,7 +459,7 @@ public class HooplaExportMain {
 	}
 
 
-	private static boolean exportHooplaContent(long settingsId, boolean doFullReload, boolean indexByDay, long lastUpdateOfChangedRecords, long lastUpdateOfAllRecords, String hooplaAPIBaseURL, String hooplaLibraryId, String accessToken, String hooplaType, String apiUsername, String apiPassword) {
+	private static boolean exportHooplaContent(long settingsId, boolean doFullReload, long lastUpdateOfChangedRecords, long lastUpdateOfAllRecords, String hooplaAPIBaseURL, String hooplaLibraryId, String accessToken, String hooplaType, String apiUsername, String apiPassword) {
 		boolean updatedContent = false;
 		long lastUpdate = Math.max(lastUpdateOfChangedRecords, lastUpdateOfAllRecords);
 		String purchaseModel = hooplaType.equals("Instant") ? "PPU" : "EST";
@@ -471,7 +470,7 @@ public class HooplaExportMain {
 				updateSettingsStmt.setLong(1, settingsId);
 				updateSettingsStmt.executeUpdate();
 				logEntry.addNote("Processing full update for " + hooplaType);
-			} else if (indexByDay) {
+			} else {
 				//We only want to index once a day at 1 am Local Time
 				ZonedDateTime nowLocalTime = ZonedDateTime.now();
 				int curHour = nowLocalTime.getHour();

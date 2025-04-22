@@ -12,7 +12,6 @@ class HooplaSetting extends DataObject {
 	public $tokenExpirationTime;
 	public $regroupAllRecords;
 	public $runFullUpdateInstant;
-	public $indexByDay;
 	public $lastUpdateOfChangedRecordsInstant;
 	public $lastUpdateOfAllRecordsInstant;
 	public $hooplaInstantEnabled;
@@ -66,15 +65,6 @@ class HooplaSetting extends DataObject {
 				'description' => 'Whether or not all existing records should be regrouped',
 				'default' => 0,
 			],
-			'indexByDay' => [
-					'property' => 'indexByDay',
-					'type' => 'checkbox',
-					'label' => 'Index By Day',
-					'description' => 'Whether or hoopla indexing should only occur once a day',
-					'default' => 1,
-					'type' => "hidden",
-					'hideInLists' => true,
-					],
 			'hooplaInstantRecords' => [
 				'property' => 'hooplaInstantRecords',
 				'type' => 'section',
