@@ -1180,6 +1180,7 @@ class HooplaDriver extends AbstractEContentDriver {
 				$recordUsage->update();
 			} else {
 				$recordUsage->timesCheckedOut = 1;
+				$recordUsage->timesHeld = 0;
 				$recordUsage->insert();
 			}
 		}
