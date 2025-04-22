@@ -331,7 +331,9 @@ class Library extends DataObject {
 
 	public $allowLinkedAccounts;
 	public $allowFilteringOfLinkedAccountsInHolds;
+	public $allowFilteringOfLinkedAccountsInCheckouts;
 	public $allowSelectingHoldsToExport;
+	public $allowSelectingCheckoutsToExport;
 
 
 	public $maxFinesToAllowAccountUpdates;
@@ -1341,11 +1343,29 @@ class Library extends DataObject {
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],
 					],
+					'allowFilteringOfLinkedAccountsInCheckouts' => [
+						'property' => 'allowFilteringOfLinkedAccountsInCheckouts',
+						'type' => 'checkbox',
+						'label' => 'Allow Filtering of Linked Accounts in Check Out Titles',
+						'description' => 'Whether or not users can filter their checked out titles by linked accounts.',
+						'hideInLists' => true,
+						'default' => 0,
+						'permissions' => ['Library ILS Options'],
+					],
 					'allowSelectingHoldsToExport' => [
 						'property' => 'allowSelectingHoldsToExport',
 						'type' => 'checkbox',
 						'label' => 'Allow Ability To Export Only Selected Holds',
 						'description' => 'Whether or not users can export only selected holds.',
+						'hideInLists' => true,
+						'default' => 0,
+						'permissions' => ['Library ILS Options'],
+					],
+					'allowSelectingCheckoutsToExport' => [
+						'property' => 'allowSelectingCheckoutsToExport',
+						'type' => 'checkbox',
+						'label' => 'Allow Ability To Export Only Selected Checkouts',
+						'description' => 'Whether or not users can export only selected checkouts.',
 						'hideInLists' => true,
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],

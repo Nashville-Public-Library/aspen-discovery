@@ -24,6 +24,10 @@
 		{if !empty($offline) && !$enableEContentWhileOffline}
 			<div class="alert alert-warning"><strong>{translate text=$offlineMessage isPublicFacing=true}</strong></div>
 		{else}
+			{if count($linkedUsers) > 0 && $allowFilteringOfLinkedAccountsInCheckouts}
+				{assign var="filterType" value="checkouts"}
+				{include file="./linkedUsersDropdown.tpl"}
+			{/if}
 			<ul class="nav nav-tabs" role="tablist" id="checkoutsTab">
 				{if empty($offline)}
 					<li role="presentation"{if $tab=='all'} class="active"{/if}><a href="#all" aria-controls="all" role="tab" data-toggle="tab">{translate text="All" isPublicFacing=true} <span class="badge"><span class="checkouts-placeholder">&nbsp;</span></span></a></li>
