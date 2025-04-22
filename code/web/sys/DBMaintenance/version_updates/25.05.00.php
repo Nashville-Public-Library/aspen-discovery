@@ -13,6 +13,14 @@ function getUpdates25_05_00(): array {
 		 ], //name*/
 
 		//mark - Grove
+		'system_variables_add_lida_github_repository' => [
+			'title' => 'system_variables_add_lida_github_repository',
+			'description' => 'Add a field to store the github repository for LiDA within System Variables to load release notes from',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE system_variables add column lidaGitHubRepository VARCHAR(255) DEFAULT 'https://github.com/Aspen-Discovery/aspen-lida'",
+			]
+		], //system_variables_add_lida_github_repository
 
 		//katherine - Grove
 

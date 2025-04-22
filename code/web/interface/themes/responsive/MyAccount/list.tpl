@@ -95,7 +95,7 @@
 											<button onclick="return AspenDiscovery.Lists.getUploadListCoverForm({$userList->id})" class="btn btn-sm btn-default">{translate text="Upload List Cover from Computer" isPublicFacing=true}</button>
 											<button onclick="return AspenDiscovery.Lists.getUploadListCoverFormByURL('{$userList->id}')" class="btn btn-sm btn-default">{translate text="Upload List Cover by URL" isPublicFacing=true}</button>
 											{if $hasUploadedCover}
-												<button onclick="return AspenDiscovery.Lists.removeUploadedListCover('{$userList->id}')" class="btn btn-sm btn-danger">{translate text="Remove Uploaded Cover" isPublicFacing=true}</button>
+												<button onclick="return AspenDiscovery.Lists.removeUploadedListCover('{$userList->id}')" class="btn btn-sm btn-danger" id="removeUploadedListCover">{translate text="Remove Uploaded Cover" isPublicFacing=true}</button>
 											{/if}
 										</div>
 									</div>
