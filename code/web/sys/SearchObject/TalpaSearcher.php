@@ -954,12 +954,20 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		if(!$settings->talpaApiToken) {
 			$msg = $settings->talpaSearchSourceString.' settings are not configured by your library: missing API token.';
 //					implode('<br />', $errors); //add this in for debugging, but not for public display.
-			throw new Exception($msg);
+			AspenError::raiseError(new AspenError($msg));
 		}
 
 		$headers = $this->authenticate($settings);
 
 		$recordData = $this->httpRequest($baseUrl, $queryString, $headers, $settings, $queryId);
+		$json_response = json_decode($recordData, true);
+		if( $json_response['error'])
+		{
+			$code = $json_response['error']['code'];
+			$wording = $json_response['error']['wording'];
+			$msg = $wording . ' ('.$code.')';
+			AspenError::raiseError(new AspenError($msg));
+		}
 
 		if (!empty($recordData)){
 			$this->processData($recordData);
@@ -1076,9 +1084,9 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				foreach (SearchObject_TalpaSearcher::$searchOptions['errors'] as $current) {
 					$errors[] = "{$current['code']}: {$current['message']}";
 				}
-				$msg = $searchSourceString.' encountered an error while processing your request.';
+				$msg = $searchSourceString.' encountered an error while processing your request: '. $current['message'];
 //					implode('<br />', $errors); //add this in for debugging, but not for public display.
-				throw new Exception($msg);
+				AspenError::raiseError(new AspenError($msg));
 			}
 			if (SearchObject_TalpaSearcher::$searchOptions) {
 				return SearchObject_TalpaSearcher::$searchOptions;
@@ -1114,7 +1122,8 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		curl_setopt_array($curlConnection, $curlOptions);
 		$result = curl_exec($curlConnection);
 		if ($result === false) {
-			throw new Exception($settings->talpaSearchSourceString.' encountered an error while processing your request.');
+			$msg = $settings->talpaSearchSourceString.' encountered an error while processing your request.';
+			AspenError::raiseError(new AspenError($msg));
 		}
 
 		 curl_close($curlConnection);

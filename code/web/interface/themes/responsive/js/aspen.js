@@ -5694,6 +5694,22 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
+		exportOnlySelectedCheckouts: function (source, sort) {
+			var url = Globals.path + "/MyAccount/AJAX?method=exportCheckouts&source=" + source;
+			var selectedTitles = AspenDiscovery.getSelectedTitles();
+
+			if (selectedTitles && selectedTitles.length > 0) {
+				sessionStorage.setItem('selectedCheckouts', JSON.stringify(selectedTitles));
+				url += "&selectedCheckouts=" + encodeURIComponent(JSON.stringify(selectedTitles));
+			}
+			if (sort !== undefined) {
+				url += "&sort=" + sort;
+			}
+			document.location.href = url;
+			AspenDiscovery.Account.clearSelectedTitles();
+			return false;
+		},
+
 		clearSelectedTitles: function() {
 			$('input[type="checkbox"]:checked').prop('checked', false);
 		},
@@ -5737,9 +5753,14 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
-		loadCheckouts: function (source, sort, showCovers) {
+		loadCheckouts: function (source, sort, showCovers, selectedUser) {
+
 			AspenDiscovery.Account.currentCheckoutsSource = source;
 			var url = Globals.path + "/MyAccount/AJAX?method=getCheckouts&source=" + source;
+			if (selectedUser || selectedUser == "") {
+				url += "&selectedUserCheckouts=" + selectedUser;
+			}
+
 			if (sort !== undefined) {
 				url += "&sort=" + sort;
 			}
@@ -5750,7 +5771,8 @@ AspenDiscovery.Account = (function () {
 				page: 'Checkouts',
 				source: source,
 				sort: sort,
-				showCovers: showCovers
+				showCovers: showCovers,
+				selectedUserCheckouts: selectedUser
 			};
 			var newUrl = AspenDiscovery.buildUrl(document.location.origin + document.location.pathname, 'source', source);
 			if (document.location.href) {
@@ -5784,6 +5806,7 @@ AspenDiscovery.Account = (function () {
 						// noinspection JSUnresolvedReference
 						$("#costSavingsPlaceholder").html(data.costSavingsMessage);
 					}
+					AspenDiscovery.Account.loadMenuData();
 				} else {
 					$("#" + source + "CheckoutsPlaceholder").html(data.message);
 				}
@@ -6881,13 +6904,20 @@ AspenDiscovery.Account = (function () {
 			return queryString;
 		},
 
-		filterOutLinkedUsers: function () {
+		filterOutLinkedUsers: function (filterType) {
+
 			var selectedUser = $('#linkedUsersDropdown').val();
-			sessionStorage.setItem('selectedUser', selectedUser);
-			var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
-			var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
 			var showCovers = $('#showCovers').prop('checked');
-			AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, []);
+			if (filterType == "holds") {
+				sessionStorage.setItem('selectedUser', selectedUser);
+				var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+				var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+				AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, []);
+			} else if (filterType === "checkouts") {
+				sessionStorage.setItem('selectedUserCheckouts', selectedUser);
+				var sort = $('#accountSort_' + AspenDiscovery.Account.currentCheckoutsSource).val();
+				AspenDiscovery.Account.loadCheckouts(AspenDiscovery.Account.currentCheckoutsSource, sort, showCovers, selectedUser);
+			}
 		},
 		
 
@@ -10806,8 +10836,213 @@ AspenDiscovery.Admin = (function () {
 				}
 			}
 			return true;
-		}
+		},
 
+		checkSSOAuthOnlyPatronTypes: function (changedTarget) {
+			const $ssoCheckbox = $("#ssoAuthOnly");
+			const isSSOEnabled = $ssoCheckbox.is(':checked');
+			const ssoSettingId = $("input[name='id']").val();
+			const $formGroup = $ssoCheckbox.closest(".form-group");
+			const $fallbackSelect = $("select[name='ssoCategoryIdFallback']");
+			const $serviceSelect = $("#serviceSelect");
+			const samlStaffPTypeSelect = $("select[name='samlStaffPType']");
+			const oAuthStaffPTypeSelect = $("select[name='oAuthStaffPType']")
+			const ssoService = $serviceSelect.val();
+			const warningId = "#ssoAuthOnly_warning";
+			const fallbackWarningId = "#fallback_warning";
+			const staffWarningId = "#staff_warning";
+
+			// Get the appropriate staff type selector based on the current service.
+			let $staffTypeSelect;
+			if (ssoService === 'saml') {
+				$staffTypeSelect = samlStaffPTypeSelect
+			} else if (ssoService === 'oauth') {
+				$staffTypeSelect = oAuthStaffPTypeSelect
+			} else {
+				$staffTypeSelect = $();
+			}
+
+			// Check if LDAP is selected as the service or no service selected, and if so, exit early.
+			if (ssoService === 'ldap' || ssoService === '0') {
+				$(warningId).remove();
+				$(fallbackWarningId).remove();
+				$(staffWarningId).remove();
+				return true;
+			}
+
+			// Remove previous warnings and listeners.
+			if (changedTarget === 'fallback') {
+				$(fallbackWarningId).remove();
+			}
+			else if (changedTarget === 'staff') {
+				$(staffWarningId).remove();
+			}
+			else {
+				$(fallbackWarningId).remove();
+				$(staffWarningId).remove();
+				$(warningId).remove();
+			}
+			$fallbackSelect.off('change.ssoWarning');
+			samlStaffPTypeSelect.off('change.ssoWarning');
+			oAuthStaffPTypeSelect.off('change.ssoWarning');
+			$serviceSelect.off('change.ssoService');
+
+			// Change listener to service selector to rerun validation.
+			$serviceSelect.on('change.ssoService', function() {
+				setTimeout(() => AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes(), 100);
+			});
+
+			if (!isSSOEnabled) return true;
+
+			// Show loading message.
+			if (!changedTarget) {
+				$formGroup.after(`
+					<div id="ssoAuthOnly_warning" class="alert alert-warning mt-2">
+						<strong>Checking patron type configuration...</strong>
+					</div>
+				`);
+			}
+
+			$fallbackSelect.on('change.ssoWarning', function () {
+				setTimeout(() => AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes('fallback'), 100);
+			});
+
+			$staffTypeSelect.on('change.ssoWarning', function () {
+				setTimeout(() => AspenDiscovery.Admin.checkSSOAuthOnlyPatronTypes('staff'), 100);
+			});
+
+			$.getJSON(`${Globals.path}/Admin/AJAX`, {
+				method: 'getSSOPatronTypesForProfiles',
+				ssoSettingId: ssoSettingId
+			}).done(function (response) {
+				if (changedTarget === 'fallback') {
+					$(fallbackWarningId).remove();
+				}
+				else if (changedTarget === 'staff') {
+					$(staffWarningId).remove();
+				}
+				else {
+					$(fallbackWarningId).remove();
+					$(staffWarningId).remove();
+					$(warningId).remove();
+				}
+
+				if (!response.success) {
+					showError(response.message || 'Could not retrieve patron type information.');
+					return;
+				}
+
+				const {
+					adminSSOExists,
+					primaryProfilesData,
+					adminSSOPatronTypes
+				} = response;
+
+				if (!adminSSOExists) {
+					showMissingProfileError();
+					return;
+				}
+
+				const adminPatronTypeKeys = Object.keys(adminSSOPatronTypes || {});
+				const missingLabels = new Set();
+
+				const selectedStaffType = $staffTypeSelect.val();
+				const selectedFallbackType = $fallbackSelect.val();
+
+				for (const [profileId, patronTypes] of Object.entries(primaryProfilesData)) {
+					for (const [ptypeValue, ptypeLabel] of Object.entries(/** @type {Record<string, string>} */ (patronTypes))) {
+						if (!adminPatronTypeKeys.includes(ptypeValue)) {
+							missingLabels.add(ptypeLabel);
+
+							if ((!changedTarget || changedTarget === 'staff') && ptypeValue === selectedStaffType && $staffTypeSelect.length > 0) {
+								$staffTypeSelect.closest(".form-group").after(`
+									<div id="staff_warning" class="alert alert-danger mt-2">
+										<strong>Warning:</strong> The selected staff patron type "${ptypeLabel}" does not exist in the admin_sso profile.
+										This patron type must be assigned to the admin_sso profile with the "Treat as Staff" option enabled and its respective staff role assigned for proper staff permissions.
+										${ssoService === 'saml'
+									? `<div class="mt-2">You may leave this blank if you selected a "A fallback value for category ID" assigned to the admin_sso account profile.</div>`
+									: ''
+								}
+									</div>
+								`);
+							}
+
+							if ((!changedTarget || changedTarget === 'fallback') && ptypeValue === selectedFallbackType) {
+								$fallbackSelect.closest(".form-group").after(`
+									<div id="fallback_warning" class="alert alert-danger mt-2">
+										<strong>Warning:</strong> The selected fallback patron type "${ptypeLabel}" is not assigned to the admin_sso profile.
+										This patron type must be assigned to the admin_sso profile for SSO users to receive the correct permissions.
+									</div>
+								`);
+							}
+						}
+					}
+				}
+
+				if (!changedTarget) {
+					const availablePatronTypes = Object.values(adminSSOPatronTypes || {});
+					let warningHtml = `
+						<div id="ssoAuthOnly_warning" class="alert alert-warning mt-2">
+							<strong>Important:</strong> When "Only authenticate users with single sign-on" is enabled, 
+							you must ensure that patron types used by SSO users are assigned to the admin_sso account profile.`;
+
+					if (missingLabels.size > 0) {
+						warningHtml += `
+							<div class="mt-2">
+								The following patron types from other primary account profile(s) are not assigned to the admin_sso profile: 
+								${[...missingLabels].join(", ")}.
+							</div>`;
+					}
+
+					if (availablePatronTypes.length > 0) {
+						warningHtml += `
+							<div class="mt-2">
+								<strong>Available patron type(s) assigned to the admin_sso profile:</strong> ${availablePatronTypes.join(", ")}.
+							</div>`;
+					} else {
+						warningHtml += `
+							<div class="mt-2">
+								<strong>No patron types are assigned to the admin_sso profile.</strong>
+							</div>`;
+					}
+
+					warningHtml += `
+						<div class="mt-2">
+							<strong>Solution:</strong> Create at least one matching patron type assigned to the admin_sso profile that should have the same permissions 
+							as its counterpart in other account profile(s).
+						</div>
+					</div>`;
+
+					$formGroup.after(warningHtml);
+				}
+			}).fail(function () {
+				showError('Could not connect to the server to verify patron types.');
+			});
+
+			return true;
+
+			function showError(message) {
+				$formGroup.after(`
+					<div id="ssoAuthOnly_warning" class="alert alert-warning mt-2">
+						<p><strong>${message}</strong></p>
+						<strong>Important:</strong> When "Only authenticate users with single sign-on" is enabled, 
+						you must ensure that patron types used by SSO users are assigned to the admin_sso account profile. 
+						If using a fallback patron type, it must also exist in the admin_sso profile.
+						<div class="mt-2">Failure to configure these properly will result in users not receiving the correct permissions and staff features may not work.</div>
+					</div>
+				`);
+			}
+
+			function showMissingProfileError() {
+				$formGroup.after(`
+					<div id="ssoAuthOnly_warning" class="alert alert-danger alert-outline mt-2">
+						<strong>Error:</strong> The "admin_sso" account profile has not been created yet. 
+						This profile is required when "Only authenticate users with single sign-on" is enabled.
+						Please complete initial SSO setup first and ensure it is spelled and formatted correctly.
+					</div>
+				`);
+			}
+		}
 	};
 }(AspenDiscovery.Admin || {}));
 AspenDiscovery.Authors = (function () {
@@ -13938,6 +14173,9 @@ AspenDiscovery.Lists = (function(){
 		removeUploadedListCover: function (id){
 			var url = Globals.path + '/MyAccount/AJAX?listId=' + id + '&method=removeUploadedListCover';
 			$.getJSON(url, function (data){
+				if (data.success) {
+					$("#removeUploadedListCover").hide();
+				}
 				AspenDiscovery.showMessage(data.title, data.message);
 			});
 			return false;

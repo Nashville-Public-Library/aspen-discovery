@@ -171,6 +171,9 @@ AspenDiscovery.Lists = (function(){
 		removeUploadedListCover: function (id){
 			var url = Globals.path + '/MyAccount/AJAX?listId=' + id + '&method=removeUploadedListCover';
 			$.getJSON(url, function (data){
+				if (data.success) {
+					$("#removeUploadedListCover").hide();
+				}
 				AspenDiscovery.showMessage(data.title, data.message);
 			});
 			return false;
