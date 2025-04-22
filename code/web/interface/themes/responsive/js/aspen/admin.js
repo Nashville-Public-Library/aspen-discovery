@@ -2284,7 +2284,6 @@ AspenDiscovery.Admin = (function () {
 			if (isUnbound) {
 				$("#propertyRowunboundAccountNumber").show();
 				$("#propertyRowunboundInstanceNumber").show();
-				$("#propertyRowsyndeticsKey").hide();
 				$("#propertyRowhasSummary").hide();
 				$("#propertyRowhasAvSummary").hide();
 				$("#propertyRowhasAvProfile").hide();
@@ -2296,7 +2295,6 @@ AspenDiscovery.Admin = (function () {
 			} else {
 				$("#propertyRowunboundAccountNumber").hide();
 				$("#propertyRowunboundInstanceNumber").hide();
-				$("#propertyRowsyndeticsKey").show();
 				$("#propertyRowhasSummary").show();
 				$("#propertyRowhasAvSummary").show();
 				$("#propertyRowhasAvProfile").show();
