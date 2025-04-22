@@ -1166,13 +1166,25 @@ class Koha extends AbstractIlsDriver {
 			$forceDisplayNameUpdate = false;
 			$firstName = $userFromDb['firstname'];
 			if ($user->firstname != $firstName) {
-				$user->firstname = $firstName;
+				$user->firstname = $firstName ?? '';
 				$forceDisplayNameUpdate = true;
+			}
+			else {
+				if (!$user->firstname) {
+					$user->firstname = '';
+					$forceDisplayNameUpdate = true;
+				}
 			}
 			$lastName = $userFromDb['surname'];
 			if ($user->lastname != $lastName) {
-				$user->lastname = isset($lastName) ? $lastName : '';
+				$user->lastname = $lastName ?? '';
 				$forceDisplayNameUpdate = true;
+			}
+			else {
+				if (!$user->lastname) {
+					$user->lastname = '';
+					$forceDisplayNameUpdate = true;
+				}
 			}
 			if ($forceDisplayNameUpdate) {
 				$user->displayName = '';
@@ -2990,6 +3002,179 @@ class Koha extends AbstractIlsDriver {
 		$allFeesRS->close();
 
 		return $fines;
+	}
+
+	public function getFineById(string $id, bool $includeAdditionalFieldValues = false): array|null {
+		require_once ROOT_DIR . '/sys/Utils/StringUtils.php';
+
+		global $activeLanguage;
+
+		$currencyCode = 'USD';
+		$variables = new SystemVariables();
+		if ($variables->find(true)) {
+			$currencyCode = $variables->currencyCode;
+		}
+
+		$currencyFormatter = new NumberFormatter($activeLanguage->locale . '@currency=' . $currencyCode, NumberFormatter::CURRENCY);
+
+		$this->initDatabaseConnection();
+
+		/** @noinspection SqlResolve */
+		$query = "SELECT * FROM accountlines WHERE accountlines_id = '" . mysqli_escape_string($this->dbConnection, $id) . "'";
+
+		$mySqliResultObj = mysqli_query($this->dbConnection, $query);
+
+		if ($mySqliResultObj->num_rows < 1) {
+			return null;
+		}
+
+		$fine = $mySqliResultObj->fetch_assoc();
+
+		if (isset($fine['accountType'])) {
+			$type = array_key_exists($fine['accounttype'], Koha::$fineTypeTranslations) ? Koha::$fineTypeTranslations[$fine['accounttype']] : $fine['accounttype'];
+		} elseif (isset($fine['debit_type_code']) && !empty($fine['debit_type_code'])) {
+			//Lookup the type in the account
+			$type = array_key_exists($fine['debit_type_code'], Koha::$fineTypeTranslations) ? Koha::$fineTypeTranslations[$fine['debit_type_code']] : $fine['debit_type_code'];
+		} elseif (isset($fine['credit_type_code']) && !empty($fine['credit_type_code'])) {
+			//Lookup the type in the account
+			$type = array_key_exists($fine['credit_type_code'], Koha::$fineTypeTranslations) ? Koha::$fineTypeTranslations[$fine['credit_type_code']] : $fine['credit_type_code'];
+		} else {
+			$type = 'Unknown';
+		}
+
+		$formattedFine = [
+			'fineId' => $fine['accountlines_id'],
+			'date' => $fine['date'],
+			'type' => $type,
+			'reason' => $type,
+			'message' => $fine['description'],
+			'amountVal' => $fine['amount'],
+			'amountOutstandingVal' => $fine['amountoutstanding'],
+			'amount' => $currencyFormatter->formatCurrency($fine['amount'], $currencyCode),
+			'amountOutstanding' => $currencyFormatter->formatCurrency($fine['amountoutstanding'], $currencyCode),
+			'branchCode' => $fine['branchcode'],
+		];
+
+		if (!$includeAdditionalFieldValues) {
+			return $formattedFine;
+		}
+
+		$additionalFineFieldValues = $this->getAdditionalFieldValuesByTable('account_debit_types') + $this->getAdditionalFieldValuesByTable('accountlines:debit');
+		$additionalLibraryFieldValues = $this->getAdditionalFieldValuesByTable('branches');
+
+		if (empty($additionalFineFieldValues) && empty($additionalLibraryFieldValues) ) {
+			return $formattedFine;
+		}
+
+		foreach ($additionalFineFieldValues as $additionalFineFieldValue) {
+			if ($additionalFineFieldValue["record_id"] == $fine['accountlines_id'] || $additionalFineFieldValue["record_id"] == $fine['debit_type_code']) {
+				$lowerCaseFieldName = strtolower($additionalFineFieldValue['field_name']);
+				$snakeCaseFieldName = str_replace(" ", "_", $lowerCaseFieldName);
+
+				$formattedFine[$snakeCaseFieldName] = $additionalFineFieldValue['value'];
+			}
+		}
+
+		foreach ($additionalLibraryFieldValues as $additionalLibraryFieldValue) {
+			if ($additionalLibraryFieldValue["record_id"] ==  $fine['branchcode']) {
+				$lowerCaseFieldName = strtolower($additionalLibraryFieldValue['field_name']);
+				$snakeCaseFieldName = str_replace(" ", "_", $lowerCaseFieldName);
+
+				$formattedFine[$snakeCaseFieldName] = $additionalLibraryFieldValue['value'];
+			}
+		}
+
+		$mySqliResultObj->close();
+
+		return $formattedFine;
+	}
+
+
+	public function getAdditionalLocationDetails($locationId): array {
+		$additionalLocationDetails = [];
+		$additionalLibraryFieldValues = $this->getAdditionalFieldValuesByTable('branches');
+
+		foreach ($additionalLibraryFieldValues as $additionalLibraryFieldValue) {
+			if ($additionalLibraryFieldValue["record_id"] ==  $locationId) {
+				$lowerCaseFieldName = strtolower($additionalLibraryFieldValue['field_name']);
+				$snakeCaseFieldName = str_replace(" ", "_", $lowerCaseFieldName);
+				
+				$additionalLocationDetails[$snakeCaseFieldName] = $additionalLibraryFieldValue['value'];
+			}
+		}
+
+		return $additionalLocationDetails;
+	}
+
+	public function getAdditionalFieldValuesByTable(string $tableName) {
+		$fields = $this->getAdditionalFields($tableName, null);
+		$values = [];
+
+		if (empty($fields)) {
+			return [];
+		}
+
+		foreach ($fields as $field) {
+			$fieldValues = $this->getAdditionalFieldValuesByFieldId($field['id']);
+			if (empty($fieldValues)) {
+				continue;
+			}
+
+			foreach ($fieldValues as $value) {
+				$value['field_name'] = $field['name'];
+				$values[] = $value;
+			}
+		}
+
+		return $values;
+	}
+
+	public function getAdditionalFieldNames(string|null $tableName, string|null $category): array {
+		$fieldNamesList = [];
+		foreach($this->getAdditionalFields($tableName, $category) as $field) {
+			$fieldNamesList[$field['name']] = $field['name'];
+		}
+		return $fieldNamesList;
+	}
+
+	private function getAdditionalFields(string|null $tableName, string|null $category): array {
+		// TODO: consider refactoring to send a GET request to the api/v1/extended_attribute_types endpoint instead
+		$this->initDatabaseConnection();
+		/** @noinspection SqlResolve */
+		$query = "SELECT * FROM additional_fields";
+
+		if ($tableName) {
+			$query .= " WHERE tablename = '" . mysqli_escape_string($this->dbConnection, $tableName) . "'";
+		}
+
+		if ($category) {
+			$query .= " AND authorised_value_category= '"  . mysqli_escape_string($this->dbConnection, $category) . "'";
+		}
+
+		$additionalFieldsResponse = mysqli_query($this->dbConnection, $query);
+		$additionalFields = [];
+		if ($additionalFieldsResponse->num_rows > 0) {
+			while ($allAdditionalFieldsRow = $additionalFieldsResponse->fetch_assoc()) {
+				$additionalFields[] = $allAdditionalFieldsRow;
+			}
+		}
+		return $additionalFields;
+	}
+
+	private function getAdditionalFieldValuesByFieldId(string $fieldId): array {
+		$this->initDatabaseConnection();
+		/** @noinspection SqlResolve */
+		$query = "SELECT * FROM additional_field_values WHERE  field_id = '" . mysqli_escape_string($this->dbConnection, $fieldId) . "'";
+		$additionalFieldValuesResponse = mysqli_query($this->dbConnection, $query);
+
+		$additionalFieldValues = [];
+		if ($additionalFieldValuesResponse->num_rows > 0) {
+			while ($allAdditionalFieldsRow = $additionalFieldValuesResponse->fetch_assoc()) {
+				$additionalFieldValues[] = $allAdditionalFieldsRow;
+			}
+		}
+		$additionalFieldValuesResponse->close();
+		return $additionalFieldValues;
 	}
 
 	/**
@@ -8684,6 +8869,10 @@ class Koha extends AbstractIlsDriver {
 	}
 
 	public function hasIlsConsentSupport(): bool {
+		return true;
+	}
+
+	public function hasAdditionalFineFields(): bool {
 		return true;
 	}
 }
