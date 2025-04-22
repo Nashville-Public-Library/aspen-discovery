@@ -27,7 +27,22 @@ class Admin_ReleaseNotes extends Action {
 		$interface->assign('releaseVersion', $releaseVersion);
 
 		$parsedown = AspenParsedown::instance();
+
+		//Fetch LiDA release Notes
+		require_once ROOT_DIR . '/sys/SystemVariables.php';
+		$systemVariables = SystemVariables::getSystemVariables();
+		$lidaReleaseNotesFormatted = '';
+		if (!empty($systemVariables)) {
+			if (!empty($systemVariables->lidaGitHubRepository)) {
+				$lidaReleaseNotes = @file_get_contents("$systemVariables->lidaGitHubRepository/raw/refs/heads/$releaseVersion/release-notes/$releaseVersion.MD");
+				if (!empty($lidaReleaseNotes)) {
+					$lidaReleaseNotesFormatted = $parsedown->parse($lidaReleaseNotes);
+				}
+			}
+		}
+
 		$releaseNotesFormatted = $parsedown->parse(file_get_contents($releaseNotesPath . '/' . $releaseVersion . '.MD'));
+		$releaseNotesFormatted = $lidaReleaseNotesFormatted . '<br>' . $releaseNotesFormatted;
 		$interface->assign('releaseNotesFormatted', $releaseNotesFormatted);
 
 		if (file_exists($releaseNotesPath . '/' . $releaseVersion . '_action_items.MD')) {
