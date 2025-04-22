@@ -9914,10 +9914,13 @@ class MyAccount_AJAX extends JSON_Action {
 	public function enrollCampaign() {
 		require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
 		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
+		require_once ROOT_DIR . '/sys/Account/User.php';
 
 		$campaignId = $_GET['campaignId'] ?? null;
+		$userId = $_GET['userId'] ?? null;
 
-		if (!$campaignId) {
+
+		if (!$campaignId || !$userId) {
 			return[
 				'success' => false,
 				'title' => translate([
@@ -9925,22 +9928,7 @@ class MyAccount_AJAX extends JSON_Action {
 					'isPublicFacing' => true
 				]),
 				'message' => translate([
-					'text' => 'Campaign ID is missing.',
-					'isPublicFacing' => true
-				])
-			];
-		}
-
-		$userId = UserAccount::getActiveUserId();
-		if (!$userId) {
-			return [
-				'success' => false,
-				'title' => translate([
-					'text' => 'Error',
-					'isPublicFacing' => true
-				]),
-				'message' => translate([
-					'text' => 'User is not logged in.',
+					'text' => 'Campaign ID or user ID is missing.',
 					'isPublicFacing' => true
 				])
 			];
@@ -9965,6 +9953,39 @@ class MyAccount_AJAX extends JSON_Action {
 			];
 		}
 
+		$today = new DateTime();
+		$enrollmentStartDate = !empty($campaign->enrollmentStartDate) ? new DateTime($campaign->enrollmentStartDate) : null;
+		$enrollmentEndDate = !empty($campaign->enrollmentEndDate) ? new DateTime($campaign->enrollmentEndDate) : null;
+		
+		if ($enrollmentStartDate && $enrollmentEndDate) {
+			if ($today < $enrollmentStartDate) {
+				return [
+					'success' => false,
+					'title' => translate([
+						'text' => 'Cannot Enroll',
+						'isPublicFacing' => true
+					]),
+					'message' => translate([
+						'text' => 'Enrollment for this campaign has not started yet.',
+						'isPublicFacing' => true
+					])
+				];
+			}
+			if ($today > $enrollmentEndDate) {
+				return [
+					'success' => false,
+					'title' => translate([
+						'text' => 'Cannot Enroll',
+						'isPublicFacing' => true
+					]),
+					'message' => translate([
+						'text' => 'Enrollment for this campaign has ended.',
+						'isPublicFacing' => true
+					])
+				];
+			}
+		}
+
 		if ($userCampaign->find(true)) {
 			return [
 				'success' => false,
@@ -9985,8 +10006,13 @@ class MyAccount_AJAX extends JSON_Action {
 			$campaign->enrollmentCounter++;
 			$campaign->currentEnrollments++;
 			$campaign->update();
+
+
+
 			return [
 				'success' => true,
+				'campaignId' => $campaignId,
+				'userId' => $userId,
 				'title' => translate([
 					'text' => 'Success',
 					'isPublicFacing' => true
@@ -10006,7 +10032,7 @@ class MyAccount_AJAX extends JSON_Action {
 				'message' => translate([
 					'text' => 'Failed to enroll user in campaign.',
 					'isPublicFacing' => true
-				])
+				]),
 			];
 		}
 	}
@@ -10019,8 +10045,10 @@ class MyAccount_AJAX extends JSON_Action {
 
 
 		$campaignId = $_GET['campaignId'] ?? null;
+		$userId = $_GET['userId'] ?? null;
 
-		if (!$campaignId) {
+
+		if (!$campaignId || !$userId) {
 			return [
 				'success' => false,
 				'title' => translate([
@@ -10028,26 +10056,26 @@ class MyAccount_AJAX extends JSON_Action {
 					'isPublicFacing' => true
 				]),
 				'message' => translate([
-					'text' => 'Campaign ID is missing.',
+					'text' => 'Campaign ID or user ID is missing.',
 					'isPublicFacing' => true
 				])
 			];
 		}
 
-		$userId = UserAccount::getActiveUserId();
-		if (!$userId) {
-			return [
-				'success' => false,
-				'title' => translate([
-					'text' => 'Error',
-					'isPublicFacing' => true
-				]),
-				'message' => translate([
-					'text' => 'User is not logged in.',
-					'isPublicFacing' => true
-				])
-			];
-		}
+		// $userId = UserAccount::getActiveUserId();
+		// if (!$userId) {
+		// 	return [
+		// 		'success' => false,
+		// 		'title' => translate([
+		// 			'text' => 'Error',
+		// 			'isPublicFacing' => true
+		// 		]),
+		// 		'message' => translate([
+		// 			'text' => 'User is not logged in.',
+		// 			'isPublicFacing' => true
+		// 		])
+		// 	];
+		// }
 
 		$userCampaign = new UserCampaign();
 		$userCampaign->userId = $userId;
@@ -10235,7 +10263,6 @@ class MyAccount_AJAX extends JSON_Action {
 			}
 		}
 	}
-	
 
 	function getYearInReviewSlide() : array {
 		$result = [
