@@ -2558,12 +2558,12 @@ class MyAccount_AJAX extends JSON_Action {
 				$ilsSummary->setMaterialsRequests($user->getNumMaterialsRequests());
 				if ($user->getLinkedUsers() != null) {
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
 						if ($filterLinkedUser->find(true)) {
 							$filterLinkedUserSummary = $filterLinkedUser->getCatalogDriver()->getAccountSummary($filterLinkedUser);
-
 							$ilsSummary->numAvailableHolds = $filterLinkedUserSummary->numAvailableHolds;
 							$ilsSummary->numUnavailableHolds = $filterLinkedUserSummary->numUnavailableHolds;
 						}
@@ -2576,13 +2576,25 @@ class MyAccount_AJAX extends JSON_Action {
 
 						}
 					}
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $filterLinkedUserCheckouts->getCatalogDriver()->getAccountSummary($filterLinkedUserCheckouts);
+							$ilsSummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+							$ilsSummary->numOverdue = $filterLinkedUserCheckoutsSummary->numOverdue;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $linkedUser->getCatalogDriver()->getAccountSummary($linkedUser);
+							$ilsSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+							$ilsSummary->numOverdue += $linkedUserSummary->numOverdue;
+						}
+					}
 					foreach ($user->getLinkedUsers() as $linkedUser) {
 						$linkedUserSummary = $linkedUser->getCatalogDriver()->getAccountSummary($linkedUser);
 						$ilsSummary->totalFines += $linkedUserSummary->totalFines;
-						$ilsSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
-						$ilsSummary->numOverdue += $linkedUserSummary->numOverdue;
 						$ilsSummary->setMaterialsRequests($ilsSummary->getMaterialsRequests() + $linkedUser->getNumMaterialsRequests());
-
 					}
 				}
 				$timer->logTime("Loaded ILS Summary for User and linked users");
@@ -2664,6 +2676,7 @@ class MyAccount_AJAX extends JSON_Action {
 					/** @var User $user */
 
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
@@ -2679,9 +2692,18 @@ class MyAccount_AJAX extends JSON_Action {
 							$cloudLibrarySummary->numAvailableHolds += $linkedUserSummary->numAvailableHolds;
 						}
 					}
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						$cloudLibrarySummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$cloudLibrarySummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							$cloudLibrarySummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+						}
 					}
 				}
 				$timer->logTime("Loaded cloudLibrary Summary for User and linked users");
@@ -2720,6 +2742,7 @@ class MyAccount_AJAX extends JSON_Action {
 				if ($user->getLinkedUsers() != null) {
 					/** @var User $user */
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
@@ -2735,9 +2758,19 @@ class MyAccount_AJAX extends JSON_Action {
 							$axis360Summary->numAvailableHolds += $linkedUserSummary->numAvailableHolds;
 						}
 					}
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						$axis360Summary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$axis360Summary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							$axis360Summary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+
+						}
 					}
 				}
 				$timer->logTime("Loaded Boundless Summary for User and linked users");
@@ -2776,11 +2809,22 @@ class MyAccount_AJAX extends JSON_Action {
 
 				if ($user->getLinkedUsers() != null) {
 					/** @var User $user */
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						if ($linkedUserSummary != false) {
-							$hooplaSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
-							$hooplaSummary->numCheckoutsRemaining += $linkedUserSummary->numCheckoutsRemaining;
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$hooplaSummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+							$hooplaSummary->numCheckoutsRemaining = $filterLinkedUserCheckoutsSummary->numCheckoutsRemaining;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							if ($linkedUserSummary != false) {
+								$hooplaSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+								$hooplaSummary->numCheckoutsRemaining += $linkedUserSummary->numCheckoutsRemaining;
+							}
 						}
 					}
 				}
@@ -2819,6 +2863,7 @@ class MyAccount_AJAX extends JSON_Action {
 					/** @var User $user */
 
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
@@ -2834,10 +2879,19 @@ class MyAccount_AJAX extends JSON_Action {
 							$overDriveSummary->numUnavailableHolds += $linkedUserSummary->numUnavailableHolds;
 						}
 					}
-					
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						$overDriveSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$overDriveSummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							$overDriveSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+						}
 					}
 				}
 				$timer->logTime("Loaded " . $readerName . " Summary for User and linked users");
@@ -2873,6 +2927,7 @@ class MyAccount_AJAX extends JSON_Action {
 				if ($user->getLinkedUsers() != null) {
 					/** @var User $user */
 					$selectedLinkedUser = $this->setFilterLinkedUser();
+					$selectedLinkedUserCheckouts = $this->setFilterLinkedUserCheckouts();
 					if ($selectedLinkedUser) {
 						$filterLinkedUser = new User();
 						$filterLinkedUser->id = $selectedLinkedUser;
@@ -2888,9 +2943,18 @@ class MyAccount_AJAX extends JSON_Action {
 							$palaceProjectSummary->numUnavailableHolds += $linkedUserSummary->numUnavailableHolds;
 						}
 					}
-					foreach ($user->getLinkedUsers() as $linkedUser) {
-						$linkedUserSummary = $driver->getAccountSummary($linkedUser);
-						$palaceProjectSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+					if ($selectedLinkedUserCheckouts) {
+						$filterLinkedUserCheckouts = new User();
+						$filterLinkedUserCheckouts->id = $selectedLinkedUserCheckouts;
+						if ($filterLinkedUserCheckouts->find(true)) {
+							$filterLinkedUserCheckoutsSummary = $driver->getAccountSummary($filterLinkedUserCheckouts);
+							$palaceProjectSummary->numCheckedOut = $filterLinkedUserCheckoutsSummary->numCheckedOut;
+						}
+					} else {
+						foreach ($user->getLinkedUsers() as $linkedUser) {
+							$linkedUserSummary = $driver->getAccountSummary($linkedUser);
+							$palaceProjectSummary->numCheckedOut += $linkedUserSummary->numCheckedOut;
+						}
 					}
 				}
 				$timer->logTime("Loaded Palace Project Summary for User and linked users");
@@ -3018,6 +3082,10 @@ class MyAccount_AJAX extends JSON_Action {
 
 	/** @noinspection PhpUnused */
 	public function exportCheckouts() {
+		if (session_status() == PHP_SESSION_NONE) {
+			session_start();
+		}
+		
 		$source = $_REQUEST['source'];
 		$user = UserAccount::getActiveUserObj();
 		$allCheckedOut = $user->getCheckouts(true, $source);
@@ -3025,6 +3093,16 @@ class MyAccount_AJAX extends JSON_Action {
 		if ($selectedSortOption == null) {
 			$selectedSortOption = 'dueDate';
 		}
+
+		$selectedUser = $this->setFilterLinkedUserCheckouts();
+
+		$selectedCheckouts = isset($_REQUEST['selectedCheckouts']) ? json_decode($_REQUEST['selectedCheckouts'], true) : [];
+		if (!empty($selectedCheckouts)) {
+			$allCheckedOut = $this->filterCheckoutsBySelected($allCheckedOut, $selectedCheckouts, $selectedUser);
+		} else {
+			$allCheckedOut = $this->filterCheckoutsByUser($allCheckedOut, $selectedUser);
+		}
+
 		$allCheckedOut = $this->sortCheckouts($selectedSortOption, $allCheckedOut);
 
 		$hasLinkedUsers = count($user->getLinkedUsers()) > 0;
@@ -3033,7 +3111,6 @@ class MyAccount_AJAX extends JSON_Action {
 		$showRenewed = $user->showTimesRenewed();
 		$showRenewalsRemaining = $user->showRenewalsRemaining();
 		$showWaitList = $user->showWaitListInCheckouts();
-
 
 		try {
 			// Redirect output to a client's web browser
@@ -3585,6 +3662,15 @@ class MyAccount_AJAX extends JSON_Action {
 					'isPublicFacing' => true,
 				]);
 			} else {
+
+				if ($user->getHomeLibrary() != null) {
+					$allowSelectingCheckoutsToExport = $user->getHomeLibrary()->allowSelectingCheckoutsToExport;
+				} else {
+					$allowSelectingCheckoutsToExport = $library->allowSelectingCheckoutsToExport;
+				}
+				$interface->assign('allowSelectingCheckoutsToExport', $allowSelectingCheckoutsToExport);
+
+
 				if (count($user->getLinkedUsers()) > 0) {
 					$sortOptions['libraryAccount'] = 'Library Account';
 				}
@@ -3600,7 +3686,9 @@ class MyAccount_AJAX extends JSON_Action {
 				$interface->assign('showNotInterested', false);
 
 				// Get My Transactions
-				$allCheckedOut = $user->getCheckouts(true, $source);
+				$selectedUser = $this->setFilterLinkedUserCheckouts();
+
+				$allCheckedOut = $this->filterCheckoutsByUser($user->getCheckouts(true, $source), $selectedUser);
 
 				foreach ($allCheckedOut as $checkout) {
 					if ($checkout->canRenew == 1) {
@@ -3707,6 +3795,46 @@ class MyAccount_AJAX extends JSON_Action {
 	
 		return $filteredHolds;
 	}
+
+	public function filterCheckoutsBySelected(array $allCheckedOut, $selectedCheckouts, string $selectedUser): array {
+		if (!empty($selectedCheckouts) && !is_array($selectedCheckouts)) {
+			$selectedCheckoutsArray = [];
+			parse_str($selectedCheckouts, $parsedCheckouts);
+
+			if (isset($parsedCheckouts['selected'])) {
+				foreach ($parsedCheckouts['selected'] as $checkoutKey => $value) {
+
+					if (preg_match('/(\d+)\|([a-zA-Z0-9:._-]+)\|?/', $checkoutKey, $matches)) {
+						$selectedCheckoutsArray[] = [
+							'recordId' => $this->normalizeRecordId($matches[2]),
+						];
+					}
+				}
+			}
+			$selectedCheckouts = $selectedCheckoutsArray;
+
+		}
+		$filteredCheckouts = [];
+	
+		foreach ($allCheckedOut as $key => $checkout) {
+			$checkout->recordId = $this->normalizeRecordId($checkout->recordId);
+
+			if ($checkout->userId != $selectedUser) {
+				continue;
+			}
+			$matchFound = false;
+			foreach ($selectedCheckouts as $selectedCheckout) {
+				if (strval($checkout->recordId) === strval($selectedCheckout['recordId'])) {
+					$matchFound = true;
+					break;
+				}
+			}
+			if ($matchFound) {
+				$filteredCheckouts[$key] = $checkout;
+			}
+		}
+		return $filteredCheckouts;
+	}
 	
 
 	public function filterHolds(array $allHolds, string $selectedUser): array {
@@ -3734,8 +3862,21 @@ class MyAccount_AJAX extends JSON_Action {
 		return $filteredHolds;
 	}
 
-	public function setFilterLinkedUser() : string {
+	public function filterCheckoutsByUser(array $allCheckedOut, string $selectedUser): array {
+		$filteredCheckouts = [];
+	
+		$allUsersSelected = (empty($selectedUser) || $selectedUser === "" || $selectedUser === '[""]');
+	
+		foreach ($allCheckedOut as $key => $checkout) {
+			if ($allUsersSelected || intval($checkout->userId) === intval($selectedUser)) {
+				$filteredCheckouts[$key] = $checkout;
+			}
+		}
+	
+		return $filteredCheckouts;
+	}
 
+	public function setFilterLinkedUser() : string {		
 		$selectedUser = '';
 		if (isset($_REQUEST['selectedUser'])) {
 			$selectedUser = $_REQUEST['selectedUser'];
@@ -3747,6 +3888,24 @@ class MyAccount_AJAX extends JSON_Action {
 	
 		} elseif (isset($_SESSION['selectedUser'])) {
 			$selectedUser = $_SESSION['selectedUser'];
+		}
+		return (string)$selectedUser;
+	}
+
+	public function setFilterLinkedUserCheckouts() : string {	
+
+		$selectedUser = '';
+		if (isset($_REQUEST['selectedUserCheckouts'])) {
+			$selectedUser = $_REQUEST['selectedUserCheckouts'];
+			if ($selectedUser == "") {
+				$_SESSION['selectedUserCheckouts'] = '';
+			} else {
+				$_SESSION['selectedUserCheckouts'] = $selectedUser;
+			}
+	
+		} elseif (isset($_SESSION['selectedUserCheckouts'])) {
+
+			$selectedUser = $_SESSION['selectedUserCheckouts'];
 		}
 		return (string)$selectedUser;
 	}
@@ -6768,6 +6927,508 @@ class MyAccount_AJAX extends JSON_Action {
 		}
 	}
 
+	function createHeyCentricOrder(){
+		global $configArray;
+
+		$transactionType = $_REQUEST['type'];
+		if ($transactionType == 'donation') {
+			$result = $this->createGenericDonation('HeyCentric');
+		} else {
+			$result = $this->createGenericOrder('HeyCentric');
+		}
+
+		if (array_key_exists('success', $result) && $result['success'] === false) {
+			return $result;
+		}
+
+		if ($transactionType == 'donation') {
+			[
+				$paymentLibrary,
+				$userLibrary,
+				$payment,
+				$purchaseUnits,
+				$patron,
+				$tempDonation,
+			] = $result;
+		} else {
+			[
+				$paymentLibrary,
+				$userLibrary,
+				$payment,
+				$purchaseUnits,
+				$patron,
+			] = $result;
+		}
+
+		require_once ROOT_DIR . '/sys/ECommerce/HeyCentricSetting.php';
+		$heyCentricSettings = new HeyCentricSetting();
+		$homeLocationHeyCentricSettingId = $patron->getHomeLocation()->heyCentricSettingId;
+		$heyCentricSettings->id = $homeLocationHeyCentricSettingId != -1 ? $homeLocationHeyCentricSettingId : $paymentLibrary->heyCentricSettingId;
+
+		if (!$heyCentricSettings->find(true)) {
+			return [
+				'success' => false,
+				'message' => 'HeyCentric was not properly configured',
+			];
+		}
+
+		$urlParameterSettings = $heyCentricSettings->__get('urlParameterSettingList');
+
+		$finesSelected = [];
+
+		foreach(explode(',', $payment->finesPaid) as $fineSelected) {
+			$finesSelected[] = ['id' => explode('|', $fineSelected)[0], 'amount' => explode('|', $fineSelected)[1]];
+		}
+
+		$locationDetails = $patron->getCatalogDriver()->hasAdditionalFineFields() ? $patron->getCatalogDriver()->getAdditionalLocationDetails($patron->getHomeLocationCode()) : [];
+
+		// URL parameters
+		$paymentRequestUrl = $heyCentricSettings->baseUrl;
+		if($urlParameterSettings["client_includeInUrl"]) {
+			$paymentRequestUrl .= "client=";
+			if(isset($urlParameterSettings['client_kohaAdditionalField']) && $urlParameterSettings['client_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['client_kohaAdditionalField']));
+				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['client_value'] &&  $urlParameterSettings['client_value'] ? $urlParameterSettings['client_value'] : "";
+			}
+		}
+		if($urlParameterSettings["area_includeInUrl"]) {
+			$paymentRequestUrl .= "&area=";
+			if(isset($urlParameterSettings['area_kohaAdditionalField']) && $urlParameterSettings['area_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['area_kohaAdditionalField']));
+				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['area_value'] &&  $urlParameterSettings['area_value'] ? $urlParameterSettings['area_value'] : "";
+			}
+		}
+		if($urlParameterSettings["till_includeInUrl"]) {
+			$paymentRequestUrl .= "&till=";
+			if(isset($urlParameterSettings['till_kohaAdditionalField']) && $urlParameterSettings['till_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['till_kohaAdditionalField']));
+				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['till_value'] &&  $urlParameterSettings['till_value'] ? $urlParameterSettings['till_value'] : "";
+			}
+		}
+		if($urlParameterSettings["entity_includeInUrl"]) {
+			$paymentRequestUrl .= "&entity=";
+			if(isset($urlParameterSettings['entity_kohaAdditionalField']) && $urlParameterSettings['entity_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['entity_kohaAdditionalField']));
+				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['entity_value'] &&  $urlParameterSettings['entity_value'] ? $urlParameterSettings['entity_value'] : "";
+			}
+		}
+		if($urlParameterSettings["co_includeInUrl"]) {
+			$paymentRequestUrl .= "&co=";
+			if(isset($urlParameterSettings['co_kohaAdditionalField']) && $urlParameterSettings['co_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['co_kohaAdditionalField']));
+				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['co_value'] &&  $urlParameterSettings['co_value'] ? $urlParameterSettings['co_value'] : "";
+			}
+		}
+		if($urlParameterSettings["bu_includeInUrl"]) {
+			$paymentRequestUrl .= "&bu=";
+			if(isset($urlParameterSettings['bu_kohaAdditionalField']) && $urlParameterSettings['bu_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['bu_kohaAdditionalField']));
+				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['bu_value'] &&  $urlParameterSettings['bu_value'] ? $urlParameterSettings['bu_value'] : "";
+			}
+		}
+		if($urlParameterSettings["lang_includeInUrl"]) {
+			$paymentRequestUrl .= "&lang=";
+			if(isset($urlParameterSettings['lang_kohaAdditionalField']) && $urlParameterSettings['lang_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['lang_kohaAdditionalField']));
+				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['lang_value'] &&  $urlParameterSettings['lang_value'] ? $urlParameterSettings['lang_value'] : "";
+			}
+		}
+		if($urlParameterSettings["mode_includeInUrl"]) {
+			$paymentRequestUrl .= "&mode=";
+			if(isset($urlParameterSettings['mode_kohaAdditionalField']) && $urlParameterSettings['mode_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['mode_kohaAdditionalField']));
+				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['mode_value'] &&  $urlParameterSettings['mode_value'] ? $urlParameterSettings['mode_value'] : "";
+			}
+		}
+
+		// hash parameters
+		$hashParams = "";
+		if($urlParameterSettings["client_includeInHash"]) {
+			$hashParams .= "client=";
+			if(isset($urlParameterSettings['client_kohaAdditionalField']) && $urlParameterSettings['client_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['client_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "client=" . $urlParameterSettings['client_value'] ? $urlParameterSettings['client_value'] : "";
+			}
+		}
+		if($urlParameterSettings["area_includeInHash"]) {
+			$hashParams .= "&area=";
+			if(isset($urlParameterSettings['area_kohaAdditionalField']) && $urlParameterSettings['area_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['area_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "area=" . $urlParameterSettings['area_value'] ? $urlParameterSettings['area_value'] : "";
+			}
+		}
+		if($urlParameterSettings["till_includeInHash"]) {
+			$hashParams .= "&till=";
+			if(isset($urlParameterSettings['till_kohaAdditionalField']) && $urlParameterSettings['till_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['till_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "till=" . $urlParameterSettings['till_value'] ? $urlParameterSettings['till_value'] : "";
+			}
+		}
+		if($urlParameterSettings["entity_includeInHash"]) {
+			$hashParams .= "&entity=";
+			if(isset($urlParameterSettings['entity_kohaAdditionalField']) && $urlParameterSettings['entity_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['entity_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "entity=" . $urlParameterSettings['entity_value'] ? $urlParameterSettings['entity_value'] : "";
+			}
+		}
+		if($urlParameterSettings["co_includeInHash"]) {
+			$hashParams .= "&co=";
+			if(isset($urlParameterSettings['co_kohaAdditionalField']) && $urlParameterSettings['co_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['co_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "co=" . $urlParameterSettings['co_value'] ? $urlParameterSettings['co_value'] : "";
+			}
+		}
+		if($urlParameterSettings["bu_includeInHash"]) {
+			$hashParams .= "&bu=";
+			if(isset($urlParameterSettings['bu_kohaAdditionalField']) && $urlParameterSettings['bu_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['bu_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "bu=" . $urlParameterSettings['bu_value'] ? $urlParameterSettings['bu_value'] : "";
+			}
+		}
+		if($urlParameterSettings["lang_includeInHash"]) {
+			$hashParams .= "&lang=";
+			if(isset($urlParameterSettings['lang_kohaAdditionalField']) && $urlParameterSettings['lang_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['lang_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "lang=" . $urlParameterSettings['lang_value'] ? $urlParameterSettings['lang_value'] : "";
+			}
+		}
+		if($urlParameterSettings["mode_includeInHash"]) {
+			$hashParams .= "&mode=";
+			if(isset($urlParameterSettings['mode_kohaAdditionalField']) && $urlParameterSettings['mode_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['mode_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "mode=" . $urlParameterSettings['mode_value'] ? $urlParameterSettings['mode_value'] : "";
+			}
+		}
+
+		// multiline hash and URL parameters
+		foreach($finesSelected as $index => $fine) {	
+			$fineDetails = $patron->getCatalogDriver()->hasAdditionalFineFields() ? $patron->getCatalogDriver()->getFineById($fine['id'], true) : [];
+			$multilineSuffix = $index > 0 ? "_$index=" : "=";
+			
+			// URL parameters
+			if($urlParameterSettings["pmtTyp_includeInUrl"]) {
+				$paymentRequestUrl .= "&pmtTyp" . $multilineSuffix;
+				if(isset($urlParameterSettings['pmtTyp_kohaAdditionalField']) && $urlParameterSettings['pmtTyp_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['pmtTyp_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName]: "none specified");
+				} else {
+					$paymentRequestUrl .= $urlParameterSettings['pmtTyp_value'] &&  $urlParameterSettings['pmtTyp_value'] ? $urlParameterSettings['pmtTyp_value'] : "";
+				}
+			}
+			if($urlParameterSettings["val1_includeInUrl"]) {
+				$paymentRequestUrl .= "&val1" . $multilineSuffix;
+				if(isset($urlParameterSettings['val1_kohaAdditionalField']) && $urlParameterSettings['val1_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['val1_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$paymentRequestUrl .= $urlParameterSettings['val1_value'] &&  $urlParameterSettings['val1_value'] ? $urlParameterSettings['val1_value'] : urlencode($fineDetails['fineId']);
+				}
+			}
+			if($urlParameterSettings["val1Desc_includeInUrl"]) {
+				$paymentRequestUrl .= "&val1Desc" . $multilineSuffix;
+				if(isset($urlParameterSettings['val1Desc_kohaAdditionalField']) && $urlParameterSettings['val1Desc_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['val1Desc_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					global $logger;
+					$paymentRequestUrl .= $urlParameterSettings['val1Desc_value'] &&  $urlParameterSettings['val1Desc_value'] &&  $urlParameterSettings['val1Desc_value'] ? $urlParameterSettings['val1Desc_value'] : urlencode($fineDetails['message']);
+				}
+			}
+			if($urlParameterSettings["val2_includeInUrl"]) {
+				$paymentRequestUrl .= "&val2" . $multilineSuffix;
+				if(isset($urlParameterSettings['val2_kohaAdditionalField']) && $urlParameterSettings['val2_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['val2_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$paymentRequestUrl .= $urlParameterSettings['val2_value'] &&  $urlParameterSettings['val2_value'] ? $urlParameterSettings['val2_value'] : "";
+				}
+			}
+			if($urlParameterSettings["val2Desc_includeInUrl"]) {
+				$paymentRequestUrl .= "&val2Desc" . $multilineSuffix;
+				if(isset($urlParameterSettings['val2Desc_kohaAdditionalField']) && $urlParameterSettings['val2Desc_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['val2Desc_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$paymentRequestUrl .= $urlParameterSettings['val2Desc_value'] &&  $urlParameterSettings['val2Desc_value'] ? $urlParameterSettings['val2Desc_value'] : "";
+				}$paymentRequestUrl .= "&val2Desc" . $multilineSuffix . $urlParameterSettings['val2Desc_value'];
+			}
+			if($urlParameterSettings["am_includeInUrl"]) {
+				$paymentRequestUrl .= "&am" . $multilineSuffix;
+				if(isset($urlParameterSettings['am_kohaAdditionalField']) && $urlParameterSettings['am_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['am_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$paymentRequestUrl .= $urlParameterSettings['am_value'] &&  $urlParameterSettings['am_value'] ? $urlParameterSettings['am_value'] : str_replace(SystemVariables::getSystemVariables()->getCurrencySymbol(), '', $fineDetails['amount']);
+				}
+			}
+			if($urlParameterSettings["cmt_includeInUrl"]) {
+				$paymentRequestUrl .= "&cmt" . $multilineSuffix;
+				if(isset($urlParameterSettings['cmt_kohaAdditionalField']) && $urlParameterSettings['cmt_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['cmt_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$paymentRequestUrl .= $urlParameterSettings['cmt_value'] &&  $urlParameterSettings['cmt_value'] ? $urlParameterSettings['cmt_value'] : "";
+				}
+			}
+			if($urlParameterSettings["extRef_includeInUrl"]) {
+				$paymentRequestUrl .= "&extRef" . $multilineSuffix;
+				if(isset($urlParameterSettings['extRef_kohaAdditionalField']) && $urlParameterSettings['extRef_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['extRef_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$paymentRequestUrl .= $urlParameterSettings['extRef_value'] &&  $urlParameterSettings['extRef_value'] ? $urlParameterSettings['extRef_value'] : "";
+				}
+			}
+
+			// hash parameters
+			if($urlParameterSettings["pmtTyp_includeInHash"]) {
+				$hashParams .= "&pmtTyp" . $multilineSuffix;
+				if(isset($urlParameterSettings['pmtTyp_kohaAdditionalField']) && $urlParameterSettings['pmtTyp_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['pmtTyp_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$hashParams .= isset($urlParameterSettings['pmtTyp_value']) &&  $urlParameterSettings['pmtTyp_value'] ? $urlParameterSettings['pmtTyp_value'] : "";
+				}
+			}
+			if($urlParameterSettings["val1_includeInHash"]) {
+				$hashParams .= "&val1" . $multilineSuffix;
+				if(isset($urlParameterSettings['val1_kohaAdditionalField']) && $urlParameterSettings['val1_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['val1_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$hashParams .= isset($urlParameterSettings['val1_value']) &&  $urlParameterSettings['val1_value'] ? $urlParameterSettings['val1_value'] : urlencode($fineDetails['fineId']);
+				}
+			}
+			if($urlParameterSettings["val1Desc_includeInHash"]) {
+				$hashParams .= "&val1Desc" . $multilineSuffix;
+				if(isset($urlParameterSettings['val1Desc_kohaAdditionalField']) && $urlParameterSettings['val1Desc_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['val1Desc_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$hashParams .= isset($urlParameterSettings['val1Desc_value']) &&  $urlParameterSettings['val1Desc_value'] ? $urlParameterSettings['val1Desc_value'] : urlencode($fineDetails['message']);
+				}
+			}
+			if($urlParameterSettings["val2_includeInHash"]) {
+				$hashParams .= "&val2" . $multilineSuffix;
+				if(isset($urlParameterSettings['val2_kohaAdditionalField']) && $urlParameterSettings['val2_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['val2_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$hashParams .= isset($urlParameterSettings['val2_value']) &&  $urlParameterSettings['val2_value'] ? $urlParameterSettings['val2_value'] : "";
+				}
+			}
+			if($urlParameterSettings["val2Desc_includeInHash"]) {
+				$hashParams .= "&val2Desc" . $multilineSuffix;
+				if(isset($urlParameterSettings['val2Desc_kohaAdditionalField']) && $urlParameterSettings['val2Desc_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['val2Desc_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$hashParams .= isset($urlParameterSettings['val2Desc_value']) &&  $urlParameterSettings['val2Desc_value'] ? $urlParameterSettings['val2Desc_value'] : "";
+				}
+			}
+			if($urlParameterSettings["am_includeInHash"]) {
+				$hashParams .= "&am" . $multilineSuffix;
+				if(isset($urlParameterSettings['am_kohaAdditionalField']) && $urlParameterSettings['am_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['am_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$hashParams .= isset($urlParameterSettings['am_value']) &&  $urlParameterSettings['am_value'] ? $urlParameterSettings['am_value'] : str_replace(SystemVariables::getSystemVariables()->getCurrencySymbol(), '', $fineDetails['amount']);
+				}
+			}
+			if($urlParameterSettings["cmt_includeInHash"]) {
+				$hashParams .= "&cmt" . $multilineSuffix;
+				if(isset($urlParameterSettings['cmt_kohaAdditionalField']) && $urlParameterSettings['cmt_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['cmt_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$hashParams .= isset($urlParameterSettings['cmt_value']) &&  $urlParameterSettings['cmt_value'] ? $urlParameterSettings['cmt_value'] : "";
+				}
+			}
+			if($urlParameterSettings["extRef_includeInHash"]) {
+				$hashParams .= "&extRef" . $multilineSuffix;
+				if(isset($urlParameterSettings['extRef_kohaAdditionalField']) && $urlParameterSettings['extRef_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['extRef_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+				} else {
+					$hashParams .= isset($urlParameterSettings['extRef_value']) &&  $urlParameterSettings['extRef_value'] ? $urlParameterSettings['extRef_value'] : "";
+				}
+			}
+		}
+
+		// hash parameters
+		if($urlParameterSettings["rurl_includeInHash"]) {
+			$hashParams .= "&rurl=";
+			if(isset($urlParameterSettings['rurl_kohaAdditionalField']) && $urlParameterSettings['rurl_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['rurl_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "rurl=" . $urlParameterSettings['rurl_value'] ? $urlParameterSettings['rurl_value'] : "";
+			}
+		}
+		if($urlParameterSettings["burl_includeInHash"]) {
+			$hashParams .= "&burl=";
+			if(isset($urlParameterSettings['burl_kohaAdditionalField']) && $urlParameterSettings['burl_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['burl_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "burl=" . $urlParameterSettings['burl_value'] ? $urlParameterSettings['burl_value'] : "";
+			}
+		}
+		if($urlParameterSettings["email_includeInHash"]) {
+			$hashParams .= "&email=";
+			if(isset($urlParameterSettings['email_kohaAdditionalField']) && $urlParameterSettings['email_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['email_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "email=" . $urlParameterSettings['email_value'] ? $urlParameterSettings['email_value'] : $patron->email;
+			}
+		}
+		if($urlParameterSettings["ccemail_includeInHash"]) {
+			$hashParams .= "&ccemail=";
+			if(isset($urlParameterSettings['ccemail_kohaAdditionalField']) && $urlParameterSettings['ccemail_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['ccemail_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "ccemail=" . $urlParameterSettings['ccemail_value'] ? $urlParameterSettings['ccemail_value'] : "";
+			}
+		}
+		if($urlParameterSettings["sid_includeInHash"]) {
+			$hashParams .= "&sid=";
+			if(isset($urlParameterSettings['sid_kohaAdditionalField']) && $urlParameterSettings['sid_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['sid_kohaAdditionalField']));
+					$hashParams .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$hashParams .= "sid=" . $urlParameterSettings['sid_value'] ? $urlParameterSettings['sid_value'] : "";
+			}
+		}
+
+		// URL parameters
+		if($urlParameterSettings["rurl_includeInUrl"]) {
+			$paymentRequestUrl .= "&rurl=";
+			if(isset($urlParameterSettings['rurl_kohaAdditionalField']) && $urlParameterSettings['rurl_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['rurl_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['rurl_value'] && $urlParameterSettings['rurl_value'] ? $urlParameterSettings['rurl_value'] . "/AJAX?method=completeHeyCentricOrder%26paymentId=" . $payment->id : $configArray['Site']['url'] . "/MyAccount/AJAX?method=completeHeyCentricOrder%26paymentId=" . $payment->id;
+			}
+		}
+		if($urlParameterSettings["burl_includeInUrl"]) {
+			$paymentRequestUrl .= "&burl=";
+			if(isset($urlParameterSettings['burl_kohaAdditionalField']) && $urlParameterSettings['burl_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['burl_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['burl_value'] ? $urlParameterSettings['burl_value'] : "";
+			}
+		}
+		if($urlParameterSettings["email_includeInUrl"]) {
+			$paymentRequestUrl .= "&email=";
+			if(isset($urlParameterSettings['email_kohaAdditionalField']) && $urlParameterSettings['email_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['email_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['email_value'] ? $urlParameterSettings['email_value'] : $patron->email;
+			}
+		}
+		if($urlParameterSettings["ccemail_includeInUrl"]) {
+			$paymentRequestUrl .= "&ccemail=";
+			if(isset($urlParameterSettings['ccemail_kohaAdditionalField']) && $urlParameterSettings['ccemail_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['ccemail_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['ccemail_value'] ? $urlParameterSettings['ccemail_value'] : "";
+			}
+		}
+		if($urlParameterSettings["sid_includeInUrl"]) {
+			$paymentRequestUrl .= "&sid=";
+			if(isset($urlParameterSettings['sid_kohaAdditionalField']) && $urlParameterSettings['sid_kohaAdditionalField'] != "none") {
+					$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['sid_kohaAdditionalField']));
+					$paymentRequestUrl .= urlencode(isset($fineDetails[$snakeCaseFieldName]) && $fineDetails[$snakeCaseFieldName] ? $fineDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$paymentRequestUrl .= $urlParameterSettings['sid_value'] ? $urlParameterSettings['sid_value'] : "";
+			}
+		}
+
+		$paymentRequestUrl .= "&hash=" . base64_encode(md5($hashParams . $heyCentricSettings->privateKey));
+
+		return [
+			'success' => true,
+			'message' => 'Redirecting to payment processor',
+			'paymentRequestUrl' => $paymentRequestUrl,
+		];
+	}
+
+	function completeHeyCentricOrder(): void {
+		global $configArray;
+		$paymentId = $_REQUEST['paymentId'];
+		$rc = $_REQUEST['Rc'];
+		$pmt = $_REQUEST['Pmt'];
+		$recNo = $_REQUEST['RecNo'] ?? "";
+
+		require_once ROOT_DIR . '/sys/Account/UserPayment.php';
+		$payment = new UserPayment();
+		$payment->id = $paymentId;
+
+		$updateDebtInIls = false;
+	
+		if ($rc == 'A') {
+			$payment->completed = true;
+			if ($recNo) {
+				$payment->heyCentricPaymentReferenceNumber = $recNo;
+			}
+			$updateDebtInIls = true;
+		}
+		if ($rc == 'C') {
+			$payment->cancelled = true;
+		} 
+		if ($rc == 'D') {
+			$payment->declined = true;
+		}
+
+		$payment->update(); // update user payment status in Aspen db
+
+		$params = "Rc=$rc&Pmt=$pmt";
+		if ($updateDebtInIls) {
+			$params .= "&RecNo=$recNo";
+			$payment->find(true);
+			$patron = UserAccount::getActiveUserObj();
+			$patron->completeFinePayment($payment); // updated debt status in ILS
+		}
+		header("Location: " . $configArray['Site']['url'] . "/MyAccount/Fines?" . $params);
+	}
+
 	/** @noinspection PhpUnused */
 	function dismissBrowseCategory() {
 		$patronId = UserAccount::getActiveUserId();
@@ -9253,10 +9914,13 @@ class MyAccount_AJAX extends JSON_Action {
 	public function enrollCampaign() {
 		require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
 		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
+		require_once ROOT_DIR . '/sys/Account/User.php';
 
 		$campaignId = $_GET['campaignId'] ?? null;
+		$userId = $_GET['userId'] ?? null;
 
-		if (!$campaignId) {
+
+		if (!$campaignId || !$userId) {
 			return[
 				'success' => false,
 				'title' => translate([
@@ -9264,22 +9928,7 @@ class MyAccount_AJAX extends JSON_Action {
 					'isPublicFacing' => true
 				]),
 				'message' => translate([
-					'text' => 'Campaign ID is missing.',
-					'isPublicFacing' => true
-				])
-			];
-		}
-
-		$userId = UserAccount::getActiveUserId();
-		if (!$userId) {
-			return [
-				'success' => false,
-				'title' => translate([
-					'text' => 'Error',
-					'isPublicFacing' => true
-				]),
-				'message' => translate([
-					'text' => 'User is not logged in.',
+					'text' => 'Campaign ID or user ID is missing.',
 					'isPublicFacing' => true
 				])
 			];
@@ -9304,6 +9953,39 @@ class MyAccount_AJAX extends JSON_Action {
 			];
 		}
 
+		$today = new DateTime();
+		$enrollmentStartDate = !empty($campaign->enrollmentStartDate) ? new DateTime($campaign->enrollmentStartDate) : null;
+		$enrollmentEndDate = !empty($campaign->enrollmentEndDate) ? new DateTime($campaign->enrollmentEndDate) : null;
+		
+		if ($enrollmentStartDate && $enrollmentEndDate) {
+			if ($today < $enrollmentStartDate) {
+				return [
+					'success' => false,
+					'title' => translate([
+						'text' => 'Cannot Enroll',
+						'isPublicFacing' => true
+					]),
+					'message' => translate([
+						'text' => 'Enrollment for this campaign has not started yet.',
+						'isPublicFacing' => true
+					])
+				];
+			}
+			if ($today > $enrollmentEndDate) {
+				return [
+					'success' => false,
+					'title' => translate([
+						'text' => 'Cannot Enroll',
+						'isPublicFacing' => true
+					]),
+					'message' => translate([
+						'text' => 'Enrollment for this campaign has ended.',
+						'isPublicFacing' => true
+					])
+				];
+			}
+		}
+
 		if ($userCampaign->find(true)) {
 			return [
 				'success' => false,
@@ -9324,8 +10006,13 @@ class MyAccount_AJAX extends JSON_Action {
 			$campaign->enrollmentCounter++;
 			$campaign->currentEnrollments++;
 			$campaign->update();
+
+
+
 			return [
 				'success' => true,
+				'campaignId' => $campaignId,
+				'userId' => $userId,
 				'title' => translate([
 					'text' => 'Success',
 					'isPublicFacing' => true
@@ -9345,7 +10032,7 @@ class MyAccount_AJAX extends JSON_Action {
 				'message' => translate([
 					'text' => 'Failed to enroll user in campaign.',
 					'isPublicFacing' => true
-				])
+				]),
 			];
 		}
 	}
@@ -9358,8 +10045,10 @@ class MyAccount_AJAX extends JSON_Action {
 
 
 		$campaignId = $_GET['campaignId'] ?? null;
+		$userId = $_GET['userId'] ?? null;
 
-		if (!$campaignId) {
+
+		if (!$campaignId || !$userId) {
 			return [
 				'success' => false,
 				'title' => translate([
@@ -9367,26 +10056,26 @@ class MyAccount_AJAX extends JSON_Action {
 					'isPublicFacing' => true
 				]),
 				'message' => translate([
-					'text' => 'Campaign ID is missing.',
+					'text' => 'Campaign ID or user ID is missing.',
 					'isPublicFacing' => true
 				])
 			];
 		}
 
-		$userId = UserAccount::getActiveUserId();
-		if (!$userId) {
-			return [
-				'success' => false,
-				'title' => translate([
-					'text' => 'Error',
-					'isPublicFacing' => true
-				]),
-				'message' => translate([
-					'text' => 'User is not logged in.',
-					'isPublicFacing' => true
-				])
-			];
-		}
+		// $userId = UserAccount::getActiveUserId();
+		// if (!$userId) {
+		// 	return [
+		// 		'success' => false,
+		// 		'title' => translate([
+		// 			'text' => 'Error',
+		// 			'isPublicFacing' => true
+		// 		]),
+		// 		'message' => translate([
+		// 			'text' => 'User is not logged in.',
+		// 			'isPublicFacing' => true
+		// 		])
+		// 	];
+		// }
 
 		$userCampaign = new UserCampaign();
 		$userCampaign->userId = $userId;
@@ -9574,7 +10263,6 @@ class MyAccount_AJAX extends JSON_Action {
 			}
 		}
 	}
-	
 
 	function getYearInReviewSlide() : array {
 		$result = [
