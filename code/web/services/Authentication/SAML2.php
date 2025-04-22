@@ -3,9 +3,10 @@ require_once ROOT_DIR . '/sys/Authentication/SAMLAuthentication.php';
 
 class Authentication_SAML2 extends Action {
 	/**
-	 * @throws UnknownAuthenticationMethodException
+	 * @throws UnknownAuthenticationMethodException|OneLogin_Saml2_Error
 	 */
-	public function launch() {
+	public function launch(): void
+	{
 		global $configArray;
 
 		if(isset($_GET['init'])) {
@@ -15,29 +16,27 @@ class Authentication_SAML2 extends Action {
 			$returnTo = $configArray['Site']['url'];
 			$action = isset($_REQUEST['followupAction']) ? strip_tags($_REQUEST['followupAction']) : 'Home';
 			$module = isset($_REQUEST['followupModule']) ? strip_tags($_REQUEST['followupModule']) :  'MyAccount';
-			$followupAction = isset($_SESSION['returnToAction']) ?? $action;
-			$followupModule = isset($_SESSION['returnToModule']) ?? $module;
-			$followupPageId = isset($_SESSION['returnToId']) ?? null;
+			$followupAction = $_SESSION['returnToAction'] ?? $action;
+			$followupModule = $_SESSION['returnToModule'] ?? $module;
+			$followupPageId = $_SESSION['returnToId'] ?? null;
+
 			if($followupModule && $followupAction) {
-				if($followupModule == 'WebBuilder' && $followupAction == 'PortalPage' && $followupPageId) {
-					require_once ROOT_DIR . '/sys/WebBuilder/PortalPage.php';
-					$portalPage = new PortalPage();
-					$portalPage->id = $followupPageId;
-					if ($portalPage->find(true)) {
-						if ($portalPage->urlAlias) {
-							$returnTo = $portalPage->urlAlias;
-						} else {
-							$returnTo = $configArray['Site']['url'] . '/' . $followupModule . '/' . $followupAction . '?id=' . $followupAction;
-						}
-					} else {
-						$returnTo = $configArray['Site']['url'] . '/' . $followupModule . '/' . $followupAction . '?id=' . $followupAction;
-					}
+				if ($followupModule == 'Search' && $followupAction == 'Results' && isset($_SESSION['lastSearchURL'])) {
+					$returnTo = $_SESSION['lastSearchURL'];
+					unset($_SESSION['lastSearchURL']);
+				}
+				elseif ($followupModule == 'MyAccount' && $followupPageId) {
+					$returnTo = $configArray['Site']['url'] . '/' . $followupModule . '/' . $followupAction . '/' . $followupPageId;
 				} else {
 					$returnTo = $configArray['Site']['url'] . '/' . $followupModule . '/' . $followupAction;
+					if ($followupPageId) {
+						$returnTo .= '?id=' . $followupPageId;
+					}
 				}
 			}
 			unset($_SESSION['returnToAction']);
 			unset($_SESSION['returnToModule']);
+			unset($_SESSION['returnToId']);
 			unset($_REQUEST['followupAction']);
 			unset($_REQUEST['followupModule']);
 			$auth->login($returnTo);
