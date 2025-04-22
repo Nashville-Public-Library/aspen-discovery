@@ -694,13 +694,13 @@ class HooplaDriver extends AbstractEContentDriver {
 						'isPublicFacing' => true,
 					]);
 					$apiResult['message'] = translate([
-						'text' => ' There was an error returning this title.',
+						'text' => 'There was an error returning this title, please click the refresh button to update your checkouts and try again.',
 						'isPublicFacing' => true,
 					]);
 
 					return [
 						'success' => false,
-						'message' => 'There was an error returning this title.',
+						'message' => 'There was an error returning this title, please click the refresh button to update your checkouts and try again.',
 						'api' => $apiResult,
 					];
 				}
