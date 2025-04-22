@@ -162,6 +162,22 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
+		exportOnlySelectedCheckouts: function (source, sort) {
+			var url = Globals.path + "/MyAccount/AJAX?method=exportCheckouts&source=" + source;
+			var selectedTitles = AspenDiscovery.getSelectedTitles();
+
+			if (selectedTitles && selectedTitles.length > 0) {
+				sessionStorage.setItem('selectedCheckouts', JSON.stringify(selectedTitles));
+				url += "&selectedCheckouts=" + encodeURIComponent(JSON.stringify(selectedTitles));
+			}
+			if (sort !== undefined) {
+				url += "&sort=" + sort;
+			}
+			document.location.href = url;
+			AspenDiscovery.Account.clearSelectedTitles();
+			return false;
+		},
+
 		clearSelectedTitles: function() {
 			$('input[type="checkbox"]:checked').prop('checked', false);
 		},
@@ -205,9 +221,14 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
-		loadCheckouts: function (source, sort, showCovers) {
+		loadCheckouts: function (source, sort, showCovers, selectedUser) {
+
 			AspenDiscovery.Account.currentCheckoutsSource = source;
 			var url = Globals.path + "/MyAccount/AJAX?method=getCheckouts&source=" + source;
+			if (selectedUser || selectedUser == "") {
+				url += "&selectedUserCheckouts=" + selectedUser;
+			}
+
 			if (sort !== undefined) {
 				url += "&sort=" + sort;
 			}
@@ -218,7 +239,8 @@ AspenDiscovery.Account = (function () {
 				page: 'Checkouts',
 				source: source,
 				sort: sort,
-				showCovers: showCovers
+				showCovers: showCovers,
+				selectedUserCheckouts: selectedUser
 			};
 			var newUrl = AspenDiscovery.buildUrl(document.location.origin + document.location.pathname, 'source', source);
 			if (document.location.href) {
@@ -252,6 +274,7 @@ AspenDiscovery.Account = (function () {
 						// noinspection JSUnresolvedReference
 						$("#costSavingsPlaceholder").html(data.costSavingsMessage);
 					}
+					AspenDiscovery.Account.loadMenuData();
 				} else {
 					$("#" + source + "CheckoutsPlaceholder").html(data.message);
 				}
@@ -1349,13 +1372,20 @@ AspenDiscovery.Account = (function () {
 			return queryString;
 		},
 
-		filterOutLinkedUsers: function () {
+		filterOutLinkedUsers: function (filterType) {
+
 			var selectedUser = $('#linkedUsersDropdown').val();
-			sessionStorage.setItem('selectedUser', selectedUser);
-			var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
-			var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
 			var showCovers = $('#showCovers').prop('checked');
-			AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, []);
+			if (filterType == "holds") {
+				sessionStorage.setItem('selectedUser', selectedUser);
+				var availableHoldSort = $('#availableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+				var unavailableHoldSort = $('#unavailableHoldSort_' + AspenDiscovery.Account.currentHoldSource).val();
+				AspenDiscovery.Account.loadHolds(AspenDiscovery.Account.currentHoldSource, availableHoldSort, unavailableHoldSort, showCovers, selectedUser, []);
+			} else if (filterType === "checkouts") {
+				sessionStorage.setItem('selectedUserCheckouts', selectedUser);
+				var sort = $('#accountSort_' + AspenDiscovery.Account.currentCheckoutsSource).val();
+				AspenDiscovery.Account.loadCheckouts(AspenDiscovery.Account.currentCheckoutsSource, sort, showCovers, selectedUser);
+			}
 		},
 		
 
