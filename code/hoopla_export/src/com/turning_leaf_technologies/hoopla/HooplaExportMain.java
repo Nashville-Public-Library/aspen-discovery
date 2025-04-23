@@ -397,7 +397,6 @@ public class HooplaExportMain {
 				// Process Instant Content
 				boolean hooplaInstantEnabled = settings.isHooplaEnabled("Instant");
 				if (hooplaInstantEnabled) {
-					logEntry.addNote("Exporting Instant Content");
 					boolean instantUpdated = exportHooplaContent(settings, "Instant");
 					updatesRun |= instantUpdated;
 				}
@@ -405,7 +404,6 @@ public class HooplaExportMain {
 				// Process Flex Content
 				boolean hooplaFlexEnabled = settings.isHooplaEnabled("Flex");
 				if (hooplaFlexEnabled) {
-					logEntry.addNote("Exporting Flex Content");
 					boolean flexUpdated = exportHooplaContent(settings, "Flex");
 					boolean availabilityUpdated = getFlexAvailability(settings);
 					updatesRun = flexUpdated || availabilityUpdated;
@@ -474,6 +472,7 @@ public class HooplaExportMain {
 						lastUpdate = thirtyTwoHoursAgo;
 					}
 					numRetries32HoursAfter = 0;
+					logEntry.addNote("Starting daily " + hooplaType + " content extraction");
 				}else{
 					//It's not 1 am Local time, skip for now.
 					//Figure out when we last indexed this collection.
@@ -571,6 +570,8 @@ public class HooplaExportMain {
 
 						logEntry.saveResults();
 					}
+					logEntry.addNote("Completed " + logEntry.getNumChanges() + " " + hooplaType + " updates");
+					logEntry.saveResults();
 				}
 			}
 
@@ -833,7 +834,6 @@ public class HooplaExportMain {
 	}
 
 	private static void updateTitlesInDB(JSONArray responseTitles, boolean forceRegrouping, boolean doFullReload, String hooplaType) {
-		logEntry.addNote("Updating titles Processing " + responseTitles.length() + " " + hooplaType + " titles");
 		logEntry.incNumProducts(responseTitles.length());
 		for (int i = 0; i < responseTitles.length(); i++){
 			try {
