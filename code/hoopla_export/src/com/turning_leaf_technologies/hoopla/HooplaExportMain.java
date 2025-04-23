@@ -271,8 +271,6 @@ public class HooplaExportMain {
 					String rawResponse = getItemDetailsForRecordRS.getString("rawResponse");
 					String hooplaType = getItemDetailsForRecordRS.getString("hooplaType");
 					try {
-						//JSONArray itemsArray = new JSONArray(rawResponse);
-					//	JSONObject itemDetails = itemsArray.getJSONObject(0);
 						JSONObject itemDetails = new JSONObject(rawResponse);
 						String groupedWorkId =  getRecordGroupingProcessor().groupHooplaRecord(itemDetails, hooplaId);
 						//Reindex the record
@@ -393,59 +391,27 @@ public class HooplaExportMain {
 			ResultSet getSettingsRS = getSettingsStmt.executeQuery();
 			int numSettings = 0;
 			while (getSettingsRS.next()) {
+				HooplaSettings settings = new HooplaSettings(getSettingsRS);
 				numSettings++;
-				hooplaAPIBaseURL = getSettingsRS.getString("apiUrl");
-				String apiUsername = getSettingsRS.getString("apiUsername");
-				String apiPassword = getSettingsRS.getString("apiPassword");
-				String hooplaLibraryId = getSettingsRS.getString("libraryId");
-				boolean isRegroupAllRecords = getSettingsRS.getBoolean("regroupAllRecords");
-				long settingsId = getSettingsRS.getLong("id");
-				String accessToken = getSettingsRS.getString("accessToken");
-				long tokenExpirationTime = getSettingsRS.getLong("tokenExpirationTime");
-
-				if (accessToken == null || tokenExpirationTime < (System.currentTimeMillis() / 1000)) {
-					accessToken = getAccessToken(apiUsername, apiPassword, settingsId);
-				}
-
-				if (accessToken == null) {
-					logEntry.incErrors("Could not load access token");
-					return true;
-				}
 
 				// Process Instant Content
-				boolean hooplaInstantEnabled = getSettingsRS.getBoolean("hooplaInstantEnabled");
+				boolean hooplaInstantEnabled = settings.isHooplaEnabled("Instant");
 				if (hooplaInstantEnabled) {
 					logEntry.addNote("Exporting Instant Content");
-					boolean doFullReloadInstant = getSettingsRS.getBoolean("runFullUpdateInstant");
-					long lastUpdateOfChangedRecordsInstant = getSettingsRS.getLong("lastUpdateOfChangedRecordsInstant");
-					long lastUpdateOfAllRecordsInstant = getSettingsRS.getLong("lastUpdateOfAllRecordsInstant");
-
-					boolean instantUpdated = exportHooplaContent(settingsId, doFullReloadInstant, lastUpdateOfChangedRecordsInstant, lastUpdateOfAllRecordsInstant, hooplaAPIBaseURL, hooplaLibraryId, accessToken, "Instant", apiUsername, apiPassword);
+					boolean instantUpdated = exportHooplaContent(settings, "Instant");
 					updatesRun |= instantUpdated;
-
 				}
 
 				// Process Flex Content
-				boolean hooplaFlexEnabled = getSettingsRS.getBoolean("hooplaFlexEnabled");
+				boolean hooplaFlexEnabled = settings.isHooplaEnabled("Flex");
 				if (hooplaFlexEnabled) {
 					logEntry.addNote("Exporting Flex Content");
-					boolean doFullReloadFlex = getSettingsRS.getBoolean("runFullUpdateFlex");
-					long lastUpdateOfChangedRecordsFlex = getSettingsRS.getLong("lastUpdateOfChangedRecordsFlex");
-					long lastUpdateOfAllRecordsFlex = getSettingsRS.getLong("lastUpdateOfAllRecordsFlex");
-
-					boolean flexUpdated = exportHooplaContent(settingsId, doFullReloadFlex, lastUpdateOfChangedRecordsFlex, lastUpdateOfAllRecordsFlex, hooplaAPIBaseURL, hooplaLibraryId, accessToken, "Flex", apiUsername, apiPassword);
-
-
-
-					boolean availabilityUpdated = getFlexAvailability(hooplaAPIBaseURL, hooplaLibraryId, accessToken, doFullReloadFlex);
+					boolean flexUpdated = exportHooplaContent(settings, "Flex");
+					boolean availabilityUpdated = getFlexAvailability(settings);
 					updatesRun = flexUpdated || availabilityUpdated;
-					logger.warn("availabilityUpdated:" + availabilityUpdated);
-					logger.warn("updatesRun:" + updatesRun);
-
-
 				}
-				if (isRegroupAllRecords) {
-					regroupAllRecords(aspenConn, settingsId, getGroupedWorkIndexer(), logEntry);
+				if (settings.isRegroupAllRecords()) {
+					regroupAllRecords(aspenConn, settings.getSettingsId(), getGroupedWorkIndexer(), logEntry);
 				}
 
 			}
@@ -459,10 +425,29 @@ public class HooplaExportMain {
 	}
 
 
-	private static boolean exportHooplaContent(long settingsId, boolean doFullReload, long lastUpdateOfChangedRecords, long lastUpdateOfAllRecords, String hooplaAPIBaseURL, String hooplaLibraryId, String accessToken, String hooplaType, String apiUsername, String apiPassword) {
+	private static boolean exportHooplaContent(HooplaSettings settings, String hooplaType) {
 		boolean updatedContent = false;
+		boolean doFullReload = settings.isRunFullUpdate(hooplaType);
+		long settingsId = settings.getSettingsId();
+		String hooplaAPIBaseURL = settings.getApiUrl();
+		int hooplaLibraryId = settings.getLibraryId();
+		long lastUpdateOfChangedRecords = settings.getLastUpdateOfChangedRecords(hooplaType);
+		long lastUpdateOfAllRecords = settings.getLastUpdateOfAllRecords(hooplaType);
 		long lastUpdate = Math.max(lastUpdateOfChangedRecords, lastUpdateOfAllRecords);
 		String purchaseModel = hooplaType.equals("Instant") ? "PPU" : "EST";
+
+		String accessToken = settings.getAccessToken();
+		long tokenExpirationTime = settings.getTokenExpirationTime();
+
+		if (accessToken == null || tokenExpirationTime < (System.currentTimeMillis() / 1000)) {
+			accessToken = getAccessToken(settings);
+		}
+
+		if (accessToken == null) {
+			logEntry.incErrors("Could not load access token");
+			return true;
+		}
+
 		try {
 			if (doFullReload){
 				//Unset that a full update needs to be done
@@ -575,7 +560,7 @@ public class HooplaExportMain {
 									} catch (InterruptedException e) {
 										logEntry.incErrors("Error sleeping for 2 minutes", e);
 									}
-									accessToken = getAccessToken(apiUsername, apiPassword, settingsId);
+									accessToken = getAccessToken(settings);
 									headers.put("Authorization", "Bearer " + accessToken);
 								}
 							}else {
@@ -595,7 +580,7 @@ public class HooplaExportMain {
 			}
 
 			try{
-		//Set the extract time
+				//Set the extract time
 				PreparedStatement updateSettingsStmt = null;
 				if (doFullReload){
 					if (!logEntry.hasErrors()) {
@@ -607,7 +592,7 @@ public class HooplaExportMain {
 						reactiveFullUpdateStmt.executeUpdate();
 					}
 				}else{
-					// Update the lastUpdateOfChangedRecordsInstant if we have a successful response
+					// Update the lastUpdateOfChangedRecords if we have a successful response
 					if (response.isSuccess()){
 						updateSettingsStmt = aspenConn.prepareStatement("UPDATE hoopla_settings set lastUpdateOfChangedRecords" + hooplaType + " = ? where id = ?");
 					}
@@ -627,10 +612,24 @@ public class HooplaExportMain {
 		return updatedContent;
 	}
 
-	private static boolean getFlexAvailability(String hooplaAPIBaseURL, String hooplaLibraryId, String accessToken, boolean doFullReloadFlex) {
+	private static boolean getFlexAvailability(HooplaSettings settings) {
 		logEntry.addNote("Starting Flex availability update");
 		logEntry.saveResults();
 		int numUpdates = 0;
+		boolean doFullReloadFlex = settings.isRunFullUpdate("Flex");
+		String hooplaAPIBaseURL = settings.getApiUrl();
+		int hooplaLibraryId = settings.getLibraryId();
+		String accessToken = settings.getAccessToken();
+		long tokenExpirationTime = settings.getTokenExpirationTime();
+
+		if (accessToken == null || tokenExpirationTime < (System.currentTimeMillis() / 1000)) {
+			accessToken = getAccessToken(settings);
+		}
+
+		if (accessToken == null) {
+			logEntry.incErrors("Could not load access token");
+			return true;
+		}
 		try {
 			PreparedStatement getFlexTitlesStmt = aspenConn.prepareStatement("SELECT t.id, t.hooplaId, UNCOMPRESS(t.rawResponse) as rawResponse, fa.holdsQueueSize, fa.availableCopies, fa.totalCopies, fa.status, fa.hooplaId " +
 			"FROM hoopla_export t " +
@@ -646,23 +645,19 @@ public class HooplaExportMain {
 			"status = VALUES(status)"
 			);
 
-			ArrayList<Long> hooplaIds = new ArrayList<>();
 			while (flexTitlesRS.next()) {
-				if (!doFullReloadFlex){
-					logEntry.incNumProducts(1);
-				}
 				long hooplaId = flexTitlesRS.getLong("hooplaId");
-				logger.warn("hooplaid: " + hooplaId);
-				hooplaIds.add(hooplaId);
 				boolean existingInDB = flexTitlesRS.getString("status") != null;
 				Integer existingHoldsQueueSize = existingInDB ? flexTitlesRS.getInt("holdsQueueSize") : 0;
 				Integer existingAvailableCopies = existingInDB ? flexTitlesRS.getInt("availableCopies") : 0;
 				Integer existingTotalCopies = existingInDB ? flexTitlesRS.getInt("totalCopies") : 0;
 				String existingStatus = existingInDB ? flexTitlesRS.getString("status") : null;
 
+				if (!doFullReloadFlex && existingInDB){
+					logEntry.incNumProducts(1);
+				}
 
 				String url = hooplaAPIBaseURL + "/api/v1/libraries/" + hooplaLibraryId + "/content/info?contentIds=" + hooplaId;
-				logger.warn("url: " + url);
 
 				HashMap<String, String> headers = new HashMap<>();
 				headers.put("Authorization", "Bearer " + accessToken);
@@ -708,8 +703,6 @@ public class HooplaExportMain {
 									JSONObject curTitle = new JSONObject(rawResponse);
 									String groupedWorkId =  getRecordGroupingProcessor().groupHooplaRecord(curTitle, hooplaId);
 									indexRecord(groupedWorkId);
-
-									logger.warn("numUpdates:" + numUpdates);
 								} catch (SQLException e) {
 									logEntry.incErrors("Error updating flex availability for title " + hooplaId, e);
 								}
@@ -722,7 +715,6 @@ public class HooplaExportMain {
 			}
 
 			if (numUpdates > 0) {
-				logger.warn("add note for numupdates:");
 				logEntry.addNote("Updated availability for " + numUpdates + " Flex titles");
 				return true;
 			} else {
@@ -748,13 +740,11 @@ public class HooplaExportMain {
 			int numSettings = 0;
 			while (getSettingsRS.next()) {
 				numSettings++;
-				hooplaAPIBaseURL = getSettingsRS.getString("apiUrl");
-				String apiUsername = getSettingsRS.getString("apiUsername");
-				String apiPassword = getSettingsRS.getString("apiPassword");
-				String hooplaLibraryId = getSettingsRS.getString("libraryId");
-				long settingsId = getSettingsRS.getLong("id");
+				HooplaSettings settings = new HooplaSettings(getSettingsRS);
+				String hooplaAPIBaseURL = settings.getApiUrl();
+				int hooplaLibraryId = settings.getLibraryId();
 
-				String accessToken = getAccessToken(apiUsername, apiPassword, settingsId);
+				String accessToken = getAccessToken(settings);
 				if (accessToken == null) {
 					logEntry.incErrors("Could not load access token");
 					return;
@@ -775,11 +765,9 @@ public class HooplaExportMain {
 					logEntry.incErrors("Could not get titles from " + url + " " + response.getMessage());
 				}else {
 					JSONObject responseJSON = new JSONObject(response.getMessage());
-					logger.warn("rawresponse" + response.getMessage());
 					if (responseJSON.has("titles")) {
 						JSONArray responseTitles = responseJSON.getJSONArray("titles");
 						if (responseTitles != null && !responseTitles.isEmpty()) {
-							logger.warn("Found titles to process: " + responseTitles.toString());
 							updateTitlesInDB(responseTitles, true, false, singleWorkType);
 							logEntry.saveResults();
 
@@ -791,13 +779,11 @@ public class HooplaExportMain {
 										logEntry.addNote("Skipping availability check for inactive Flex title: " + numericSingleWorkId);
 									} else {
 										String availUrl = hooplaAPIBaseURL + "/api/v1/libraries/" + hooplaLibraryId + "/content/info?contentIds=" + numericSingleWorkId;
-										logger.warn("Availability URL: " + availUrl);
 										WebServiceResponse availResponse = NetworkUtils.getURL(availUrl, logger, headers);
 										if (!availResponse.isSuccess()) {
 											logEntry.incErrors("Could not get availability for Flex title " + numericSingleWorkId + " from " + availUrl + " " + availResponse.getMessage());
 										} else {
 											try {
-												logger.warn("Response received: " + availResponse.getMessage());
 												JSONArray availabilityArray = new JSONArray(availResponse.getMessage());
 												if (availabilityArray.length() > 0) {
 													JSONObject titleInfo = availabilityArray.getJSONObject(0);
@@ -834,7 +820,6 @@ public class HooplaExportMain {
 									}
 								}
 							}
-
 						}
 					}
 				}
@@ -850,7 +835,6 @@ public class HooplaExportMain {
 	private static void updateTitlesInDB(JSONArray responseTitles, boolean forceRegrouping, boolean doFullReload, String hooplaType) {
 		logEntry.addNote("Updating titles Processing " + responseTitles.length() + " " + hooplaType + " titles");
 		logEntry.incNumProducts(responseTitles.length());
-		logger.warn("update titles in db run times" + responseTitles.length());
 		for (int i = 0; i < responseTitles.length(); i++){
 			try {
 				JSONObject curTitle = responseTitles.getJSONObject(i);
@@ -893,6 +877,8 @@ public class HooplaExportMain {
 				if (!curTitleActive){
 					//Title is currently active (and if we got this far exists, delete it)
 					//Delete the record if it exists
+
+					//Delete the Flex availability if it's a Flex title
 					if (hooplaType.equalsIgnoreCase("Flex")) {
 						try {
 							PreparedStatement deleteFlexAvailabilityStmt = aspenConn.prepareStatement(
@@ -989,7 +975,9 @@ public class HooplaExportMain {
 		getGroupedWorkIndexer().processGroupedWork(groupedWorkId);
 	}
 
-	private static String getAccessToken(String username, String password, long settingsId) {
+	private static String getAccessToken(HooplaSettings settings) {
+		String username = settings.getApiUsername();
+		String password = settings.getApiPassword();
 		if (username == null || password == null){
 			logger.error("Please set HooplaAPIUser and HooplaAPIPassword in settings");
 			logEntry.addNote("Please set HooplaAPIUser and HooplaAPIPassword in settings");
@@ -998,7 +986,7 @@ public class HooplaExportMain {
 		int numTries = 0;
 		while (numTries <= 3) {
 			numTries++;
-			String getTokenUrl = hooplaAPIBaseURL + "/v2/token";
+			String getTokenUrl = settings.getApiUrl() + "/v2/token";
 			WebServiceResponse response = NetworkUtils.postToURL(getTokenUrl, null, "application/json", null, logger, username + ":" + password);
 
 			if (response.isSuccess()) {
@@ -1013,7 +1001,7 @@ public class HooplaExportMain {
 						);
 						updateTokenStmt.setString(1, accessToken);
 						updateTokenStmt.setLong(2, tokenExpirationTime);
-						updateTokenStmt.setLong(3, settingsId);
+						updateTokenStmt.setLong(3, settings.getSettingsId());
 						updateTokenStmt.executeUpdate();
 						return accessToken;
 					} catch (SQLException e) {
