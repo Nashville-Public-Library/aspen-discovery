@@ -38,6 +38,7 @@ class SystemVariables extends DataObject {
 	public $disableIpSpammyControl;
 	public $monitorAntivirus;
 	public $useOriginalCoverUrls;
+	public $lidaGitHubRepository;
 
 
 	static function getObjectStructure($context = ''): array {
@@ -61,6 +62,13 @@ class SystemVariables extends DataObject {
 				'label' => 'Community Content URL',
 				'description' => 'URL of the community content server',
 				'maxLength' => 128,
+			],
+			'lidaGitHubRepository' => [
+				'property' => 'lidaGitHubRepository',
+				'type' => 'url',
+				'label' => 'LiDA GitHub Repository URL',
+				'description' => 'URL of the GitHub repository where Aspen LiDA is deployed from',
+				'maxLength' => 255,
 			],
 			'errorEmail' => [
 				'property' => 'errorEmail',
@@ -395,6 +403,24 @@ class SystemVariables extends DataObject {
 			}
 		}
 		return SystemVariables::$_systemVariables;
+	}
+
+	public function getCurrencySymbol() {
+		$currencyCode = 'USD';
+		$systemVariables = SystemVariables::getSystemVariables();
+		if (!empty($systemVariables->currencyCode)) {
+			$currencyCode = $systemVariables->currencyCode;
+		}
+		if ($currencyCode == 'USD') {
+			$currencySymbol = '$';
+		} elseif ($currencyCode == 'EUR') {
+			$currencySymbol = '€';
+		} elseif ($currencyCode == 'CAD') {
+			$currencySymbol = '$';
+		} elseif ($currencyCode == 'GBP') {
+			$currencySymbol = '£';
+		}
+		return $currencySymbol;
 	}
 
 	public function update($context = '') {

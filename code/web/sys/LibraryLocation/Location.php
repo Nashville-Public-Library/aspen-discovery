@@ -100,8 +100,7 @@ class Location extends DataObject {
 	public $systemsToRepeatIn;
 	public $homeLink;
 	public $ptypesToAllowRenewals;
-	public /** @noinspection PhpUnused */
-		$publicListsToInclude;
+	public $publicListsToInclude;
 	public $automaticTimeoutLength;
 	public $automaticTimeoutLengthLoggedOut;
 	public $additionalCss;
@@ -138,6 +137,8 @@ class Location extends DataObject {
 	 * @var array|LocationHours[]|mixed|null
 	 */
 	public $ebscohostSearchSettingId;
+
+	public $heyCentricSettingId;
 
 	private $_sublocations;
 
@@ -177,7 +178,8 @@ class Location extends DataObject {
 			'defaultToCombinedResults',
 			'useLibraryCombinedResultsSettings',
 			'ebscohostSearchSettingId',
-			'lidaSelfCheckSettingId'
+			'lidaSelfCheckSettingId',
+			'heyCentricSettingId',
 		];
 	}
 

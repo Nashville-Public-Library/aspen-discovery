@@ -2037,7 +2037,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 				$curNote .= " " . $note;
 				$curNote = trim($curNote);
 				if (preg_match("/--$/", $curNote)) {
-					$notes[] = $curNote;
+					$notes[] = str_replace('--', '', $curNote);
 					$curNote = '';
 				} elseif (strpos($curNote, '--') !== false) {
 					$brokenNotes = explode('--', $curNote);

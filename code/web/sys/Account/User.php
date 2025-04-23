@@ -52,6 +52,8 @@ class User extends DataObject {
 	public $userCookiePreferenceLocalAnalytics;
 	public $holdInfoLastLoaded;
 	public $checkoutInfoLastLoaded;
+	public $optInToAllCampaignLeaderboards;
+	public $campaignNotificationsByEmail;
 
 	public $onboardAppNotifications;
 	public $shouldAskBrightness;
@@ -1436,6 +1438,8 @@ class User extends DataObject {
 	}
 
 	function updateUserPreferences() {
+		require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
+
 		// Validate that the input data is correct
 		if (isset($_POST['pickupLocation']) && !is_array($_POST['pickupLocation']) && preg_match('/^\d{1,3}$/', $_POST['pickupLocation']) == 0) {
 			return [
@@ -1575,6 +1579,9 @@ class User extends DataObject {
 				return $result;
 			}
 		}
+
+		$this->__set('optInToAllCampaignLeaderboards', (isset($_POST['optInToAllCampaignLeaderboards']) && $_POST['optInToAllCampaignLeaderboards'] == 'on') ? 1 : 0);
+		$this->__set('campaignNotificationsByEmail', (isset($_POST['campaignNotificationsByEmail']) && $_POST['campaignNotificationsByEmail'] == 'on') ? 1 : 0);
 		$this->clearCache();
 		$saveResult = $this->update();
 		if ($saveResult === false) {
@@ -4224,6 +4231,9 @@ class User extends DataObject {
 			$sections['communityEngagement']->addAction(new AdminAction('Admin View', 'View progress and manage rewards.', '/CommunityEngagement/AdminView'), [
 				'View Community Engagement Dashboard',
 			]);
+			$sections['communityEngagement']->addAction(new AdminAction('Dashboard', 'View usage dashboard for Community Engagement.', '/CommunityEngagement/Dashboard'), [
+				'View Community Engagement Dashboard',
+			]);
 		}
 		$sections['cataloging'] = new AdminSection('Catalog / Grouped Works');
 		$groupedWorkAction = new AdminAction('Grouped Work Display', 'Define information about what is displayed for Grouped Works in search results and full record displays.', '/Admin/GroupedWorkDisplay');
@@ -4328,6 +4338,7 @@ class User extends DataObject {
 		//PROPAY $sections['ecommerce']->addAction(new AdminAction('ProPay Settings', 'Define Settings for ProPay.', '/Admin/ProPaySettings'), 'Administer ProPay');
 		$sections['ecommerce']->addAction(new AdminAction('Xpress-pay Settings', 'Define Settings for Xpress-pay.', '/Admin/XpressPaySettings'), 'Administer Xpress-pay');
 		$sections['ecommerce']->addAction(new AdminAction('ACI Speedpay Settings', 'Define Settings for ACI Speedpay.', '/Admin/ACISpeedpaySettings'), 'Administer ACI Speedpay');
+		$sections['ecommerce']->addAction(new AdminAction('HeyCentric Settings', 'Define Settings for HeyCentric.', '/Admin/HeyCentricSettings'), 'Administer HeyCentric Settings');
 		$sections['ecommerce']->addAction(new AdminAction('InvoiceCloud Settings', 'Define Settings for InvoiceCloud.', '/Admin/InvoiceCloudSettings'), 'Administer InvoiceCloud');
 		$sections['ecommerce']->addAction(new AdminAction('Certified Payments by Deluxe Settings', 'Define Settings for Certified Payments by Deluxe.', '/Admin/CertifiedPaymentsByDeluxeSettings'), 'Administer Certified Payments by Deluxe');
 		$sections['ecommerce']->addAction(new AdminAction('PayPal Payflow Settings', 'Define Settings for PayPal Payflow.', '/Admin/PayPalPayflowSettings'), 'Administer PayPal Payflow');
