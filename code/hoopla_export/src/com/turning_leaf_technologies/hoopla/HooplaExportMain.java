@@ -614,6 +614,7 @@ public class HooplaExportMain {
 	}
 
 	private static boolean getFlexAvailability(HooplaSettings settings) {
+		// Update all the flex titles availability
 		logEntry.addNote("Starting Flex availability update");
 		logEntry.saveResults();
 		int numUpdates = 0;
@@ -913,6 +914,7 @@ public class HooplaExportMain {
 						addHooplaTitleToDB.setString(8, curTitle.has("rating") ? curTitle.getString("rating") : "");
 						addHooplaTitleToDB.setBoolean(9, curTitle.getBoolean("abridged"));
 						addHooplaTitleToDB.setBoolean(10, curTitle.getBoolean("children"));
+						// Flex titles don't have a price so set it to 0.0
 						if (hooplaType.equalsIgnoreCase("Flex")) {
 							addHooplaTitleToDB.setDouble(11, 0.0);
 						} else {
@@ -942,6 +944,7 @@ public class HooplaExportMain {
 						updateHooplaTitleInDB.setString(7, curTitle.has("rating") ? curTitle.getString("rating") : "");
 						updateHooplaTitleInDB.setBoolean(8, curTitle.getBoolean("abridged"));
 						updateHooplaTitleInDB.setBoolean(9, curTitle.getBoolean("children"));
+						// Flex titles don't have a price so set it to 0.0
 						if (hooplaType.equalsIgnoreCase("Flex")) {
 							updateHooplaTitleInDB.setDouble(10, 0.0);
 						} else {

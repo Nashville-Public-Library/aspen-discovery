@@ -526,7 +526,6 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 	function getStatusSummary() : array {
 		$relatedRecord = $this->getRelatedRecord();
 		$statusSummary = [];
-
 		if ($relatedRecord == null) {
 			$statusSummary['status'] = "Unavailable";
 			$statusSummary['available'] = false;
@@ -537,7 +536,6 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 			// Check if it's a Flex title
 			if ($this->getHooplaType() == 'Flex') {
 				$availableCopies = $relatedRecord->getAvailableCopies();
-			//	$holdsQueueSize = $relatedRecord->getHoldsQueueSize();
 				if ($availableCopies > 0) {
 					$statusSummary['status'] = "Available from Hoopla";
 					$statusSummary['available'] = true;

@@ -4,7 +4,7 @@ AspenDiscovery.Hoopla = (function(){
 			if (Globals.loggedIn) {
 				if (typeof patronId === 'undefined') {
 					patronId = $('#patronId', '#pickupLocationOptions').val();
-				}			
+				}
 				var url = Globals.path + '/Hoopla/'+ hooplaId + '/AJAX';
 				var params = {
 					'method' : 'checkOutHooplaTitle',
@@ -119,7 +119,6 @@ AspenDiscovery.Hoopla = (function(){
 			}
 			return false;
 		},
-
 
 		doHold: function(patronId, id) {
 			if (Globals.loggedIn) {

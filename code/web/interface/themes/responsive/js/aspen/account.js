@@ -515,7 +515,6 @@ AspenDiscovery.Account = (function () {
 						$(".hoopla-checkouts-placeholder").html(data.summary.numCheckedOut);
 						totalCheckouts += parseInt(data.summary.numCheckedOut);
 						$(".checkouts-placeholder").html(totalCheckouts);
-
 						$(".hoopla-holds-placeholder").html(data.summary.numHolds);
 						totalHolds += parseInt(data.summary.numHolds);
 						$(".holds-placeholder").html(totalHolds);

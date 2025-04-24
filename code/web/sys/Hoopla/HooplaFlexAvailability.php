@@ -9,4 +9,4 @@ class HooplaFlexAvailability extends DataObject {
 	public $availableCopies;
 	public $totalCopies;
 	public $status;
-} 
+}

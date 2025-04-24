@@ -1,4 +1,3 @@
-
 <?php
 
 class Hoopla_AJAX extends Action {
@@ -71,7 +70,8 @@ class Hoopla_AJAX extends Action {
 					}
 					$checkOutStatus = $hooplaUserStatuses[$hooplaUser->id];
 					if (!$checkOutStatus) {
-						// Always get the checkout status, not sure if this is  still needed?
+						// This block is currently unused since checkOutStatus always has a value even if patron is not registered
+						// Keeping it here for potential future use cases
 						require_once ROOT_DIR . '/RecordDrivers/HooplaRecordDriver.php';
 						$hooplaRecord = new HooplaRecordDriver($id);
 

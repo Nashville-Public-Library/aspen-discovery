@@ -3124,7 +3124,6 @@ class UserAPI extends AbstractAPI {
 		$id = $_REQUEST['recordId'] ?? $_REQUEST['itemId'];
 		$user = $this->getUserForApiCall();
 
-
 		if ($user && !($user instanceof AspenError)) {
 			require_once ROOT_DIR . '/RecordDrivers/HooplaRecordDriver.php';
 			$recordDriver = new HooplaRecordDriver($id);
@@ -3172,7 +3171,6 @@ class UserAPI extends AbstractAPI {
 			];
 		}
 	}
-
 
 	function placeAxis360Hold(): array {
 		$id = $_REQUEST['itemId'];

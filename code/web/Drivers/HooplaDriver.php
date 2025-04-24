@@ -207,7 +207,7 @@ class HooplaDriver extends AbstractEContentDriver {
 			$summary->resetCounters();
 			$patronURL = $this->getHooplaBasePatronURL($user);
 			if (!empty($patronURL)) {
-				// Get Patron Status (checkouts)
+				// Get Patron Status (only has checkouts in status call)
 				$getPatronStatusURL = $patronURL . '/status';
 				$hooplaPatronStatusResponse = $this->getAPIResponse('hoopla.getAccountSummary', $getPatronStatusURL);
 				if ($hooplaPatronStatusResponse['httpCode'] == 200 && !empty($hooplaPatronStatusResponse['body'])) {
@@ -317,18 +317,16 @@ class HooplaDriver extends AbstractEContentDriver {
 			/** @var Memcache $memCache */ global $memCache;
 			$accessToken = $memCache->get(self::memCacheKey);
 			if (empty($accessToken)) {
-				if (!empty($this->hooplaSettings->accessToken) && !empty($this->hooplaSettings->tokenExpirationTime) && $this->hooplaSettings->tokenExpirationTime > (time())) {
-					$this->accessToken = $this->hooplaSettings->accessToken;
-					global $logger;
-					$logger->log("accessToken: " . $this->accessToken, Logger::LOG_ERROR);
-					$logger->log("tokenExpirationTime: " . $this->hooplaSettings->tokenExpirationTime, Logger::LOG_ERROR);
+				$tokenInDB = $this->hooplaSettings->accessToken;
+				$tokenExpirationTimeInDB = $this->hooplaSettings->tokenExpirationTime;
+				if (!empty($tokenInDB) && !empty($tokenExpirationTimeInDB) && $tokenExpirationTimeInDB > (time())) {
+					$this->accessToken = $tokenInDB;
 				} else {
 					$this->renewAccessToken();
 				}
 			} else {
 				$this->accessToken = $accessToken;
 			}
-
 		}
 		return $this->accessToken;
 	}
@@ -407,6 +405,7 @@ class HooplaDriver extends AbstractEContentDriver {
 				return $hooplaItem->hooplaType;
 			}
 		}
+		// default to Instant
 		return 'Instant';
 	}
 
@@ -921,13 +920,7 @@ class HooplaDriver extends AbstractEContentDriver {
 
 				$holdURL .= '/holds/' . $titleId;
 
-				$holdResponse = $this->getAPIResponse(
-					'hoopla.placeHold',
-					$holdURL,
-					null,
-					'POST',
-					['ws-api: 2.1']
-				);
+				$holdResponse = $this->getAPIResponse('hoopla.placeHold', $holdURL, null, 'POST');
 
 				if ($holdResponse && isset($holdResponse['body'])) {
 					if ($holdResponse['httpCode'] == 200 && !empty($holdResponse['body'])) {
@@ -1067,6 +1060,8 @@ class HooplaDriver extends AbstractEContentDriver {
 	 *
 	 * @param User $patron The User to cancel the hold for
 	 * @param string $recordId The id of the bib record
+	 * @param null $cancelId ID to cancel for compatibility
+	 * @return false|array
 	 */
 	function cancelHold($patron, $recordId, $cancelId = null, $isIll = false): array
 	{
@@ -1079,7 +1074,6 @@ class HooplaDriver extends AbstractEContentDriver {
 		if (!empty($patronUrl)) {
 			$cancelUrl = $patronUrl . '/holds/' . $recordId;
 			$cancelResponse = $this->getAPIResponse('hoopla.cancelHold', $cancelUrl, null, 'DELETE');
-
 
 			if ($cancelResponse['httpCode'] == 403) {
 				// Hold already cancelled or doesn't exist

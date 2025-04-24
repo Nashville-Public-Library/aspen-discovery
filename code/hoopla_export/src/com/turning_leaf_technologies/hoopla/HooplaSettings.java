@@ -111,7 +111,6 @@ class HooplaSettings {
         return accessToken;
     }
 
-
     public long getTokenExpirationTime() {
         return tokenExpirationTime;
     }

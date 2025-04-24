@@ -443,7 +443,6 @@ class HooplaProcessor {
 					itemInfo.setDetailedStatus("Available Online");
 					itemInfo.setGroupedStatus("Available Online");
 					itemInfo.setHoldable(false);
-
 				}
 				itemInfo.setInLibraryUseOnly(false);
 
