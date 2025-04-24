@@ -433,6 +433,7 @@ public class HooplaExportMain {
 		long lastUpdateOfAllRecords = settings.getLastUpdateOfAllRecords(hooplaType);
 		long lastUpdate = Math.max(lastUpdateOfChangedRecords, lastUpdateOfAllRecords);
 		String purchaseModel = hooplaType.equals("Instant") ? "PPU" : "EST";
+		int numRecordsToExtract = 0;
 
 		String accessToken = settings.getAccessToken();
 		long tokenExpirationTime = settings.getTokenExpirationTime();
@@ -518,6 +519,7 @@ public class HooplaExportMain {
 					JSONArray responseTitles = responseJSON.getJSONArray("titles");
 					if (responseTitles != null && !responseTitles.isEmpty()) {
 						updateTitlesInDB(responseTitles, false, doFullReload, hooplaType);
+						numRecordsToExtract += responseTitles.length();
 						logEntry.saveResults();
 					}
 
@@ -540,6 +542,7 @@ public class HooplaExportMain {
 								responseTitles = responseJSON.getJSONArray("titles");
 								if (responseTitles != null && !responseTitles.isEmpty()) {
 									updateTitlesInDB(responseTitles, false, doFullReload, hooplaType);
+									numRecordsToExtract += responseTitles.length();
 								}
 							}
 							if (responseJSON.has("nextStartToken")) {
@@ -570,7 +573,7 @@ public class HooplaExportMain {
 
 						logEntry.saveResults();
 					}
-					logEntry.addNote("Completed " + logEntry.getNumChanges() + " " + hooplaType + " updates");
+					logEntry.addNote("Completed " + numRecordsToExtract + " " + hooplaType + " updates");
 					logEntry.saveResults();
 				}
 			}
