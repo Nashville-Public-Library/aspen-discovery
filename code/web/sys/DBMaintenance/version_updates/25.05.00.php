@@ -14,13 +14,21 @@ function getUpdates25_05_00(): array {
 
 		//mark - Grove
 		'system_variables_add_lida_github_repository' => [
-			'title' => 'system_variables_add_lida_github_repository',
+			'title' => 'Add LIDA GitHub Repository to System Variables',
 			'description' => 'Add a field to store the github repository for LiDA within System Variables to load release notes from',
 			'continueOnError' => false,
 			'sql' => [
 				"ALTER TABLE system_variables add column lidaGitHubRepository VARCHAR(255) DEFAULT 'https://github.com/Aspen-Discovery/aspen-lida'",
 			]
 		], //system_variables_add_lida_github_repository
+		'axis360_setting_name' => [
+			'title' => 'Add Boundless setting name',
+			'description' => 'Add a name for Boundless settings',
+			'sql' => [
+				"ALTER TABLE axis360_settings ADD COLUMN name VARCHAR(100) DEFAULT ''",
+				"UPDATE axis360_settings set name = concat('Setting ', id)",
+			]
+		], //axis360_setting_name
 
 		//katherine - Grove
 
