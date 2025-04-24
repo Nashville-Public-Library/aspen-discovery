@@ -2284,7 +2284,6 @@ AspenDiscovery.Admin = (function () {
 			if (isUnbound) {
 				$("#propertyRowunboundAccountNumber").show();
 				$("#propertyRowunboundInstanceNumber").show();
-				$("#propertyRowsyndeticsKey").hide();
 				$("#propertyRowhasSummary").hide();
 				$("#propertyRowhasAvSummary").hide();
 				$("#propertyRowhasAvProfile").hide();
@@ -2296,7 +2295,6 @@ AspenDiscovery.Admin = (function () {
 			} else {
 				$("#propertyRowunboundAccountNumber").hide();
 				$("#propertyRowunboundInstanceNumber").hide();
-				$("#propertyRowsyndeticsKey").show();
 				$("#propertyRowhasSummary").show();
 				$("#propertyRowhasAvSummary").show();
 				$("#propertyRowhasAvProfile").show();
@@ -2441,6 +2439,7 @@ AspenDiscovery.Admin = (function () {
 							missingLabels.add(ptypeLabel);
 
 							if ((!changedTarget || changedTarget === 'staff') && ptypeValue === selectedStaffType && $staffTypeSelect.length > 0) {
+								$(staffWarningId).remove();
 								$staffTypeSelect.closest(".form-group").after(`
 									<div id="staff_warning" class="alert alert-danger mt-2">
 										<strong>Warning:</strong> The selected staff patron type "${ptypeLabel}" does not exist in the admin_sso profile.
@@ -2454,6 +2453,7 @@ AspenDiscovery.Admin = (function () {
 							}
 
 							if ((!changedTarget || changedTarget === 'fallback') && ptypeValue === selectedFallbackType) {
+								$(fallbackWarningId).remove();
 								$fallbackSelect.closest(".form-group").after(`
 									<div id="fallback_warning" class="alert alert-danger mt-2">
 										<strong>Warning:</strong> The selected fallback patron type "${ptypeLabel}" is not assigned to the admin_sso profile.
@@ -2466,6 +2466,7 @@ AspenDiscovery.Admin = (function () {
 				}
 
 				if (!changedTarget) {
+					$(warningId).remove();
 					const availablePatronTypes = Object.values(adminSSOPatronTypes || {});
 					let warningHtml = `
 						<div id="ssoAuthOnly_warning" class="alert alert-warning mt-2">
@@ -2508,6 +2509,7 @@ AspenDiscovery.Admin = (function () {
 			return true;
 
 			function showError(message) {
+				$(warningId).remove();
 				$formGroup.after(`
 					<div id="ssoAuthOnly_warning" class="alert alert-warning mt-2">
 						<p><strong>${message}</strong></p>
@@ -2520,6 +2522,7 @@ AspenDiscovery.Admin = (function () {
 			}
 
 			function showMissingProfileError() {
+				$(warningId).remove();
 				$formGroup.after(`
 					<div id="ssoAuthOnly_warning" class="alert alert-danger alert-outline mt-2">
 						<strong>Error:</strong> The "admin_sso" account profile has not been created yet. 

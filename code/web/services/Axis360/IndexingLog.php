@@ -2,8 +2,16 @@
 
 require_once ROOT_DIR . '/services/Admin/IndexingLog.php';
 require_once ROOT_DIR . '/sys/Axis360/Axis360LogEntry.php';
+require_once ROOT_DIR . '/sys/Axis360/Axis360Setting.php';
 
 class Axis360_IndexingLog extends Admin_IndexingLog {
+	function launch() {
+		global $interface;
+		$setting = new Axis360Setting();
+		$settings = $setting->fetchAll('id', 'name');
+		$interface->assign('settings', $settings);
+		parent::launch();
+	}
 	function getIndexLogEntryObject(): BaseLogEntry {
 		return new Axis360LogEntry();
 	}
@@ -23,6 +31,23 @@ class Axis360_IndexingLog extends Admin_IndexingLog {
 	function applyMinProcessedFilter(DataObject $indexingObject, $minProcessed) {
 		if ($indexingObject instanceof Axis360LogEntry) {
 			$indexingObject->whereAdd('numProducts >= ' . $minProcessed);
+		}
+	}
+
+	/**
+	 * Apply any additional filters that are custom to the log being viewed.
+	 *
+	 * @param DataObject $logEntry
+	 * @return void
+	 */
+	function applyAdditionalFilters(DataObject $logEntry) {
+		global $interface;
+		$interface->assign('selectedSetting', -1);
+		if (isset($_REQUEST['settingToShow'])) {
+			if ($_REQUEST['settingToShow'] != -1 && is_numeric($_REQUEST['settingToShow'])) {
+				$logEntry->settingId = $_REQUEST['settingToShow'];
+				$interface->assign('selectedSetting', $_REQUEST['settingToShow']);
+			}
 		}
 	}
 

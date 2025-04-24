@@ -3,12 +3,12 @@
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class IPAddress extends DataObject {
-	public $__table = 'ip_lookup';   // table name
-	public $id;                      //int(25)
-	public $locationid;              //int(5)
-	public $location;                //varchar(255)
-	public $ip;                      //varchar(255)
-	public $isOpac;                   //tinyint(1)
+	public $__table = 'ip_lookup';    //	table name
+	public $id;                       //	int(25)
+	public $locationid;               //	int(5)
+	public $location;                 //	varchar(255)
+	public $ip;                       //	varchar(255) - IPv4 or IPv6 address or range
+	public $isOpac;                   //	tinyint(1)
 	public $defaultLogMeOutAfterPlacingHoldOn;
 	public $blockAccess;
 	public $blockedForSpam;
@@ -16,8 +16,8 @@ class IPAddress extends DataObject {
 	public $showDebuggingInformation;
 	public $logTimingInformation;
 	public $logAllQueries;
-	public $startIpVal;
-	public $endIpVal;
+	public $startIpVal;              //	varchar(255) - Numeric for IPv4, string with 'ipv6:' prefix for IPv6
+	public $endIpVal;                //	varchar(255) - Numeric for IPv4, string with 'ipv6:' prefix for IPv6
 	public $authenticatedForEBSCOhost;
 	public $masqueradeMode;
 	public $ssoLogin;
@@ -27,8 +27,6 @@ class IPAddress extends DataObject {
 			'isOpac',
 			'blockAccess',
 			'allowAPIAccess',
-			'startIpVal',
-			'endIpVal',
 			'ssoLogin'
 		];
 	}
@@ -58,8 +56,9 @@ class IPAddress extends DataObject {
 				'property' => 'ip',
 				'type' => 'text',
 				'label' => 'IP Address',
-				'description' => 'The IP Address to map to a location formatted as xxx.xxx.xxx.xxx/mask, xxx.xxx.xxx.xxx, or xxx.xxx.xxx.xxx-xxx.xxx.xxx.xxx',
+				'description' => 'The IP Address to map to a location.',
 				'serverValidation' => 'validateIPAddress',
+				'note' => 'Supported formats: IPv4 (xxx.xxx.xxx.xxx), IPv6 (8 groups of 4 hexadecimal digits or shorthand xxxx:xxxx::xxxx), or ranges with dash notation (xxx.xxx.xxx.xxx-xxx.xxx.xxx.xxx or xxxx:xxxx::-xxxx:xxxx::). Subnet masks are only supported with IPv4 addresses (xxx.xxx.xxx.xxx/xx); IPv6 subnets are not supported.'
 			],
 			'location' => [
 				'property' => 'location',
@@ -193,20 +192,102 @@ class IPAddress extends DataObject {
 
 	/** @noinspection PhpUnused This is used in validation when editing the object */
 	function validateIPAddress(): array {
-		$calcIpResult = $this->calcIpRange();
+		$ipAddress = $this->ip;
 		$errors = [];
-		if (!$calcIpResult) {
-			$errors[] = 'The IP address entered is not valid';
+
+		// Check if it's a valid IPv4 address.
+		$isIPv4 = filter_var($ipAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
+
+		// Check if it's a valid IPv6 address.
+		$isIPv6 = filter_var($ipAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+
+		// Check for CIDR notation.
+		if (str_contains($ipAddress, '/')) {
+			[$subnet, $mask] = explode('/', $ipAddress);
+			$isIPv4Subnet = filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && is_numeric($mask) && $mask >= 0 && $mask <= 32;
+			$isIPv6Subnet = filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+
+			if ($isIPv6Subnet) {
+				$errors[] = 'IPv6 subnets are not supported. Please use individual IPv6 addresses or IPv6 ranges with dash notation instead.';
+			} else if (!$isIPv4Subnet) {
+				$errors[] = 'The subnet mask is not valid. For IPv4, it should be between 0-32.';
+			}
 		}
+
+		// Check for range notation with dash.
+		elseif (str_contains($ipAddress, '-')) {
+			[$startIP, $endIP] = explode('-', $ipAddress);
+			$startIP = trim($startIP);
+			$endIP = trim($endIP);
+
+			$isValidIPv4Range = filter_var($startIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) &&
+				filter_var($endIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
+
+			$isValidIPv6Range = filter_var($startIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) &&
+				filter_var($endIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+
+			if (!$isValidIPv4Range && !$isValidIPv6Range) {
+				$errors[] = 'The IP range is not valid. Both start and end IPs must be valid and of the same type (IPv4 or IPv6).';
+			}
+		}
+
+		// Single IP address.
+		else if (!$isIPv4 && !$isIPv6) {
+			$errors[] = 'The IP address entered is not a valid IPv4 or IPv6 address. Examples: xxx.xxx.xxx.xxx (IPv4), xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx (IPv6).';
+		}
+
+		$calcIpResult = $this->calcIpRange();
+		if (!$calcIpResult) {
+			$errors[] = 'Failed to calculate the IP range.';
+		}
+
 		return [
-			'validatedOk' => $calcIpResult,
+			'validatedOk' => empty($errors),
 			'errors' => $errors,
 		];
 	}
 
 	function calcIpRange(): bool {
 		$ipAddress = $this->ip;
+		$objectStructure = IPAddress::getObjectStructure();
+
+		// Handle IPv6 addresses
+		if (filter_var($ipAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+			$ipv6Binary = 'ipv6:' . bin2hex(inet_pton($ipAddress));
+			$this->setProperty('startIpVal', $ipv6Binary, $objectStructure);
+			$this->setProperty('endIpVal', $ipv6Binary, $objectStructure);
+			return true;
+		}
+
+		// Check if it's a CIDR notation for IPv6 (currently not supported in Aspen).
+		// TODO: To be supported, it would require testing IPv6 subnets.
 		$subnet_and_mask = explode('/', $ipAddress);
+		if (count($subnet_and_mask) == 2 && filter_var($subnet_and_mask[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+			global $logger;
+			$logger->log("IPv6 subnets (CIDR notation) are not supported: $ipAddress.", Logger::LOG_ERROR);
+			return false;
+		}
+
+		// Check for IPv6 range with dash notation.
+		if (str_contains($ipAddress, '-')) {
+			[$startVal, $endVal] = explode('-', $ipAddress);
+			$startVal = trim($startVal);
+			$endVal = trim($endVal);
+
+			if (filter_var($startVal, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) &&
+				filter_var($endVal, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+
+				$startHex = 'ipv6:' . bin2hex(inet_pton($startVal));
+				$endHex = 'ipv6:' . bin2hex(inet_pton($endVal));
+
+				$this->setProperty('startIpVal', $startHex, $objectStructure);
+				$this->setProperty('endIpVal', $endHex, $objectStructure);
+
+				return true;
+			}
+		}
+
+		// Original IPv4 handling.
 		if (count($subnet_and_mask) == 2) {
 			$ipRange = $this->getIpRange($ipAddress);
 			$startIp = $ipRange[0];
@@ -225,10 +306,9 @@ class IPAddress extends DataObject {
 			}
 		}
 		//echo("\r\n<br/>$ipAddress: " . sprintf('%u', $startIp) . " - " .  sprintf('%u', $endIp));
-		$objectStructure = IPAddress::getObjectStructure();
 		$this->setProperty('startIpVal', $startIp, $objectStructure);
 		$this->setProperty('endIpVal', $endIp, $objectStructure);
-		if ($startIp == false || $endIp == false) {
+		if (!$startIp || !$endIp) {
 			return false;
 		} else {
 			return true;
@@ -264,8 +344,18 @@ class IPAddress extends DataObject {
 		];
 	}
 
-	function convertIpToLong($ipAddress) {
+	function convertIpToLong($ipAddress): bool|int|string
+	{
 		$ipAddress = trim($ipAddress);
+
+		// Check if it's an IPv6 address.
+		if (filter_var($ipAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+			// For IPv6, use inet_pton and store the result as a binary string.
+			// Use a prefix to identify IPv6 addresses in internal storage.
+			return 'ipv6:' . bin2hex(inet_pton($ipAddress));
+		}
+
+		// Original IPv4 handling
 		$ipAsLong = ip2long($ipAddress);
 		if ($ipAsLong !== false) {
 			return $ipAsLong;
@@ -293,10 +383,72 @@ class IPAddress extends DataObject {
 	 * @param $activeIP
 	 * @return bool|IPAddress
 	 */
-	static function getIPAddressForIP($activeIP) {
+	static function getIPAddressForIP($activeIP): IPAddress|bool
+	{
 		if (empty($activeIP)) {
 			return false;
 		}
+
+		// Handle IPv6 addresses
+		if (filter_var($activeIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+			$ipVal = 'ipv6:' . bin2hex(inet_pton($activeIP));
+
+			if (array_key_exists($ipVal, IPAddress::$ipAddressesForIP)) {
+				return IPAddress::$ipAddressesForIP[$ipVal];
+			}
+
+			disableErrorHandler();
+
+			// First, check exact matches.
+			$ipObject = new IPAddress();
+			$ipObject->ip = $activeIP;
+			if ($ipObject->find(true)) {
+				enableErrorHandler();
+				IPAddress::$ipAddressesForIP[$ipVal] = $ipObject;
+				return $ipObject;
+			}
+
+			// Then, check for IPv6 stored in startIpVal/endIpVal.
+			$ipObject = new IPAddress();
+			$ipObject->startIpVal = $ipVal;
+			$ipObject->endIpVal = $ipVal;
+			if ($ipObject->find(true)) {
+				enableErrorHandler();
+				IPAddress::$ipAddressesForIP[$ipVal] = $ipObject;
+				return $ipObject;
+			}
+
+			// Check IPv6 ranges (start-end).
+			$ipObject = new IPAddress();
+			$ipObject->whereAdd('startIpVal LIKE \'ipv6:%\'');
+			$ipObject->whereAdd('startIpVal != endIpVal');
+			$numRows = $ipObject->find();
+
+			for ($i = 0; $i < $numRows; $i++) {
+				$ipObject->fetch();
+				// Extract hex values from stored format.
+				$startHex = substr($ipObject->startIpVal, 5); // Remove 'ipv6:' prefix.
+				$endHex = substr($ipObject->endIpVal, 5);     // Remove 'ipv6:' prefix.
+
+				// Current IP as hex without prefix.
+				$currentHex = substr($ipVal, 5);
+
+				// Check if the IP is within the range.
+				if (IPAddress::ipv6HexInRange($currentHex, $startHex, $endHex)) {
+					enableErrorHandler();
+					IPAddress::$ipAddressesForIP[$ipVal] = $ipObject;
+					return $ipObject;
+				}
+			}
+
+			enableErrorHandler();
+			IPAddress::$ipAddressesForIP[$ipVal] = false;
+			$ipObject->__destruct();
+			$ipObject = null;
+			return false;
+		}
+
+		// Original IPv4 handling
 		$ipVal = ip2long($activeIP);
 		if (is_numeric($ipVal)) {
 			if (array_key_exists($ipVal, IPAddress::$ipAddressesForIP)) {
@@ -352,7 +504,8 @@ class IPAddress extends DataObject {
 	/**
 	 * @return mixed|string
 	 */
-	public static function getClientIP() {
+	public static function getClientIP(): mixed
+	{
 		if (isset($_SERVER["HTTP_CLIENT_IP"])) {
 			$ip = $_SERVER["HTTP_CLIENT_IP"];
 		} elseif (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
@@ -370,9 +523,24 @@ class IPAddress extends DataObject {
 		} else {
 			$ip = '';
 		}
+
+		// Handle X-Forwarded-For with multiple IPs.
+		if (str_contains($ip, ',')) {
+			// X-Forwarded-For may contain multiple IPs; take the first one (client).
+			$ipList = explode(',', $ip);
+			$ip = trim($ipList[0]);
+		}
+
+		if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+			// If not a valid IP, return a default.
+			$ip = '0.0.0.0';
+		}
+
+		// Convert IPv6 localhost to IPv4 localhost for backward compatibility.
 		if ($ip == '::1') {
 			$ip = '127.0.0.1';
 		}
+
 		return $ip;
 	}
 
@@ -389,6 +557,14 @@ class IPAddress extends DataObject {
 	public static function allowAPIAccessForClientIP(): bool {
 		$clientIP = IPAddress::getClientIP();
 		$ipInfo = IPAddress::getIPAddressForIP($clientIP);
+
+		global $logger;
+		if ($ipInfo) {
+			$logger->log("IP rule found with allowAPIAccess: " . ($ipInfo->allowAPIAccess ? 'true.' : 'false.'), Logger::LOG_DEBUG);
+		} else {
+			$logger->log("No IP rule found for $clientIP, denying API access.", Logger::LOG_DEBUG);
+		}
+
 		if (!empty($ipInfo)) {
 			return $ipInfo->allowAPIAccess;
 		} else {
@@ -516,5 +692,19 @@ class IPAddress extends DataObject {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Check if an IPv6 address in hex format is within a range.
+	 *
+	 * @param string $ipHex The IPv6 address as hex.
+	 * @param string $startHex The start of the range as hex.
+	 * @param string $endHex The end of the range as hex.
+	 * @return bool True if the IP is in the range, false otherwise.
+	 */
+	public static function ipv6HexInRange(string $ipHex, string $startHex, string $endHex): bool
+	{
+		// Simple lexicographical comparison works for hex strings of equal length.
+		return ($ipHex >= $startHex && $ipHex <= $endHex);
 	}
 }
