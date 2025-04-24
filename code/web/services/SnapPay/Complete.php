@@ -34,12 +34,14 @@ class SnapPay_Complete extends Action {
 				} elseif (isset($_POST['udf0']) && preg_match('/^[0-9a-z]{26}$/', $_POST['udf0'])) { // As of 2025 04 21, the aspen_session ID is passed in udf9, but *sometimes* is returned in Nashville's SnapPay configuration in udf0
 					$incomingSessionId = $_POST['udf0'];
 				}
-				if(!empty($incomingSessionId) && $session->id != $incomingSessionId) {
-					$session->id = $incomingSessionId;
-					if ($session->read(true)) {
-						$session->setSessionId($session->id);
+				if(!empty($incomingSessionId)) {
+					$retrievedSessionData = $session->read($incomingSessionId);
+					if (!empty($retrievedSessionData) && strpos($retrievedSessionData, 'activeUserId|i:' . $_POST['customerId']) !== false) {
+						$session->write($incomingSessionId, $retrievedSessionData);
+						$_SESSION = unserialize($retrievedSessionData);
 					}
 				}
+
 			}
 			if (empty($_GET['u'])) { // Payment Reference ID from the query string
 				$error = true;
