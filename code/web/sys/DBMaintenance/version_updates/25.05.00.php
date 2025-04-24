@@ -29,6 +29,96 @@ function getUpdates25_05_00(): array {
 		//kodi - Grove
 
 		//Yanjun Li - ByWater
+		'hoopla_settings_updates' => [
+			'title' => 'Migrate Hoopla Flex Settings',
+			'description' => 'Seperate Hoopla Flex and Hoopla Instant settings',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE hoopla_settings ADD COLUMN hooplaInstantEnabled TINYINT(1) DEFAULT 1',
+				'ALTER TABLE hoopla_settings CHANGE COLUMN runFullUpdate runFullUpdateInstant TINYINT(1) DEFAULT 0',
+				'ALTER TABLE hoopla_settings CHANGE COLUMN lastUpdateOfChangedRecords lastUpdateOfChangedRecordsInstant INT(11) DEFAULT 0',
+				'ALTER TABLE hoopla_settings CHANGE COLUMN lastUpdateOfAllRecords lastUpdateOfAllRecordsInstant INT(11) DEFAULT 0',
+				'ALTER TABLE hoopla_settings ADD COLUMN hooplaFlexEnabled TINYINT(1) DEFAULT 0',
+				'ALTER TABLE hoopla_settings ADD COLUMN runFullUpdateFlex TINYINT(1) DEFAULT 0',
+				'ALTER TABLE hoopla_settings ADD COLUMN lastUpdateOfChangedRecordsFlex INT(11) DEFAULT 0',
+				'ALTER TABLE hoopla_settings ADD COLUMN lastUpdateOfAllRecordsFlex INT(11) DEFAULT 0',
+				]
+		],//hoopla_settings_updates
+		'hoopla_flex_availability' => [
+			'title' => 'Add Hoopla Flex Availability Table',
+			'description' => 'Get availability for Hoopla Flex titles',
+			'continueOnError' => false,
+			'sql' => [
+				'CREATE TABLE hoopla_flex_availability (
+					id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					hooplaId BIGINT NOT NULL,
+					holdsQueueSize INT NOT NULL,
+					availableCopies INT NOT NULL,
+					totalCopies INT NOT NULL,
+					status VARCHAR(10) NOT NULL,
+					UNIQUE KEY `hooplaId` (hooplaId)
+				)'
+			]
+		],//hoopla_flex_availability
+		'hoopla_export_table_add_type_column' => [
+			'title' => 'Add HooplaType Column to Hoopla Export Table',
+			'description' => 'Add HooplaType column to hoopla_export table and update existing records to "Instant"',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE hoopla_export ADD COLUMN hooplaType VARCHAR(10) DEFAULT NULL',
+				'UPDATE hoopla_export SET hooplaType = "Instant" WHERE hooplaType IS NULL',
+			]
+		],//hoopla_export_table_add_type_column
+		'hoopla_export_log_table_add_availability_column' => [
+			'title' => 'Add numAvailabilityChanges to Hoopla Export Log',
+			'description' => 'Add numAvailabilityChanges column to hoopla_export_log table',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE hoopla_export_log ADD COLUMN numAvailabilityChanges INT DEFAULT 0'
+			]
+		],//hoopla_export_log_table_add_availability_column
+		'hoopla_scopes_updates' => [
+			'title' => 'Hoopla Scopes Updates',
+			'description' => 'Add includeInstant and includeFlex columns to hoopla_scopes table',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE hoopla_scopes ADD COLUMN includeInstant TINYINT(1) DEFAULT 1',
+				'ALTER TABLE hoopla_scopes ADD COLUMN includeFlex TINYINT(1) DEFAULT 0'
+			]
+		],//hoopla_scopes_updates
+		'hoopla_hold_queue_size_confirmation' => [
+			'title' => 'Add hooplaHoldQueueSizeConfirmation column to user table',
+			'description' => 'Add hooplaHoldQueueSizeConfirmation column to user table',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE user ADD COLUMN hooplaHoldQueueSizeConfirmation TINYINT(3) DEFAULT 1'
+			]
+		],//hoopla_hold_queue_size_confirmation
+		'hoopla_export_token_store' => [
+			'title' => 'Hoopla Export Token Store',
+			'description' => 'Add token store to hoopla settings table',
+			'sql' => [
+				"ALTER TABLE hoopla_settings ADD COLUMN accessToken VARCHAR(255) DEFAULT NULL",
+				"ALTER TABLE hoopla_settings ADD COLUMN tokenExpirationTime INT(11) DEFAULT NULL",
+			],
+		], //hoopla_export_token_store
+		'hoopla_record_usage_add_times_held' => [
+			'title' => 'Add timesHeld column to hoopla_record_usage table',
+			'description' => 'Add a field to store the number of times a hoopla record has been held for Hoopla Dashboard',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE hoopla_record_usage add column timesHeld INT DEFAULT 0",
+			]
+		], //hoopla_record_usage_add_times_held
+		'hoopla_index_by_day_remove' => [
+			'title' => 'Remove indexByDay column from hoopla_settings table',
+			'description' => 'Remove indexByDay column from hoopla_settings table',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE hoopla_settings DROP COLUMN indexByDay",
+			]
+		], //hoopla_index_by_day_remove
+
 
 		// Leo Stoyanov - BWS
 		'custom_form_field_enums_to_text' => [
