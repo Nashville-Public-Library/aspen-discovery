@@ -76,7 +76,7 @@ class HooplaSetting extends DataObject {
 						'type' => 'checkbox',
 						'label' => 'Hoopla Instant Enabled',
 						'description' => 'Whether or not to use Hoopla Instant Records',
-						'default' => 0,
+						'default' => 1,
 					],
 					'runFullUpdateInstant' => [
 						'property' => 'runFullUpdateInstant',
@@ -99,7 +99,7 @@ class HooplaSetting extends DataObject {
 						'description' => 'The timestamp when just changes were loaded',
 						'default' => 0,
 					],
-						],
+				],
 			],
 			'hooplaFlexRecords' => [
 				'property' => 'hooplaFlexRecords',
