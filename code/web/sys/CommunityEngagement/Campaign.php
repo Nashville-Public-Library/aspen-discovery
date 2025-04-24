@@ -1065,7 +1065,7 @@ class Campaign extends DataObject {
 						$progressData = CampaignMilestoneProgressEntry::getUserProgressDataByMilestoneId($linkedUser->id, $milestone->id, $campaign->id);
 
 
-                        if ($milestoneProgress['progress'] == 100) {
+                        if ($milestoneProgress['progress'] >= 100) {
                             $numCompletedMilestones++;
                         }
 
