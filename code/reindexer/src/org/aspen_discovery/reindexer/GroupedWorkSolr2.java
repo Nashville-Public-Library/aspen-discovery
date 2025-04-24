@@ -102,23 +102,23 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			doc.addField("series_with_volume", seriesWithVolume.values());
 
 			doc.addField("topic", topics);
-			topicFacets.removeAll(GroupedWorkIndexer.hideSubjects);
+			topicFacets.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("topic_facet", topicFacets);
-			subjects.removeAll(GroupedWorkIndexer.hideSubjects);
+			subjects.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("subject_facet", subjects);
 			doc.addField("lc_subject", lcSubjects);
 			doc.addField("bisac_subject", bisacSubjects);
 			doc.addField("genre", genres);
-			genreFacets.removeAll(GroupedWorkIndexer.hideSubjects);
+			genreFacets.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("genre_facet", genreFacets);
 			doc.addField("geographic", geographic);
-			geographicFacets.removeAll(GroupedWorkIndexer.hideSubjects);
+			geographicFacets.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("geographic_facet", geographicFacets);
-			personalNameSubjects.removeAll(GroupedWorkIndexer.hideSubjects);
+			personalNameSubjects.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("personal_name_facet", personalNameSubjects);
-			corporateNameSubjects.removeAll(GroupedWorkIndexer.hideSubjects);
+			corporateNameSubjects.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("corporate_name_facet", corporateNameSubjects);
-			eras.removeAll(GroupedWorkIndexer.hideSubjects);
+			eras.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("era", eras);
 			//Check default values and inconsistent forms
 			checkDefaultValue(literaryFormFull, "Not Coded");
@@ -524,12 +524,12 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 
 						if (locallyOwned || libraryOwned) {
 							if (isAvailable) {
-								if (libBoost < GroupedWorkIndexer.availableAtBoostValue) {
-									libBoost = GroupedWorkIndexer.availableAtBoostValue;
+								if (libBoost < groupedWorkIndexer.availableAtBoostValue) {
+									libBoost = groupedWorkIndexer.availableAtBoostValue;
 								}
 							} else {
-								if (libBoost < GroupedWorkIndexer.ownedByBoostValue) {
-									libBoost = GroupedWorkIndexer.ownedByBoostValue;
+								if (libBoost < groupedWorkIndexer.ownedByBoostValue) {
+									libBoost = groupedWorkIndexer.ownedByBoostValue;
 								}
 							}
 						}

@@ -21,6 +21,13 @@ function getUpdates25_05_00(): array {
 				"ALTER TABLE system_variables add column lidaGitHubRepository VARCHAR(255) DEFAULT 'https://github.com/Aspen-Discovery/aspen-lida'",
 			]
 		], //system_variables_add_lida_github_repository
+		'axis360_indexing_concurrency' => [
+			'title' => 'Setup indexing concurrency for Boundless',
+			'description' => 'Define numBoundlessSettingsToProcessInParallel in System variables',
+			'sql' => [
+				"ALTER TABLE system_variables add column numBoundlessSettingsToProcessInParallel int DEFAULT 1",
+			]
+		], //axis360_indexing_concurrency
 		'axis360_setting_name' => [
 			'title' => 'Add Boundless setting name',
 			'description' => 'Add a name for Boundless settings',
