@@ -376,7 +376,7 @@ public class CloudLibraryExporter {
 					markRecordToReloadAsProcessedStmt.executeUpdate();
 					numRecordsToReloadProcessed++;
 				}else{
-					logEntry.incErrors("Could not get details for record to reload " + cloudLibraryId);
+					logEntry.incErrors("Could not get details for Cloud Library record to reload " + cloudLibraryId);
 				}
 				getItemDetailsForRecordRS.close();
 			}
