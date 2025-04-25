@@ -14,6 +14,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Axis360ExportMain {
 	private static Logger logger;
@@ -72,47 +75,77 @@ public class Axis360ExportMain {
 
 			HashSet<Axis360Setting> settings = loadSettings();
 
+			//Default to running single threaded
+			int numThreads = 1;
+			//Try to load the desired number of threads from the database
+			try {
+				PreparedStatement getThreadCountStmt = aspenConn.prepareStatement("SELECT numBoundlessSettingsToProcessInParallel from system_variables");
+				ResultSet getThreadCountRS = getThreadCountStmt.executeQuery();
+				if (getThreadCountRS.next()) {
+					numThreads = getThreadCountRS.getInt("numBoundlessSettingsToProcessInParallel");
+				}
+				getThreadCountStmt.close();
+				getThreadCountRS.close();
+			} catch (SQLException e) {
+				logger.error("Error loading number of threads to index with", e);
+			}
+
 			final int[] numChanges = {0};
 			//Process each setting in order.
+			ThreadPoolExecutor es = (ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
+			int numSettingsAdded = 0;
 			for(Axis360Setting setting : settings) {
 				if (settingToProcess == -1 || settingToProcess == setting.getId()) {
-					Axis360ExtractLogEntry logEntry = createDbLogEntry(startTime, setting.getId(), aspenConn);
-					if (!logEntry.saveResults()) {
-						logger.error("Could not save log entry to database, quitting");
-						return;
+					try {
+						es.execute(() -> {
+							//Create a new database connection for each extractor
+							Connection connectionForThread = connectToDatabase();
+
+							Axis360ExtractLogEntry logEntry = createDbLogEntry(startTime, setting.getId(), connectionForThread);
+							if (!logEntry.saveResults()) {
+								logger.error("Could not save log entry to database, quitting");
+								return;
+							}
+
+							Axis360Extractor extractor = new Axis360Extractor(serverName, connectionForThread, setting, configIni, logEntry, logger);
+							numChanges[0] += extractor.extractAxis360Data();
+
+							if (logEntry.hasErrors()) {
+								logger.error("There were errors during the export for setting " + setting.getId());
+							}
+
+							logger.info("Finished " + new Date());
+							long endTime = new Date().getTime();
+							long elapsedTime = endTime - startTime.getTime();
+							logger.info("Elapsed Minutes " + (elapsedTime / 60000));
+
+							logEntry.setFinished();
+
+							disconnectDatabase(connectionForThread);
+						});
+						numSettingsAdded++;
+					}catch (Exception e){
+						logger.error("Error adding setting for processing " + setting.getId() + " - " + numSettingsAdded + " added so far");
 					}
-
-					Axis360Extractor extractor = new Axis360Extractor(serverName, aspenConn, setting, configIni, logEntry, logger);
-					numChanges[0] += extractor.extractAxis360Data();
-
-					if (logEntry.hasErrors()) {
-						logger.error("There were errors during the export for setting " + setting.getId());
-					}
-
-					logger.info("Finished " + new Date());
-					long endTime = new Date().getTime();
-					long elapsedTime = endTime - startTime.getTime();
-					logger.info("Elapsed Minutes " + (elapsedTime / 60000));
-
-					logEntry.setFinished();
-//					});
-//					numSettingsAdded++;
-//				}catch (Exception e){
-//					logger.error("Error adding setting for processing " + setting.getId() + " - " + numSettingsAdded + " added so far");
-//				}
 				}
 			}
-//			es.shutdown();
-//			while (true) {
-//				try {
-//					boolean terminated = es.awaitTermination(1, TimeUnit.MINUTES);
-//					if (terminated){
-//						break;
-//					}
-//				} catch (InterruptedException e) {
-//					logger.error("Error waiting for all extracts to finish");
-//				}
-//			}
+			es.shutdown();
+			while (true) {
+				try {
+					boolean terminated = es.awaitTermination(1, TimeUnit.MINUTES);
+					if (terminated){
+						break;
+					}
+				} catch (InterruptedException e) {
+					logger.error("Error waiting for all extracts to finish");
+				}
+			}
+
+			if (settingToProcess != -1) {
+				//Quit since we were indexing a specific setting for testing
+				disconnectDatabase(aspenConn);
+				break;
+			}
 
 			//Check to see if the jar has changes, and if so quit
 			if (myChecksumAtStart != JarUtil.getChecksumForJar(logger, processName, "./" + processName + ".jar")){
