@@ -448,12 +448,12 @@ public class GroupedWorkSolr extends AbstractGroupedWorkSolr implements Cloneabl
 
 					if (scopingInfo.isLocallyOwned() || scopingInfo.isLibraryOwned()) {
 						if (curItem.isAvailable()) {
-							if (libBoost < GroupedWorkIndexer.availableAtBoostValue){
-								libBoost = GroupedWorkIndexer.availableAtBoostValue;
+							if (libBoost < groupedWorkIndexer.availableAtBoostValue){
+								libBoost = groupedWorkIndexer.availableAtBoostValue;
 							}
 						} else {
-							if (libBoost < GroupedWorkIndexer.ownedByBoostValue){
-								libBoost = GroupedWorkIndexer.ownedByBoostValue;
+							if (libBoost < groupedWorkIndexer.ownedByBoostValue){
+								libBoost = groupedWorkIndexer.ownedByBoostValue;
 							}
 						}
 					}
