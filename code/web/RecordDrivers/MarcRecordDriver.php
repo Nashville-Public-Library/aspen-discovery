@@ -3041,6 +3041,17 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 			$holdGroups
 		);
 	}
+
+	public function getAudience(): string|null {
+		if (!$this->getMarcRecord()) {
+			return null;
+		}
+		$descriptionField = $this->getMarcRecord()->getField('521');
+		if (!$descriptionField || !$descriptionField->getSubfield('a')) {
+			return null;
+		}
+		return $descriptionField->getSubfield('a')->getData();
+	}
 }
 
 

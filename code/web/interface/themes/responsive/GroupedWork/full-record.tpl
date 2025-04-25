@@ -83,6 +83,19 @@
 						</div>
 					</div>
 				{/if}
+			
+				{if !empty($showAudience)}
+					<div class="row">
+						<div class="result-label col-sm-4 col-xs-12">{translate text='Audience' isPublicFacing=true} </div>
+						<div class="result-value col-sm-8 col-xs-12">
+							{if !empty($summAudience)}
+								{$summAudience}
+							{else}
+								{translate text="Varies, see individual formats and editions" isPublicFacing=true}
+							{/if}
+						</div>
+					</div>
+				{/if}
 
 				{if !empty($summLanguage)}
 					<div class="row">
@@ -123,6 +136,7 @@
 						</div>
 					</div>
 				{/if}
+
 
 				{include file="GroupedWork/relatedLists.tpl" isSearchResults=false}
 
