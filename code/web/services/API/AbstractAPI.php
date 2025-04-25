@@ -102,8 +102,24 @@ abstract class AbstractAPI extends Action{
 		[$username, $password] = $this->loadUsernameAndPassword();
 		$user = UserAccount::validateAccount($username, $password);
 		if ($user !== false && $user->source == 'admin') {
+			//Admin users are not allowed with API calls
 			return false;
 		}
+
+		//Set translations up based on the active user's desired language
+		if (empty($_REQUEST['language'] && $user !== false) {
+			global $activeLanguage;
+			global $translator;
+			$userLanguage = new Language();
+			$userLanguage->code = $user->interfaceLanguage;
+			if ($userLanguage->find(true)) {
+				if ($userLanguage->code != $activeLanguage->code) {
+					$activeLanguage = $userLanguage;
+					$translator = new Translator('lang', $userLanguage->code);
+				}
+			}
+		}
+
 		return $user;
 	}
 }
