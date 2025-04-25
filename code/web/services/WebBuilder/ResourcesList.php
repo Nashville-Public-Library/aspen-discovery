@@ -17,7 +17,6 @@ class WebBuilder_ResourcesList extends Action {
 		$libraryWebResource->libraryId = $library->libraryId;
 		$resource->joinAdd($libraryWebResource, 'INNER', 'libraryWebResource', 'id', 'webResourceId');
 		$resource->limit(0, 1000);
-		//$resource->orderBy('name');
 		$resource->find();
 		$allResources = $resource->fetchAll();
 		$numLoaded = 0;
