@@ -5,6 +5,7 @@ require_once ROOT_DIR . '/sys/Axis360/Axis360Scope.php';
 class Axis360Setting extends DataObject {
 	public $__table = 'axis360_settings';    // table name
 	public $id;
+	public $name;
 	public $apiUrl;
 	public $userInterfaceUrl;
 	public $vendorUsername;
@@ -26,6 +27,13 @@ class Axis360Setting extends DataObject {
 				'type' => 'label',
 				'label' => 'Id',
 				'description' => 'The unique id',
+			],
+			'name' => [
+				'property' => 'name',
+				'type' => 'text',
+				'label' => 'Name',
+				'description' => 'A name for the setting to distinguish it from others when many are defined in an instance.',
+				'maxLength' => 100
 			],
 			'apiUrl' => [
 				'property' => 'apiUrl',

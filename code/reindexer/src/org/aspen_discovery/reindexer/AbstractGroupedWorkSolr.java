@@ -741,7 +741,7 @@ public abstract class AbstractGroupedWorkSolr {
 		if (seriesName != null && !seriesName.isEmpty()) {
 			String seriesInfo = getNormalizedSeries(seriesName);
 			String seriesInfoLower = seriesInfo.toLowerCase();
-			if (GroupedWorkIndexer.hideSeries.contains(seriesInfoLower)) {
+			if (groupedWorkIndexer.hideSeries.contains(seriesInfoLower)) {
 				return;
 			}
 			if (!volume.isEmpty()) {
@@ -812,7 +812,7 @@ public abstract class AbstractGroupedWorkSolr {
 		if (seriesInfo != null && !seriesInfo.equalsIgnoreCase("none")) {
 			seriesInfo = getNormalizedSeries(seriesInfo);
 			String normalizedSeriesLower = seriesInfo.toLowerCase();
-			if (GroupedWorkIndexer.hideSeries.contains(normalizedSeriesLower)) {
+			if (groupedWorkIndexer.hideSeries.contains(normalizedSeriesLower)) {
 				return;
 			}
 			if (!seriesField.containsKey(normalizedSeriesLower)) {
