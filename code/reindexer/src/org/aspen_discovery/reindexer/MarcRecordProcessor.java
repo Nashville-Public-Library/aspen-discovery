@@ -106,7 +106,9 @@ abstract class MarcRecordProcessor {
 						if ((curSubfield.getCode() >= 'a' && curSubfield.getCode() <= 'h') ||
 								(curSubfield.getCode() >= 'j' && curSubfield.getCode() <= 'v') ||
 								(curSubfield.getCode() >= 'x' && curSubfield.getCode() <= 'z')) {
-							if (curSubject.length() > 0) curSubject.append(" -- ");
+							if (curSubfield.getCode() == 'x' || curSubfield.getCode() == 'y' || curSubfield.getCode() == 'z' || curSubfield.getCode() == 'v') {
+								if (curSubject.length() > 0) curSubject.append(" -- ");
+							}
 							curSubject.append(curSubfield.getData());
 							if (settings.isIncludePersonalAndCorporateNamesInTopics()) {
 								groupedWork.addTopic(curSubfield.getData());
@@ -1536,10 +1538,10 @@ abstract class MarcRecordProcessor {
 		String authorInTitleField = null;
 		if (titleField != null) {
 			//noinspection SpellCheckingInspection
-			String subTitle = titleField.getSubfieldsAsString("bfgnp");
+			String subTitle = titleField.getSubfieldsAsString("bfgnp", " ");
 			if (!hasParentRecord) {
 				//noinspection SpellCheckingInspection
-				groupedWork.setTitle(titleField.getSubfieldsAsString("a"), subTitle, titleField.getSubfieldsAsString("abfgnp"), this.getSortableTitle(record), format, formatCategory);
+				groupedWork.setTitle(titleField.getSubfieldsAsString("a"), subTitle, titleField.getSubfieldsAsString("abfgnp", " "), this.getSortableTitle(record), format, formatCategory);
 			}
 			//title full
 			authorInTitleField = titleField.getSubfieldsAsString("c");
@@ -1611,7 +1613,7 @@ abstract class MarcRecordProcessor {
 		int nonFilingInt = getInd2AsInt(titleField);
 
 		//noinspection SpellCheckingInspection
-		String title = titleField.getSubfieldsAsString("abfgnp");
+		String title = titleField.getSubfieldsAsString("abfgnp", " ");
 		if (title == null){
 			return "";
 		}

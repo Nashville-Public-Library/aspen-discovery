@@ -1919,7 +1919,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 									$subFieldData = ucwords(strtolower($subFieldData));
 								}
 								$search .= " " . $subFieldData;
-								if (strlen($title) > 0) {
+								if (strlen($title) > 0 && in_array($subfieldCode, ['v', 'x', 'y', 'z'])) {
 									$title .= ' -- ';
 								}
 								$title .= $subFieldData;
@@ -2037,7 +2037,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 				$curNote .= " " . $note;
 				$curNote = trim($curNote);
 				if (preg_match("/--$/", $curNote)) {
-					$notes[] = $curNote;
+					$notes[] = str_replace('--', '', $curNote);
 					$curNote = '';
 				} elseif (strpos($curNote, '--') !== false) {
 					$brokenNotes = explode('--', $curNote);
