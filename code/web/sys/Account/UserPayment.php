@@ -24,6 +24,7 @@ class UserPayment extends DataObject {
 	public $deluxeRemittanceId;
 	public $deluxeSecurityId;
 	public $ncrTransactionId;
+	public $heyCentricPaymentReferenceNumber;
 	public $requestingUrl;
 
 	public static function getObjectStructure($context = '') {
@@ -117,6 +118,13 @@ class UserPayment extends DataObject {
 				'type' => 'checkbox',
 				'label' => 'Cancelled?',
 				'description' => 'Whether or not the user cancelled the payment',
+				'readOnly' => true,
+			],
+			'declined' => [
+				'property' => 'declined',
+				'type' => 'checkbox',
+				'label' => 'Declined?',
+				'description' => 'Whether or not the payment was declined',
 				'readOnly' => true,
 			],
 			'error' => [
@@ -248,7 +256,7 @@ class UserPayment extends DataObject {
 							if ($hostedTransactionResultsResponse && $curlWrapper->getResponseCode() == 200) {
 								$jsonResponse = json_decode($hostedTransactionResultsResponse);
 							}
-							ExternalRequestLogEntry::logRequest('ncr.completeNCROrder', 'GET', $url, $curlWrapper->getHeaders(), false, $curlWrapper->getResponseCode(), $hostedTransactionResultsResponse, []);
+							ExternalRequestLogEntry::logRequest('fine_payment.completeNCROrder', 'GET', $url, $curlWrapper->getHeaders(), false, $curlWrapper->getResponseCode(), $hostedTransactionResultsResponse, []);
 
 							if ($jsonResponse->status == "ok") {
 								if($userPayment->transactionType == 'donation') {
@@ -506,6 +514,9 @@ class UserPayment extends DataObject {
 							'Authorization: ' . $authorization,
 						], true);
 						$hostedTransactionResultsResponse = $curlWrapper->curlGetPage($url);
+
+						ExternalRequestLogEntry::logRequest('fine_payment.completeProPayPayment', 'GET', $url, $curlWrapper->getHeaders(),"", $curlWrapper->getResponseCode(), $hostedTransactionResultsResponse, []);
+						
 						$jsonResponse = null;
 						if ($hostedTransactionResultsResponse && $curlWrapper->getResponseCode() == 200) {
 							$jsonResponse = json_decode($hostedTransactionResultsResponse);

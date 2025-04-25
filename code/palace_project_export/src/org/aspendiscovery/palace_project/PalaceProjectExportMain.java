@@ -871,7 +871,7 @@ public class PalaceProjectExportMain {
 						}
 					}else{
 						//The record has likely been deleted
-						logEntry.addNote("Could not get details for record to reload " + palaceProjectId + " it has been deleted");
+						logEntry.addNote("Could not get details for palace project record to reload " + palaceProjectId + " it has been deleted");
 						markRecordToReloadAsProcessedStmt.setLong(1, recordToReloadId);
 						markRecordToReloadAsProcessedStmt.executeUpdate();
 						logEntry.incDeleted();
