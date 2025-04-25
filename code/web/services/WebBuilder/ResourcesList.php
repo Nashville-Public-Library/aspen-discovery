@@ -8,6 +8,7 @@ class WebBuilder_ResourcesList extends Action {
 		//Get all the resources.
 		$resourcesByCategory = [];
 		$featuredResources = [];
+		$resourcesAtoZ = [];
 
 		$resource = new WebResource();
 		$resource->orderBy('name');
@@ -16,11 +17,13 @@ class WebBuilder_ResourcesList extends Action {
 		$libraryWebResource->libraryId = $library->libraryId;
 		$resource->joinAdd($libraryWebResource, 'INNER', 'libraryWebResource', 'id', 'webResourceId');
 		$resource->limit(0, 1000);
+		//$resource->orderBy('name');
 		$resource->find();
 		$allResources = $resource->fetchAll();
 		$numLoaded = 0;
 		foreach ($allResources as $resource) {
 			$clonedResource = clone $resource;
+			$resourcesAtoZ[] = $clonedResource;
 			if ($clonedResource->featured) {
 				$featuredResources[] = $clonedResource;
 			}
@@ -33,8 +36,10 @@ class WebBuilder_ResourcesList extends Action {
 			$numLoaded++;
 		}
 		ksort($resourcesByCategory);
+		ksort($resourcesAtoZ);
 		global $interface;
 		$interface->assign('resourcesByCategory', $resourcesByCategory);
+		$interface->assign('resourcesAtoZ', $resourcesAtoZ);
 		$interface->assign('featuredResources', $featuredResources);
 		$interface->assign('numLoaded', $numLoaded);
 

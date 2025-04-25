@@ -18,6 +18,42 @@
 			</div>
 		{/if}
 
+		<h2 id="AtoZHeader">{translate text="Resources A to Z" isPublicFacing=true}</h2>
+			<div class="panel resourceCategory" id="AtoZPanel">
+				<a data-toggle="collapse" href="#AtoZPanelBody">
+					<div class="panel-heading">
+						<div class="panel-title">
+							{translate text="A to Z" isPublicFacing=true}
+						</div>
+					</div>
+				</a>
+				<div id="AtoZPanelBody" class="panel-collapse collapse">
+					<div class="panel-body">
+						{foreach from=$resourcesAtoZ item=resource}
+							<div class="row webResourceRow">
+								{if !empty($resource->logo)}
+									<div class="coversColumn col-xs-3 col-sm-3 col-md-3 col-lg-2 text-center" aria-hidden="true" role="presentation">
+										<a href="/WebBuilder/WebResource?id={$resource->id}" tabindex="-1">
+											<img src='/files/thumbnail/{$resource->logo}' alt="{$resource->name}" class="img-responsive img-thumbnail">
+										</a>
+									</div>
+								{/if}
+								<div class="{if !empty($resource->logo)}col-xs-9 col-sm-9 col-md-9 col-lg-10{else}col-xs-12 col-sm-12 col-md-12 col-lg-12{/if}">
+									<div>
+										<a href="/WebBuilder/WebResource?id={$resource->id}" class="result-title">
+											{$resource->name}
+										</a>
+									</div>
+									<div>
+										{$resource->teaser}
+									</div>
+								</div>
+							</div>
+						{/foreach}
+					</div>
+				</div>
+			</div>
+
 		<h2>{translate text="Resources by Category" isPublicFacing=true}</h2>
 		{foreach from=$resourcesByCategory key=category item=resources}
 			<div class="panel resourceCategory" id="{$category|regex_replace:'/\W/':''|escapeCSS}Panel">
