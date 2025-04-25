@@ -107,7 +107,7 @@ abstract class AbstractAPI extends Action{
 		}
 
 		//Set translations up based on the active user's desired language
-		if (empty($_REQUEST['language'] && $user !== false) {
+		if (empty($_REQUEST['language']) && $user !== false) {
 			global $activeLanguage;
 			global $translator;
 			$userLanguage = new Language();
