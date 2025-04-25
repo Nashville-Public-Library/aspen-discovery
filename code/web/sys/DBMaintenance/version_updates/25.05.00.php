@@ -38,6 +38,13 @@ function getUpdates25_05_00(): array {
 		], //axis360_setting_name
 
 		//katherine - Grove
+		'add_deleted_field_to_series_member' => [
+			'title' => 'Add a deleted field to Series Member table',
+			'description' => 'Add a deleted field so that Series Members can be deleted',
+			'sql' => [
+				"ALTER TABLE series_member ADD COLUMN deleted TINYINT(1) DEFAULT 0",
+			]
+		], //add_deleted_field_to_series_member
 
 		//kirstien - Grove
 

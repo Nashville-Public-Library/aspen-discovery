@@ -1443,6 +1443,11 @@ public class GroupedWorkIndexer {
 						long seriesId;
 						if (seriesRS.next()) { // Should only be one match
 							seriesId = seriesRS.getLong("id");
+							// Check if the series has been deleted
+							int seriesDeleted = seriesRS.getInt("deleted");
+							if (seriesDeleted == 1) {
+								continue;
+							}
 							// Check to see if we need to add additional authors
 							String authors = seriesRS.getString("author");
 							String newAuthor = groupedWork.getPrimaryAuthor();
