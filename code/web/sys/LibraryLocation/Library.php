@@ -173,6 +173,7 @@ class Library extends DataObject {
 		$hooplaScopeId;
 	public /** @noinspection PhpUnused */
 		$axis360ScopeId;
+	public $palaceProjectLibraryId;
 	public $palaceProjectScopeId;
 	public /** @noinspection PhpUnused */
 		$systemsToRepeatIn;
@@ -3926,6 +3927,14 @@ class Library extends DataObject {
 				'renderAsHeading' => true,
 				'permissions' => ['Library Records included in Catalog'],
 				'properties' => [
+					'palaceProjectLibraryId' => [
+						'property' => 'palaceProjectLibraryId',
+						'type' => 'text',
+						'label' => 'Palace Project Library ID',
+						'description' => 'The ID Number Palace Project uses for this library',
+						'hideInLists' => true,
+						'forcesReindex' => true,
+					],
 					'palaceProjectScopeId' => [
 						'property' => 'palaceProjectScopeId',
 						'type' => 'enum',
