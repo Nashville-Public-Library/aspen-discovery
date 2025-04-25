@@ -18,6 +18,12 @@
 			</div>
 		{/if}
 
+		<div class="row">
+			<div class="col-xs-4 col-md-3 col-lg-2" style="margin-top:20px;">
+				<a href="/WebBuilder/ResourcesAtoZ" class="btn btn-primary" target="_blank" aria-label="{translate text="Resources A to Z" isPublicFacing=true inAttribute=true} ({translate text="opens in a new window" isPublicFacing=true inAttribute=true})"><i class="fas fa-external-link-alt" role="presentation"></i> {translate text="Resources A to Z" isPublicFacing=true}</a>
+			</div>
+		</div>
+
 		<h2>{translate text="Resources by Category" isPublicFacing=true}</h2>
 		{foreach from=$resourcesByCategory key=category item=resources}
 			<div class="panel resourceCategory" id="{$category|regex_replace:'/\W/':''|escapeCSS}Panel">

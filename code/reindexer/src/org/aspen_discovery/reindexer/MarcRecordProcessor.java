@@ -106,7 +106,9 @@ abstract class MarcRecordProcessor {
 						if ((curSubfield.getCode() >= 'a' && curSubfield.getCode() <= 'h') ||
 								(curSubfield.getCode() >= 'j' && curSubfield.getCode() <= 'v') ||
 								(curSubfield.getCode() >= 'x' && curSubfield.getCode() <= 'z')) {
-							if (curSubject.length() > 0) curSubject.append(" -- ");
+							if (curSubfield.getCode() == 'x' || curSubfield.getCode() == 'y' || curSubfield.getCode() == 'z' || curSubfield.getCode() == 'v') {
+								if (curSubject.length() > 0) curSubject.append(" -- ");
+							}
 							curSubject.append(curSubfield.getData());
 							if (settings.isIncludePersonalAndCorporateNamesInTopics()) {
 								groupedWork.addTopic(curSubfield.getData());

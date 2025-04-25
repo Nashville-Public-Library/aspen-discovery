@@ -21,6 +21,13 @@ function getUpdates25_05_00(): array {
 				"ALTER TABLE system_variables add column lidaGitHubRepository VARCHAR(255) DEFAULT 'https://github.com/Aspen-Discovery/aspen-lida'",
 			]
 		], //system_variables_add_lida_github_repository
+		'axis360_indexing_concurrency' => [
+			'title' => 'Setup indexing concurrency for Boundless',
+			'description' => 'Define numBoundlessSettingsToProcessInParallel in System variables',
+			'sql' => [
+				"ALTER TABLE system_variables add column numBoundlessSettingsToProcessInParallel int DEFAULT 1",
+			]
+		], //axis360_indexing_concurrency
 		'axis360_setting_name' => [
 			'title' => 'Add Boundless setting name',
 			'description' => 'Add a name for Boundless settings',
@@ -37,6 +44,14 @@ function getUpdates25_05_00(): array {
 		//kodi - Grove
 
 		//Yanjun Li - ByWater
+		'library_add_palace_project_library_id' => [
+			'title' => 'library_add_palace_project_library_id',
+			'description' => 'Add a field to store the palace project library id for the library',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE library add column palaceProjectLibraryId VARCHAR(50) DEFAULT NULL",
+			]
+		], //library_add_palace_project_library_id
 
 		// Leo Stoyanov - BWS
 		'custom_form_field_enums_to_text' => [
