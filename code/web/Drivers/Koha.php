@@ -3533,6 +3533,10 @@ class Koha extends AbstractIlsDriver {
 			'userid' => $user->ils_barcode,
 		];
 
+		if (empty($ils_password)) {
+			$result['message'] = "Update Failed: The patron's password does not exist in Aspen, either because you are masquerading or performed a SSO.";
+		}
+
 		$kohaVersion = $this->getKohaVersion();
 		$csrfToken = '';
 		if ($kohaVersion >= 24.05) {
@@ -3564,7 +3568,7 @@ class Koha extends AbstractIlsDriver {
 			$info = curl_getinfo($this->opacCurlWrapper->curl_connection);
 			$result = [
 				'success' => false,
-				'message' => 'Could not login to the backend system',
+				'message' => $result['message'] ?? 'Update Failed: Could not login to the backend system.',
 			];
 		}
 		return $result;
@@ -6316,7 +6320,7 @@ class Koha extends AbstractIlsDriver {
 
 				$result = [
 					'success' => true,
-					'message' => 'Settings updated',
+					'message' => 'Updated Succeeded!',
 				];
 			} else {
 				$result = [
