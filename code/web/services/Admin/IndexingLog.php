@@ -14,6 +14,11 @@ abstract class Admin_IndexingLog extends Admin_Admin {
 		if (isset($_REQUEST['processedLimit']) && is_numeric($_REQUEST['processedLimit'])) {
 			$this->applyMinProcessedFilter($logEntry, $_REQUEST['processedLimit']);
 		}
+		if (isset($_REQUEST['showErrorsOnly'])) {
+			$interface->assign('showErrorsOnly', true);
+			$this->applyShowErrorsOnlyFilter($logEntry);
+		}
+		$this->applyAdditionalFilters($logEntry);
 		$total = $logEntry->count();
 		$logEntry = $this->getIndexLogEntryObject();
 		$logEntry->orderBy('startTime DESC');
@@ -30,6 +35,7 @@ abstract class Admin_IndexingLog extends Admin_Admin {
 			$interface->assign('showErrorsOnly', true);
 			$this->applyShowErrorsOnlyFilter($logEntry);
 		}
+		$this->applyAdditionalFilters($logEntry);
 		$logEntry->find();
 		while ($logEntry->fetch()) {
 			$logEntries[] = clone($logEntry);
@@ -56,6 +62,16 @@ abstract class Admin_IndexingLog extends Admin_Admin {
 	abstract function getModule(): string;
 
 	abstract function applyMinProcessedFilter(DataObject $indexingObject, $minProcessed);
+
+	/**
+	 * Apply any additional filters that are custom to the log being viewed.
+	 *
+	 * @param DataObject $logEntry
+	 * @return void
+	 */
+	function applyAdditionalFilters(DataObject $logEntry) {
+		//By default, do nothing
+	}
 
 	function applyShowErrorsOnlyFilter(DataObject $logEntry) {
 		$logEntry->whereAdd('numErrors > 0');

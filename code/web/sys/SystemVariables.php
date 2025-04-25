@@ -39,6 +39,7 @@ class SystemVariables extends DataObject {
 	public $monitorAntivirus;
 	public $useOriginalCoverUrls;
 	public $lidaGitHubRepository;
+	public $numBoundlessSettingsToProcessInParallel;
 
 
 	static function getObjectStructure($context = ''): array {
@@ -200,6 +201,13 @@ class SystemVariables extends DataObject {
 						'label' => 'Wait after delete commit',
 						'description' => 'Whether or not to wait for Solr to finish processing the commit before deleting more records',
 						'default' => false,
+					],
+					'numBoundlessSettingsToProcessInParallel' => [
+						'property' => 'numBoundlessSettingsToProcessInParallel',
+						'type' => 'integer',
+						'label' => 'Number of Boundless Settings to process in parallel',
+						'description' => 'Allows multiple Boundless Settings to be processed in parallel to improve the speed of indexing, but this must be balanced against the performance of your server.',
+						'default' => 1,
 					]
 				],
 			],
@@ -363,6 +371,11 @@ class SystemVariables extends DataObject {
 			$objectStructure['indexingSection']['properties']['storeRecordDetailsInDatabase']['type'] = 'hidden';
 			$objectStructure['indexingSection']['properties']['indexVersion']['type'] = 'hidden';
 			$objectStructure['indexingSection']['properties']['searchVersion']['type'] = 'hidden';
+		}
+
+		global $enabledModules;
+		if (!array_key_exists('Axis 360', $enabledModules)) {
+			unset($objectStructure['indexingSection']['properties']['numBoundlessSettingsToProcessInParallel']);
 		}
 
 		return $objectStructure;

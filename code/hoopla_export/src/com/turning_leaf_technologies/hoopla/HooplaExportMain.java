@@ -257,7 +257,7 @@ public class HooplaExportMain {
 					}
 				}else{
 					//The record has likely been deleted
-					logEntry.addNote("Could not get details for record to reload " + hooplaId + " it has been deleted");
+					logEntry.addNote("Could not get details for Hoopla record to reload " + hooplaId + " it has been deleted");
 					markRecordToReloadAsProcessedStmt.setLong(1, recordToReloadId);
 					markRecordToReloadAsProcessedStmt.executeUpdate();
 					numRecordsToReloadProcessed++;
@@ -367,7 +367,7 @@ public class HooplaExportMain {
 					updateSettingsStmt.executeUpdate();
 				} else if (indexByDay ) {
 					//We only want to index once a day at 1 am Local Time
-					ZonedDateTime nowLocalTime = ZonedDateTime.now(); 
+					ZonedDateTime nowLocalTime = ZonedDateTime.now();
 					int curHour = nowLocalTime.getHour();
 					ZonedDateTime startOfToday = nowLocalTime.truncatedTo(ChronoUnit.DAYS);
 					long startOfTodaySeconds = startOfToday.toEpochSecond();
