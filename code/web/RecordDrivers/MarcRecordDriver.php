@@ -1919,7 +1919,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 									$subFieldData = ucwords(strtolower($subFieldData));
 								}
 								$search .= " " . $subFieldData;
-								if (strlen($title) > 0) {
+								if (strlen($title) > 0 && in_array($subfieldCode, ['v', 'x', 'y', 'z'])) {
 									$title .= ' -- ';
 								}
 								$title .= $subFieldData;

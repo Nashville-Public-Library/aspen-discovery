@@ -304,6 +304,54 @@ class EventAPI extends AbstractAPI {
 		];
 	}
 
+	function getAspenEventDetails() {
+		require_once ROOT_DIR . '/RecordDrivers/AspenEventRecordDriver.php';
+		$aspenEventDriver = new AspenEventRecordDriver($_REQUEST['id']);
+		if($aspenEventDriver->isValid()) {
+			$registrationInformation = null;
+
+			$itemData['success'] = true;
+			$itemData['id'] = $_REQUEST['id'];
+			$itemData['title'] = $aspenEventDriver->getTitle();
+			$itemData['isAllDay'] = (bool)$aspenEventDriver->isAllDayEvent();
+			$itemData['startDate'] = $aspenEventDriver->getStartDate();
+			$itemData['endDate'] = $aspenEventDriver->getEndDate();
+			$itemData['description'] = strip_tags($aspenEventDriver->getDescription());
+			$itemData['registrationRequired'] = $aspenEventDriver->isRegistrationRequired();
+			$itemData['userIsRegistered'] = false;
+			$itemData['inUserEvents'] = false;
+			$itemData['registrationBody'] = $registrationInformation;
+			$itemData['bypass'] = (bool)$aspenEventDriver->getBypassSetting();
+			$itemData['cover'] = $aspenEventDriver->getEventCoverUrl();
+			$itemData['url'] = $aspenEventDriver->getExternalUrl();
+			$itemData['audiences'] = $aspenEventDriver->getAudiences();
+			$itemData['categories'] = null;
+			$itemData['programTypes'] = null;
+			$itemData['room'] = null;
+
+			// check if event has passed
+			$today = new DateTime('now');
+			$eventDay = $aspenEventDriver->getStartDate();
+			$itemData['pastEvent'] = $today >= $eventDay;
+
+			$itemData['location'] = $this->getDiscoveryBranchDetails($aspenEventDriver->getBranch());
+			$itemData['canAddToList'] = false;
+
+			$user = $this->getUserForApiCall();
+			if ($user && !($user instanceof AspenError)) {
+				$itemData['userIsRegistered'] = false;
+				$itemData['inUserEvents'] = $user->inUserEvents($_REQUEST['id']);
+				$itemData['canAddToList'] = $user->isAllowedToAddEventsToList($aspenEventDriver->getSource());
+			}
+
+			return $itemData;
+		}
+		return [
+			'success' => false,
+			'message' => 'Event id not valid',
+		];
+	}
+
 	function getDiscoveryBranchDetails($locationName = '') {
 		if ($locationName) {
 			$eventLocation = new Location();
@@ -635,6 +683,9 @@ class EventAPI extends AbstractAPI {
 				} else if(str_starts_with($eventId, 'assabet')) {
 					$sourceFull = 'assabet';
 					$source = 'assabet';
+				} else if(str_starts_with($eventId, 'aspenEvent')) {
+					$sourceFull = 'aspenEvent';
+					$source = 'aspenEvent';
 				} else {
 					// something went wrong
 				}
@@ -649,6 +700,8 @@ class EventAPI extends AbstractAPI {
 						$details = $this->getSpringshareEventDetails();
 					} else if(str_starts_with($eventId, 'assabet')) {
 						$details = $this->getAssabetEventDetails();
+					} else if(str_starts_with($eventId, 'aspenEvent')) {
+						$details = $this->getAspenEventDetails();
 					} else {
 						// something went wrong
 					}
