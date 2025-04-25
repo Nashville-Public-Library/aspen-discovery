@@ -54,6 +54,13 @@ function getUpdates25_05_00(): array {
 		], //library_add_palace_project_library_id
 
 		// Leo Stoyanov - BWS
+		'add_placard_image_max_height_to_themes' => [
+			'title' => 'Add Placard Image Max Height to Themes',
+			'description' => 'Adds a placardImageMaxHeight column to the themes table to control placard image height.',
+			'sql' => [
+				"ALTER TABLE themes ADD COLUMN IF NOT EXISTS `placardImageMaxHeight` INT DEFAULT 0",
+			]
+		], //add_placard_image_max_height_to_themes
 		'custom_form_field_enums_to_text' => [
 			'title' => 'Increase Custom Form Field EnumValues Size',
 			'description' => 'Changes the enumValues column in web_builder_custom_form_field from VARCHAR(255) to TEXT to allow for longer select lists.',
