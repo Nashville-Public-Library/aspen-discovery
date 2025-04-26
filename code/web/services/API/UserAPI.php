@@ -970,14 +970,14 @@ class UserAPI extends AbstractAPI {
 			// get list count
 			$userLists = new ListAPI();
 			$lists = $userLists->getUserLists();
-			if ($lists['count']) {
+			if (!empty($lists['count'])) {
 				$numLists = $lists['count'];
 			}
 
 			// get saved search count
 			$savedSearches = new ListAPI(true);
 			$searches = $savedSearches->getSavedSearches($user->id);
-			if ($searches['count']) {
+			if (!empty($searches['count'])) {
 				$numSavedSearches = $searches['count'];
 			}
 
@@ -4822,10 +4822,24 @@ class UserAPI extends AbstractAPI {
 			if ($user !== false && $user->source == 'admin') {
 				return false;
 			}
+			//Set translations up based on the active user's desired language
+			if (empty($_REQUEST['language']) && $user !== false) {
+				global $activeLanguage;
+				global $translator;
+				$userLanguage = new Language();
+				$userLanguage->code = $user->interfaceLanguage;
+				if ($userLanguage->find(true)) {
+					if ($userLanguage->code != $activeLanguage->code) {
+						$activeLanguage = $userLanguage;
+						$translator = new Translator('lang', $userLanguage->code);
+					}
+				}
+			}
 			return $user;
 		}
 	}
 
+	/** @noinspection PhpUnused */
 	function getLinkedAccounts() : array {
 		$user = $this->getUserForApiCall();
 
@@ -4881,7 +4895,8 @@ class UserAPI extends AbstractAPI {
 		}
 	}
 
-	function getViewers() {
+	/** @noinspection PhpUnused */
+	function getViewers() : array {
 		$user = $this->getUserForApiCall();
 
 		if ($user && !($user instanceof AspenError)) {
