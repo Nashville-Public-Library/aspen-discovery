@@ -1,7 +1,7 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
-
+require_once ROOT_DIR . '/sys/User/ExpirationInformation.php';
 class User extends DataObject {
 	public $__table = 'user'; // table name
 	public $id;
@@ -4841,6 +4841,18 @@ class User extends DataObject {
 		} else {
 			return [];
 		}
+	}
+
+	private $_expirationInformation;
+	public function getExpirationInformation() : ExpirationInformation {
+		if (is_null($this->_expirationInformation)) {
+			if ($this->hasIlsConnection()) {
+				$this->_expirationInformation = $this->getCatalogDriver()->getExpirationInformation($this);
+			} else {
+				$this->_expirationInformation = new ExpirationInformation();
+			}
+		}
+		return $this->_expirationInformation;
 	}
 
 	public function getCachedAccountSummary(string $source) {
