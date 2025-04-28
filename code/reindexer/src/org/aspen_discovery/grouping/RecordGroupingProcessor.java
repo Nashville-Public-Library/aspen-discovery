@@ -836,7 +836,7 @@ public class RecordGroupingProcessor {
 					logEntry.incErrors("Could not parse item details for record to reload " + axis360Id);
 				}
 			}else{
-				logEntry.incErrors("Could not get details for record to reload " + axis360Id);
+				logEntry.incErrors("Could not get details for Axis360 Record " + axis360Id);
 			}
 			getItemDetailsForRecordRS.close();
 		}catch (SQLException e){
@@ -886,7 +886,7 @@ public class RecordGroupingProcessor {
 
 				return processRecord(primaryIdentifier, title, subTitle, author, format, primaryLanguage, true);
 			}else{
-				logEntry.incErrors("Could not get details for record to reload " + cloudLibraryId);
+				logEntry.incErrors("Could not get details for Cloud Library record " + cloudLibraryId);
 			}
 			getItemDetailsForRecordRS.close();
 		}catch(SQLException e){

@@ -34,6 +34,7 @@ class Campaign extends DataObject {
 		$milestoneList = Milestone::getMilestoneList();
 		$milestoneStructure = CampaignMilestone::getObjectStructure($context);
 		unset($milestoneStructure['campaignId']);
+		unset($milestoneStructure['weight']);
 
 		$libraryList = Library::getLibraryList(false);
 		$patronTypeList = PType::getPatronTypeList();
@@ -270,6 +271,7 @@ class Campaign extends DataObject {
 			if (!empty($this->id)) {
 				$campaignMilestone = new CampaignMilestone();
 				$campaignMilestone->campaignId = $this->id;
+				$campaignMilestone->orderBy('weight');
 			   if ($campaignMilestone->find()) {
 					while ($campaignMilestone->fetch()) {
 						$this->_availableMilestones[$campaignMilestone->id] = clone($campaignMilestone);
@@ -566,6 +568,10 @@ class Campaign extends DataObject {
 				// Fetch campaign milestones and their rewards using mapping
 				$milestones = CampaignMilestone::getMilestoneByCampaign($campaign->id);
 				$pastCampaignList[$campaign->id]->milestones = $milestones;
+
+				usort($pastCampaignList[$campaign->id]->milestones, function($a, $b) {
+					return $a->weight <=> $b->weight;
+				});
 	
 				// Check if user is enrolled
 				$pastCampaignList[$campaign->id]->enrolled = $campaign->isUserEnrolled($userId);
@@ -957,6 +963,8 @@ class Campaign extends DataObject {
                     $milestone->completedGoals = $milestoneProgress['completed'];
                     $milestone->totalGoals = CampaignMilestone::getMilestoneGoalCountByCampaign($campaignId, $milestoneId);
                     $milestone->progressData = $progressData;
+					$milestone->rewardGiven = CampaignMilestoneUsersProgress::getRewardGivenForMilestone($milestone->id, $userId, $campaign->id);
+
 
 					if ($milestone->completedGoals >= $milestone->totalGoals) {
 						$milestone->milestoneComplete = true;
@@ -964,6 +972,9 @@ class Campaign extends DataObject {
 						$milestone->milestoneComplete = false;
 					}
                 }
+				usort($milestones, function($a, $b) {
+					return $a->weight <=> $b->weight;
+				});
                 //Add completed milestones count to campaign object
                 // $campaign->numCompletedMilestones = $completedMilestonesCount;
                 $campaign->numCampaignMilestones = $numCampaignMilestones;
@@ -980,6 +991,7 @@ class Campaign extends DataObject {
                 $userCampaign->campaignId = $campaignId;
                 $userCampaign->find();
                 while($userCampaign->fetch()) {
+					$campaign->campaignRewardGiven = (int)$userCampaign->rewardGiven;
 					$campaign->isComplete = $userCampaign->checkCompletionStatus();
                     if ($userCampaign->optInToCampaignLeaderboard === null) {
                         $campaign->optInToCampaignLeaderboard = $user->optInToAllCampaignLeaderboards;
@@ -1072,6 +1084,7 @@ class Campaign extends DataObject {
 
                         $milestoneRewards[] = [
                             'id' => $milestone->id,
+							'weight' => $milestone->weight,
                             'milestoneName' => $milestone->name,
                             'rewardName' => $milestone->rewardName, 
                             'rewardType' => $milestone->rewardType, 
@@ -1089,6 +1102,9 @@ class Campaign extends DataObject {
                             'allowPatronProgressInput' => $milestone->allowPatronProgressInput
                         ];
                     }
+					usort($milestoneRewards, function($a, $b) {
+						return $a['weight'] <=> $b['weight'];
+					});
 
 
                     $eligibleCampaigns[] = [
