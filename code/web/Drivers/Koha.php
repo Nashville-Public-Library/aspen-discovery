@@ -3533,6 +3533,17 @@ class Koha extends AbstractIlsDriver {
 			'userid' => $user->ils_barcode,
 		];
 
+		if (empty($ils_password)) {
+			if ($user->isLoggedInViaSSO) {
+				// This is a limitation of using Koha pages to perform logins rather than API requests.
+				// In the future, with an API request, user verification could be performed without a password when a user has logged in to Aspen via SSO.
+				$result['message'] = "Update Failed: Your password does not exist in Aspen because you performed a SSO without ever having performed a local login to Aspen."; // (i.e., local login = ILS-based login)
+			}
+			else {
+				$result['message'] = "Update Failed: The patron's password does not exist in Aspen because the patron has not logged in to Aspen for the first time yet.";
+			}
+		}
+
 		$kohaVersion = $this->getKohaVersion();
 		$csrfToken = '';
 		if ($kohaVersion >= 24.05) {
@@ -3564,7 +3575,7 @@ class Koha extends AbstractIlsDriver {
 			$info = curl_getinfo($this->opacCurlWrapper->curl_connection);
 			$result = [
 				'success' => false,
-				'message' => 'Could not login to the backend system',
+				'message' => $result['message'] ?? 'Update Failed: Could not login to the backend system.',
 			];
 		}
 		return $result;
@@ -6324,7 +6335,7 @@ class Koha extends AbstractIlsDriver {
 
 				$result = [
 					'success' => true,
-					'message' => 'Settings updated',
+					'message' => 'Update Succeeded!',
 				];
 			} else {
 				$result = [
