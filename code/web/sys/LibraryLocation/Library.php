@@ -305,6 +305,7 @@ class Library extends DataObject {
 
 	public $econtentLocationsToInclude;
 	public $showCardExpirationDate;
+	public $showPatronTypeOnCard;
 	public $showExpirationWarnings;
 	public /** @noinspection PhpUnused */
 		$loginFormUsernameLabel;
@@ -1299,9 +1300,18 @@ class Library extends DataObject {
 						'property' => 'showCardExpirationDate',
 						'type' => 'checkbox',
 						'label' => 'Show Card Expiration Date',
-						'description' => 'Whether or not the user should be shown their cards expiration date on the My Library Card Page.',
+						'description' => 'Whether or not the user should be shown their cards expiration date on the My Library Card page.',
 						'hideInLists' => true,
 						'default' => 1,
+						'permissions' => ['Library ILS Options'],
+					],
+					'showPatronTypeOnCard' => [
+						'property' => 'showPatronTypeOnCard',
+						'type' => 'checkbox',
+						'label' => 'Show Patron Type on Library Card',
+						'description' => 'Whether or not the patron type should be displayed under the barcode of the My Library Card page.',
+						'hideInLists' => true,
+						'default' => 0,
 						'permissions' => ['Library ILS Options'],
 					],
 					'showExpirationWarnings' => [
@@ -5511,10 +5521,10 @@ class Library extends DataObject {
 	}
 
 	/**
-	 * @return array|null
+	 * @return GeneralSetting|null
 	 */
 	public function getLiDAGeneralSettings() {
-		$settings = [];
+		$settings = null;
 
 		$setting = new GeneralSetting();
 		$setting->id = $this->lidaGeneralSettingId;
@@ -5584,41 +5594,38 @@ class Library extends DataObject {
 		$apiInfo['notifications'] = $this->getLiDANotifications();
 		$allThemes = $this->getThemes();
 		if (count($allThemes) > 0) {
-			$libraryTheme = new LibraryTheme();
-			$libraryTheme->libraryId = $this->libraryId;
-			$libraryTheme->orderBy('weight');
-			if ($libraryTheme->find(true)) {
-				$theme = new Theme();
-				$theme->id = $libraryTheme->themeId;
-				if ($theme->find(true)) {
-					$theme->applyDefaults();
-					if ($theme->logoName) {
-						$apiInfo['logo'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoName;
-					}
-					if ($theme->favicon) {
-						$apiInfo['favicon'] = $configArray['Site']['url'] . '/files/original/' . $theme->favicon;
-					}
-					if ($theme->logoApp) {
-						$apiInfo['logoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoApp;
-					}
-					if ($theme->headerLogoApp) {
-						$apiInfo['headerLogoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
-						[
-							$width,
-							$height,
-						] = @getimagesize(ROOT_DIR . '/files/original/' . $theme->headerLogoApp);
-						$apiInfo['headerLogoWidth'] = $width;
-						$apiInfo['headerLogoHeight'] = $height;
-					}
-					$apiInfo['headerLogoAlignmentApp'] = $theme->headerLogoAlignmentApp;
-					$apiInfo['headerLogoBackgroundColorApp'] = $theme->headerLogoBackgroundColorApp;
-					$apiInfo['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
-					$apiInfo['primaryForegroundColor'] = $theme->primaryForegroundColor;
-					$apiInfo['secondaryBackgroundColor'] = $theme->secondaryBackgroundColor;
-					$apiInfo['secondaryForegroundColor'] = $theme->secondaryForegroundColor;
-					$apiInfo['tertiaryBackgroundColor'] = $theme->tertiaryBackgroundColor;
-					$apiInfo['tertiaryForegroundColor'] = $theme->tertiaryForegroundColor;
+			$libraryTheme = reset($allThemes);
+
+			$theme = new Theme();
+			$theme->id = $libraryTheme->themeId;
+			if ($theme->find(true)) {
+				$theme->applyDefaults();
+				if ($theme->logoName) {
+					$apiInfo['logo'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoName;
 				}
+				if ($theme->favicon) {
+					$apiInfo['favicon'] = $configArray['Site']['url'] . '/files/original/' . $theme->favicon;
+				}
+				if ($theme->logoApp) {
+					$apiInfo['logoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoApp;
+				}
+				if ($theme->headerLogoApp) {
+					$apiInfo['headerLogoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
+					[
+						$width,
+						$height,
+					] = @getimagesize(ROOT_DIR . '/files/original/' . $theme->headerLogoApp);
+					$apiInfo['headerLogoWidth'] = $width;
+					$apiInfo['headerLogoHeight'] = $height;
+				}
+				$apiInfo['headerLogoAlignmentApp'] = $theme->headerLogoAlignmentApp;
+				$apiInfo['headerLogoBackgroundColorApp'] = $theme->headerLogoBackgroundColorApp;
+				$apiInfo['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
+				$apiInfo['primaryForegroundColor'] = $theme->primaryForegroundColor;
+				$apiInfo['secondaryBackgroundColor'] = $theme->secondaryBackgroundColor;
+				$apiInfo['secondaryForegroundColor'] = $theme->secondaryForegroundColor;
+				$apiInfo['tertiaryBackgroundColor'] = $theme->tertiaryBackgroundColor;
+				$apiInfo['tertiaryForegroundColor'] = $theme->tertiaryForegroundColor;
 			}
 		}
 		$locations = $this->getLocations();
@@ -5689,18 +5696,24 @@ class Library extends DataObject {
 		$apiInfo['showFines'] = $configArray['Catalog']['showFines'];
 
 		$generalSettings = $this->getLiDAGeneralSettings();
-		$apiInfo['generalSettings']['autoRotateCard'] = $generalSettings->autoRotateCard ?? 0;
-		$apiInfo['enableSelfRegistrationInApp'] = $generalSettings->enableSelfRegistration ?? 0;
-		$apiInfo['showMoreInfoBtn'] = (int)$generalSettings->showMoreInfoBtn ?? 0;
+		if (is_null($generalSettings)) {
+			$apiInfo['generalSettings']['autoRotateCard'] = 0;
+			$apiInfo['enableSelfRegistrationInApp'] = 0;
+			$apiInfo['showMoreInfoBtn'] = 0;
+		} else {
+			$apiInfo['generalSettings']['autoRotateCard'] = $generalSettings->autoRotateCard ?? 0;
+			$apiInfo['enableSelfRegistrationInApp'] = $generalSettings->enableSelfRegistration ?? 0;
+			$apiInfo['showMoreInfoBtn'] = (int)$generalSettings->showMoreInfoBtn ?? 0;
+		}
 
 		$apiInfo['hasEventSettings'] = $this->hasEventSettings();
 
 		$apiInfo['palaceProjectInstructions'] = null;
-		require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectScope.php';
-		require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectSetting.php';
-		$scope = new PalaceProjectScope();
-		$scope->id = $this->palaceProjectScopeId;
 		if ($this->palaceProjectScopeId > 0) {
+			require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectScope.php';
+			require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectSetting.php';
+			$scope = new PalaceProjectScope();
+			$scope->id = $this->palaceProjectScopeId;
 			if ($scope->find(true)) {
 				$settings = new PalaceProjectSetting();
 				$settings->id = $scope->settingId;

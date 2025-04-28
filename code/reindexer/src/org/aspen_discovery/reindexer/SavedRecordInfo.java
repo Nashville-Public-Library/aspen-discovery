@@ -9,6 +9,7 @@ public class SavedRecordInfo {
 	public String recordIdentifier;
 	public long groupedWorkId;
 	public long editionId;
+	public long audienceId;
 	public long publisherId;
 	public long publicationDateId;
 	public long placeOfPublicationId;
@@ -36,6 +37,7 @@ public class SavedRecordInfo {
 		isClosedCaptioned = getExistingRecordsForWorkRS.getBoolean("isClosedCaptioned");
 		hasParentRecord = getExistingRecordsForWorkRS.getBoolean("hasParentRecord");
 		hasChildRecord = getExistingRecordsForWorkRS.getBoolean("hasChildRecord");
+		audienceId = getExistingRecordsForWorkRS.getLong("audienceId");
 	}
 
 }

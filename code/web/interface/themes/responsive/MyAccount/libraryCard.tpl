@@ -32,6 +32,9 @@
 			{if count($linkedCards) > 0}
 				<div>{$profile->displayName|escape}</div>
 			{/if}
+			{if !empty($showPatronTypeOnCard) && $profile->getPTypeObj()}
+				<div>{translate text="Patron Type" isPublicFacing=true} - {if $profile->getPTypeObj()->pType}{$profile->getPTypeObj()->pType|escape}{else}{translate text="None" isPublicFacing=true}{/if}</div>
+			{/if}
 			{if !empty($showCardExpirationDate) && !empty($expirationDate)}
 				{translate text="Expires %1%" 1=$expirationDate|date_format:"%b %d, %Y" isPublicFacing=true}
 			{/if}
@@ -106,6 +109,9 @@
 						{$linkedCard.barcode}
 					</div>
 					<div>{$linkedCard.fullName}</div>
+					{if !empty($showPatronTypeOnCard)}
+						<div>{translate text="Patron Type" isPublicFacing=true} - {if !empty($linkedCard.patronType)}{$linkedCard.patronType|escape}{else}{translate text="None" isPublicFacing=true}{/if}</div>
+					{/if}
 					{if !empty($showCardExpirationDate) && !empty($linkedCard.expirationDate)}
 						{translate text="Expires %1%" 1=$linkedCard.expirationDate|date_format:"%D" isPublicFacing=true}
 					{/if}
