@@ -19,6 +19,7 @@ class LibraryCard extends MyAccount {
 		$interface->assign('alternateLibraryCardStyle', $library->alternateLibraryCardStyle);
 		$interface->assign('showCardExpirationDate', $library->showCardExpirationDate);
 		$interface->assign('expirationDate', $user->getAccountSummary()->expirationDate);
+		$interface->assign('showPatronTypeOnCard', $library->showPatronTypeOnCard ?? false);
 
 		$interface->assign('showRenewalLink', false);
 		if ($user->hasIlsConnection()) {
@@ -50,6 +51,7 @@ class LibraryCard extends MyAccount {
 				'fullName' => $tmpUser->displayName,
 				'barcode' => $tmpUser->getBarcode(),
 				'expirationDate' => $tmpUser->getAccountSummary()->expirationDate,
+				'patronType' => $tmpUser->getPTypeObj() ? $tmpUser->getPTypeObj()->pType : null,
 			];
 		}
 		$interface->assign('linkedCards', $linkedCards);

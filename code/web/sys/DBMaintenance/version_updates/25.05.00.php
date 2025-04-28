@@ -36,6 +36,18 @@ function getUpdates25_05_00(): array {
 				"UPDATE axis360_settings set name = concat('Setting ', id)",
 			]
 		], //axis360_setting_name
+		'lida_loading_messages' => [
+			'title' => 'LiDA Loading messages',
+			'description' => 'Update Branded App settings to include the type of loading messages to show as well as configuration of startup meessages',
+			'sql' => [
+				'ALTER TABLE aspen_lida_branded_settings ADD COLUMN loadingMessageType TINYINT DEFAULT 0',
+				'CREATE TABLE lida_loading_messages (
+					id INT PRIMARY KEY AUTO_INCREMENT,
+					brandedAppSettingId INT(11) NOT NULL, 
+					message VARCHAR(255) NOT NULL
+				)'
+			]
+		], //lida_loading_messages
 
 		//katherine - Grove
 		'add_deleted_field_to_series_member' => [
@@ -51,8 +63,23 @@ function getUpdates25_05_00(): array {
 		//kodi - Grove
 
 		//Yanjun Li - ByWater
+		'library_add_palace_project_library_id' => [
+			'title' => 'library_add_palace_project_library_id',
+			'description' => 'Add a field to store the palace project library id for the library',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE library add column palaceProjectLibraryId VARCHAR(50) DEFAULT NULL",
+			]
+		], //library_add_palace_project_library_id
 
 		// Leo Stoyanov - BWS
+		'add_placard_image_max_height_to_themes' => [
+			'title' => 'Add Placard Image Max Height to Themes',
+			'description' => 'Adds a placardImageMaxHeight column to the themes table to control placard image height.',
+			'sql' => [
+				"ALTER TABLE themes ADD COLUMN IF NOT EXISTS `placardImageMaxHeight` INT DEFAULT 0",
+			]
+		], //add_placard_image_max_height_to_themes
 		'custom_form_field_enums_to_text' => [
 			'title' => 'Increase Custom Form Field EnumValues Size',
 			'description' => 'Changes the enumValues column in web_builder_custom_form_field from VARCHAR(255) to TEXT to allow for longer select lists.',
@@ -69,6 +96,33 @@ function getUpdates25_05_00(): array {
 				"ALTER TABLE ip_lookup MODIFY endIpVal VARCHAR(255) NULL COMMENT 'Numeric value for IPv4 or encoded string for IPv6'"
 			],
 		], //ip_lookup_ipv6_support
+		'show_patron_type_on_library_card' => [
+			'title' => 'Add Show Patron Type Option',
+			'description' => 'Adds a setting to display patron type under the barcode on the My Library Card page.',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN IF NOT EXISTS showPatronTypeOnCard TINYINT(1) DEFAULT 0",
+			]
+		],//show_patron_type_on_library_card
+
+		// Laura Escamilla - ByWater Solutions
+
+               'blueskyLink' => [
+                      'title' => 'Bluesky Link', 
+                      'description' => 'The URL to Bluesky (leave blank if the library does not have a Bluesky account)',
+                      'continueOnError' => true,
+                      'sql' => [
+                               "ALTER TABLE library ADD COLUMN blueskyLink VARCHAR(255)",
+                               ], 
+                ], // blueskyLink
+
+               'threadsLink' => [
+                      'title' => 'Threads Link',
+                      'description' => 'The URL to Threads (leave blank if the library does not have a Threads account)',
+                      'continueOnError' => true,
+                      'sql' => [
+                               "ALTER TABLE library ADD COLUMN threadsLink VARCHAR(255)",
+                               ],
+                ], // threadsLink
 
 		//alexander - Open Fifth
 		'allow_filtering_of_linked_users_in_checkouts' => [
@@ -85,12 +139,61 @@ function getUpdates25_05_00(): array {
 				'ALTER TABLE library ADD COLUMN allowSelectingCheckoutsToExport TINYINT(1) DEFAULT 0'
 			],
 		], //allow_selecting_checkouts_to_export
+		'add_ability_to_highlight_campaigns_in_account_area' => [
+			'title' => 'Add Ability to Highlight Campaigns In Account Area',
+			'description' => 'Allow libraries to choose whether to display a block highlighting campaigns on the account page',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN highlightCommunityEngagement TINYINT(1) DEFAULT 0",
+			],
+		], //add_ability_to_highlight_campaigns_in_account_area
+		'add_weight_to_campaign_milestones' => [
+			'title' => 'Add Weight To Campaign Milestones',
+			'description' => 'Add a weight column to campaign milestones to allow ordering',
+			'sql' => [
+				"ALTER TABLE ce_campaign_milestones ADD COLUMN weight int(11) NOT NULL DEFAULT 0",
+			],
+		], //add_weight_to_campaign_milestones
 
-		//chloe - PTFS-Europe
+		//chloe - Open Fifth
+		'add_audienceId_to_grouped_work_records' => [
+			'title' => 'Add AudienceId To Grouped Work Records',
+			'description' => 'So that audiences can be displayed on grouped work records, add an audienceId column to grouped work records.',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE grouped_work_records ADD COLUMN audienceId INT(11) DEFAULT -1",
+			]
+		], //add_audienceId_to_grouped_work_records
+		'create_indexed_audience' => [
+			'title' => 'Create Indexed Audience',
+			'description' => 'Create the indexed_audience table',
+			'continueOnError' => false,
+			'sql' => [
+			'CREATE TABLE indexed_audience (
+				id int(11) NOT NULL AUTO_INCREMENT,
+				audience varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+				PRIMARY KEY (id),
+				KEY audience (audience(500))
+			)'
+			]
+		], //create_indexed_audience
 
 		//James Staub - Nashville Public Library
 
 		//Lucas Montoya - Theke Solutions
+		'forceDebugLog' => [
+			'title' => 'Enable Forced Logging of Debugging Information for Paypal, PayPalPayflow, Propay, InvoiceCloud, Square, Stripe, and ACISpeedPay Payments',
+			'description' => 'Enable to show debugging information about Paypal payments',
+			'sql' => [
+				'ALTER TABLE paypal_settings ADD COLUMN forceDebugLog TINYINT(1) DEFAULT 0',
+				'ALTER TABLE square_settings ADD COLUMN forceDebugLog TINYINT(1) DEFAULT 0',
+				'ALTER TABLE stripe_settings ADD COLUMN forceDebugLog TINYINT(1) DEFAULT 0',
+				'ALTER TABLE propay_settings ADD COLUMN forceDebugLog TINYINT(1) DEFAULT 0',
+				'ALTER TABLE ncr_payments_settings ADD COLUMN forceDebugLog TINYINT(1) DEFAULT 0',
+				'ALTER TABLE paypal_payflow_settings ADD COLUMN forceDebugLog TINYINT(1) DEFAULT 0',
+				'ALTER TABLE aci_speedpay_settings ADD COLUMN forceDebugLog TINYINT(1) DEFAULT 0',
+				'ALTER TABLE invoice_cloud_settings ADD COLUMN forceDebugLog TINYINT(1) DEFAULT 0',
+			]
+		], //enable_payments_debugging
 
 		//other
 

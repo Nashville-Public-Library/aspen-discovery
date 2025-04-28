@@ -25,6 +25,7 @@ class Sierra extends Millennium {
 			$authInfo = base64_encode($this->accountProfile->oAuthClientId . ":" . $this->accountProfile->oAuthClientSecret);
 			$headers = [
 				'Content-Type: application/x-www-form-urlencoded;charset=UTF-8',
+				'User-Agent: Aspen Discovery',
 				'Authorization: Basic ' . $authInfo,
 			];
 			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -1316,7 +1317,11 @@ class Sierra extends Millennium {
 		return $user;
 	}
 
+	private $_patronInfoByBarcode = [];
 	public function getPatronInfoByBarcode($barcode) {
+		if (array_key_exists($barcode, $this->_patronInfoByBarcode)){
+			return $this->_patronInfoByBarcode[$barcode];
+		}
 		$params = [
 			'varFieldTag' => 'b',
 			'varFieldContent' => $barcode,
@@ -1329,14 +1334,15 @@ class Sierra extends Millennium {
 
 		$response = $this->_callUrl('sierra.findPatronByBarcode', $sierraUrl);
 		if (!$response) {
-			return false;
+			$this->_patronInfoByBarcode[$barcode] = false;
 		} else {
 			if (!empty($response->deleted) || !empty($response->suppressed) || (!empty($response->httpStatus) && $response->httpStatus == 404)) {
-				return false;
+				$this->_patronInfoByBarcode[$barcode] = false;
 			} else {
-				return $response;
+				$this->_patronInfoByBarcode[$barcode] = $response;
 			}
 		}
+		return $this->_patronInfoByBarcode[$barcode];
 	}
 
 	public function getPatronInfoByUsername($username) {
@@ -1478,21 +1484,33 @@ class Sierra extends Millennium {
 
 			$summary->totalFines = $patronInfo->moneyOwed;
 
+			//Get expiration information
+			$expirationInformation = $this->getExpirationInformation($patron);
+			$summary->expirationDate = $expirationInformation->expirationDate;
+		}
+
+		return $summary;
+	}
+
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		$expirationInformation = new ExpirationInformation();
+
+		$patronInfo = $this->getPatronInfoByBarcode($patron->getBarcode());
+		if ($patronInfo) {
 			if (!empty($patronInfo->expirationDate)) {
 				[
 					$yearExp,
 					$monthExp,
 					$dayExp,
 				] = explode("-", $patronInfo->expirationDate);
-				$summary->expirationDate = strtotime($monthExp . "/" . $dayExp . "/" . $yearExp);
+				$expirationInformation->expirationDate = strtotime($monthExp . "/" . $dayExp . "/" . $yearExp);
 			}else{
-				//No expiration date set, just set something 20 years in the future
-				//$now = time();
-				$summary->expirationDate = 0;
+				//No expiration date set, leave it blank
+				$expirationInformation->expirationDate = 0;
 			}
 		}
 
-		return $summary;
+		return $expirationInformation;
 	}
 
 	public function updatePatronInfo($patron, $canUpdateContactInfo, $fromMasquerade): array {
@@ -2128,10 +2146,26 @@ class Sierra extends Millennium {
 				if (strpos($line2, ',')) {
 					$user->_city = substr($line2, 0, strrpos($line2, ','));
 					$stateZip = trim(substr($line2, strrpos($line2, ',') + 1));
-					$user->_state = substr($stateZip, 0, strrpos($stateZip, ' '));
-					$user->_zip = substr($stateZip, strrpos($stateZip, ' '));
+					if (strpos($stateZip, ' ')) {
+						$user->_state = substr($stateZip, 0, strrpos($stateZip, ' '));
+						$user->_zip = substr($stateZip, strrpos($stateZip, ' '));
+					} else {
+						$user->_state = trim($stateZip); 
+					}
 				} else {
-					$user->_city = $line2;
+					$parts = preg_split('/\s+/', $line2);
+					if (count($parts) >= 3) {
+						$lastpart = array_pop($parts);
+						if (is_numeric($lastpart)) {
+							$user->_zip = $lastpart;
+							$user->_state = array_pop($parts);
+						} else {
+							$user->_state = $lastpart;
+						}
+						$user->_city = implode(' ', $parts);
+					} else {
+						$user->_city = $line2;
+					}
 				}
 			}
 		}

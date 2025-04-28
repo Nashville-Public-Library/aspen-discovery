@@ -3533,6 +3533,17 @@ class Koha extends AbstractIlsDriver {
 			'userid' => $user->ils_barcode,
 		];
 
+		if (empty($ils_password)) {
+			if ($user->isLoggedInViaSSO) {
+				// This is a limitation of using Koha pages to perform logins rather than API requests.
+				// In the future, with an API request, user verification could be performed without a password when a user has logged in to Aspen via SSO.
+				$result['message'] = "Update Failed: Your password does not exist in Aspen because you performed a SSO without ever having performed a local login to Aspen."; // (i.e., local login = ILS-based login)
+			}
+			else {
+				$result['message'] = "Update Failed: The patron's password does not exist in Aspen because the patron has not logged in to Aspen for the first time yet.";
+			}
+		}
+
 		$kohaVersion = $this->getKohaVersion();
 		$csrfToken = '';
 		if ($kohaVersion >= 24.05) {
@@ -3564,7 +3575,7 @@ class Koha extends AbstractIlsDriver {
 			$info = curl_getinfo($this->opacCurlWrapper->curl_connection);
 			$result = [
 				'success' => false,
-				'message' => 'Could not login to the backend system',
+				'message' => $result['message'] ?? 'Update Failed: Could not login to the backend system.',
 			];
 		}
 		return $result;
@@ -5819,11 +5830,20 @@ class Koha extends AbstractIlsDriver {
 		}
 
 		//Get fines
-		//Load fines from database
+		//Load fines from the database
 		$outstandingFines = $this->getOutstandingFineTotal($patron);
 		$summary->totalFines = floatval($outstandingFines);
 
 		//Get expiration information
+		$expirationInformation = $this->getExpirationInformation($patron);
+		$summary->expirationDate = $expirationInformation->expirationDate;
+
+		return $summary;
+	}
+
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		$expirationInformation = new ExpirationInformation();
+		$this->initDatabaseConnection();
 		/** @noinspection SqlResolve */
 		$lookupUserQuery = "SELECT dateexpiry from borrowers where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
 		$lookupUserResult = mysqli_query($this->dbConnection, $lookupUserQuery, MYSQLI_USE_RESULT);
@@ -5833,7 +5853,7 @@ class Koha extends AbstractIlsDriver {
 			if (!empty($dateExpiry)) {
 				$timeExpire = strtotime($dateExpiry);
 				if ($timeExpire !== false) {
-					$summary->expirationDate = $timeExpire;
+					$expirationInformation->expirationDate = $timeExpire;
 				} else {
 					global $logger;
 					$logger->log("Error parsing expiration date for patron $dateExpiry", Logger::LOG_ERROR);
@@ -5841,8 +5861,7 @@ class Koha extends AbstractIlsDriver {
 			}
 			$lookupUserResult->close();
 		}
-
-		return $summary;
+		return $expirationInformation;
 	}
 
 	/**
@@ -6316,7 +6335,7 @@ class Koha extends AbstractIlsDriver {
 
 				$result = [
 					'success' => true,
-					'message' => 'Settings updated',
+					'message' => 'Update Succeeded!',
 				];
 			} else {
 				$result = [
@@ -8680,8 +8699,16 @@ class Koha extends AbstractIlsDriver {
 	public function getFormattedConsentTypes(): array {
 		$consentTypes = $this->getConsentTypes();
 		if (empty($consentTypes)) {
-			return [];
+			return [
+				'success' => false,
+				'messages' => 'There are no consent options to show'
+			];
 		}
+
+		if ((isset($consentTypes['success']) && !$consentTypes['success'])) {
+			return $consentTypes;
+		}
+
 		$formattedConsentTypes = [];
 		foreach ($consentTypes as $key => $consentType) {
 			if (strtolower($key) == 'gdpr_processing') {
@@ -8772,6 +8799,7 @@ class Koha extends AbstractIlsDriver {
 
 		$this->apiCurlWrapper->curl_connect($url);
 		$this->apiCurlWrapper->curlSendPage($url, 'PUT' , json_encode($body));
+		$this->apiCurlWrapper->resetCurlConnectionOptions();
 
 		if ($this->apiCurlWrapper->getResponseCode() == 200) {
 			$result['success'] = true;
@@ -8785,6 +8813,7 @@ class Koha extends AbstractIlsDriver {
 	}
 
 	public function getPatronConsents($patron): array {	
+		$result = ['success' => false,];
 		$oauthToken = $this->getOAuthToken();
 		if (!$oauthToken) {
 			$result['message'] = translate([
@@ -8815,25 +8844,28 @@ class Koha extends AbstractIlsDriver {
 
 		$this->apiCurlWrapper->curl_connect($url);
 		$response = $this->apiCurlWrapper->curlGetPage($url);
+		$this->apiCurlWrapper->resetCurlConnectionOptions();
 
 		if ($this->apiCurlWrapper->getResponseCode() == 200) {
 			return json_decode($response, true);
 		} else {
-			return translate([
-				'text' => 'Error getting a list of consents for this patron from Koha.',
+			$result['message'] = translate([
+				'text' => 'There was an error while getting your existing consent information from Koha.',
 				'isPublicFacing' => true,
 			]);
 		}
-
+		return $result;
 	}
 
 	private function getConsentTypes(): array {
+		$result = ['success' => false,];
 		$oauthToken = $this->getOAuthToken();
 		if (!$oauthToken) {
-			return translate([
+			$result['message'] = translate([
 				'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
 				'isPublicFacing' => true,
 			]);
+			return $result;
 		}
 		
 		$url = $this->getWebServiceURL() . '/api/v1/contrib/newsletterconsent/consents/';
@@ -8857,15 +8889,17 @@ class Koha extends AbstractIlsDriver {
 		
 		$this->apiCurlWrapper->curl_connect($url);
 		$response = $this->apiCurlWrapper->curlGetPage($url);
+		$this->apiCurlWrapper->resetCurlConnectionOptions();
 
 		if ($this->apiCurlWrapper->getResponseCode() == 200) {
 			return json_decode($response, true);
 		} else {
-			return translate([
+			$result['message'] = translate([
 				'text' => 'There was an error while getting existing consent types from Koha.',
 				'isPublicFacing' => true,
 			]);
 		}
+		return $result;
 	}
 
 	public function hasIlsConsentSupport(): bool {

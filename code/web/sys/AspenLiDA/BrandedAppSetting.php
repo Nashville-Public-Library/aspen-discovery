@@ -1,5 +1,6 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
+require_once ROOT_DIR . '/sys/AspenLiDA/LiDALoadingMessage.php';
 
 class BrandedAppSetting extends DataObject {
 	public $__table = 'aspen_lida_branded_settings';
@@ -19,14 +20,22 @@ class BrandedAppSetting extends DataObject {
 	public $autoPickUserHomeLocation;
 
 	//API Keys that are used instead of Greenhouse Settings if needed.
+	/** @noinspection PhpUnused */
 	public $apiKey1;
+	/** @noinspection PhpUnused */
 	public $apiKey2;
+	/** @noinspection PhpUnused */
 	public $apiKey3;
+	/** @noinspection PhpUnused */
 	public $apiKey4;
+	/** @noinspection PhpUnused */
 	public $apiKey5;
 
-	static function getObjectStructure($context = ''): array {
+	public $loadingMessageType;
+	public $_loadingMessages;
 
+	static function getObjectStructure($context = ''): array {
+		$lidaLoadingMessageStructure = LiDALoadingMessage::getObjectStructure($context);
 		return [
 			'id' => [
 				'property' => 'id',
@@ -204,19 +213,107 @@ class BrandedAppSetting extends DataObject {
 					],
 				]
 			],
+			'loadingMessagesSection' => [
+				'property' => 'loadingMessagesSection',
+				'type' => 'section',
+				'label' => 'Loading Messages',
+				'instructions' => 'How messages should be displayed to the patron while LiDA is loading.',
+				'properties' => [
+					'loadingMessageType' => [
+						'property' => 'loadingMessageType',
+						'type' => 'enum',
+						'label' => 'Loading Message Type',
+						'values' => [
+							'0' => 'Show library facts',
+							'1' => 'Show step being performed',
+							'2' => 'Show random loading message'
+						]
+					],
+					'loadingMessages' => [
+						'property' => 'loadingMessages',
+						'type' => 'oneToMany',
+						'label' => 'Loading Messages',
+						'description' => 'Custom Messages that will be shown at random',
+						'keyThis' => 'id',
+						'keyOther' => 'brandedAppSettingId',
+						'subObjectType' => 'LiDALoadingMessage',
+						'structure' => $lidaLoadingMessageStructure,
+						'sortable' => false,
+						'storeDb' => true,
+						'allowEdit' => true,
+						'canEdit' => false,
+						'canAddNew' => true,
+						'canDelete' => true,
+					],
+				]
+			]
 		];
 	}
-/*
- * 		$address = '';
-		$tel = '';
-		$email = '';
-		$location = new Location();
-		$location->orderBy('isMainBranch desc'); // gets the main branch first or the first location
-		$location->libraryId = $library->libraryId;
-		if ($location->find(true)) {
-			$address = preg_replace('/\r\n|\r|\n/', '<br>', $location->address);
-			$tel = $location->phone;
-			$email = $location->contactEmail;
+
+	public function __get($name) {
+		if ($name == "loadingMessages") {
+			return $this->getLoadingMessages();
+		} else {
+			return parent::__get($name);
 		}
- */
+	}
+
+	public function getLoadingMessages(): ?array {
+		if (!isset($this->_loadingMessages) && $this->id) {
+			$this->_loadingMessages = [];
+			$obj = new LiDALoadingMessage();
+			$obj->brandedAppSettingId = $this->id;
+			$obj->find();
+			while ($obj->fetch()) {
+				$this->_loadingMessages[$obj->id] = clone $obj;
+			}
+		}
+		return $this->_loadingMessages;
+	}
+
+	public function __set($name, $value) {
+		if ($name == "loadingMessages") {
+			$this->_loadingMessages = $value;
+		} else {
+			parent::__set($name, $value);
+		}
+	}
+
+	/**
+	 * Override the update functionality to save related objects
+	 *
+	 * @see DB/DB_DataObject::update()
+	 */
+	public function update($context = '') {
+		$ret = parent::update();
+		if ($ret !== FALSE) {
+			$this->saveLoadingMessages();
+		}
+		return $ret;
+	}
+
+	public function insert($context = '') {
+		$ret = parent::insert();
+		if ($ret !== FALSE) {
+			$this->saveLoadingMessages();
+		}
+		return $ret;
+	}
+
+	public function delete($useWhere = false) : int {
+		$ret = parent::delete($useWhere);
+		if ($ret && !empty($this->id)) {
+			$loadingMessage = new LiDALoadingMessage();
+			$loadingMessage->brandedAppSettingId = $this->id;
+			$loadingMessage->delete(true);
+		}
+		return $ret;
+	}
+
+	public function saveLoadingMessages() : void {
+		if (isset ($this->_loadingMessages) && is_array($this->_loadingMessages)) {
+			$this->saveOneToManyOptions($this->_loadingMessages, 'brandedAppSettingId');
+			unset($this->_loadingMessages);
+		}
+	}
 }
