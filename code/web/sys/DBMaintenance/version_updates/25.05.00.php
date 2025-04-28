@@ -96,6 +96,13 @@ function getUpdates25_05_00(): array {
 				"ALTER TABLE ip_lookup MODIFY endIpVal VARCHAR(255) NULL COMMENT 'Numeric value for IPv4 or encoded string for IPv6'"
 			],
 		], //ip_lookup_ipv6_support
+		'show_patron_type_on_library_card' => [
+			'title' => 'Add Show Patron Type Option',
+			'description' => 'Adds a setting to display patron type under the barcode on the My Library Card page.',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN IF NOT EXISTS showPatronTypeOnCard TINYINT(1) DEFAULT 0",
+			]
+		],//show_patron_type_on_library_card
 
 		//alexander - Open Fifth
 		'allow_filtering_of_linked_users_in_checkouts' => [
