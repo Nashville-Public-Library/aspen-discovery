@@ -36,8 +36,27 @@ function getUpdates25_05_00(): array {
 				"UPDATE axis360_settings set name = concat('Setting ', id)",
 			]
 		], //axis360_setting_name
+		'lida_loading_messages' => [
+			'title' => 'LiDA Loading messages',
+			'description' => 'Update Branded App settings to include the type of loading messages to show as well as configuration of startup meessages',
+			'sql' => [
+				'ALTER TABLE aspen_lida_branded_settings ADD COLUMN loadingMessageType TINYINT DEFAULT 0',
+				'CREATE TABLE lida_loading_messages (
+					id INT PRIMARY KEY AUTO_INCREMENT,
+					brandedAppSettingId INT(11) NOT NULL, 
+					message VARCHAR(255) NOT NULL
+				)'
+			]
+		], //lida_loading_messages
 
 		//katherine - Grove
+		'add_deleted_field_to_series_member' => [
+			'title' => 'Add a deleted field to Series Member table',
+			'description' => 'Add a deleted field so that Series Members can be deleted',
+			'sql' => [
+				"ALTER TABLE series_member ADD COLUMN deleted TINYINT(1) DEFAULT 0",
+			]
+		], //add_deleted_field_to_series_member
 
 		//kirstien - Grove
 
@@ -77,6 +96,13 @@ function getUpdates25_05_00(): array {
 				"ALTER TABLE ip_lookup MODIFY endIpVal VARCHAR(255) NULL COMMENT 'Numeric value for IPv4 or encoded string for IPv6'"
 			],
 		], //ip_lookup_ipv6_support
+		'show_patron_type_on_library_card' => [
+			'title' => 'Add Show Patron Type Option',
+			'description' => 'Adds a setting to display patron type under the barcode on the My Library Card page.',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN IF NOT EXISTS showPatronTypeOnCard TINYINT(1) DEFAULT 0",
+			]
+		],//show_patron_type_on_library_card
 
 		//alexander - Open Fifth
 		'allow_filtering_of_linked_users_in_checkouts' => [
@@ -108,7 +134,28 @@ function getUpdates25_05_00(): array {
 			],
 		], //add_weight_to_campaign_milestones
 
-		//chloe - PTFS-Europe
+		//chloe - Open Fifth
+		'add_audienceId_to_grouped_work_records' => [
+			'title' => 'Add AudienceId To Grouped Work Records',
+			'description' => 'So that audiences can be displayed on grouped work records, add an audienceId column to grouped work records.',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE grouped_work_records ADD COLUMN audienceId INT(11) DEFAULT -1",
+			]
+		], //add_audienceId_to_grouped_work_records
+		'create_indexed_audience' => [
+			'title' => 'Create Indexed Audience',
+			'description' => 'Create the indexed_audience table',
+			'continueOnError' => false,
+			'sql' => [
+			'CREATE TABLE indexed_audience (
+				id int(11) NOT NULL AUTO_INCREMENT,
+				audience varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+				PRIMARY KEY (id),
+				KEY audience (audience(500))
+			)'
+			]
+		], //create_indexed_audience
 
 		//James Staub - Nashville Public Library
 

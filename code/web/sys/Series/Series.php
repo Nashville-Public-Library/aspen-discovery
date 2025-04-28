@@ -15,6 +15,7 @@ class Series extends DataObject {
 	public $isIndexed;
 	public $dateUpdated;
 	public $created;
+	public $deleted;
 
 	public $_seriesMembers; // grouped works and placeholders
 
@@ -133,6 +134,27 @@ class Series extends DataObject {
 		return $ret;
 	}
 
+	function delete($useWhere = false) : int {
+		if (!$useWhere) {
+			$this->deleted = 1;
+			$this->dateUpdated = time();
+			$ret = parent::update();
+
+			if ($ret) {
+				$member = new SeriesMember();
+				$member->seriesId = $this->id;
+				$member->find();
+				while ($member->fetch()) {
+					$member->delete(false);
+				}
+				return true;
+			}
+			return false;
+		} else {
+			return parent::delete($useWhere);
+		}
+	}
+
 	public function __set($name, $value) {
 		if ($name == 'seriesMembers') {
 			$this->setSeriesMembers($value);
@@ -242,6 +264,7 @@ class Series extends DataObject {
 		if (!$showExcluded) {
 			$seriesMember->excluded = 0;
 		}
+		$seriesMember->deleted = 0;
 		$seriesMember->orderBy('weight');
 		$this->_seriesMembers = [];
 		$seriesMember->find();

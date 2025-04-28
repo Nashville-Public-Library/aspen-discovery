@@ -5830,11 +5830,20 @@ class Koha extends AbstractIlsDriver {
 		}
 
 		//Get fines
-		//Load fines from database
+		//Load fines from the database
 		$outstandingFines = $this->getOutstandingFineTotal($patron);
 		$summary->totalFines = floatval($outstandingFines);
 
 		//Get expiration information
+		$expirationInformation = $this->getExpirationInformation($patron);
+		$summary->expirationDate = $expirationInformation->expirationDate;
+
+		return $summary;
+	}
+
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		$expirationInformation = new ExpirationInformation();
+		$this->initDatabaseConnection();
 		/** @noinspection SqlResolve */
 		$lookupUserQuery = "SELECT dateexpiry from borrowers where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
 		$lookupUserResult = mysqli_query($this->dbConnection, $lookupUserQuery, MYSQLI_USE_RESULT);
@@ -5844,7 +5853,7 @@ class Koha extends AbstractIlsDriver {
 			if (!empty($dateExpiry)) {
 				$timeExpire = strtotime($dateExpiry);
 				if ($timeExpire !== false) {
-					$summary->expirationDate = $timeExpire;
+					$expirationInformation->expirationDate = $timeExpire;
 				} else {
 					global $logger;
 					$logger->log("Error parsing expiration date for patron $dateExpiry", Logger::LOG_ERROR);
@@ -5852,8 +5861,7 @@ class Koha extends AbstractIlsDriver {
 			}
 			$lookupUserResult->close();
 		}
-
-		return $summary;
+		return $expirationInformation;
 	}
 
 	/**
