@@ -42,6 +42,7 @@ public abstract class AbstractGroupedWorkSolr {
 	protected String displayTitle;
 	protected Long earliestPublicationDate = null;
 	protected HashSet<String> editions = new HashSet<>();
+	protected HashSet<String> audiences = new HashSet<>();
 	protected HashSet<String> eras = new HashSet<>();
 	protected HashSet<String> fullTitles = new HashSet<>();
 	protected HashSet<String> genres = new HashSet<>();
@@ -151,6 +152,8 @@ public abstract class AbstractGroupedWorkSolr {
 		clonedWork.description = (HashSet<String>) description.clone();
 		// noinspection unchecked
 		clonedWork.editions = (HashSet<String>) editions.clone();
+		// noinspection unchecked
+		clonedWork.audiences = (HashSet<String>) audiences.clone();
 		// noinspection unchecked
 		clonedWork.eras = (HashSet<String>) eras.clone();
 		// noinspection unchecked
@@ -883,6 +886,10 @@ public abstract class AbstractGroupedWorkSolr {
 
 	void addEditions(Set<String> fieldList) {
 		this.editions.addAll(fieldList);
+	}
+
+	void addAudiences(Set<String> fieldList) {
+		this.audiences.addAll(fieldList);
 	}
 
 	void addContents(Set<String> fieldList) {

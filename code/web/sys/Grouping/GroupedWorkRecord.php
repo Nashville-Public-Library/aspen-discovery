@@ -9,6 +9,7 @@ class GroupedWorkRecord extends DataObject {
 	public $formatId;
 	public $formatCategoryId;
 	public $editionId;
+	public $audienceId;
 	public $publisherId;
 	public $publicationDateId;
 	public $placeOfPublicationId;
