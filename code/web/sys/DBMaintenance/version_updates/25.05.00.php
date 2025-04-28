@@ -36,6 +36,18 @@ function getUpdates25_05_00(): array {
 				"UPDATE axis360_settings set name = concat('Setting ', id)",
 			]
 		], //axis360_setting_name
+		'lida_loading_messages' => [
+			'title' => 'LiDA Loading messages',
+			'description' => 'Update Branded App settings to include the type of loading messages to show as well as configuration of startup meessages',
+			'sql' => [
+				'ALTER TABLE aspen_lida_branded_settings ADD COLUMN loadingMessageType TINYINT DEFAULT 0',
+				'CREATE TABLE lida_loading_messages (
+					id INT PRIMARY KEY AUTO_INCREMENT,
+					brandedAppSettingId INT(11) NOT NULL, 
+					message VARCHAR(255) NOT NULL
+				)'
+			]
+		], //lida_loading_messages
 
 		//katherine - Grove
 
