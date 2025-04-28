@@ -1317,7 +1317,11 @@ class Sierra extends Millennium {
 		return $user;
 	}
 
+	private $_patronInfoByBarcode = [];
 	public function getPatronInfoByBarcode($barcode) {
+		if (array_key_exists($barcode, $this->_patronInfoByBarcode)){
+			return $this->_patronInfoByBarcode[$barcode];
+		}
 		$params = [
 			'varFieldTag' => 'b',
 			'varFieldContent' => $barcode,
@@ -1330,14 +1334,15 @@ class Sierra extends Millennium {
 
 		$response = $this->_callUrl('sierra.findPatronByBarcode', $sierraUrl);
 		if (!$response) {
-			return false;
+			$this->_patronInfoByBarcode[$barcode] = false;
 		} else {
 			if (!empty($response->deleted) || !empty($response->suppressed) || (!empty($response->httpStatus) && $response->httpStatus == 404)) {
-				return false;
+				$this->_patronInfoByBarcode[$barcode] = false;
 			} else {
-				return $response;
+				$this->_patronInfoByBarcode[$barcode] = $response;
 			}
 		}
+		return $this->_patronInfoByBarcode[$barcode];
 	}
 
 	public function getPatronInfoByUsername($username) {
@@ -1479,21 +1484,33 @@ class Sierra extends Millennium {
 
 			$summary->totalFines = $patronInfo->moneyOwed;
 
+			//Get expiration information
+			$expirationInformation = $this->getExpirationInformation($patron);
+			$summary->expirationDate = $expirationInformation->expirationDate;
+		}
+
+		return $summary;
+	}
+
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		$expirationInformation = new ExpirationInformation();
+
+		$patronInfo = $this->getPatronInfoByBarcode($patron->getBarcode());
+		if ($patronInfo) {
 			if (!empty($patronInfo->expirationDate)) {
 				[
 					$yearExp,
 					$monthExp,
 					$dayExp,
 				] = explode("-", $patronInfo->expirationDate);
-				$summary->expirationDate = strtotime($monthExp . "/" . $dayExp . "/" . $yearExp);
+				$expirationInformation->expirationDate = strtotime($monthExp . "/" . $dayExp . "/" . $yearExp);
 			}else{
-				//No expiration date set, just set something 20 years in the future
-				//$now = time();
-				$summary->expirationDate = 0;
+				//No expiration date set, leave it blank
+				$expirationInformation->expirationDate = 0;
 			}
 		}
 
-		return $summary;
+		return $expirationInformation;
 	}
 
 	public function updatePatronInfo($patron, $canUpdateContactInfo, $fromMasquerade): array {

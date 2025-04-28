@@ -1535,6 +1535,10 @@ class CatalogConnection {
 		return $summary;
 	}
 
+	public function getExpirationInformation(User $user) : ExpirationInformation {
+		return $this->driver->getExpirationInformation($user);
+	}
+
 	/**
 	 * @return bool
 	 */

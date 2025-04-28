@@ -1981,36 +1981,47 @@ class Evergreen extends AbstractIlsDriver {
 		//Get additional information
 		$authToken = $this->getAPIAuthToken($patron, true);
 		if ($authToken != null) {
-			$sessionData = $this->fetchSession($authToken);
-			if ($sessionData != null) {
-				$expireTime = $sessionData['expire_date'];
-				$expireTime = strtotime($expireTime);
-				$summary->expirationDate = $expireTime;
-				//TODO : Load total charge balance
-				//$summary->totalFines = $basicDataResponse->ChargeBalance;
+			//Get expiration information
+			$expirationInformation = $this->getExpirationInformation($patron);
+			$summary->expirationDate = $expirationInformation->expirationDate;
 
-				$evergreenUrl = $this->accountProfile->patronApiUrl . '/osrf-gateway-v1';
-				$headers = [
-					'Content-Type: application/x-www-form-urlencoded',
-				];
-				$this->apiCurlWrapper->addCustomHeaders($headers, false);
-				$request = 'service=open-ils.actor&method=open-ils.actor.user.fines.summary';
-				$request .= '&param=' . json_encode($authToken);
-				$request .= '&param=' . $patron->unique_ils_id;
-				$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request);
+			$evergreenUrl = $this->accountProfile->patronApiUrl . '/osrf-gateway-v1';
+			$headers = [
+				'Content-Type: application/x-www-form-urlencoded',
+			];
+			$this->apiCurlWrapper->addCustomHeaders($headers, false);
+			$request = 'service=open-ils.actor&method=open-ils.actor.user.fines.summary';
+			$request .= '&param=' . json_encode($authToken);
+			$request .= '&param=' . $patron->unique_ils_id;
+			$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request);
 
-				if ($this->apiCurlWrapper->getResponseCode() == 200) {
-					$apiResponse = json_decode($apiResponse);
-					if (isset($apiResponse->payload) && isset($apiResponse->payload[0]->__p)) {
-						/** @noinspection SpellCheckingInspection */
-						$moneySummary = $this->mapEvergreenFields($apiResponse->payload[0]->__p, $this->fetchIdl('mous'));
-						$summary->totalFines = $moneySummary['balance_owed'];
-					}
+			if ($this->apiCurlWrapper->getResponseCode() == 200) {
+				$apiResponse = json_decode($apiResponse);
+				if (isset($apiResponse->payload) && isset($apiResponse->payload[0]->__p)) {
+					/** @noinspection SpellCheckingInspection */
+					$moneySummary = $this->mapEvergreenFields($apiResponse->payload[0]->__p, $this->fetchIdl('mous'));
+					$summary->totalFines = $moneySummary['balance_owed'];
 				}
 			}
 		}
 
 		return $summary;
+	}
+
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		$expirationInformation = new ExpirationInformation();
+
+		$authToken = $this->getAPIAuthToken($patron, true);
+		if ($authToken != null) {
+			$sessionData = $this->fetchSession($authToken);
+			if ($sessionData != null) {
+				$expireTime = $sessionData['expire_date'];
+				$expireTime = strtotime($expireTime);
+				$expirationInformation->expirationDate = $expireTime;
+			}
+		}
+
+		return $expirationInformation;
 	}
 
 	public function isPromptForHoldNotifications(): bool {

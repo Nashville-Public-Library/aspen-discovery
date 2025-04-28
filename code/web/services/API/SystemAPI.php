@@ -256,6 +256,20 @@ class SystemAPI extends AbstractAPI {
 					$settings['autoPickUserHomeLocation'] = $app->autoPickUserHomeLocation;
 				}
 
+				//Check to see if we should use custom loading text
+
+				$settings['loadingMessageType'] = $app->loadingMessageType;
+				if ($app->loadingMessageType == 2) {
+					//Get a loading message at random
+					$loadingMessage = new LiDALoadingMessage();
+					$loadingMessage->brandedAppSettingId = $app->id;
+					$loadingMessage->orderBy('rand()');
+					$loadingMessage->limit(0, 1);
+					if ($loadingMessage->find(true)) {
+						$settings['loadingMessage'] = $loadingMessage->message;
+					}
+				}
+
 				return [
 					'success' => true,
 					'settings' => $settings,
@@ -762,7 +776,10 @@ class SystemAPI extends AbstractAPI {
 		];
 	}
 
-	function getBulkTranslations() {
+	/** @noinspection PhpUnused */
+	function getBulkTranslations(): array {
+		global $timer;
+		global $logger;
 		if (isset($_REQUEST['language'])) {
 			$language = new Language();
 			$language->code = $_REQUEST['language'];
@@ -778,6 +795,7 @@ class SystemAPI extends AbstractAPI {
 			if (file_get_contents('php://input')) {
 				$data = file_get_contents('php://input');
 				$terms = json_decode($data, true);
+				$logger->log("Preparing to translate " . count($terms['terms']), Logger::LOG_DEBUG);
 				$translatedTerms = [];
 				/** @var Translator $translator */ global $translator;
 				foreach ($terms['terms'] as $key => $term) {
@@ -786,6 +804,7 @@ class SystemAPI extends AbstractAPI {
 					$translatedTerm = strip_tags($translatedTerm);
 					$translatedTerms[$key] = trim($translatedTerm);
 				}
+				$timer->logTime("Finished translating terms");
 				return [
 					'success' => true,
 					$_REQUEST['language'] => $translatedTerms,
@@ -804,7 +823,8 @@ class SystemAPI extends AbstractAPI {
 		}
 	}
 
-	function getLanguages() {
+	/** @noinspection PhpUnused */
+	function getLanguages() : array {
 		$validLanguages = [];
 		require_once ROOT_DIR . '/sys/Translation/Language.php';
 		$validLanguage = new Language();
@@ -1155,7 +1175,13 @@ class SystemAPI extends AbstractAPI {
 		}
 	}
 
-	function getLibraryLinks() {
+	/**
+	 * Returns information about menu links for a library so that they can be displayed within Aspen LiDA and other
+	 * third party apps.
+	 *
+	 * @noinspection PhpUnused
+	 */
+	function getLibraryLinks() : array {
 		$user = $this->getUserForApiCall();
 		if ($user && !($user instanceof AspenError)) {
 			global $library;
