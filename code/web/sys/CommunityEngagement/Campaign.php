@@ -959,6 +959,8 @@ class Campaign extends DataObject {
                     $milestone->completedGoals = $milestoneProgress['completed'];
                     $milestone->totalGoals = CampaignMilestone::getMilestoneGoalCountByCampaign($campaignId, $milestoneId);
                     $milestone->progressData = $progressData;
+					$milestone->rewardGiven = CampaignMilestoneUsersProgress::getRewardGivenForMilestone($milestone->id, $userId, $campaign->id);
+
 
 					if ($milestone->completedGoals >= $milestone->totalGoals) {
 						$milestone->milestoneComplete = true;
@@ -982,6 +984,7 @@ class Campaign extends DataObject {
                 $userCampaign->campaignId = $campaignId;
                 $userCampaign->find();
                 while($userCampaign->fetch()) {
+					$campaign->campaignRewardGiven = (int)$userCampaign->rewardGiven;
 					$campaign->isComplete = $userCampaign->checkCompletionStatus();
                     if ($userCampaign->optInToCampaignLeaderboard === null) {
                         $campaign->optInToCampaignLeaderboard = $user->optInToAllCampaignLeaderboards;
