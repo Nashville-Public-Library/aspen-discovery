@@ -492,6 +492,7 @@ class SirsiDynixROA extends HorizonAPI {
 			}
 			$summary->totalFines = $finesVal;
 
+			//Don't call getExpirationInformation since we already have the data available.
 			if ($lookupMyAccountInfoResponse->fields->privilegeExpiresDate == null) {
 				$summary->expirationDate = 0;
 			} else {
@@ -500,6 +501,27 @@ class SirsiDynixROA extends HorizonAPI {
 		}
 
 		return $summary;
+	}
+
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		$expirationInformation = new ExpirationInformation();
+
+		$webServiceURL = $this->getWebServiceURL();
+		$includeFields = urlencode("privilegeExpiresDate");
+		$accountInfoLookupURL = $webServiceURL . '/user/patron/key/' . $patron->unique_ils_id . '?includeFields=' . $includeFields;
+
+		$sessionToken = $this->getSessionToken($patron);
+		$lookupMyAccountInfoResponse = $this->getWebServiceResponse('accountSummary', $accountInfoLookupURL, null, $sessionToken);
+
+		if ($lookupMyAccountInfoResponse && !isset($lookupMyAccountInfoResponse->messageList)) {
+			if ($lookupMyAccountInfoResponse->fields->privilegeExpiresDate == null) {
+				$expirationInformation->expirationDate = 0;
+			} else {
+				$expirationInformation->expirationDate = strtotime($lookupMyAccountInfoResponse->fields->privilegeExpiresDate);
+			}
+		}
+
+		return $expirationInformation;
 	}
 
 	private function getStaffSessionToken() {
