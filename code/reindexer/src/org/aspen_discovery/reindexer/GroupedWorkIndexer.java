@@ -1422,6 +1422,7 @@ public class GroupedWorkIndexer {
 				getSeriesMemberStmt.setString(1, groupedWork.getId());
 				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
 				HashMap<String, Integer> seriesInDb = new HashMap<>();
+				HashMap<String, Integer> seriesInProcess = new HashMap<>();
 				while (seriesMemberRS.next()) {
 					// Strip diacritics and switch to lowercase for comparing series names to minimize duplicates
 					String seriesTitle = seriesMemberRS.getString("groupedWorkSeriesTitle");
@@ -1431,6 +1432,7 @@ public class GroupedWorkIndexer {
 					}
 					String normalizedSeriesName = Normalizer.normalize(seriesTitle.toLowerCase(), Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
 					seriesInDb.put(normalizedSeriesName, seriesMemberRS.getInt("seriesId"));
+					seriesInProcess.put(normalizedSeriesName, seriesMemberRS.getInt("seriesId"));
 				}
 				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.keySet()) {
 					String[] series = seriesNameWithVolume.split("\\|");
@@ -1508,12 +1510,12 @@ public class GroupedWorkIndexer {
 						seriesRS.close();
 
 					} else {
-						seriesInDb.remove(normalizedSeriesName); // Remove since we have accounted for it
+						seriesInProcess.remove(normalizedSeriesName); // Remove since we have accounted for it
 					}
 				}
-				if (!seriesInDb.isEmpty()) {
+				if (!seriesInProcess.isEmpty()) {
 					// Remove entries from series_member table when this work is no longer part of the series
-					for (int seriesId : seriesInDb.values()) {
+					for (int seriesId : seriesInProcess.values()) {
 						deleteSeriesMemberStmt.setInt(1, seriesId);
 						deleteSeriesMemberStmt.setString(2, groupedWork.id);
 						int result = deleteSeriesMemberStmt.executeUpdate();
