@@ -52,18 +52,28 @@ class Polaris extends AbstractIlsDriver {
 		$basicDataResponse = $this->getBasicDataResponse($patron->getBarcode(), $patron->getPasswordOrPin(), UserAccount::isUserMasquerading());
 		if ($basicDataResponse != null) {
 			$summary->totalFines = $basicDataResponse->ChargeBalance;
-
-			$polarisUrl = "/PAPIService/REST/public/v1/1033/100/1/patron/{$patron->getBarcode()}/circulationblocks";
-			$circulateBlocksResponse = $this->getWebServiceResponse($polarisUrl, 'GET', Polaris::$accessTokensForUsers[$patron->getBarcode()]['accessToken'], false, UserAccount::isUserMasquerading());
-			ExternalRequestLogEntry::logRequest('polaris.getCirculateBlocks', 'GET', $this->getWebServiceURL() . $polarisUrl, $this->apiCurlWrapper->getHeaders(), false, $this->lastResponseCode, $circulateBlocksResponse, []);
-			if ($circulateBlocksResponse && $this->lastResponseCode == 200) {
-				$circulateBlocksResponse = json_decode($circulateBlocksResponse);
-				$expireTime = $this->parsePolarisDate($circulateBlocksResponse->ExpirationDate);
-				$summary->expirationDate = $expireTime;
-			}
 		}
 
+		//Get expiration information
+		$expirationInformation = $this->getExpirationInformation($patron);
+		$summary->expirationDate = $expirationInformation->expirationDate;
+
 		return $summary;
+	}
+
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		$expirationInformation = new ExpirationInformation();
+
+		$polarisUrl = "/PAPIService/REST/public/v1/1033/100/1/patron/{$patron->getBarcode()}/circulationblocks";
+		$circulateBlocksResponse = $this->getWebServiceResponse($polarisUrl, 'GET', Polaris::$accessTokensForUsers[$patron->getBarcode()]['accessToken'], false, UserAccount::isUserMasquerading());
+		ExternalRequestLogEntry::logRequest('polaris.getCirculateBlocks', 'GET', $this->getWebServiceURL() . $polarisUrl, $this->apiCurlWrapper->getHeaders(), false, $this->lastResponseCode, $circulateBlocksResponse, []);
+		if ($circulateBlocksResponse && $this->lastResponseCode == 200) {
+			$circulateBlocksResponse = json_decode($circulateBlocksResponse);
+			$expireTime = $this->parsePolarisDate($circulateBlocksResponse->ExpirationDate);
+			$expirationInformation->expirationDate = $expireTime;
+		}
+
+		return $expirationInformation;
 	}
 
 	public function getILSMessages(User $user) {

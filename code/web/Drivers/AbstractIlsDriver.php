@@ -222,6 +222,10 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return $summary;
 	}
 
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		return new ExpirationInformation();
+	}
+
 	/**
 	 * @return bool
 	 */
