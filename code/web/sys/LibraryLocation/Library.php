@@ -67,6 +67,7 @@ class Library extends DataObject {
 	public $headerText;
 	public $footerText;
 	public $systemMessage;
+	public $highlightCommunityEngagement;
 
 	//Explore More Bar Display
 	public $displayExploreMoreBarInSummon;
@@ -154,6 +155,7 @@ class Library extends DataObject {
 	public $invoiceCloudSettingId;
 	public $deluxeCertifiedPaymentsSettingId;
 	public $paypalPayflowSettingId;
+	public $heyCentricSettingId;
 	public $ncrSettingId;
 	public $usernameField;
 
@@ -172,6 +174,7 @@ class Library extends DataObject {
 		$hooplaScopeId;
 	public /** @noinspection PhpUnused */
 		$axis360ScopeId;
+	public $palaceProjectLibraryId;
 	public $palaceProjectScopeId;
 	public /** @noinspection PhpUnused */
 		$systemsToRepeatIn;
@@ -332,7 +335,9 @@ class Library extends DataObject {
 
 	public $allowLinkedAccounts;
 	public $allowFilteringOfLinkedAccountsInHolds;
+	public $allowFilteringOfLinkedAccountsInCheckouts;
 	public $allowSelectingHoldsToExport;
+	public $allowSelectingCheckoutsToExport;
 
 
 	public $maxFinesToAllowAccountUpdates;
@@ -447,6 +452,11 @@ class Library extends DataObject {
 	// ILS privacy consent
 	public $ilsConsentEnabled;
 
+	//Community Engagement
+	public $campaignLeaderboardDisplay;
+	public $sendStaffEmailOnCampaignCompletion;
+	public $campaignCompletionNewEmail;
+
 	//SHAREit
 	public $repeatInShareIt;
 	public $shareItCid;
@@ -503,7 +513,8 @@ class Library extends DataObject {
 			'deluxeCertifiedPaymentsSettingId',
 			'paypalPayflowSettingId',
 			'squareSettingId',
-			'sripteSettingId'
+			'sripteSettingId',
+			'heyCentricSettingId'
 		];
 	}
 
@@ -767,6 +778,16 @@ class Library extends DataObject {
 		$ncrSettings[-1] = 'none';
 		while ($ncrSetting->fetch()) {
 			$ncrSettings[$ncrSetting->id] = $ncrSetting->name;
+		}
+
+		require_once ROOT_DIR . '/sys/ECommerce/HeyCentricSetting.php';
+		$heyCentricSetting = new HeyCentricSetting();
+		$heyCentricSetting->orderBy('name');
+		$heyCentricSettings = [];
+		$heyCentricSetting->find();
+		$heyCentricSettings[-1] = 'none';
+		while ($heyCentricSetting->fetch()) {
+			$heyCentricSettings[$heyCentricSetting->id] = $heyCentricSetting->name;
 		}
 
 		require_once ROOT_DIR . '/sys/Hoopla/HooplaScope.php';
@@ -1050,6 +1071,15 @@ class Library extends DataObject {
 						'description' => 'Whether to display the language and display settings in the page header',
 						'hideInLists' => true,
 						'default' => true,
+						'permissions' => ['Library Theme Configuration'],
+					],
+					'highlightCommunityEngagement' => [
+						'property' => 'highlightCommunityEngagement',
+						'type' => 'checkbox',
+						'label' => 'Highlight Campaign in Account Page',
+						'description' => 'Whether or not to add a box highlighting campaigns to the top of the account page.',
+						'hideInLists' => true,
+						'default' => false,
 						'permissions' => ['Library Theme Configuration'],
 					],
 					'themes' => [
@@ -1351,11 +1381,29 @@ class Library extends DataObject {
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],
 					],
+					'allowFilteringOfLinkedAccountsInCheckouts' => [
+						'property' => 'allowFilteringOfLinkedAccountsInCheckouts',
+						'type' => 'checkbox',
+						'label' => 'Allow Filtering of Linked Accounts in Check Out Titles',
+						'description' => 'Whether or not users can filter their checked out titles by linked accounts.',
+						'hideInLists' => true,
+						'default' => 0,
+						'permissions' => ['Library ILS Options'],
+					],
 					'allowSelectingHoldsToExport' => [
 						'property' => 'allowSelectingHoldsToExport',
 						'type' => 'checkbox',
 						'label' => 'Allow Ability To Export Only Selected Holds',
 						'description' => 'Whether or not users can export only selected holds.',
+						'hideInLists' => true,
+						'default' => 0,
+						'permissions' => ['Library ILS Options'],
+					],
+					'allowSelectingCheckoutsToExport' => [
+						'property' => 'allowSelectingCheckoutsToExport',
+						'type' => 'checkbox',
+						'label' => 'Allow Ability To Export Only Selected Checkouts',
+						'description' => 'Whether or not users can export only selected checkouts.',
 						'hideInLists' => true,
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],
@@ -2555,7 +2603,8 @@ class Library extends DataObject {
 							12 => 'Square',
 							13 => 'Stripe',
 							14 => 'NCR',
-							15 => 'SnapPay'
+							15 => 'SnapPay',
+							16 => 'HeyCentric'
 						],
 						'description' => 'Whether or not users should be allowed to pay fines',
 						'hideInLists' => true,
@@ -2747,6 +2796,15 @@ class Library extends DataObject {
 						'values' => $ncrSettings,
 						'label' => 'NCR Settings',
 						'description' => 'The NCR settings to use',
+						'hideInLists' => true,
+						'default' => -1,
+					],
+					'heyCentricSettingId' => [
+						'property' => 'heyCentricSettingId',
+						'type' => 'enum',
+						'values' => $heyCentricSettings,
+						'label' => 'HeyCentric Settings',
+						'description' => 'The HeyCentric settings to use',
 						'hideInLists' => true,
 						'default' => -1,
 					],
@@ -3686,6 +3744,43 @@ class Library extends DataObject {
 					],
 				]
 			],
+			'communityEngagement' => [
+				'property' => 'communityEngagement',
+				'type' => 'section',
+				'label' => 'Community Engagement',
+				'hideInLists' => true,
+				'renderAsHeading' => true,
+				'expandByDefault' => false,
+				'properties' => [
+					'campaignLeaderboardDisplay' => [
+						'property' => 'campaignLeaderboardDisplay',
+						'type' => 'enum',
+						'label' => 'Campaign Leaderbaord Display',
+						'description' => 'Whether to display the rank on the leaderboard by branch or by user',
+						'values' => [
+							'displayBranch' => 'Display Branch',
+							'displayUser' => 'Display User',
+						],
+						'default' => 'displayBranch',
+					],
+					'sendStaffEmailOnCampaignCompletion' => [
+						'property' => 'sendStaffEmailOnCampaignCompletion',
+						'type' => 'checkbox',
+						'label' => 'Send email to library when a user completes a campaign',
+						'description' => 'Whether or not an email should be sent out when a user has completed a campaign.',
+						'hideInLists' => true,
+						'default' => 0,
+					],
+					'campaignCompletionNewEmail' => [
+						'property' => 'campaignCompletionNewEmail',
+						'type' => 'text',
+						'label' => 'Email to receive notifications when patrons complete campaigns',
+						'description' => 'The email address that will receive emails when a patron completes a campaign.',
+						'maxLength' => 125,
+						'hideInLists' => true,
+					],
+				],
+			],
 			'messagingSection' => [
 				'property' => 'messagingSection',
 				'type' => 'section',
@@ -3852,6 +3947,14 @@ class Library extends DataObject {
 				'renderAsHeading' => true,
 				'permissions' => ['Library Records included in Catalog'],
 				'properties' => [
+					'palaceProjectLibraryId' => [
+						'property' => 'palaceProjectLibraryId',
+						'type' => 'text',
+						'label' => 'Palace Project Library ID',
+						'description' => 'The ID Number Palace Project uses for this library',
+						'hideInLists' => true,
+						'forcesReindex' => true,
+					],
 					'palaceProjectScopeId' => [
 						'property' => 'palaceProjectScopeId',
 						'type' => 'enum',
@@ -5418,10 +5521,10 @@ class Library extends DataObject {
 	}
 
 	/**
-	 * @return array|null
+	 * @return GeneralSetting|null
 	 */
 	public function getLiDAGeneralSettings() {
-		$settings = [];
+		$settings = null;
 
 		$setting = new GeneralSetting();
 		$setting->id = $this->lidaGeneralSettingId;
@@ -5491,41 +5594,38 @@ class Library extends DataObject {
 		$apiInfo['notifications'] = $this->getLiDANotifications();
 		$allThemes = $this->getThemes();
 		if (count($allThemes) > 0) {
-			$libraryTheme = new LibraryTheme();
-			$libraryTheme->libraryId = $this->libraryId;
-			$libraryTheme->orderBy('weight');
-			if ($libraryTheme->find(true)) {
-				$theme = new Theme();
-				$theme->id = $libraryTheme->themeId;
-				if ($theme->find(true)) {
-					$theme->applyDefaults();
-					if ($theme->logoName) {
-						$apiInfo['logo'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoName;
-					}
-					if ($theme->favicon) {
-						$apiInfo['favicon'] = $configArray['Site']['url'] . '/files/original/' . $theme->favicon;
-					}
-					if ($theme->logoApp) {
-						$apiInfo['logoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoApp;
-					}
-					if ($theme->headerLogoApp) {
-						$apiInfo['headerLogoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
-						[
-							$width,
-							$height,
-						] = @getimagesize(ROOT_DIR . '/files/original/' . $theme->headerLogoApp);
-						$apiInfo['headerLogoWidth'] = $width;
-						$apiInfo['headerLogoHeight'] = $height;
-					}
-					$apiInfo['headerLogoAlignmentApp'] = $theme->headerLogoAlignmentApp;
-					$apiInfo['headerLogoBackgroundColorApp'] = $theme->headerLogoBackgroundColorApp;
-					$apiInfo['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
-					$apiInfo['primaryForegroundColor'] = $theme->primaryForegroundColor;
-					$apiInfo['secondaryBackgroundColor'] = $theme->secondaryBackgroundColor;
-					$apiInfo['secondaryForegroundColor'] = $theme->secondaryForegroundColor;
-					$apiInfo['tertiaryBackgroundColor'] = $theme->tertiaryBackgroundColor;
-					$apiInfo['tertiaryForegroundColor'] = $theme->tertiaryForegroundColor;
+			$libraryTheme = reset($allThemes);
+
+			$theme = new Theme();
+			$theme->id = $libraryTheme->themeId;
+			if ($theme->find(true)) {
+				$theme->applyDefaults();
+				if ($theme->logoName) {
+					$apiInfo['logo'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoName;
 				}
+				if ($theme->favicon) {
+					$apiInfo['favicon'] = $configArray['Site']['url'] . '/files/original/' . $theme->favicon;
+				}
+				if ($theme->logoApp) {
+					$apiInfo['logoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->logoApp;
+				}
+				if ($theme->headerLogoApp) {
+					$apiInfo['headerLogoApp'] = $configArray['Site']['url'] . '/files/original/' . $theme->headerLogoApp;
+					[
+						$width,
+						$height,
+					] = @getimagesize(ROOT_DIR . '/files/original/' . $theme->headerLogoApp);
+					$apiInfo['headerLogoWidth'] = $width;
+					$apiInfo['headerLogoHeight'] = $height;
+				}
+				$apiInfo['headerLogoAlignmentApp'] = $theme->headerLogoAlignmentApp;
+				$apiInfo['headerLogoBackgroundColorApp'] = $theme->headerLogoBackgroundColorApp;
+				$apiInfo['primaryBackgroundColor'] = $theme->primaryBackgroundColor;
+				$apiInfo['primaryForegroundColor'] = $theme->primaryForegroundColor;
+				$apiInfo['secondaryBackgroundColor'] = $theme->secondaryBackgroundColor;
+				$apiInfo['secondaryForegroundColor'] = $theme->secondaryForegroundColor;
+				$apiInfo['tertiaryBackgroundColor'] = $theme->tertiaryBackgroundColor;
+				$apiInfo['tertiaryForegroundColor'] = $theme->tertiaryForegroundColor;
 			}
 		}
 		$locations = $this->getLocations();
@@ -5596,18 +5696,24 @@ class Library extends DataObject {
 		$apiInfo['showFines'] = $configArray['Catalog']['showFines'];
 
 		$generalSettings = $this->getLiDAGeneralSettings();
-		$apiInfo['generalSettings']['autoRotateCard'] = $generalSettings->autoRotateCard ?? 0;
-		$apiInfo['enableSelfRegistrationInApp'] = $generalSettings->enableSelfRegistration ?? 0;
-		$apiInfo['showMoreInfoBtn'] = (int)$generalSettings->showMoreInfoBtn ?? 0;
+		if (is_null($generalSettings)) {
+			$apiInfo['generalSettings']['autoRotateCard'] = 0;
+			$apiInfo['enableSelfRegistrationInApp'] = 0;
+			$apiInfo['showMoreInfoBtn'] = 0;
+		} else {
+			$apiInfo['generalSettings']['autoRotateCard'] = $generalSettings->autoRotateCard ?? 0;
+			$apiInfo['enableSelfRegistrationInApp'] = $generalSettings->enableSelfRegistration ?? 0;
+			$apiInfo['showMoreInfoBtn'] = (int)$generalSettings->showMoreInfoBtn ?? 0;
+		}
 
 		$apiInfo['hasEventSettings'] = $this->hasEventSettings();
 
 		$apiInfo['palaceProjectInstructions'] = null;
-		require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectScope.php';
-		require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectSetting.php';
-		$scope = new PalaceProjectScope();
-		$scope->id = $this->palaceProjectScopeId;
 		if ($this->palaceProjectScopeId > 0) {
+			require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectScope.php';
+			require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectSetting.php';
+			$scope = new PalaceProjectScope();
+			$scope->id = $this->palaceProjectScopeId;
 			if ($scope->find(true)) {
 				$settings = new PalaceProjectSetting();
 				$settings->id = $scope->settingId;

@@ -222,6 +222,10 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return $summary;
 	}
 
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		return new ExpirationInformation();
+	}
+
 	/**
 	 * @return bool
 	 */
@@ -920,6 +924,10 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 	}
 
 	public function hasIlsConsentSupport(): bool {
+		return false;
+	}
+
+	public function hasAdditionalFineFields(): bool {
 		return false;
 	}
 }

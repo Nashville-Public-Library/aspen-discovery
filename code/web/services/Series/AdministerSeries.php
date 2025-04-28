@@ -23,6 +23,7 @@ class Series_AdministerSeries extends ObjectEditor {
 
 	function getAllObjects($page, $recordsPerPage): array {
 		$object = new Series();
+		$object->deleted = 0;
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
 		$this->applyFilters($object);
 		$object->orderBy($this->getSort());

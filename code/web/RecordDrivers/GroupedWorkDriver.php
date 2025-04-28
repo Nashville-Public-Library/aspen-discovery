@@ -578,41 +578,33 @@ class GroupedWorkDriver extends IndexRecordDriver {
 
 	public function getBrowseResult() {
 		global $interface;
-		$item = [];
 		$id = $this->getUniqueID();
 		$interface->assign('summId', $id);
-		$item['summId'] = $id;
 
 		$url = $this->getMoreInfoLinkUrl();
 
 		$interface->assign('summUrl', $url);
-		$item['summUrl'] = $url;
 
 		$shortTitle = $this->getShortTitle();
 		if (empty($shortTitle)) {
 			$interface->assign('summTitle', $this->getTitle());
 			$interface->assign('summSubTitle', '');
-			$item['summTitle'] = $this->getTitle();
-			$item['summSubTitle'] = '';
+			$interface->assign('summFullTitle', $this->getTitle());
 		} else {
 			$interface->assign('summTitle', $this->getShortTitle());
 			$interface->assign('summSubTitle', $this->getSubtitle());
-			$item['summTitle'] = $this->getShortTitle();
-			$item['summSubTitle'] = $this->getSubtitle();
+			$interface->assign('summFullTitle', $this->getTitle());
 		}
 		$interface->assign('summAuthor', $this->getPrimaryAuthor());
-		$item['summAuthor'] = $this->getPrimaryAuthor();
 
 		//Get Rating
 		$interface->assign('ratingData', $this->getRatingData());
-		$item['ratingData'] = $this->getRatingData();
 
 		//Get cover image size
 		global $interface;
 		$appliedTheme = $interface->getAppliedTheme();
 
 		$interface->assign('bookCoverUrl', $this->getBookcoverUrl('small'));
-		$item['bookCoverUrl'] = $this->getBookcoverUrl('large');
 		$accessibleBrowseCategories = 0;
 
 		if ($appliedTheme != null) {
@@ -643,12 +635,6 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$interface->assign('browseMode', $browseMode); // sets the template switch that is created in GroupedWork object
 
 		$interface->assign('browseCategoryRatingsMode', $browseCategoryRatingsMode);
-
-		$item['browseMode'] = $browseMode;
-		$item['browseCategoryRatingsMode'] = $browseCategoryRatingsMode;
-		/*if($accessibleBrowseCategories == 1) {
-			return $item;
-		}*/
 
 		return 'RecordDrivers/GroupedWork/browse_result.tpl';
 	}
@@ -2238,7 +2224,8 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
 				$seriesMember->excluded = 0;
 				$seriesInfo = null;
-				if ($seriesMember->find(true)) {
+				$seriesMember->find();
+				if ($seriesMember->fetch()) {
 					$series = $seriesMember->getSeries();
 					if ($series != null) {
 						$seriesInfo = [
@@ -2250,7 +2237,17 @@ class GroupedWorkDriver extends IndexRecordDriver {
 						];
 					}
 				}
-				return $seriesInfo;
+				while ($seriesMember->fetch()) {
+					$series = $seriesMember->getSeries();
+					$seriesInfo['additionalSeries'][] = [
+						'seriesTitle' => $series->displayName,
+						'seriesId' => $series->id,
+						'volume' => $seriesMember->volume,
+						'fromNovelist' => false,
+						'fromSeriesIndex' => true
+					];
+				}
+				$this->seriesData = $seriesInfo;
 			}else{
 				//Get a list of isbns from the record and existing display info if any
 				$relatedIsbns = $this->getISBNs();

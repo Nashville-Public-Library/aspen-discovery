@@ -52,8 +52,8 @@ public class GroupedWorkIndexer {
 	private PalaceProjectProcessor palaceProjectProcessor;
 	private final HashMap<String, HashMap<String, String>> translationMaps = new HashMap<>();
 	private final HashMap<String, LexileTitle> lexileInformation = new HashMap<>();
-	protected static final HashSet<String> hideSubjects = new HashSet<>();
-	protected static final HashSet<String> hideSeries = new HashSet<>();
+	protected final HashSet<String> hideSubjects = new HashSet<>();
+	protected final HashSet<String> hideSeries = new HashSet<>();
 
 	private PreparedStatement getRatingStmt;
 	private PreparedStatement getNovelistStmt;
@@ -67,8 +67,8 @@ public class GroupedWorkIndexer {
 
 	private final Connection dbConn;
 
-	static int availableAtBoostValue = 50;
-	static int ownedByBoostValue = 10;
+	int availableAtBoostValue = 50;
+	int ownedByBoostValue = 10;
 
 	private final boolean fullReindex;
 	private final boolean clearIndex;
@@ -1443,6 +1443,11 @@ public class GroupedWorkIndexer {
 						long seriesId;
 						if (seriesRS.next()) { // Should only be one match
 							seriesId = seriesRS.getLong("id");
+							// Check if the series has been deleted
+							int seriesDeleted = seriesRS.getInt("deleted");
+							if (seriesDeleted == 1) {
+								continue;
+							}
 							// Check to see if we need to add additional authors
 							String authors = seriesRS.getString("author");
 							String newAuthor = groupedWork.getPrimaryAuthor();
@@ -1458,7 +1463,7 @@ public class GroupedWorkIndexer {
 									} else {
 										authors = authors + "|" + newAuthor;
 									}
-									updateSeriesAuthor.setString(1, authors);
+									updateSeriesAuthor.setString(1, AspenStringUtils.trimTo(500, authors));
 									updateSeriesAuthor.executeUpdate();
 								}
 							}
@@ -1471,7 +1476,7 @@ public class GroupedWorkIndexer {
 							addSeriesStmt.setString(2, groupedWork.getTargetAudiencesAsString());
 							addSeriesStmt.setLong(3, timeNow);
 							addSeriesStmt.setLong(4, timeNow);
-							addSeriesStmt.setString(5, groupedWork.getPrimaryAuthor());
+							addSeriesStmt.setString(5, AspenStringUtils.trimTo(500, groupedWork.getPrimaryAuthor()));
 							addSeriesStmt.executeUpdate();
 							ResultSet generatedKeys = addSeriesStmt.getGeneratedKeys();
 							if (generatedKeys.next()) {

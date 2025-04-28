@@ -14,6 +14,7 @@ class GroupedWork_Home extends Action {
 
 		$id = strip_tags($_REQUEST['id']);
 		$_SESSION['returnToAction'] = $id;
+		$_SESSION['returnToModule'] = 'GroupedWork';
 
 		require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 		$this->recordDriver = new GroupedWorkDriver($id);

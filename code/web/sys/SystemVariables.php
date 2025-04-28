@@ -38,6 +38,8 @@ class SystemVariables extends DataObject {
 	public $disableIpSpammyControl;
 	public $monitorAntivirus;
 	public $useOriginalCoverUrls;
+	public $lidaGitHubRepository;
+	public $numBoundlessSettingsToProcessInParallel;
 
 
 	static function getObjectStructure($context = ''): array {
@@ -61,6 +63,13 @@ class SystemVariables extends DataObject {
 				'label' => 'Community Content URL',
 				'description' => 'URL of the community content server',
 				'maxLength' => 128,
+			],
+			'lidaGitHubRepository' => [
+				'property' => 'lidaGitHubRepository',
+				'type' => 'url',
+				'label' => 'LiDA GitHub Repository URL',
+				'description' => 'URL of the GitHub repository where Aspen LiDA is deployed from',
+				'maxLength' => 255,
 			],
 			'errorEmail' => [
 				'property' => 'errorEmail',
@@ -192,6 +201,13 @@ class SystemVariables extends DataObject {
 						'label' => 'Wait after delete commit',
 						'description' => 'Whether or not to wait for Solr to finish processing the commit before deleting more records',
 						'default' => false,
+					],
+					'numBoundlessSettingsToProcessInParallel' => [
+						'property' => 'numBoundlessSettingsToProcessInParallel',
+						'type' => 'integer',
+						'label' => 'Number of Boundless Settings to process in parallel',
+						'description' => 'Allows multiple Boundless Settings to be processed in parallel to improve the speed of indexing, but this must be balanced against the performance of your server.',
+						'default' => 1,
 					]
 				],
 			],
@@ -357,6 +373,11 @@ class SystemVariables extends DataObject {
 			$objectStructure['indexingSection']['properties']['searchVersion']['type'] = 'hidden';
 		}
 
+		global $enabledModules;
+		if (!array_key_exists('Axis 360', $enabledModules)) {
+			unset($objectStructure['indexingSection']['properties']['numBoundlessSettingsToProcessInParallel']);
+		}
+
 		return $objectStructure;
 	}
 
@@ -395,6 +416,24 @@ class SystemVariables extends DataObject {
 			}
 		}
 		return SystemVariables::$_systemVariables;
+	}
+
+	public function getCurrencySymbol() {
+		$currencyCode = 'USD';
+		$systemVariables = SystemVariables::getSystemVariables();
+		if (!empty($systemVariables->currencyCode)) {
+			$currencyCode = $systemVariables->currencyCode;
+		}
+		if ($currencyCode == 'USD') {
+			$currencySymbol = '$';
+		} elseif ($currencyCode == 'EUR') {
+			$currencySymbol = '€';
+		} elseif ($currencyCode == 'CAD') {
+			$currencySymbol = '$';
+		} elseif ($currencyCode == 'GBP') {
+			$currencySymbol = '£';
+		}
+		return $currencySymbol;
 	}
 
 	public function update($context = '') {
