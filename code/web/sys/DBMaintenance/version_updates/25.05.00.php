@@ -104,6 +104,26 @@ function getUpdates25_05_00(): array {
 			]
 		],//show_patron_type_on_library_card
 
+		// Laura Escamilla - ByWater Solutions
+
+               'blueskyLink' => [
+                      'title' => 'Bluesky Link', 
+                      'description' => 'The URL to Bluesky (leave blank if the library does not have a Bluesky account)',
+                      'continueOnError' => true,
+                      'sql' => [
+                               "ALTER TABLE library ADD COLUMN blueskyLink VARCHAR(255)",
+                               ], 
+                ], // blueskyLink
+
+               'threadsLink' => [
+                      'title' => 'Threads Link',
+                      'description' => 'The URL to Threads (leave blank if the library does not have a Threads account)',
+                      'continueOnError' => true,
+                      'sql' => [
+                               "ALTER TABLE library ADD COLUMN threadsLink VARCHAR(255)",
+                               ],
+                ], // threadsLink
+
 		//alexander - Open Fifth
 		'allow_filtering_of_linked_users_in_checkouts' => [
 			'title' => 'Allow Filtering of Linked Users in Checkouts',

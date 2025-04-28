@@ -75,6 +75,12 @@
 					{if !empty($tiktokLink)}
 						<a href="{$tiktokLink}" class="connect-icon" target="_blank" title="{translate text="Follow us on TikTok" inAttribute=true isPublicFacing=true}" aria-label="{translate text="Follow us on TikTok" inAttribute=true isPublicFacing=true} ({translate text="opens in a new window" isPublicFacing=true inAttribute=true})"><i class='fab fa-tiktok fa-lg' role="presentation"></i></a>
 					{/if}
+                                        {if !empty($blueskyLink)}
+                                                <a href="{$blueskyLink}" class="connect-icon" target="_blank" title="{translate text="Follow us on BlueSky" inAttribute= isPublicFacing=true}" aria-label="{translate text="Follow us on BlueSky" inAttribute=true isPublicFacing=true} ({translate text="opens in a new window" isPublicFacing=true inAttribute=true})"><i class='fab fa-bluesky fa-lg' role="presentation"></i></a>
+                                        {/if}
+                                        {if !empty($threadsLink)}
+                                                <a href="{threadsLink)}" class="connect-icon" target="_blank" title="{translate text="Follow us on Threads" inAttribute= isPublicFacing=true}" aria-label="{translate text="Follow us on Threads" inAttribute=true isPublicFacing=true} ({translate text="opens in a new window" isPublicFacing=true inAttribute=true})"><i class='fab fa-threads fa-lg' role="presentation"></i></a>
+                                        {/if}
 					{if !empty($generalContactLink)}
 						<a href="{$generalContactLink}" class="connect-icon" target="_blank" title="{translate text="Contact Us" inAttribute=true isPublicFacing=true}" aria-label="{translate text="Contact Us" inAttribute=true isPublicFacing=true} ({translate text="opens in a new window" isPublicFacing=true inAttribute=true})"><i class='fas fa-envelope-open fa-lg' role="presentation"></i></a>
 					{/if}

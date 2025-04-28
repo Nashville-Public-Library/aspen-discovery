@@ -274,6 +274,8 @@ class Library extends DataObject {
 	public $pinterestLink;
 	public $goodreadsLink;
 	public $tiktokLink;
+	public $blueskyLink;
+	public $threadsLink;
 	public $generalContactLink;
 	public $contactEmail;
 
@@ -1226,6 +1228,24 @@ class Library extends DataObject {
 						'type' => 'text',
 						'label' => 'TikTok Link URL',
 						'description' => 'The URL to TikTok (leave blank if the library does not have a TikTok account)',
+						'size' => '40',
+						'maxLength' => 255,
+						'hideInLists' => true,
+					],
+					'blueskyLink' => [
+						'property' => 'blueskyLink',
+						'type' => 'text',
+						'label' => 'BlueSky Link URL',
+						'description' => 'The URL to BlueSky (leave blank if the library does not have a BlueSky account)',
+						'size' => '40',
+						'maxLength' => 255,
+						'hideInLists' => true,
+					],
+					'threadsLink' => [
+						'property' => 'threadsLink',
+						'type' => 'text',
+						'label' => 'Threads Link URL',
+						'description' => 'The URL to Threads (leave blank if the library does not have a Threads account)',
 						'size' => '40',
 						'maxLength' => 255,
 						'hideInLists' => true,
