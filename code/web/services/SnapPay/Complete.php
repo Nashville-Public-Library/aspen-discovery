@@ -21,6 +21,14 @@ class SnapPay_Complete extends Action {
 			$mailer = new Mailer();
 			$emailNotificationsAddresses = $snapPaySetting->emailNotificationsAddresses;
 		}
+
+		// Catch the referring URL
+		$referringUrl = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'Unknown';
+		if (strpos($referringUrl, 'https://www.snappayglobal.com/Interop/HostedPaymentPage') === false && (strpos($referringUrl, 'https://stage.snappayglobal.com/Interop/HostedPaymentPage') === false)) {
+			$error = true;
+			$message = 'Invalid referring URL. The request must originate from SnapPay.';
+		}
+
 		if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) {
 			// attempt to restore user session if it has been lost
 			if(!UserAccount::$isLoggedIn) { // if the user is NOT logged in, i.e., the session has been lost...
@@ -39,6 +47,31 @@ class SnapPay_Complete extends Action {
 					if (!empty($retrievedSessionData) && strpos($retrievedSessionData, 'activeUserId|i:' . $_POST['customerId']) !== false) {
 						$session->write($incomingSessionId, $retrievedSessionData);
 						$_SESSION = unserialize($retrievedSessionData);
+						// Destroy the current session
+						session_unset();
+						session_destroy();
+						// Set the new session ID and start the session
+						session_id($incomingSessionId);
+						session_start();
+						// Check if an aspen_session cookie exists
+						if (isset($_COOKIE['aspen_session']) && $_COOKIE['aspen_session'] !== $incomingSessionId) {
+							// Destroy the existing aspen_session cookie with a different value
+							setcookie('aspen_session', $_COOKIE['aspen_session'], [
+								'expires' => time() - 3600, // Set expiration to a past time
+								'path' => '/',            // Cookie is available across the entire domain
+								'secure' => true,        // Cookie is sent only over HTTPS
+								'httponly' => '',        // Cookie is accessible through HTTP(S) and JavaScript
+								'samesite' => ''        // Does NOT prevent the cookie from being sent with cross-site requests
+							]);
+						}
+						// Set the new aspen_session cookie
+						setcookie('aspen_session', $incomingSessionId, [ // Based on aspen-discovery\install\php.ini
+							'expires' => 0, 		// Session cookie, ends when browser closes
+							'path' => '/',			// Cookie is available across the entire domain
+							'secure' => true,		// Cookie is sent only over HTTPS
+							'httponly' => '',		// Cookie is accessible through HTTP(S) and JavaScript
+							'samesite' => ''		// Does NOT prevent the cookie from being sent with cross-site requests
+						]);
 					}
 				}
 
