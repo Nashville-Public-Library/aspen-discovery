@@ -57,6 +57,17 @@ function getUpdates25_05_00(): array {
 				"ALTER TABLE series_member ADD COLUMN deleted TINYINT(1) DEFAULT 0",
 			]
 		], //add_deleted_field_to_series_member
+		'remove_duplicate_series_titles' => [
+			'title' => 'Remove duplicate series titles',
+			'description' => 'Clean up series that have more than one copy of the same title unless it was manually added or has already been excluded',
+			'sql' => [
+				"DELETE t1 FROM series_member t1 INNER JOIN series_member t2
+				WHERE t1.groupedWorkPermanentId = t2.groupedWorkPermanentId	AND t1.seriesId = t2.seriesId
+				AND t1.userAdded = 0 AND t1.excluded = 0
+				AND t2.userAdded = 0 AND t2.excluded = 0
+				AND t1.id > t2.id;",
+			]
+		],
 
 		//kirstien - Grove
 
