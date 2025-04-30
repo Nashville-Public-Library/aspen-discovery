@@ -694,6 +694,9 @@ public class GroupedWorkIndexer {
 			removeRecordsForWorkStmt.setLong(1, groupedWorkId);
 			removeRecordsForWorkStmt.executeUpdate();
 
+			//Remove from any Series
+			removeSeriesForWork(permanentId);
+
 		}catch (SolrServerException sse) {
 			logEntry.incErrors("Solr Exception deleting work from index, quitting to be safe", sse);
 			logEntry.setFinished();
@@ -1534,6 +1537,30 @@ public class GroupedWorkIndexer {
 			}
 		} catch (Exception e) {
 			logEntry.incErrors("Unable to update series data for grouped work " + groupedWork.getId(), e);
+		}
+	}
+
+	private void removeSeriesForWork(String groupedWorkId) {
+		try {
+			if (seriesModuleEnabled) {
+				getSeriesMemberStmt.setString(1, groupedWorkId);
+				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
+				long seriesId;
+				while (seriesMemberRS.next()) {
+					seriesId = seriesMemberRS.getLong("seriesId");
+					deleteSeriesMemberStmt.setLong(1, seriesId);
+					deleteSeriesMemberStmt.setString(2, groupedWorkId);
+					int result = deleteSeriesMemberStmt.executeUpdate();
+					// Also delete the series if it no longer has any members
+					if (result != 0) {
+						deleteSeriesStmt.setLong(1, seriesId); // Deletes if it only had 1 member (this work)
+						deleteSeriesStmt.executeUpdate();
+					}
+				}
+				seriesMemberRS.close();
+			}
+		} catch (Exception e) {
+			logEntry.incErrors("Unable to remove series data for grouped work " + groupedWorkId, e);
 		}
 	}
 
