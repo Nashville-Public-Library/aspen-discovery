@@ -531,11 +531,6 @@ class IPAddress extends DataObject {
 			$ip = trim($ipList[0]);
 		}
 
-		if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-			// If not a valid IP, return a default.
-			$ip = '0.0.0.0';
-		}
-
 		// Convert IPv6 localhost to IPv4 localhost for backward compatibility.
 		if ($ip == '::1') {
 			$ip = '127.0.0.1';
