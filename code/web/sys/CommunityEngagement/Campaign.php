@@ -67,6 +67,7 @@ class Campaign extends DataObject {
 				'property' => 'availableMilestones',
 				'type' => 'oneToMany',
 				'label' => 'Milestones',
+				'note' => 'Each milestone can only be used once per campaign',
 				'renderAsHeading' => true,
 				'description' => 'The Milestones to be linked to this campaign',
 				'keyThis' => 'campaignId',
@@ -649,12 +650,28 @@ class Campaign extends DataObject {
 		return $userCampaign->find(true);
 	}
 
-    public function saveMilestones() {
-        if (isset($this->_availableMilestones) && is_array($this->_availableMilestones)) {
-            $this->saveOneToManyOptions($this->_availableMilestones, 'campaignId');
-            unset($this->_availableMilestones);
-        }
-    }
+	public function saveMilestones() {
+		if (isset($this->_availableMilestones) && is_array($this->_availableMilestones)) {
+			$seen = [];
+			$filtered = [];
+	
+			foreach ($this->_availableMilestones as $milestoneData) {
+				$milestoneId = $milestoneData->milestoneId ?? null;
+	
+				if ($milestoneId && !isset($seen[$milestoneId])) {
+					$seen[$milestoneId] = true;
+					$filtered[] = $milestoneData;
+				}
+			}
+	
+			$this->saveOneToManyOptions($filtered, 'campaignId');
+			unset($this->_availableMilestones);
+		}
+	}
+	
+	
+	
+	
 
      /**
      * Return an overall leaderboard based on the number of milestones completed by each user across all campaigns.
