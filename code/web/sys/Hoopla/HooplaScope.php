@@ -9,6 +9,8 @@ class HooplaScope extends DataObject {
 	public $settingId;
 	public /** @noinspection PhpUnused */
 		$excludeTitlesWithCopiesFromOtherVendors;
+	public $includeInstant;
+	public $includeFlex;
 	public /** @noinspection PhpUnused */
 		$includeEBooks;
 	public /** @noinspection PhpUnused */
@@ -95,6 +97,22 @@ class HooplaScope extends DataObject {
 				],
 				'label' => 'Exclude Records With Copies from other eContent Vendors (OverDrive, cloudLibrary, Boundless, etc.)',
 				'description' => 'Whether or not records in other collections should be included',
+				'default' => 0,
+				'forcesReindex' => true,
+			],
+			'includeInstant' => [
+				'property' => 'includeInstant',
+				'type' => 'checkbox',
+				'label' => 'Include Instant',
+				'description' => 'Whether or not Instant are included',
+				'default' => 1,
+				'forcesReindex' => true,
+			],
+			'includeFlex' => [
+				'property' => 'includeFlex',
+				'type' => 'checkbox',
+				'label' => 'Include Flex',
+				'description' => 'Whether or not Flex are included',
 				'default' => 0,
 				'forcesReindex' => true,
 			],

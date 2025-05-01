@@ -9,6 +9,8 @@ class HooplaDriver extends AbstractEContentDriver {
 	public $hooplaAPIBaseURL = 'hoopla-api-dev.hoopladigital.com';
 	private $accessToken;
 	private $hooplaEnabled = false;
+	private $hooplaInstantEnabled = false;
+	private $hooplaFlexEnabled = false;
 
 	public function __construct() {
 		require_once ROOT_DIR . '/sys/Hoopla/HooplaSetting.php';
@@ -16,7 +18,8 @@ class HooplaDriver extends AbstractEContentDriver {
 			$hooplaSettings = new HooplaSetting();
 			if ($hooplaSettings->find(true)) {
 				$this->hooplaEnabled = true;
-
+				$this->hooplaInstantEnabled = $hooplaSettings->hooplaInstantEnabled;
+				$this->hooplaFlexEnabled = $hooplaSettings->hooplaFlexEnabled;
 				$this->hooplaAPIBaseURL = $hooplaSettings->apiUrl;
 				$this->hooplaSettings = $hooplaSettings;
 				$this->getAccessToken();
@@ -82,23 +85,33 @@ class HooplaDriver extends AbstractEContentDriver {
 			curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
 		}
 		$json = curl_exec($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 		ExternalRequestLogEntry::logRequest($requestType, $customRequest, $url, $headers, '', curl_getinfo($ch, CURLINFO_HTTP_CODE), $json, $dataToSanitize);
 
-		if (!$json && curl_getinfo($ch, CURLINFO_HTTP_CODE) == 401) {
+		if (!$json && $httpCode == 401) {
 			$logger->log('401 Response in getAPIResponse. Attempting to renew access token', Logger::LOG_WARNING);
 			$this->renewAccessToken();
-			return false;
+			return [
+				'body' => false,
+				'httpCode' => $httpCode,
+			];
 		}
 
 		$logger->log("Hoopla API response\r\n$json", Logger::LOG_DEBUG);
 		curl_close($ch);
 
 		if ($json !== false && $json !== 'false') {
-			return json_decode($json);
+			return [
+				'body' => json_decode($json),
+				'httpCode' => $httpCode,
+			];
 		} else {
 			$logger->log('Curl problem in getAPIResponse', Logger::LOG_WARNING);
-			return false;
+			return [
+				'body' => false,
+				'httpCode' => $httpCode,
+			];
 		}
 	}
 
@@ -192,20 +205,50 @@ class HooplaDriver extends AbstractEContentDriver {
 			$summary->userId = $user->id;
 			$summary->source = 'hoopla';
 			$summary->resetCounters();
-			$getPatronStatusURL = $this->getHooplaBasePatronURL($user);
-			if (!empty($getPatronStatusURL)) {
-				$getPatronStatusURL .= '/status';
+			$patronURL = $this->getHooplaBasePatronURL($user);
+			if (!empty($patronURL)) {
+				// Get Patron Status (only has checkouts in status call)
+				$getPatronStatusURL = $patronURL . '/status';
 				$hooplaPatronStatusResponse = $this->getAPIResponse('hoopla.getAccountSummary', $getPatronStatusURL);
-				if (!empty($hooplaPatronStatusResponse) && !isset($hooplaPatronStatusResponse->message)) {
-					$this->hooplaPatronStatuses[$user->id] = $hooplaPatronStatusResponse;
+				if ($hooplaPatronStatusResponse['httpCode'] == 200 && !empty($hooplaPatronStatusResponse['body'])) {
+					$this->hooplaPatronStatuses[$user->id] = $hooplaPatronStatusResponse['body'];
 
-					$summary->numCheckedOut = $hooplaPatronStatusResponse->currentlyBorrowed;
-					$summary->numCheckoutsRemaining = $hooplaPatronStatusResponse->borrowsRemaining;
+					$summary->numCheckedOut = $hooplaPatronStatusResponse['body']->currentlyBorrowed;
+					$summary->numCheckoutsRemaining = $hooplaPatronStatusResponse['body']->borrowsRemaining;
 				} else {
 					global $logger;
-					$hooplaErrorMessage = empty($hooplaPatronStatusResponse->message) ? '' : ' Hoopla Message :' . $hooplaPatronStatusResponse->message;
+					$hooplaErrorMessage = empty($hooplaPatronStatusResponse['body']->message) ? '' : ' Hoopla Message :' . $hooplaPatronStatusResponse['body']->message;
 					$logger->log('Error retrieving patron status from Hoopla. User ID : ' . $user->id . $hooplaErrorMessage, Logger::LOG_NOTICE);
 					$this->hooplaPatronStatuses[$user->id] = false; // Don't do status call again for this user
+				}
+				// Get Holds status for only the patrons can access to Hoopla Flex
+				if ($user->isValidForEContentSource('hoopla_flex')) {
+					$holdsUrl = $patronURL . '/holds/current';
+					$holdsResponse = $this->getAPIResponse('hoopla.getHoldsCount', $holdsUrl);
+					if ($holdsResponse['httpCode'] == 200 && !empty($holdsResponse['body'])) {
+						$availableHolds = 0;
+						$unavailableHolds = 0;
+
+						foreach ($holdsResponse['body'] as $hold) {
+							if ($hold->status === 'RESERVED') {
+								$availableHolds++;
+							} else if ($hold->status === 'WAITING') {
+								$unavailableHolds++;
+							}
+						}
+
+						$summary->numHolds = $availableHolds + $unavailableHolds;
+						$summary->numAvailableHolds = $availableHolds;
+						$summary->numUnavailableHolds = $unavailableHolds;
+					} else {
+						global $logger;
+						$errorMessage = empty($holdsResponse['body']->message) ? '' : ' Hoopla Message: ' . $holdsResponse['body']->message;
+						$logger->log('Error retrieving holds from Hoopla. User ID: ' . $user->id . $errorMessage, Logger::LOG_NOTICE);
+					}
+				} else {
+					$summary->numHolds = 0;
+					$summary->numAvailableHolds = 0;
+					$summary->numUnavailableHolds = 0;
 				}
 			}
 
@@ -232,9 +275,9 @@ class HooplaDriver extends AbstractEContentDriver {
 			if (!empty($hooplaCheckedOutTitlesURL)) {
 				$hooplaCheckedOutTitlesURL .= '/checkouts/current';
 				$checkOutsResponse = $this->getAPIResponse('hoopla.getCheckouts', $hooplaCheckedOutTitlesURL);
-				if (is_array($checkOutsResponse)) {
+				if ($checkOutsResponse['httpCode'] == 200 && !empty($checkOutsResponse['body'])) {
 					$hooplaPatronStatus = null;
-					foreach ($checkOutsResponse as $checkOut) {
+					foreach ($checkOutsResponse['body'] as $checkOut) {
 						$hooplaRecordID = $checkOut->contentId;
 						$currentTitle = new Checkout();
 						$currentTitle->type = 'hoopla';
@@ -279,11 +322,16 @@ class HooplaDriver extends AbstractEContentDriver {
 			/** @var Memcache $memCache */ global $memCache;
 			$accessToken = $memCache->get(self::memCacheKey);
 			if (empty($accessToken)) {
-				$this->renewAccessToken();
+				$tokenInDB = $this->hooplaSettings->accessToken;
+				$tokenExpirationTimeInDB = $this->hooplaSettings->tokenExpirationTime;
+				if (!empty($tokenInDB) && !empty($tokenExpirationTimeInDB) && $tokenExpirationTimeInDB > (time())) {
+					$this->accessToken = $tokenInDB;
+				} else {
+					$this->renewAccessToken();
+				}
 			} else {
 				$this->accessToken = $accessToken;
 			}
-
 		}
 		return $this->accessToken;
 	}
@@ -322,6 +370,9 @@ class HooplaDriver extends AbstractEContentDriver {
 				$json = json_decode($response);
 				if (!empty($json->access_token)) {
 					$this->accessToken = $json->access_token;
+					$this->hooplaSettings->accessToken = $json->access_token;
+					$this->hooplaSettings->tokenExpirationTime = time() + $json->expires_in; 
+					$this->hooplaSettings->update();
 
 					/** @var Memcache $memCache */ global $memCache;
 					global $configArray;
@@ -345,9 +396,37 @@ class HooplaDriver extends AbstractEContentDriver {
 	}
 
 	/**
+	 * Get the type (Instant or Flex) of a Hoopla title
+	 * @param string $titleId
+	 * @return string 'Instant' or 'Flex'
+	 */
+	private function getHooplaType($titleId)
+	{
+		require_once ROOT_DIR . '/sys/Hoopla/HooplaExtract.php';
+		$hooplaItem = new HooplaExtract();
+		$hooplaItem->hooplaId = $titleId;
+		if ($hooplaItem->find(true)) {
+			if (!empty($hooplaItem->hooplaType)) {
+				return $hooplaItem->hooplaType;
+			}
+		}
+		// default to Instant
+		return 'Instant';
+	}
+
+	public function getHoldQueueSize($titleId) {
+		require_once ROOT_DIR . '/sys/Hoopla/HooplaFlexAvailability.php';
+		$flexAvailability = new HooplaFlexAvailability();
+		$flexAvailability->hooplaId = $titleId;
+		if ($flexAvailability->find(true)) {
+			return $flexAvailability->holdsQueueSize;
+		}
+		return 0;
+	}
+
+	/**
 	 * @param User $patron
 	 * @param string $titleId
-	 *
 	 * @return array
 	 */
 	public function checkOutTitle($patron, $titleId) {
@@ -356,65 +435,144 @@ class HooplaDriver extends AbstractEContentDriver {
 			if (!empty($checkoutURL)) {
 
 				$titleId = self::recordIDtoHooplaID($titleId);
+				$hooplaType = $this->getHooplaType($titleId);
+				if ($hooplaType == 'Flex' && !$this->hooplaFlexEnabled) {
+					return [
+						'success' => false,
+						'title' => translate([
+							'text' => 'Unable to checkout title',
+							'isPublicFacing' => true,
+						]),
+						'message' => translate([
+							'text' => 'Hoopla Flex is not enabled for this library.',
+							'isPublicFacing' => true,
+						]),
+						'api' => [
+							'title' => "Unable to checkout title",
+							'message' => "Hoopla Flex is not enabled for this library.",
+						]
+					];
+				}
 				$checkoutURL .= '/' . $titleId;
 				$checkoutResponse = $this->getAPIResponse('hoopla.checkoutTitle', $checkoutURL, [], 'POST');
 				if ($checkoutResponse) {
-					if (!empty($checkoutResponse->contentId)) {
+					if ($checkoutResponse['httpCode'] == 200) {
 						$this->trackUserUsageOfHoopla($patron);
 						$this->trackRecordCheckout($titleId);
 						$patron->clearCachedAccountSummaryForSource('hoopla');
 						$patron->forceReloadOfCheckouts();
 
+						$dueDate = date('l, F j', $checkoutResponse['body']->due);
+
 						// Result for API or app use
-						$apiResult = [];
-						$apiResult['title'] = translate([
-							'text' => 'Checked out title',
-							'isPublicFacing' => true,
-						]);
-						$apiResult['message'] = strip_tags($checkoutResponse->message);
-						$apiResult['action'] = translate([
-							'text' => 'Go to Checkouts',
-							'isPublicFacing' => true,
-						]);
+						$apiResult = [
+							'title' => translate([
+								'text' => 'Checked out title',
+								'isPublicFacing' => true,
+							]),
+							'message' => translate([
+								'text' => 'You can now enjoy this title through %1%. You can stream it to your browser, or download it for offline viewing using our mobile apps.',
+								1 => $dueDate,
+								'isPublicFacing' => true,
+							]),
+							'action' => translate([
+								'text' => 'Go to Checkouts',
+								'isPublicFacing' => true,
+							])
+						];
 
 						//Prepare message for translation
-						$checkoutResponseMessage = $checkoutResponse->message;
-						$checkoutResponseMessage = str_replace($patron->getBarcode(), '%1%', $checkoutResponseMessage);
 						return [
 							'success' => true,
 							'message' => translate([
-								'text' => $checkoutResponseMessage,
-								1 => $patron->getBarcode(),
+								'text' => 'You can now enjoy this title through %1%. You can stream it to your browser, or download it for offline viewing using our mobile apps.',
+								1 => $dueDate,
 								'isPublicFacing' => true,
 							]),
 							'title' => translate([
-								'text' => $checkoutResponse->title,
+								'text' => $checkoutResponse['body']->title,
 								'isPublicFacing' => true,
 							]),
-							'HooplaURL' => $checkoutResponse->url,
-							'due' => $checkoutResponse->due,
+							'HooplaURL' => $checkoutResponse['body']->url,
+							'due' => $checkoutResponse['body']->due,
 							'api' => $apiResult,
 						];
-					} else {
-						// Result for API or app use
-						$apiResult = [];
-						$apiResult['title'] = translate([
-							'text' => 'Unable to checkout title',
-							'isPublicFacing' => true,
-						]);
-						$apiResult['message'] = isset($checkoutResponse->message) ? strip_tags($checkoutResponse->message) : 'An error occurred checking out the Hoopla title.';
-
-						$checkoutResponseMessage = isset($checkoutResponse->message) ? strip_tags($checkoutResponse->message) : 'An error occurred checking out the Hoopla title.';
-						$checkoutResponseMessage = str_replace($patron->getBarcode(), '%1%', $checkoutResponseMessage);
+					} else if ($checkoutResponse['httpCode'] == 404) {
+						// prompt user to register at hoopla
+						$registrationUrl = 'https://www.hoopladigital.com/register';
 						return [
 							'success' => false,
-							'message' => translate([
-								'text' => $checkoutResponseMessage,
-								1 => $patron->getBarcode(),
+							'needToRegister' => true,
+							'title' => translate([
+								'text' => 'Registration Required',
 								'isPublicFacing' => true,
 							]),
-							'api' => $apiResult,
+							'message' => translate([
+								'text' => 'We are unable to find a hoopla digital account for your library card. Please register to continue.',
+								'isPublicFacing' => true,
+							]),
+							'buttons' => '<a class="btn btn-primary" href="' . $registrationUrl . '" target="_blank">' . translate(['text' => 'Register at Hoopla', 'isPublicFacing' => true]) . '</a>',
+							'api' => [
+								'title' => translate([
+									'text' => 'Unable to checkout title',
+									'isPublicFacing' => true,
+								]),
+								'message' => translate([
+									'text' => 'We are unable to find a hoopla digital account for your library card. Please register at %1%',
+									1 => $registrationUrl,
+									'isPublicFacing' => true,
+								])
+							]
 						];
+					} else if ($checkoutResponse['httpCode'] == 412) {
+						if ($hooplaType == 'Flex') {
+							// prompt user to place a hold for Flex titles
+							return [
+								'success' => false,
+								'noCopies' => true,
+								'title' => translate([
+									'text' => 'Title Not Available',
+									'isPublicFacing' => true,
+								]),
+								'message' => translate([
+									'text' => 'No copies available right now, would you like to place a hold instead?',
+									'isPublicFacing' => true,
+								]),
+								'buttons' => '<button class="btn btn-primary" onclick="AspenDiscovery.Hoopla.doHold(\'' . $patron->id . '\', \'' . $titleId . '\')">' . translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button> ',
+								'api' => [
+									'title' => translate([
+										'text' => 'Unable to checkout title',
+										'isPublicFacing' => true,
+									]),
+									'message' => translate([
+										'text' => 'Title currently unavailable, please try again after 5 minutes',
+										'isPublicFacing' => true,
+									]),
+								]
+							];
+					 	} else {
+							return [
+								'success' => false,
+								'title' => translate([
+									'text' => 'Checkout Unavailable',
+									'isPublicFacing' => true,
+								]),
+								'message' => translate([
+									'text' => $checkoutResponse['body']->message,
+									'isPublicFacing' => true,
+								]),
+								'api' => [
+									'title' => translate([
+										'text' => 'Checkout Unavailable',
+										'isPublicFacing' => true,
+									]),
+									'message' => translate([
+										'text' => $checkoutResponse['body']->message,
+										'isPublicFacing' => true,
+									]),
+								]
+							];
+						}
 					}
 
 				} else {
@@ -488,6 +646,16 @@ class HooplaDriver extends AbstractEContentDriver {
 				'api' => $apiResult,
 			];
 		}
+
+		//Default return
+		return [
+			'success' => false,
+			'message' => translate(['text' => 'Unknown error checking out title', 'isPublicFacing' => true]),
+			'api' => [
+				'title' => translate(['text' => 'Unable to checkout title', 'isPublicFacing' => true]),
+				'message' => translate(['text' => 'Unknown error checking out title', 'isPublicFacing' => true])
+			]
+		];
 	}
 
 	/**
@@ -530,13 +698,13 @@ class HooplaDriver extends AbstractEContentDriver {
 						'isPublicFacing' => true,
 					]);
 					$apiResult['message'] = translate([
-						'text' => ' There was an error returning this title.',
+						'text' => 'There was an error returning this title, please click the refresh button to update your checkouts and try again.',
 						'isPublicFacing' => true,
 					]);
 
 					return [
 						'success' => false,
-						'message' => 'There was an error returning this title.',
+						'message' => 'There was an error returning this title, please click the refresh button to update your checkouts and try again.',
 						'api' => $apiResult,
 					];
 				}
@@ -627,18 +795,84 @@ class HooplaDriver extends AbstractEContentDriver {
 		return false;
 	}
 
+	private $holds = [];
 	/**
 	 * Get Patron Holds
 	 *
 	 * This is responsible for retrieving all holds for a specific patron.
 	 *
 	 * @param User $patron The user to load transactions for
+	 * @param bool $forSummary 
 	 *
 	 * @return array        Array of the patron's holds
 	 * @access public
 	 */
-	public function getHolds($patron): array {
-		return [];
+	public function getHolds($patron, $forSummary = false): array
+	{
+		require_once ROOT_DIR . '/sys/User/Hold.php';
+		if (isset($this->holds[$patron->id])) {
+			return $this->holds[$patron->id];
+		}
+		$holds = [
+			'available' => [],
+			'unavailable' => [],
+		];
+
+		if ($this->hooplaFlexEnabled) {
+			$holdUrl = $this->getHooplaBasePatronURL($patron);
+			if (!empty($holdUrl)) {
+				$holdUrl .= '/holds/current';
+				$holdResponse = $this->getAPIResponse('hoopla.getHolds', $holdUrl);
+				if ($holdResponse['httpCode'] == 200 && !empty($holdResponse['body'])) {
+					foreach ($holdResponse['body'] as $holdInfo) {
+						$this->loadHoldInfo($holdInfo, $holds, $patron, $forSummary);
+					}
+				}
+			}
+		}
+		return $holds;
+	}
+
+	private function loadHoldInfo($rawHold, array &$holds, User $user, $forSummary): Hold
+	{
+		$hold = new Hold();
+		$hold->type = 'hoopla';
+		$hold->source = 'hoopla';
+
+		$hold->recordId = $rawHold->contentId;
+		$hold->sourceId = 'hoopla:' . $rawHold->contentId;
+		$hold->cancelId = $rawHold->contentId;
+		$hold->title = $rawHold->title;
+		$hold->position = $rawHold->holdsQueuePosition;
+		$hold->createDate = $rawHold->inserted;
+		if (isset($rawHold->reserveUntil)) {
+			$hold->expirationDate = $rawHold->reserveUntil;
+		}
+		$hold->cancelable = true;
+		$hold->kind = $rawHold->kind;
+		$hold->userId = $user->id;
+		$hold->available = $rawHold->status === 'RESERVED';
+
+		if (!empty($rawHold->kind)) {
+			$hold->format = 'Hoopla ' . ucfirst(strtolower($rawHold->kind));
+		}
+
+		require_once ROOT_DIR . '/RecordDrivers/HooplaRecordDriver.php';
+		$hooplaRecord = new HooplaRecordDriver($hold->recordId);
+		if ($hooplaRecord->isValid()) {
+			$hold->updateFromRecordDriver($hooplaRecord);
+		}
+
+		$hold->userId = $user->id;
+		$key = $hold->source . $hold->recordId . $hold->userId;
+
+		if ($hold->available) {
+			$holds['available'][$key] = $hold;
+		} else {
+			$holds['unavailable'][$key] = $hold;
+		}
+
+		return $hold;
 	}
 
 	/**
@@ -657,11 +891,173 @@ class HooplaDriver extends AbstractEContentDriver {
 	 *                                title - the title of the record the user is placing a hold on
 	 * @access  public
 	 */
-	function placeHold($patron, $recordId, $pickupBranch = null, $cancelDate = null) {
-		return [
-			'result' => false,
-			'message' => 'Holds are not implemented for Hoopla',
+	function placeHold($patron, $recordId, $pickupBranch = null, $cancelDate = null)
+	{
+		$result = [
+			'success' => false,
+			'message' => translate(['text' => 'Unknown error', 'isPublicFacing' => true])
 		];
+
+		if ($this->hooplaEnabled) {
+			$holdURL = $this->getHooplaBasePatronURL($patron);
+			if (!empty($holdURL)) {
+				$titleId = self::recordIDtoHooplaID($recordId);
+				$titleType = $this->getHooplaType($titleId);
+
+				// Check if Flex is enabled
+				if ($titleType == 'Flex' && !$this->hooplaFlexEnabled) {
+					return [
+						'success' => false,
+						'title' => translate([
+							'text' => 'Unable to place hold',
+							'isPublicFacing' => true,
+						]),
+						'message' => translate([
+							'text' => 'Hoopla Flex is not enabled for this library.',
+							'isPublicFacing' => true,
+						]),
+						'api' => [
+							'title' => "Unable to place hold",
+							'message' => "Hoopla Flex is not enabled for this library.",
+						],
+					];
+				}
+
+				$holdURL .= '/holds/' . $titleId;
+
+				$holdResponse = $this->getAPIResponse('hoopla.placeHold', $holdURL, null, 'POST');
+
+				if ($holdResponse && isset($holdResponse['body'])) {
+					if ($holdResponse['httpCode'] == 200 && !empty($holdResponse['body'])) {
+						$this->trackUserUsageOfHoopla($patron);
+						$this->trackRecordHold($titleId);
+						$patron->clearCachedAccountSummaryForSource('hoopla');
+						$patron->forceReloadOfHolds();
+
+						return [
+							'success' => true,
+							'title' => translate(['text' => 'Hold Placed Successfully', 'isPublicFacing' => true]),
+							'message' => translate([
+								'text' => 'Your hold for %1% was placed successfully. You are number %2% in the queue.',
+								1 => $holdResponse['body']->title,
+								2 => $holdResponse['body']->holdsQueuePosition,
+								'isPublicFacing' => true
+							]),
+							'buttons' => '<a class="btn btn-primary" href="/MyAccount/Holds" role="button">' . translate(['text' => 'View My Holds', 'isPublicFacing' => true]) . '</a>',
+							'api' => [
+								'title' => translate(['text' => 'Hold Placed Successfully', 'isPublicFacing' => true]),
+								'message' => translate(['text' => 'Your hold was placed successfully. You are number %1% in the queue.', 1 => $holdResponse['body']->holdsQueuePosition, 'isPublicFacing' => true]),
+								'action' => translate(['text' => 'View My Holds', 'isPublicFacing' => true])
+							]
+						];
+					} else if ($holdResponse['httpCode'] == 400) {
+						// Prompt user to check out instead 
+						return [
+							'success' => false,
+							'available' => true,
+							'title' => translate([
+								'text' => 'Title Available',
+								'isPublicFacing' => true,
+							]),
+							'message' => translate([
+								'text' => 'This title is currently available. Would you like to check it out instead?',
+								'isPublicFacing' => true,
+							]),
+							'buttons' => '<button class="btn btn-primary" onclick="AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $titleId . '\', \'' . $patron->id . '\', \'Flex\')">' .
+								translate(['text' => 'Check Out', 'isPublicFacing' => true]) .
+								'</button>',
+							'api' => [
+								'title' => translate([
+									'text' => 'Unable to place hold',
+									'isPublicFacing' => true,
+								]),
+								'message' => translate([
+									'text' => 'Title currently available, please try again after 5 minutes',
+									'isPublicFacing' => true,
+								]),
+							]
+						];
+					} else if ($holdResponse['httpCode'] == 403) {
+						// Prompt user to register at hoopla
+						$registrationUrl = 'https://www.hoopladigital.com/register';
+						return [
+							'success' => false,
+							'needToRegister' => true,
+							'title' => translate([
+								'text' => 'Registration Required',
+								'isPublicFacing' => true,
+							]),
+							'message' => translate([
+								'text' => 'We are unable to find a hoopla digital account for your library card. Please register to continue.',
+								'isPublicFacing' => true,
+							]),
+							'buttons' => '<a class="btn btn-primary" href="' . $registrationUrl . '" target="_blank">' .
+								translate(['text' => 'Register at Hoopla', 'isPublicFacing' => true]) .
+								'</a>',
+							'api' => [
+								'title' => translate([
+									'text' => 'Unable to place hold',
+									'isPublicFacing' => true,
+								]),
+								'message' => translate([
+									'text' => 'We are unable to find a hoopla digital account for your library card. Please register at %1%',
+									1 => $registrationUrl,
+									'isPublicFacing' => true,
+								])
+							]
+						];
+					} else {
+						return [
+							'success' => false,
+							'title' => translate([
+								'text' => 'Unable to place hold',
+								'isPublicFacing' => true,
+							]),
+							'message' => translate([
+								'text' => 'There was an error placing your hold. Please try again later.',
+								'isPublicFacing' => true,
+							]),
+							'api' => [
+								'title' => translate([
+									'text' => 'Unable to place hold',
+									'isPublicFacing' => true,
+								]),
+								'message' => translate([
+									'text' => 'There was an error placing your hold. Please try again later.',
+									'isPublicFacing' => true,
+								]),
+							]
+						];
+					}
+				}
+			}
+		}
+
+		return $result;
+
+	}
+
+	function trackRecordHold($recordId): void {
+		require_once ROOT_DIR . '/sys/Hoopla/HooplaRecordUsage.php';
+		require_once ROOT_DIR . '/sys/Hoopla/HooplaExtract.php';
+		$recordUsage = new HooplaRecordUsage();
+		$product = new HooplaExtract();
+		$product->hooplaId = $recordId;
+		if ($product->find(true)) {
+			global $aspenUsage;
+			$recordUsage->instance = $aspenUsage->getInstance();
+			$recordUsage->hooplaId = $product->hooplaId;
+			$recordUsage->year = date('Y');
+			$recordUsage->month = date('n');
+			if ($recordUsage->find(true)) {
+				$recordUsage->timesHeld++;
+				$recordUsage->update();
+			} else {
+				$recordUsage->timesCheckedOut = 0;
+				$recordUsage->timesHeld = 1;
+				$recordUsage->insert();
+			}
+		}
 	}
 
 	/**
@@ -672,8 +1068,69 @@ class HooplaDriver extends AbstractEContentDriver {
 	 * @param null $cancelId ID to cancel for compatibility
 	 * @return false|array
 	 */
-	function cancelHold($patron, $recordId, $cancelId = null, $isIll = false): array {
-		return false;
+	function cancelHold($patron, $recordId, $cancelId = null, $isIll = false): array
+	{
+		$result = [
+			'success' => false,
+			'message' => 'Unknown error canceling hold'
+		];
+
+		$patronUrl = $this->getHooplaBasePatronURL($patron);
+		if (!empty($patronUrl)) {
+			$cancelUrl = $patronUrl . '/holds/' . $recordId;
+			$cancelResponse = $this->getAPIResponse('hoopla.cancelHold', $cancelUrl, null, 'DELETE');
+
+			if ($cancelResponse['httpCode'] == 403) {
+				// Hold already cancelled or doesn't exist
+				$result['success'] = true;
+				$result['message'] = translate([
+					'text' => 'Hold already cancelled or doesn\'t exist',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['title'] = translate([
+					'text' => 'Unable to cancel hold',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['message'] = translate([
+					'text' => 'Hold already cancelled or doesn\'t exist',
+					'isPublicFacing' => true,
+				]);
+				$patron->clearCachedAccountSummaryForSource('hoopla');
+				$patron->forceReloadOfHolds();
+			} else if ($cancelResponse['httpCode'] == 200) {
+				// Empty response means success (HTTP 200 with no content)
+				$result['success'] = true;
+				$result['message'] = translate([
+					'text' => 'Your Hoopla hold was cancelled successfully',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['title'] = translate([
+					'text' => 'Hold Cancelled Successfully',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['message'] = translate([
+					'text' => 'Your Hoopla hold was cancelled successfully',
+					'isPublicFacing' => true,
+				]);
+				$patron->clearCachedAccountSummaryForSource('hoopla');
+				$patron->forceReloadOfHolds();
+			} else {
+				$result['message'] = translate([
+					'text' => 'Could not cancel Hoopla hold.',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['title'] = translate([
+					'text' => 'Unable to cancel hold',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['message'] = translate([
+					'text' => 'Could not cancel Hoopla hold.',
+					'isPublicFacing' => true,
+				]);
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -722,6 +1179,7 @@ class HooplaDriver extends AbstractEContentDriver {
 				$recordUsage->update();
 			} else {
 				$recordUsage->timesCheckedOut = 1;
+				$recordUsage->timesHeld = 0;
 				$recordUsage->insert();
 			}
 		}

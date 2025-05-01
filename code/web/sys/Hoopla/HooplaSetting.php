@@ -8,13 +8,17 @@ class HooplaSetting extends DataObject {
 	public $libraryId;
 	public $apiUsername;
 	public $apiPassword;
-	public /** @noinspection PhpUnused */
-		$apiToken;
+	public $accessToken;
+	public $tokenExpirationTime;
 	public $regroupAllRecords;
-	public $runFullUpdate;
-	public $indexByDay;
-	public $lastUpdateOfChangedRecords;
-	public $lastUpdateOfAllRecords;
+	public $runFullUpdateInstant;
+	public $lastUpdateOfChangedRecordsInstant;
+	public $lastUpdateOfAllRecordsInstant;
+	public $hooplaInstantEnabled;
+	public $runFullUpdateFlex;
+	public $lastUpdateOfChangedRecordsFlex;
+	public $lastUpdateOfAllRecordsFlex;
+	public $hooplaFlexEnabled;
 
 	private $_scopes;
 
@@ -61,37 +65,78 @@ class HooplaSetting extends DataObject {
 				'description' => 'Whether or not all existing records should be regrouped',
 				'default' => 0,
 			],
-			'runFullUpdate' => [
-				'property' => 'runFullUpdate',
-				'type' => 'checkbox',
-				'label' => 'Run Full Update',
-				'description' => 'Whether or not a full update of all records should be done on the next pass of indexing',
-				'default' => 0,
+			'hooplaInstantRecords' => [
+				'property' => 'hooplaInstantRecords',
+				'type' => 'section',
+				'label' => 'Hoopla Instant',
+				'expandByDefault' => true,
+				'properties' => [
+					'hooplaInstantEnabled' => [
+						'property' => 'hooplaInstantEnabled',
+						'type' => 'checkbox',
+						'label' => 'Hoopla Instant Enabled',
+						'description' => 'Whether or not to use Hoopla Instant Records',
+						'default' => 1,
+					],
+					'runFullUpdateInstant' => [
+						'property' => 'runFullUpdateInstant',
+						'type' => 'checkbox',
+						'label' => 'Run Full Update for Instant',
+						'description' => 'Whether or not a full update of all records should be done on the next pass of indexing',
+						'default' => 0,
+					],
+					'lastUpdateOfChangedRecordsInstant' => [
+						'property' => 'lastUpdateOfChangedRecordsInstant',
+						'type' => 'timestamp',
+						'label' => 'Last Update of Changed Instant Records',
+						'description' => 'The timestamp when just changes were loaded',
+						'default' => 0,
+					],
+					'lastUpdateOfAllRecordsInstant' => [
+						'property' => 'lastUpdateOfAllRecordsInstant',
+						'type' => 'timestamp',
+						'label' => 'Last Update of All Instant Records',
+						'description' => 'The timestamp when just changes were loaded',
+						'default' => 0,
+					],
+				],
 			],
-			'indexByDay' => [
-				'property' => 'indexByDay',
-				'type' => 'checkbox',
-				'label' => 'Index By Day',
-				'description' => 'Whether or hoopla indexing should only occur once a day',
-				'default' => 1,
-				'type' => "hidden",
-				'hideInLists' => true,
+			'hooplaFlexRecords' => [
+				'property' => 'hooplaFlexRecords',
+				'type' => 'section',
+				'label' => 'Hoopla Flex',
+				'expandByDefault' => true,
+				'properties' => [
+					'hooplaFlexEnabled' => [
+						'property' => 'hooplaFlexEnabled',
+						'type' => 'checkbox',
+						'label' => 'Hoopla Flex Enabled',
+						'description' => 'Whether or not to use Hoopla Flex',
+						'default' => 0,
+					],
+					'runFullUpdateFlex' => [
+						'property' => 'runFullUpdateFlex',
+						'type' => 'checkbox',
+						'label' => 'Run Full Update for Flex',
+						'description' => 'Whether or not a full update of all records should be done on the next pass of indexing',
+						'default' => 0,
+					],
+					'lastUpdateOfChangedRecordsFlex' => [
+						'property' => 'lastUpdateOfChangedRecordsFlex',
+						'type' => 'timestamp',
+						'label' => 'Last Update of Changed Flex Records',
+						'description' => 'The timestamp when just changes were loaded',
+						'default' => 0,
+					],
+					'lastUpdateOfAllRecordsFlex' => [
+						'property' => 'lastUpdateOfAllRecordsFlex',
+						'type' => 'timestamp',
+						'label' => 'Last Update of All Flex Records',
+						'description' => 'The timestamp when just changes were loaded',
+						'default' => 0,
+					],
+				],
 			],
-			'lastUpdateOfChangedRecords' => [
-				'property' => 'lastUpdateOfChangedRecords',
-				'type' => 'timestamp',
-				'label' => 'Last Update of Changed Records',
-				'description' => 'The timestamp when just changes were loaded',
-				'default' => 0,
-			],
-			'lastUpdateOfAllRecords' => [
-				'property' => 'lastUpdateOfAllRecords',
-				'type' => 'timestamp',
-				'label' => 'Last Update of All Records',
-				'description' => 'The timestamp when just changes were loaded',
-				'default' => 0,
-			],
-
 			'scopes' => [
 				'property' => 'scopes',
 				'type' => 'oneToMany',
