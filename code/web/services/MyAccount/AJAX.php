@@ -3819,7 +3819,7 @@ class MyAccount_AJAX extends JSON_Action {
 		foreach ($allCheckedOut as $key => $checkout) {
 			$checkout->recordId = $this->normalizeRecordId($checkout->recordId);
 
-			if (!empty ($slectedUser) && $checkout->userId != $selectedUser) {
+			if (!empty ($selectedUser) && $checkout->userId != $selectedUser) {
 				continue;
 			}
 			$matchFound = false;
