@@ -263,8 +263,7 @@ function loadUserInfoFromCSV(?array $userRow, User $existingUser = null): User {
 	$userFromCSV->initialReadingHistoryLoaded = $userRow[$curCol++];
 	$userFromCSV->noPromptForUserReviews = $userRow[$curCol++];
 	$userFromCSV->source = cleancsv($userRow[$curCol++]);
-	$userFromCSV->hooplaCheckOutConfirmation = $userRow[$curCol++];
-	$userFromCSV->hooplaHoldQueueSizeConfirmation = $userRow[$curCol++];
+	$userFromCSV->hooplaCheckOutConfirmation = $userRow[$curCol];
 
 	//Set defaults
 	$userFromCSV->rbdigitalId = -1;
