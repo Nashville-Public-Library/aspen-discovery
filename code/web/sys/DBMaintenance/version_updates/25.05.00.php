@@ -187,6 +187,14 @@ function getUpdates25_05_00(): array {
 			)'
 			]
 		], //create_indexed_audience
+		'permanentUrl_allows_longer_strings' => [
+			'title' => 'PermanentUrl Allows For Longer Strings',
+			'description' => 'Allow for longer permanent URLs so that Open Archive records can be indexed without clashing with the length constraint',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE open_archives_record MODIFY COLUMN permanentUrl VARCHAR(2048) NOT NULL",
+			]
+		], // permanentUrl_allows_longer_strings
 
 		//James Staub - Nashville Public Library
 
