@@ -1346,7 +1346,7 @@ class Library extends DataObject {
 					'allowFilteringOfLinkedAccountsInCheckouts' => [
 						'property' => 'allowFilteringOfLinkedAccountsInCheckouts',
 						'type' => 'checkbox',
-						'label' => 'Allow Filtering of Linked Accounts in Check Out Titles',
+						'label' => 'Allow Filtering of Linked Accounts in Checked Out Titles',
 						'description' => 'Whether or not users can filter their checked out titles by linked accounts.',
 						'hideInLists' => true,
 						'default' => 0,
