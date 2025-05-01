@@ -1115,6 +1115,7 @@ class Koha extends AbstractIlsDriver {
 	private function loadPatronInfoFromDB($patronId, $password, $suppliedUsernameOrBarcode) {
 		global $timer;
 		global $logger;
+		global $library;
 
 		/** @noinspection SqlResolve */
 		$sql = "SELECT *, borrowernumber, cardnumber, surname, firstname, preferred_name, streetnumber, streettype, address, address2, city, state, zipcode, country, email, phone, mobile, categorycode, dateexpiry, password, userid, branchcode, opacnote, privacy, dateofbirth from borrowers where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patronId) . "';";
@@ -1169,7 +1170,11 @@ class Koha extends AbstractIlsDriver {
 			}
 
 			$forceDisplayNameUpdate = false;
-			$firstName = $userFromDb['firstname'];
+			if ($library->replaceAllFirstNameWithPreferredName && !empty($userFromDb['preferred_name'])) {
+				$firstName = $userFromDb['preferred_name'];
+			} else {
+				$firstName = $userFromDb['firstname'];
+			}
 			if ($user->firstname != $firstName) {
 				$user->firstname = $firstName ?? '';
 				$forceDisplayNameUpdate = true;
