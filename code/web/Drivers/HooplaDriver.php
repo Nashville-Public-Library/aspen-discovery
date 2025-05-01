@@ -222,7 +222,7 @@ class HooplaDriver extends AbstractEContentDriver {
 					$this->hooplaPatronStatuses[$user->id] = false; // Don't do status call again for this user
 				}
 				// Get Holds status for only the patrons can access to Hoopla Flex
-				if ($this->hooplaFlexEnabled) {
+				if ($user->isValidForEContentSource('hoopla_flex')) {
 					$holdsUrl = $patronURL . '/holds/current';
 					$holdsResponse = $this->getAPIResponse('hoopla.getHoldsCount', $holdsUrl);
 					if ($holdsResponse['httpCode'] == 200 && !empty($holdsResponse['body'])) {

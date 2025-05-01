@@ -4851,15 +4851,15 @@ class Library extends DataObject {
 	}
 
 	public function getHooplaScope() {
-		if ($this->_hooplaScope == null && $this->libraryId) {
+		if ($this->hooplaScopeId != null) {
 			require_once ROOT_DIR . '/sys/Hoopla/HooplaScope.php';
 			$hooplaScope = new HooplaScope();
 			$hooplaScope->id = $this->hooplaScopeId;
 			if ($hooplaScope->find(true)) {
-				$this->_hooplaScope = $hooplaScope->id;
+				return $hooplaScope;
 			}
 		}
-		return $hooplaScope;
+		return null;
 	}
 
 	public function saveCloudLibraryScopes() : void {
