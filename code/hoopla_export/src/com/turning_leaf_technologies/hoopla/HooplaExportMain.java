@@ -290,7 +290,7 @@ public class HooplaExportMain {
 					}
 				}else{
 					//The record has likely been deleted
-					logEntry.addNote("Could not get details for record to reload " + hooplaId + " it has been deleted");
+					logEntry.addNote("Could not get details for Hoopla record to reload " + hooplaId + " it has been deleted");
 					markRecordToReloadAsProcessedStmt.setLong(1, recordToReloadId);
 					markRecordToReloadAsProcessedStmt.executeUpdate();
 					numRecordsToReloadProcessed++;

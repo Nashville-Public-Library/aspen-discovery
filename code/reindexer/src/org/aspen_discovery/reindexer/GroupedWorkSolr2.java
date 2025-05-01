@@ -102,23 +102,23 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			doc.addField("series_with_volume", seriesWithVolume.values());
 
 			doc.addField("topic", topics);
-			topicFacets.removeAll(GroupedWorkIndexer.hideSubjects);
+			topicFacets.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("topic_facet", topicFacets);
-			subjects.removeAll(GroupedWorkIndexer.hideSubjects);
+			subjects.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("subject_facet", subjects);
 			doc.addField("lc_subject", lcSubjects);
 			doc.addField("bisac_subject", bisacSubjects);
 			doc.addField("genre", genres);
-			genreFacets.removeAll(GroupedWorkIndexer.hideSubjects);
+			genreFacets.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("genre_facet", genreFacets);
 			doc.addField("geographic", geographic);
-			geographicFacets.removeAll(GroupedWorkIndexer.hideSubjects);
+			geographicFacets.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("geographic_facet", geographicFacets);
-			personalNameSubjects.removeAll(GroupedWorkIndexer.hideSubjects);
+			personalNameSubjects.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("personal_name_facet", personalNameSubjects);
-			corporateNameSubjects.removeAll(GroupedWorkIndexer.hideSubjects);
+			corporateNameSubjects.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("corporate_name_facet", corporateNameSubjects);
-			eras.removeAll(GroupedWorkIndexer.hideSubjects);
+			eras.removeAll(groupedWorkIndexer.hideSubjects);
 			doc.addField("era", eras);
 			//Check default values and inconsistent forms
 			checkDefaultValue(literaryFormFull, "Not Coded");
@@ -436,7 +436,6 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 							eContentSources.add(scopePrefix + trimmedEContentSource);
 						} else { //physical materials
 							if (locallyOwned) {
-								//noinspection ConstantValue
 								addAvailabilityToggle(locallyOwned, isAvailable, false, availabilityToggleForItem);
 								if (isAvailable) {
 									availableAtForItem.add(scopeFacetLabel);
@@ -454,7 +453,6 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 							}
 							if (libraryOwned) {
 								if (curScope.isLibraryScope() || (curScope.isLocationScope() && !scopeDisplaySettings.isBaseAvailabilityToggleOnLocalHoldingsOnly())) {
-									//noinspection ConstantValue
 									addAvailabilityToggle(libraryOwned, isAvailable, false, availabilityToggleForItem);
 								}
 								if (isAvailable) {
@@ -524,12 +522,12 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 
 						if (locallyOwned || libraryOwned) {
 							if (isAvailable) {
-								if (libBoost < GroupedWorkIndexer.availableAtBoostValue) {
-									libBoost = GroupedWorkIndexer.availableAtBoostValue;
+								if (libBoost < groupedWorkIndexer.availableAtBoostValue) {
+									libBoost = groupedWorkIndexer.availableAtBoostValue;
 								}
 							} else {
-								if (libBoost < GroupedWorkIndexer.ownedByBoostValue) {
-									libBoost = GroupedWorkIndexer.ownedByBoostValue;
+								if (libBoost < groupedWorkIndexer.ownedByBoostValue) {
+									libBoost = groupedWorkIndexer.ownedByBoostValue;
 								}
 							}
 						}
@@ -598,7 +596,7 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 		doc.addField("availability_toggle", availabilityToggleValues);
 		doc.addField("available_at", availableAt);
 
-		logger.info("Work " + id + " processed " + relatedScopes.size() + " scopes");
+		//logger.info("Work " + id + " processed " + relatedScopes.size() + " scopes");
 	}
 
 	private void loadScopedEditionInformation(HashSet<String> editionInfo, String scopePrefix, HashSet<String> formatsForItem, HashSet<String> formatsCategoriesForItem, HashSet<String> availableAtForItem, AvailabilityToggleInfo availabilityToggleForItem) {
@@ -614,11 +612,18 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			for (String format : formatsForItem) {
 				String scopeFormatCategoryFormat = scopeAndFormatCategory  + "#" + format;
 				for (String availabilityToggle : availabilityToggleValues) {
-					String baseEditionStmt = scopeFormatCategoryFormat + "#" + availabilityToggle;
+					StringBuilder baseEditionBuilder = new StringBuilder(scopeFormatCategoryFormat)
+						.append("#")
+						.append(availabilityToggle)
+						.append("#");
+
 					for (String availableAtLocation : availableAtForItem) {
-						String editionStmt = baseEditionStmt + "#" + availableAtLocation + "#";
-						editionStmt = editionStmt.replace(' ', '_');
-						editionInfo.add(editionStmt);
+						StringBuilder editionBuilder = new StringBuilder(baseEditionBuilder);
+						String editionString = editionBuilder.append(availableAtLocation)
+							.append("#")
+							.toString() // Get the final String
+							.replace(' ', '_');
+						editionInfo.add(editionString);
 					}
 				}
 			}

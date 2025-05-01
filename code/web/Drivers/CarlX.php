@@ -2339,14 +2339,24 @@ class CarlX extends AbstractIlsDriver {
 			$outstandingFines = $patronSummaryResponse->FineTotal + $patronSummaryResponse->LostItemFeeTotal;
 			$summary->totalFines = floatval($outstandingFines);
 
-			$request = $this->getSearchbyPatronIdRequest($patron);
-			$patronInfoResponse = $this->doSoapRequest('getPatronInformation', $request);
-			if ($patronInfoResponse && $patronInfoResponse->Patron) {
-				$summary->expirationDate = strtotime($this->extractDateFromCarlXDateField($patronInfoResponse->Patron->ExpirationDate));
-			}
+			//Get expiration information
+			$expirationInformation = $this->getExpirationInformation($patron);
+			$summary->expirationDate = $expirationInformation->expirationDate;
 		}
 
 		return $summary;
+	}
+
+	public function getExpirationInformation(User $patron) : ExpirationInformation {
+		$expirationInformation = new ExpirationInformation();
+
+		$request = $this->getSearchbyPatronIdRequest($patron);
+		$patronInfoResponse = $this->doSoapRequest('getPatronInformation', $request);
+		if ($patronInfoResponse && $patronInfoResponse->Patron) {
+			$expirationInformation->expirationDate = strtotime($this->extractDateFromCarlXDateField($patronInfoResponse->Patron->ExpirationDate));
+		}
+
+		return $expirationInformation;
 	}
 
 	/**

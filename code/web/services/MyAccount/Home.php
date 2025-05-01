@@ -10,8 +10,11 @@ class MyAccount_Home extends MyAccount {
 		// The script should only execute when a user is logged in, otherwise it calls Login.php
 		if (UserAccount::isLoggedIn()) {
 			$user = UserAccount::getLoggedInUser();
+			$homeLibrary = $user->getHomeLibrary();
+			$homeLibraryCommunityEngagementHighlight = $homeLibrary ? $homeLibrary->highlightCommunityEngagement : null;
 			// Check to see if the user has rated any titles
 			$interface->assign('hasRatings', $user->hasRatings());
+			$interface->assign('highlightCommunityEngagement', $homeLibraryCommunityEngagementHighlight);
 
 			parent::display('home.tpl');
 		}

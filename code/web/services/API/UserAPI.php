@@ -979,14 +979,14 @@ class UserAPI extends AbstractAPI {
 			// get list count
 			$userLists = new ListAPI();
 			$lists = $userLists->getUserLists();
-			if ($lists['count']) {
+			if (!empty($lists['count'])) {
 				$numLists = $lists['count'];
 			}
 
 			// get saved search count
 			$savedSearches = new ListAPI(true);
 			$searches = $savedSearches->getSavedSearches($user->id);
-			if ($searches['count']) {
+			if (!empty($searches['count'])) {
 				$numSavedSearches = $searches['count'];
 			}
 
@@ -1745,13 +1745,14 @@ class UserAPI extends AbstractAPI {
 	}
 
 	function renewItem(): array {
+		global $library;
 		$source = $_REQUEST['itemSource'] ?? null;
 		$itemBarcode = $_REQUEST['itemBarcode'] ?? null;
 		$recordId = $_REQUEST['recordId'] ?? null;
 
 		$user = $this->getUserForApiCall();
 		if ($user && !($user instanceof AspenError)) {
-			if ($source == 'ils' || $source == null) {
+			if ($source == 'ils' || $source == null || $source == $library->interLibraryLoanName) {
 				$result = $user->renewCheckout($recordId, $itemBarcode);
 
 				if(isset($result['confirmRenewalFee']) && $result['confirmRenewalFee']) {
@@ -4886,10 +4887,24 @@ class UserAPI extends AbstractAPI {
 			if ($user !== false && $user->source == 'admin') {
 				return false;
 			}
+			//Set translations up based on the active user's desired language
+			if (empty($_REQUEST['language']) && $user !== false) {
+				global $activeLanguage;
+				global $translator;
+				$userLanguage = new Language();
+				$userLanguage->code = $user->interfaceLanguage;
+				if ($userLanguage->find(true)) {
+					if ($userLanguage->code != $activeLanguage->code) {
+						$activeLanguage = $userLanguage;
+						$translator = new Translator('lang', $userLanguage->code);
+					}
+				}
+			}
 			return $user;
 		}
 	}
 
+	/** @noinspection PhpUnused */
 	function getLinkedAccounts() : array {
 		$user = $this->getUserForApiCall();
 
@@ -4899,14 +4914,14 @@ class UserAPI extends AbstractAPI {
 			if (count($linkedAccounts) > 0) {
 				foreach ($linkedAccounts as $linkedAccount) {
 					$linkedAccount->loadContactInformation();
-					$accountSummary = $linkedAccount->getCatalogDriver()->getAccountSummary($linkedAccount);
+					$expirationData = $linkedAccount->getExpirationInformation();
 					$account[$linkedAccount->id]['displayName'] = $linkedAccount->displayName;
 					$account[$linkedAccount->id]['homeLocation'] = $linkedAccount->getHomeLocation()->displayName;
 					$account[$linkedAccount->id]['barcode'] = $linkedAccount->getBarcode();
 					$account[$linkedAccount->id]['barcodeStyle'] = $linkedAccount->getHomeLibrary()->libraryCardBarcodeStyle;
 					$account[$linkedAccount->id]['id'] = $linkedAccount->id;
-					$account[$linkedAccount->id]['expired'] = $accountSummary->isExpired();
-					$account[$linkedAccount->id]['expires'] = $accountSummary->expiresOn();
+					$account[$linkedAccount->id]['expired'] = $expirationData->isExpired();
+					$account[$linkedAccount->id]['expires'] = $expirationData->expiresOn();
 					$account[$linkedAccount->id]['ils_barcode'] = $linkedAccount->ils_barcode;
 					$account[$linkedAccount->id]['alternateLibraryCard'] = $linkedAccount->getAlternateLibraryCardBarcode();
 					$account[$linkedAccount->id]['alternateLibraryCardPassword'] = $linkedAccount->getAlternateLibraryCardPasswordOrPin();
@@ -4945,7 +4960,8 @@ class UserAPI extends AbstractAPI {
 		}
 	}
 
-	function getViewers() {
+	/** @noinspection PhpUnused */
+	function getViewers() : array {
 		$user = $this->getUserForApiCall();
 
 		if ($user && !($user instanceof AspenError)) {

@@ -42,6 +42,7 @@ public abstract class AbstractGroupedWorkSolr {
 	protected String displayTitle;
 	protected Long earliestPublicationDate = null;
 	protected HashSet<String> editions = new HashSet<>();
+	protected HashSet<String> audiences = new HashSet<>();
 	protected HashSet<String> eras = new HashSet<>();
 	protected HashSet<String> fullTitles = new HashSet<>();
 	protected HashSet<String> genres = new HashSet<>();
@@ -151,6 +152,8 @@ public abstract class AbstractGroupedWorkSolr {
 		clonedWork.description = (HashSet<String>) description.clone();
 		// noinspection unchecked
 		clonedWork.editions = (HashSet<String>) editions.clone();
+		// noinspection unchecked
+		clonedWork.audiences = (HashSet<String>) audiences.clone();
 		// noinspection unchecked
 		clonedWork.eras = (HashSet<String>) eras.clone();
 		// noinspection unchecked
@@ -741,7 +744,7 @@ public abstract class AbstractGroupedWorkSolr {
 		if (seriesName != null && !seriesName.isEmpty()) {
 			String seriesInfo = getNormalizedSeries(seriesName);
 			String seriesInfoLower = seriesInfo.toLowerCase();
-			if (GroupedWorkIndexer.hideSeries.contains(seriesInfoLower)) {
+			if (groupedWorkIndexer.hideSeries.contains(seriesInfoLower)) {
 				return;
 			}
 			if (!volume.isEmpty()) {
@@ -812,7 +815,7 @@ public abstract class AbstractGroupedWorkSolr {
 		if (seriesInfo != null && !seriesInfo.equalsIgnoreCase("none")) {
 			seriesInfo = getNormalizedSeries(seriesInfo);
 			String normalizedSeriesLower = seriesInfo.toLowerCase();
-			if (GroupedWorkIndexer.hideSeries.contains(normalizedSeriesLower)) {
+			if (groupedWorkIndexer.hideSeries.contains(normalizedSeriesLower)) {
 				return;
 			}
 			if (!seriesField.containsKey(normalizedSeriesLower)) {
@@ -883,6 +886,10 @@ public abstract class AbstractGroupedWorkSolr {
 
 	void addEditions(Set<String> fieldList) {
 		this.editions.addAll(fieldList);
+	}
+
+	void addAudiences(Set<String> fieldList) {
+		this.audiences.addAll(fieldList);
 	}
 
 	void addContents(Set<String> fieldList) {

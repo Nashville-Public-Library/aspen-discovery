@@ -1919,7 +1919,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 									$subFieldData = ucwords(strtolower($subFieldData));
 								}
 								$search .= " " . $subFieldData;
-								if (strlen($title) > 0) {
+								if (strlen($title) > 0 && in_array($subfieldCode, ['v', 'x', 'y', 'z'])) {
 									$title .= ' -- ';
 								}
 								$title .= $subFieldData;
@@ -3040,6 +3040,17 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 			$homeLocation,
 			$holdGroups
 		);
+	}
+
+	public function getAudience(): string|null {
+		if (!$this->getMarcRecord()) {
+			return null;
+		}
+		$descriptionField = $this->getMarcRecord()->getField('521');
+		if (!$descriptionField || !$descriptionField->getSubfield('a')) {
+			return null;
+		}
+		return $descriptionField->getSubfield('a')->getData();
 	}
 }
 
