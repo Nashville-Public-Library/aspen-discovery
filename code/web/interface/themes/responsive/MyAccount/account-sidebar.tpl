@@ -111,7 +111,7 @@
 											</a>
 										</li>
 									{/if}
-									{if $user->isValidForEContentSource('hoopla')}
+									{if $user->isValidForEContentSource('hoopla_flex')}
 										<li class="myAccountLink">
 											&nbsp;&nbsp;&raquo;&nbsp;
 											<a href="/MyAccount/Holds?tab=hoopla" id="holdsHoopla" title="View holds from Hoopla">

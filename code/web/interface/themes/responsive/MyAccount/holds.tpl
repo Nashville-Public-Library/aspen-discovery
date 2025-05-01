@@ -36,7 +36,7 @@
 				{if $user->isValidForEContentSource('overdrive')}
 					<li role="presentation"{if $tab=='overdrive'} class="active"{/if}><a href="#overdrive" aria-controls="overdrive" role="tab" data-toggle="tab">{$readerName} <span class="badge"><span class="overdrive-holds-placeholder">&nbsp;</span></span></a></li>
 				{/if}
-				{if $user->isValidForEContentSource('hoopla')}
+				{if $user->isValidForEContentSource('hoopla_flex')}
 					<li role="presentation"{if $tab=='hoopla'} class="active"{/if}><a href="#hoopla" aria-controls="hoopla" role="tab" data-toggle="tab">{translate text="Hoopla" isPublicFacing=true} <span class="badge"><span class="hoopla-holds-placeholder">&nbsp;</span></span></a></li>
 				{/if}
 				{if $user->isValidForEContentSource('palace_project')}
@@ -65,7 +65,7 @@
 				{if $user->isValidForEContentSource('overdrive')}
 					<div role="tabpanel" class="tab-pane{if $tab=='overdrive'} active{/if}" id="overdrive" aria-label="List of Holds on OverDrive Titles"><div id="overdriveHoldsPlaceholder">{translate text="Loading holds from %1%" 1=$readerName isPublicFacing=true}</div></div>
 				{/if}
-				{if $user->isValidForEContentSource('hoopla')}
+				{if $user->isValidForEContentSource('hoopla_flex')}
 					<div role="tabpanel" class="tab-pane{if $tab=='hoopla'} active{/if}" id="hoopla" aria-label="List of Holds on Hoopla Titles"><div id="hooplaHoldsPlaceholder">{translate text="Loading holds from Hoopla" isPublicFacing=true}</div></div>
 				{/if}
 				{if $user->isValidForEContentSource('cloud_library')}

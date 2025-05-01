@@ -35,6 +35,8 @@ class MyAccount_HooplaOptions extends MyAccount {
 
 			$interface->assign('profile', $patron);
 		}
+		$isFlexAvailable = $user->isValidForEContentSource('hoopla_flex');
+		$interface->assign('isFlexAvailable', $isFlexAvailable);
 
 		$this->display('hooplaOptions.tpl', 'Account Settings');
 	}

@@ -221,30 +221,35 @@ class HooplaDriver extends AbstractEContentDriver {
 					$logger->log('Error retrieving patron status from Hoopla. User ID : ' . $user->id . $hooplaErrorMessage, Logger::LOG_NOTICE);
 					$this->hooplaPatronStatuses[$user->id] = false; // Don't do status call again for this user
 				}
-				// Get Holds status 
-				$holdsUrl = $patronURL . '/holds/current';
-				$holdsResponse = $this->getAPIResponse('hoopla.getHoldsCount', $holdsUrl);
-				if ($holdsResponse['httpCode'] == 200 && !empty($holdsResponse['body'])) {
-					$availableHolds = 0;
-					$unavailableHolds = 0;
+				// Get Holds status for only the patrons can access to Hoopla Flex
+				if ($this->hooplaFlexEnabled) {
+					$holdsUrl = $patronURL . '/holds/current';
+					$holdsResponse = $this->getAPIResponse('hoopla.getHoldsCount', $holdsUrl);
+					if ($holdsResponse['httpCode'] == 200 && !empty($holdsResponse['body'])) {
+						$availableHolds = 0;
+						$unavailableHolds = 0;
 
-					foreach ($holdsResponse['body'] as $hold) {
-						if ($hold->status === 'RESERVED') {
-							$availableHolds++;
-						} else if ($hold->status === 'WAITING') {
-							$unavailableHolds++;
+						foreach ($holdsResponse['body'] as $hold) {
+							if ($hold->status === 'RESERVED') {
+								$availableHolds++;
+							} else if ($hold->status === 'WAITING') {
+								$unavailableHolds++;
+							}
 						}
+
+						$summary->numHolds = $availableHolds + $unavailableHolds;
+						$summary->numAvailableHolds = $availableHolds;
+						$summary->numUnavailableHolds = $unavailableHolds;
+					} else {
+						global $logger;
+						$errorMessage = empty($holdsResponse['body']->message) ? '' : ' Hoopla Message: ' . $holdsResponse['body']->message;
+						$logger->log('Error retrieving holds from Hoopla. User ID: ' . $user->id . $errorMessage, Logger::LOG_NOTICE);
 					}
-
-					$summary->numHolds = $availableHolds + $unavailableHolds;
-					$summary->numAvailableHolds = $availableHolds;
-					$summary->numUnavailableHolds = $unavailableHolds;
 				} else {
-					global $logger;
-					$errorMessage = empty($holdsResponse['body']->message) ? '' : ' Hoopla Message: ' . $holdsResponse['body']->message;
-					$logger->log('Error retrieving holds from Hoopla. User ID: ' . $user->id . $errorMessage, Logger::LOG_NOTICE);
+					$summary->numHolds = 0;
+					$summary->numAvailableHolds = 0;
+					$summary->numUnavailableHolds = 0;
 				}
-
 			}
 
 			$summary->lastLoaded = time();

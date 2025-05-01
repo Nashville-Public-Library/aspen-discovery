@@ -861,6 +861,10 @@ class User extends DataObject {
 					}
 				} elseif ($source == 'hoopla') {
 					return array_key_exists('Hoopla', $enabledModules) && $userHomeLibrary->hooplaLibraryID > 0;
+				} elseif ($source == 'hoopla_flex') {
+					$libraryHooplaScope = $userHomeLibrary->getHooplaScope();
+					$isFlexAvilable = $libraryHooplaScope->includeFlex;
+					return array_key_exists('Hoopla', $enabledModules) && $userHomeLibrary->hooplaLibraryID > 0 && $isFlexAvilable;
 				} elseif ($source == 'cloud_library') {
 					return array_key_exists('Cloud Library', $enabledModules) && ($userHomeLibrary->cloudLibraryScope > 0);
 				} elseif ($source == 'axis360') {
@@ -1940,7 +1944,7 @@ class User extends DataObject {
 
 			//Get holds from Hoopla
 			if ($source == 'all' || $source == 'hoopla') {
-				if ($this->isValidForEContentSource('hoopla')) {
+				if ($this->isValidForEContentSource('hoopla_flex')) {
 					require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
 					$driver = new HooplaDriver();
 					$hooplaHolds = $driver->getHolds($this);
