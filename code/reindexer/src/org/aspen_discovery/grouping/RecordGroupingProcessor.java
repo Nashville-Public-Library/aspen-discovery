@@ -877,6 +877,14 @@ public class RecordGroupingProcessor {
 		return processRecord(primaryIdentifier, title, subtitle, primaryAuthor, formatType, language, true);
 	}
 
+	/**
+	 * Fetches the raw MARC data for the given CloudLibrary record ID from the database,
+	 * attempts to parse it into a MARC record, and then delegates the grouping process to
+	 * overloaded method {@link #groupCloudLibraryRecord(String, org.marc4j.marc.Record)}.
+	 *
+	 * @param cloudLibraryId The unique identifier of the CloudLibrary record to group.
+	 * @return A string representing the grouped record result, or {@code null} if parsing or grouping fails.
+	 */
 	public String groupCloudLibraryRecord(String cloudLibraryId) {
 		try {
 			getCloudLibraryRecordStmt.setString(1, cloudLibraryId);
@@ -907,6 +915,13 @@ public class RecordGroupingProcessor {
 		return null;
 	}
 
+	/**
+	 * Groups a CloudLibrary MARC record with the provided metadata from the database.
+	 *
+	 * @param cloudLibraryId The unique identifier of the CloudLibrary record.
+	 * @param cloudLibraryRecord The parsed MARC record associated with the CloudLibrary item.
+	 * @return A string representing the grouped record, or {@code null} if metadata lookup fails or an error occurs.
+	 */
 	public String groupCloudLibraryRecord(String cloudLibraryId, org.marc4j.marc.Record cloudLibraryRecord){
 		try{
 			getCloudLibraryDetailsForRecordStmt.setString(1, cloudLibraryId);

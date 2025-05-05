@@ -248,17 +248,17 @@ public class CloudLibraryExporter {
 	}
 
 	/**
-	 * Extract a single CloudLibrary record by ID
+	 * Extract a single CloudLibrary record by ID.
 	 *
-	 * @param singleRecordId The CloudLibrary ID of the record to extract
-	 * @return Number of changes made
+	 * @param singleRecordId The CloudLibrary ID of the record to extract.
+	 * @return Number of changes made.
 	 */
 	public int extractSingleRecord(String singleRecordId) {
 		int numChanges = 0;
 
 		loadExistingTitles(settings.getSettingsId());
 
-		logEntry.addNote("Extracting single CloudLibrary record: " + singleRecordId);
+		logEntry.addNote("Extracting single CloudLibrary record: " + singleRecordId + ".");
 		logEntry.saveResults();
 
 		CloudLibraryMarcHandler handler = new CloudLibraryMarcHandler(this, settings.getSettingsId(), existingRecords, true, startTimeForLogging, aspenConn, getRecordGroupingProcessor(), getGroupedWorkIndexer(), logEntry, logger);
@@ -267,22 +267,21 @@ public class CloudLibraryExporter {
 		for (int curTry = 1; curTry <= 4; curTry++) {
 			WebServiceResponse response = callCloudLibrary(apiPath);
 			if (response == null) {
-				// Something bad happened, we're done.
 				break;
 			} else if (!response.isSuccess()) {
 				if (response.getResponseCode() != 502) {
-					logEntry.incErrors("Error " + response.getResponseCode() + " calling " + apiPath + ": " + response.getMessage());
+					logEntry.incErrors("Error " + response.getResponseCode() + " calling " + apiPath + ": " + response.getMessage() + ".");
 					break;
 				} else {
 					if (curTry == 4) {
-						logEntry.incErrors("Error (after 3 tries) " + response.getResponseCode() + " calling " + apiPath + ": " + response.getMessage());
+						logEntry.incErrors("Error (after 3 tries) " + response.getResponseCode() + " calling " + apiPath + ": " + response.getMessage() + ".");
 						logEntry.addNote(response.getMessage());
 						break;
 					} else {
 						try {
 							Thread.sleep(1000);
 						} catch (InterruptedException e) {
-							logger.error("Thread was interrupted while waiting to retry for cloudLibrary");
+							logger.error("Thread was interrupted while waiting to retry for cloudLibrary.");
 						}
 					}
 				}

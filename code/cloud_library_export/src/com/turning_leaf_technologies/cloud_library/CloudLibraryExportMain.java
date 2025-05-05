@@ -150,6 +150,13 @@ public class CloudLibraryExportMain {
 		System.exit(0);
 	}
 
+	/**
+	 * Extracts a single CloudLibrary record using the specified record ID.
+	 *
+	 * @param singleRecordId The unique identifier of the CloudLibrary record to extract.
+	 * @return The total number of changes resulting from the record extraction across all settings.
+	 * @throws RuntimeException If a database error occurs while loading settings.
+	 */
 	private static int extractSingleCloudLibraryRecord(String singleRecordId) {
 		logger.info("Extracting single CloudLibrary record: {}.", singleRecordId);
 		int numChanges = 0;
@@ -168,7 +175,7 @@ public class CloudLibraryExportMain {
 				logger.error("Unable to find settings for CloudLibrary; please add settings to the database.");
 			}
 		} catch (SQLException e) {
-			logger.error("Failed to load CloudLibrary settings from the database:", e);
+			logger.error("Failed to load CloudLibrary setting(s) from the database:", e);
 		}
 
 		return numChanges;
