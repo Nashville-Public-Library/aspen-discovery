@@ -3244,7 +3244,6 @@ class Theme extends DataObject {
 
 			// If any libraries would be left without themes, show error message and abort.
 			if ($preventDeletion) {
-				// Create a single error message listing all libraries
 				if (count($librariesWithOnlyThisTheme) == 1) {
 					$preventionMessage = translate([
 						'text' => 'Library %1% cannot be removed from this theme because it is the only theme for the library. Before proceeding, please assign another theme to this library.',
