@@ -7340,7 +7340,7 @@ class Koha extends AbstractIlsDriver {
 		} elseif ($code == "has_fine") {
 			$message .= 'Item has an outstanding fine';
 		} else {
-			$message = 'Unknown error';
+			$message = 'Unknown error:' . $code;
 		}
 		return $message;
 	}
