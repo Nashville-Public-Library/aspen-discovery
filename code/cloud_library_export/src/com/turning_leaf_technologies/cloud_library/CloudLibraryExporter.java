@@ -429,7 +429,7 @@ public class CloudLibraryExporter {
 				if (groupedWorkId != null) {
 					logEntry.incRecordsRegrouped();
 					getGroupedWorkIndexer().processGroupedWork(groupedWorkId);
-                } else {
+				} else {
 					logEntry.incErrors("Could not get details for record to reload " + cloudLibraryId + ", as it has likely been deleted.");
 					RemoveRecordFromWorkResult result = getRecordGroupingProcessor().removeRecordFromGroupedWork("cloud_library", cloudLibraryId);
 					if (result.reindexWork) {
@@ -440,10 +440,10 @@ public class CloudLibraryExporter {
 						getGroupedWorkIndexer().deleteRecord(result.permanentId, result.groupedWorkId);
 					}
 
-                }
-                markRecordToReloadAsProcessedStmt.setLong(1, recordToReloadId);
-                markRecordToReloadAsProcessedStmt.executeUpdate();
-                numRecordsToReloadProcessed++;
+				}
+				markRecordToReloadAsProcessedStmt.setLong(1, recordToReloadId);
+				markRecordToReloadAsProcessedStmt.executeUpdate();
+				numRecordsToReloadProcessed++;
 			}
 			if (numRecordsToReloadProcessed > 0){
 				logEntry.addNote("Regrouped " + numRecordsToReloadProcessed + " records marked for reprocessing.");

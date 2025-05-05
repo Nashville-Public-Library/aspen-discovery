@@ -166,10 +166,10 @@ class CloudLibraryExtractLogEntry implements BaseIndexingLogEntry {
 		this.addNote("Invalid Record found: " + invalidRecordId);
 	}
 
-    public void incRecordsRegrouped() {
+	public void incRecordsRegrouped() {
 		numRegrouped++;
 		if (numRegrouped % 1000 == 0){
 			this.saveResults();
 		}
-    }
+	}
 }
