@@ -197,6 +197,14 @@
 								<div class="adminActionLabel"><a href="/Testing/GenerateMaterialRequests">{translate text="Generate Test Material Request Data" isAdminFacing=true}</a></div>
 							</div>
 						</div>
+						<div class="adminAction row">
+							<div class="col-tn-2 col-xs-1 col-sm-2 col-md-1 adminActionLabel">
+								<a href="/Testing/SIPTester" title="{translate text="Test SIP Connection" inAttribute="true" isAdminFacing=true}"><i class="fas fa-chevron-circle-right fa"></i></a>
+							</div>
+							<div class="col-tn-10 col-xs-11 col-sm-10 col-md-11">
+								<div class="adminActionLabel"><a href="/Testing/SIPTester">{translate text="Test SIP Connection" isAdminFacing=true}</a></div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
