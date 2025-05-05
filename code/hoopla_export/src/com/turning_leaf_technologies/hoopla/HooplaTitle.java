@@ -6,14 +6,16 @@ class HooplaTitle {
 	private final long checksum;
 	private final boolean active;
 	private final long rawResponseLength;
+	private final String hooplaType;
 	private boolean foundInExport;
 
-	HooplaTitle(long id, long hooplaId, long checksum, boolean active, long rawResponseLength) {
+	HooplaTitle(long id, long hooplaId, long checksum, boolean active, long rawResponseLength, String hooplaType) {
 		this.id = id;
 		this.hooplaId = hooplaId;
 		this.checksum = checksum;
 		this.active = active;
 		this.rawResponseLength = rawResponseLength;
+		this.hooplaType = hooplaType != null ? hooplaType : "Instant";
 	}
 
 	long getId() {
@@ -42,5 +44,9 @@ class HooplaTitle {
 
 	public void setFoundInExport(boolean foundInExport) {
 		this.foundInExport = foundInExport;
+	}
+
+	public String getHooplaType() {
+		return hooplaType;
 	}
 }

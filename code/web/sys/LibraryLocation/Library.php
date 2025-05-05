@@ -1404,7 +1404,7 @@ class Library extends DataObject {
 					'allowFilteringOfLinkedAccountsInCheckouts' => [
 						'property' => 'allowFilteringOfLinkedAccountsInCheckouts',
 						'type' => 'checkbox',
-						'label' => 'Allow Filtering of Linked Accounts in Check Out Titles',
+						'label' => 'Allow Filtering of Linked Accounts in Checked Out Titles',
 						'description' => 'Whether or not users can filter their checked out titles by linked accounts.',
 						'hideInLists' => true,
 						'default' => 0,
@@ -2944,8 +2944,8 @@ class Library extends DataObject {
 						'type' => 'enum',
 						'values' => [
 							0 => 'No Lists',
-							'1' => 'Lists from this library',
-							'3' => 'Lists from library list publishers Only',
+							'1' => 'Lists from this library', // no NYT
+							'3' => 'Lists from library list publishers Only', //includes NYT
 							'4' => 'Lists from all list publishers',
 							'2' => 'All Lists',
 						],
@@ -4897,6 +4897,18 @@ class Library extends DataObject {
 			}
 		}
 		return $this->_cloudLibraryScope;
+	}
+
+	public function getHooplaScope() {
+		if ($this->hooplaScopeId != null) {
+			require_once ROOT_DIR . '/sys/Hoopla/HooplaScope.php';
+			$hooplaScope = new HooplaScope();
+			$hooplaScope->id = $this->hooplaScopeId;
+			if ($hooplaScope->find(true)) {
+				return $hooplaScope;
+			}
+		}
+		return null;
 	}
 
 	public function saveCloudLibraryScopes() : void {

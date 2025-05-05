@@ -26,6 +26,7 @@ class HooplaExtractLogEntry implements BaseIndexingLogEntry {
 	private int numUpdated = 0;
 	private int numSkipped = 0;
 	private int numInvalidRecords = 0;
+	private int numAvailabilityChanges = 0;
 	private final Logger logger;
 
 	HooplaExtractLogEntry(Connection dbConn, Logger logger) {
@@ -33,7 +34,7 @@ class HooplaExtractLogEntry implements BaseIndexingLogEntry {
 		this.startTime = new Date();
 		try {
 			insertLogEntry = dbConn.prepareStatement("INSERT into hoopla_export_log (startTime) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS);
-			updateLogEntry = dbConn.prepareStatement("UPDATE hoopla_export_log SET lastUpdate = ?, endTime = ?, notes = ?, numProducts = ?, numErrors = ?, numAdded = ?, numUpdated = ?, numDeleted = ?, numSkipped = ?, numRegrouped =?, numChangedAfterGrouping = ?, numInvalidRecords = ? WHERE id = ?", PreparedStatement.RETURN_GENERATED_KEYS);
+			updateLogEntry = dbConn.prepareStatement("UPDATE hoopla_export_log SET lastUpdate = ?, endTime = ?, notes = ?, numProducts = ?, numErrors = ?, numAdded = ?, numUpdated = ?, numDeleted = ?, numSkipped = ?, numRegrouped =?, numChangedAfterGrouping = ?, numInvalidRecords = ?, numAvailabilityChanges = ? WHERE id = ?", PreparedStatement.RETURN_GENERATED_KEYS);
 		} catch (SQLException e) {
 			logger.error("Error creating prepared statements to update log", e);
 		}
@@ -99,6 +100,7 @@ class HooplaExtractLogEntry implements BaseIndexingLogEntry {
 				updateLogEntry.setInt(++curCol, numRegrouped);
 				updateLogEntry.setInt(++curCol, numChangedAfterGrouping);
 				updateLogEntry.setInt(++curCol, numInvalidRecords);
+				updateLogEntry.setInt(++curCol, numAvailabilityChanges);
 				updateLogEntry.setLong(++curCol, logEntryId);
 				updateLogEntry.executeUpdate();
 			}
@@ -154,7 +156,7 @@ class HooplaExtractLogEntry implements BaseIndexingLogEntry {
 	}
 
 	int getNumChanges() {
-		return numUpdated + numDeleted + numAdded;
+		return numUpdated + numDeleted + numAdded + numAvailabilityChanges;
 	}
 
 	public void incRecordsRegrouped() {
@@ -163,6 +165,10 @@ class HooplaExtractLogEntry implements BaseIndexingLogEntry {
 			this.saveResults();
 		}
 	}
+	void incAvailabilityChanges(){
+		numAvailabilityChanges++;
+	}
+
 	public void incChangedAfterGrouping(){
 		numChangedAfterGrouping++;
 	}

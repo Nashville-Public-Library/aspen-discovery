@@ -344,6 +344,8 @@ AspenDiscovery.Account = (function () {
 					label = 'Boundless Holds';
 				} else if (source === 'palace_project') {
 					label = 'Palace Project Holds';
+				} else if (source === 'hoopla') {
+					label = 'Hoopla Holds';
 				}
 				history.pushState(stateObj, label, newUrl);
 			}
@@ -513,6 +515,13 @@ AspenDiscovery.Account = (function () {
 						$(".hoopla-checkouts-placeholder").html(data.summary.numCheckedOut);
 						totalCheckouts += parseInt(data.summary.numCheckedOut);
 						$(".checkouts-placeholder").html(totalCheckouts);
+						$(".hoopla-holds-placeholder").html(data.summary.numHolds);
+						totalHolds += parseInt(data.summary.numHolds);
+						$(".holds-placeholder").html(totalHolds);
+						if (data.summary.numAvailableHolds > 0) {
+							$(".hoopla-available-holds-placeholder").html(data.summary.numAvailableHolds);
+							$(".hoopla-available-holds").show();
+						}
 					}
 				});
 			}
