@@ -406,8 +406,9 @@ public class RecordGroupingProcessor {
 			getWorkByAlternateTitleAuthorStmt.setString(3, groupedWork.getGroupingCategory());
 			ResultSet getWorkByAlternateTitleAuthorRS = getWorkByAlternateTitleAuthorStmt.executeQuery();
 			if (getWorkByAlternateTitleAuthorRS.next()){
+				String permanentId = getWorkByAlternateTitleAuthorRS.getString("permanent_id");
 				getWorkByAlternateTitleAuthorRS.close();
-				return getWorkByAlternateTitleAuthorRS.getString("permanent_id");
+				return permanentId;
 			}
 			getWorkByAlternateTitleAuthorRS.close();
 		} catch (SQLException e) {
@@ -807,8 +808,9 @@ public class RecordGroupingProcessor {
 					getTitleAuthorityStmt.setString(1, originalTitle);
 					ResultSet authorityRS = getTitleAuthorityStmt.executeQuery();
 					if (authorityRS.next()) {
+						String authoritativeName = authorityRS.getString("authoritativeName");
 						authorityRS.close();
-						return authorityRS.getString("authoritativeName");
+						return authoritativeName;
 					}
 					authorityRS.close();
 				} catch (SQLException e) {
