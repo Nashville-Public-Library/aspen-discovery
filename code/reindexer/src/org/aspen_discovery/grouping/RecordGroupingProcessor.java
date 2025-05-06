@@ -788,7 +788,6 @@ public class RecordGroupingProcessor {
 					if (!normalizedAuthoritativeAuthor.equals(originalAuthor)) {
 						numAuthorAuthoritiesUsed++;
 					}
-
 					authoritativeAuthorRS.close();
 					return normalizedAuthoritativeAuthor;
 				}
@@ -863,7 +862,7 @@ public class RecordGroupingProcessor {
 					logEntry.incErrors("Could not parse item details for record to reload " + axis360Id);
 				}
 			}else{
-				logEntry.incErrors("Could not get details for Axis360 Record " + axis360Id);
+				logEntry.addNote("Could not get details for Axis360 Record " + axis360Id);
 			}
 			getItemDetailsForRecordRS.close();
 		}catch (SQLException e){
