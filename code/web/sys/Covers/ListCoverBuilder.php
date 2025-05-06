@@ -93,7 +93,7 @@ class ListCoverBuilder {
 
 		$maxIndex = $isListOfLists
 			? min(count($validListEntries) - 1, 2) // Up to 3 covers for lists-of-lists,
-			: min(count($validListEntries) - 1, 3); // up to 4 covers for standard lists.
+			: min(count($validListEntries) - 1, 3); // Up to 4 covers for standard lists.
 		for ($i = $maxIndex; $i >= 0; $i--) {
 			$recordDriver = $validListEntries[$i];
 			$bookcoverUrl = $recordDriver->getBookcoverUrl('medium', true);
