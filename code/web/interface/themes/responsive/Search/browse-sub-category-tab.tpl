@@ -23,7 +23,7 @@
 						<div class="swiper-button-prev"></div>
 					</div>
 					<div class="swiper-wrapper" id="swiper-sub-browse-category-{$subCategory.textId}">
-						{if $subCategory@iteration == 1 && !empty($subCategory.initialResults)}
+						{if $subCategory@iteration == 1}
 							<div class="swiper-slide" id="swiper-loading-{$subCategory.textId}" style="height: 200px">
 								<i class="fas fa-lg fa-spinner fa-spin"></i>
 							</div>

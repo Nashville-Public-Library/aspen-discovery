@@ -201,26 +201,28 @@ class Search_Home extends Action {
 	 * @param BrowseCategoryGroup|null $localBrowseCategories
 	 * @return BrowseCategory[]
 	 */
-	private function getInitialBrowseCategoryFeed($localBrowseCategories = null) {
+	private function getInitialBrowseCategoryFeed($localBrowseCategories = null): array {
+		// Build basic list of categories, marking those with subcategories
 		require_once ROOT_DIR . '/services/API/SearchAPI.php';
-
+		$searchAPI = new SearchAPI();
 		$browseCategories = [];
 		if ($localBrowseCategories) {
-			foreach ($localBrowseCategories as $index => $localBrowseCategory) {
+			foreach ($localBrowseCategories as $localBrowseCategory) {
 				$browseCategory = new BrowseCategory();
 				$browseCategory->id = $localBrowseCategory->browseCategoryId;
 				$browseCategory->find(true);
-				if($browseCategory->isValidForDisplay()) {
-					$browseCategories[$browseCategory->id]['textId'] = $browseCategory->textId;
-					$browseCategories[$browseCategory->id]['label'] = $browseCategory->label;
-
-					require_once ROOT_DIR . '/services/Browse/AJAX.php';
-					$browseAJAX = new Browse_AJAX();
-					$browseCategories[$browseCategory->id] = $browseAJAX->getBrowseCategoryInfo($browseCategory->textId);
+				if ($browseCategory->isValidForDisplay()) {
+					$textId = $browseCategory->textId;
+					$subCatResult = $searchAPI->getSubCategories($textId);
+					$browseCategories[] = [
+						'textId' => $textId,
+						'label' => $browseCategory->label,
+						'searchUrl' => '#',
+						'hasSubcategories' => !empty($subCatResult['subCategories']),
+					];
 				}
 			}
 		}
-
 		return $browseCategories;
 	}
 
