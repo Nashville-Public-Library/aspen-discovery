@@ -165,6 +165,7 @@ public class GroupedWorkIndexer {
 	private PreparedStatement addSeriesMemberStmt;
 	private PreparedStatement deleteSeriesMemberStmt;
 	private PreparedStatement deleteSeriesStmt;
+	private PreparedStatement getNumberOfSeriesMembersStmt;
 	private PreparedStatement addSeriesStmt;
 	private PreparedStatement setSeriesDateUpdated;
 	private PreparedStatement updateSeriesAuthor;
@@ -339,12 +340,13 @@ public class GroupedWorkIndexer {
 			removeVariationsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_variation where groupedWorkId = ?");
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
 
-			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, sm.seriesId FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?");
-			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?");
+			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, sm.seriesId FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
 			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesId, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?)");
 			deleteSeriesMemberStmt = dbConn.prepareStatement("DELETE FROM series_member WHERE seriesId = ? AND groupedWorkPermanentId = ? AND userAdded = 0;");
-			deleteSeriesStmt = dbConn.prepareStatement("DELETE FROM series WHERE id in (SELECT seriesId FROM series_member WHERE seriesId = ? HAVING COUNT(groupedWorkPermanentId) = 1);");
+			deleteSeriesStmt = dbConn.prepareStatement("DELETE FROM series WHERE seriesId = ?;");
+			getNumberOfSeriesMembersStmt = dbConn.prepareStatement("SELECT COUNT(*) as numMembers FROM series_member WHERE seriesId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			updateSeriesAuthor = dbConn.prepareStatement("UPDATE series SET author = ? WHERE id = ?;");
 			setSeriesDateUpdated = dbConn.prepareStatement("UPDATE series SET dateUpdated = ? WHERE id = ?;");
 		} catch (Exception e){
@@ -1534,8 +1536,15 @@ public class GroupedWorkIndexer {
 						int result = deleteSeriesMemberStmt.executeUpdate();
 						// Also delete the series if it no longer has any members
 						if (result != 0) {
-							deleteSeriesStmt.setInt(1, seriesId); // Deletes if it only had 1 member (this work)
-							deleteSeriesStmt.executeUpdate();
+							getNumberOfSeriesMembersStmt.setInt(1, seriesId);
+							ResultSet numSeriesMembersRS = getNumberOfSeriesMembersStmt.executeQuery();
+							if (numSeriesMembersRS.next()) {
+								if (numSeriesMembersRS.getInt("numMembers") == 0) {
+									deleteSeriesStmt.setInt(1, seriesId); // Deletes if it only had 1 member (this work)
+									deleteSeriesStmt.executeUpdate();
+								}
+							}
+							numSeriesMembersRS.close();
 						}
 					}
 				}
