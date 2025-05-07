@@ -45,9 +45,9 @@ var AspenDiscovery = (function(){
 			}
 		});
 
-		// Handle search box clear button visibility
-		var $lookfor = aspenJQ("#lookfor");
-		var $clearAddon = $lookfor.siblings('.clear-search');
+		// Handle search box clear button visibility.
+		const $lookfor = aspenJQ("#lookfor");
+		const $clearAddon = $lookfor.siblings('.clear-search');
 
 		$lookfor.on("input", function() {
 			if (aspenJQ(this).val().length > 0) {
@@ -56,7 +56,7 @@ var AspenDiscovery = (function(){
 				$clearAddon.css('display', 'none');
 			}
 		});
-		// Set initial visibility
+		// Set initial visibility.
 		$lookfor.trigger("input");
 	});
 

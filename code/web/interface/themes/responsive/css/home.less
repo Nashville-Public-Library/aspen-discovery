@@ -455,7 +455,8 @@
   z-index: 2;
 
   @media (max-width: @screen-sm-min) {
-    right: 20px; // Increase right offset slightly on smaller screens
+    // Increase right offset slightly on smaller screens.
+    right: 20px;
   }
 }
 .input-group-addon.clear-search svg {
@@ -467,7 +468,7 @@
   fill: #222;
 }
 
-// Ensure the clear icon does not overlap the input text
+// Ensure the clear icon does not overlap the input text.
 #horizontal-search-box .input-group input#lookfor,
 #home-search-box .input-group input#lookfor {
   padding-right: 30px !important;
