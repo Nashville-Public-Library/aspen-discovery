@@ -27,6 +27,7 @@ class Hoopla_AJAX extends Action {
 				$id,
 			] = explode(':', $id);
 		}
+		$hooplaType = $_REQUEST['hooplaType'];
 		if ($user) {
 			$hooplaUsers = $user->getRelatedEcontentUsers('hoopla');
 
@@ -45,8 +46,10 @@ class Hoopla_AJAX extends Action {
 				}
 
 				if (count($hooplaUsers) > 1) {
+					// For multiple users, show the checkout prompt according to the hooplaType
 					$interface->assign('hooplaUsers', $hooplaUsers);
 					$interface->assign('hooplaUserStatuses', $hooplaUserStatuses);
+					$interface->assign('hooplaType', $hooplaType);
 
 					return [
 						'title' => translate([
@@ -54,18 +57,21 @@ class Hoopla_AJAX extends Action {
 							'isPublicFacing' => true,
 						]),
 						'body' => $interface->fetch('Hoopla/ajax-checkout-prompt.tpl'),
-						'buttons' => '<button class="btn btn-primary" type= "button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\');">' . translate([
+						'buttons' => '<button class="btn btn-primary" type= "button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', $(\'#patronId\').val(), \'' . $hooplaType . '\');">' . translate([
 								'text' => 'Check Out',
 								'isPublicFacing' => true,
 							]) . '</button>',
 					];
 				} elseif (count($hooplaUsers) == 1) {
+					// Single user
 					$hooplaUser = reset($hooplaUsers);
 					if ($hooplaUser->id != $user->id) {
 						$interface->assign('hooplaUser', $hooplaUser); // Display the account name when not using the main user
 					}
 					$checkOutStatus = $hooplaUserStatuses[$hooplaUser->id];
 					if (!$checkOutStatus) {
+						// This block is currently unused since checkOutStatus always has a value even if patron is not registered
+						// Keeping it here for potential future use cases
 						require_once ROOT_DIR . '/RecordDrivers/HooplaRecordDriver.php';
 						$hooplaRecord = new HooplaRecordDriver($id);
 
@@ -80,7 +86,7 @@ class Hoopla_AJAX extends Action {
 								'isPublicFacing' => true,
 							]),
 							'body' => $interface->fetch('Hoopla/ajax-hoopla-single-user-checkout-prompt.tpl'),
-							'buttons' => '<button id="theHooplaButton" class="btn btn-default" type="button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', ' . $hooplaUser->id . ')">' . translate([
+							'buttons' => '<button id="theHooplaButton" class="btn btn-default" type="button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', ' . ', \'' . $hooplaType . '\');">' . translate([
 									'text' => 'I registered, Check Out now',
 									'isPublicFacing' => true,
 								]) . '</button>' . '<a class="btn btn-primary" role="button" href="' . $hooplaRegistrationUrl . '" target="_blank" title="Register at Hoopla" aria-label="Register at Hoopla ('.translate(['text' => 'opens in a new window', 'isPublicFacing' => true, 'inAttribute' => true]) .')" onclick="$(\'#theHooplaButton+a,#theHooplaButton\').toggleClass(\'btn-primary btn-default\');">' . translate([
@@ -89,7 +95,8 @@ class Hoopla_AJAX extends Action {
 								]) . '</a>',
 						];
 					}
-					if ($hooplaUser->hooplaCheckOutConfirmation) {
+					if ($hooplaUser->hooplaCheckOutConfirmation && $hooplaType == 'Instant') {
+						// Instant titles require a prompt to show the remaining checkouts
 						$interface->assign('hooplaPatronStatus', $checkOutStatus);
 						return [
 							'title' => translate([
@@ -97,20 +104,18 @@ class Hoopla_AJAX extends Action {
 								'isPublicFacing' => true,
 							]),
 							'body' => $interface->fetch('Hoopla/ajax-hoopla-single-user-checkout-prompt.tpl'),
-							'buttons' => '<button class="btn btn-primary" type="button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', ' . $hooplaUser->id . ')">' . translate([
+							'buttons' => '<button class="btn btn-primary" type="button" title="Check Out" onclick="return AspenDiscovery.Hoopla.checkOutHooplaTitle(\'' . $id . '\', ' . $hooplaUser->id . ', \'' . $hooplaType . '\');">' . translate([
 									'text' => 'Check Out',
 									'isPublicFacing' => true,
 								]) . '</button>',
 						];
 					} else {
-						// Go ahead and checkout the title
+						// Flex titles can be checked out directly
 						return [
-							'title' => translate([
-								'text' => 'Checking out Hoopla title',
-								'isPublicFacing' => true,
-							]),
-							'body' => "<script>AspenDiscovery.Hoopla.checkOutHooplaTitle('{$id}', '{$hooplaUser->id}')</script>",
-							'buttons' => '',
+							'flexDirectCheckout' => true,
+							'patronId' => $hooplaUser->id,
+							'id' => $id,
+							'hooplaType' => $hooplaType
 						];
 					}
 				} else {
@@ -160,10 +165,117 @@ class Hoopla_AJAX extends Action {
 	}
 
 	/** @noinspection PhpUnused */
-	function checkOutHooplaTitle() {
+	function getHoldPrompts() {
+		$user = UserAccount::getLoggedInUser();
+		if ($user) {
+			$id = $_REQUEST['id'];
+			$hooplaUsers = $user->getRelatedEcontentUsers('hoopla');
+
+			global $interface;
+			$interface->assign('hooplaId', $id);
+
+			$driver = new HooplaDriver();
+			$holdQueueSize = $driver->getHoldQueueSize($id);
+			$interface->assign('holdQueueSize', $holdQueueSize);
+			if (count($hooplaUsers) > 0) {
+				$interface->assign('hooplaUsers', $hooplaUsers);
+				if (count($hooplaUsers) == 1) {
+					$singleUser = reset($hooplaUsers);
+					$interface->assign('singleUser', $singleUser);
+					if (!$singleUser->hooplaHoldQueueSizeConfirmation) {
+						return [
+							'success' => true,
+							'promptNeeded' => false,
+							'patronId' => $singleUser->id
+						];
+					}
+					$buttonOnClick = "return AspenDiscovery.Hoopla.doHold('" . $singleUser->id . "', '" . $id . "');";
+				} else {
+					$buttonOnClick = "return AspenDiscovery.Hoopla.doHold($('#patronId').val(), '" . $id . "');";
+				}
+
+				return [
+					'success' => true,
+					'promptNeeded' => true,
+					'promptTitle' => translate(['text' => 'Place Hoopla Flex Hold', 'isPublicFacing' => true]),
+					'prompts' => $interface->fetch('Hoopla/ajax-hold-prompt.tpl'),
+					'buttons' => '<button class="btn btn-primary" onclick="' . $buttonOnClick . '">' . translate(['text' => 'Place Hold', 'isPublicFacing' => true]) . '</button>'
+				];
+			} else {
+				return [
+					'success' => false,
+					'message' => translate(['text' => 'No valid Hoopla account found.', 'isPublicFacing' => true])
+				];
+			}
+		}
+		return ['success' => false, 'message' => 'You must be logged in to place holds'];
+
+	}
+
+	/** @noinspection PhpUnused */
+	function placeHold() {
 		$user = UserAccount::getLoggedInUser();
 		if ($user) {
 			$patronId = $_REQUEST['patronId'];
+			$id = $_REQUEST['id'];
+			$patron = $user->getUserReferredTo($patronId);
+
+			if ($patron) {
+				if (isset($_REQUEST['stopHooplaHoldConfirmation'])) {
+					$patron->hooplaHoldQueueSizeConfirmation = 0;
+					$patron->update();
+				}
+				require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+				$driver = new HooplaDriver();
+				$result = $driver->placeHold($patron, $id);
+				return $result;
+			} else {
+				return [
+					'success' => false,
+					'message' => translate(['text' => 'Invalid patron selected', 'isPublicFacing' => true])
+				];
+			}
+		}
+		return ['success' => false, 'message' => 'You must be logged in to place holds'];
+	}
+
+	function cancelHold() {
+		$user = UserAccount::getLoggedInUser();
+		$id = $_REQUEST['recordId'];
+		if ($user) {
+			$patronId = $_REQUEST['patronId'];
+			$patron = $user->getUserReferredTo($patronId);
+			if ($patron) {
+				require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+				$driver = new HooplaDriver();
+				return $driver->cancelHold($patron, $id);
+			} else {
+				return [
+					'success' => false,
+					'message' => translate([
+						'text' => 'Sorry, it looks like you don\'t have permissions to cancel holds for that user.',
+						'isPublicFacing' => true,
+					]),
+				];
+			}
+		} else {
+			return [
+				'success' => false,
+				'message' => translate([
+					'text' => 'You must be logged in to cancel holds.',
+					'isPublicFacing' => true,
+				]),
+			];
+		}
+	}
+
+	/** @noinspection PhpUnused */
+	function checkOutHooplaTitle() {
+		$user = UserAccount::getLoggedInUser();
+		if ($user) {
+			$patronId = !empty($_REQUEST['patronId']) ? $_REQUEST['patronId'] : $user->id;
+
+			$hooplaType = $_REQUEST['hooplaType'];
 			$patron = $user->getUserReferredTo($patronId);
 			if ($patron) {
 				global $interface;
@@ -171,17 +283,19 @@ class Hoopla_AJAX extends Action {
 					$interface->assign('hooplaUser', $patron); // Display the account name when not using the main user
 				}
 
+				if (isset($_REQUEST['stopHooplaConfirmation'])) {
+					$patron->hooplaCheckOutConfirmation = 0;
+					$patron->update();
+				}
+
 				$id = $_REQUEST['id'];
 				require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
 				$driver = new HooplaDriver();
 				$result = $driver->checkOutTitle($patron, $id);
-				if (!empty($_REQUEST['stopHooplaConfirmation'])) {
-					$patron->hooplaCheckOutConfirmation = 0;
-					$patron->update();
-				}
 				if ($result['success']) {
 					$checkOutStatus = $driver->getAccountSummary($patron);
 					$interface->assign('hooplaPatronStatus', $checkOutStatus);
+					$interface->assign('hooplaType', $hooplaType);
 					$title = empty($result['title']) ? translate([
 						'text' => "Title checked out successfully",
 						'isPublicFacing' => true,

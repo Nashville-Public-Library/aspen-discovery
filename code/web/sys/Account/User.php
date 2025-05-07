@@ -33,6 +33,7 @@ class User extends DataObject {
 	public $overdriveEmail;
 	public $promptForOverdriveEmail; //Semantics of this have changed to not prompting for hold settings
 	public $hooplaCheckOutConfirmation;
+	public $hooplaHoldQueueSizeConfirmation;
 	public $promptForAxis360Email;
 	public $axis360Email;
 	public $preferredLibraryInterface;
@@ -860,6 +861,10 @@ class User extends DataObject {
 					}
 				} elseif ($source == 'hoopla') {
 					return array_key_exists('Hoopla', $enabledModules) && $userHomeLibrary->hooplaLibraryID > 0;
+				} elseif ($source == 'hoopla_flex') {
+					$libraryHooplaScope = $userHomeLibrary->getHooplaScope();
+					$isFlexAvilable = $libraryHooplaScope->includeFlex;
+					return array_key_exists('Hoopla', $enabledModules) && $userHomeLibrary->hooplaLibraryID > 0 && $isFlexAvilable;
 				} elseif ($source == 'cloud_library') {
 					return array_key_exists('Cloud Library', $enabledModules) && ($userHomeLibrary->cloudLibraryScope > 0);
 				} elseif ($source == 'axis360') {
@@ -1401,6 +1406,11 @@ class User extends DataObject {
 		} else {
 			$this->__set('hooplaCheckOutConfirmation', 0);
 		}
+		if (isset($_REQUEST['hooplaHoldQueueSizeConfirmation']) && ($_REQUEST['hooplaHoldQueueSizeConfirmation'] == 'yes' || $_REQUEST['hooplaHoldQueueSizeConfirmation'] == 'on')) {
+			$this->__set('hooplaHoldQueueSizeConfirmation', 1);
+		} else {
+			$this->__set('hooplaHoldQueueSizeConfirmation', 0);
+		}
 		$this->update();
 	}
 
@@ -1851,7 +1861,7 @@ class User extends DataObject {
 	public function getHolds($includeLinkedUsers = true, $unavailableSort = 'sortTitle', $availableSort = 'expire', $source = 'all'): array {
 		require_once ROOT_DIR . '/sys/User/Hold.php';
 		//Check to see if we should return cached information, we will reload it if we last fetched it more than
-		//15 minutes ago or if the refresh option is selected
+		//5 minutes ago or if the refresh option is selected
 		$reloadHoldInformation = false;
 		if (($this->holdInfoLastLoaded < time() - 5 * 60) || isset($_REQUEST['refreshHolds'])) {
 			$reloadHoldInformation = true;
@@ -1931,6 +1941,18 @@ class User extends DataObject {
 					$holdsToReturn = array_merge_recursive($holdsToReturn, $vdxRequests);
 				}
 			}
+
+			//Get holds from Hoopla
+			if ($source == 'all' || $source == 'hoopla') {
+				if ($this->isValidForEContentSource('hoopla_flex')) {
+					require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+					$driver = new HooplaDriver();
+					$hooplaHolds = $driver->getHolds($this);
+					$allHolds = array_merge_recursive($allHolds, $hooplaHolds);
+					$holdsToReturn = array_merge_recursive($holdsToReturn, $hooplaHolds);
+				}
+			}
+
 			//Delete all existing holds
 			$hold = new Hold();
 			$hold->userId = $this->id;
@@ -2225,7 +2247,7 @@ class User extends DataObject {
 				'requireLogin' => false,
 				'btnType' => 'btn-info',
 			];
-		} elseif ($source != 'hoopla' && $this->isRecordOnHold($source, $recordId)) {
+		} elseif ($this->isRecordOnHold($source, $recordId)) {
 			$actions[] = [
 				'title' => translate([
 					'text' => 'On Hold for %1%',
@@ -5115,6 +5137,14 @@ class User extends DataObject {
 			$driver = new PalaceProjectDriver();
 			$result = $driver->placeHold($this, $selectedRequestCandidate->sourceId);
 			$action = $result['api']['action'] ?? null;
+			return [
+				'success' => $result['success'],
+				'message' => $result['api']['message'],
+			];
+		} elseif ($source == 'hoopla') {
+			require_once ROOT_DIR . '/Drivers/HooplaDriver.php';
+			$driver = new HooplaDriver();
+			$result = $driver->placeHold($this, $selectedRequestCandidate->sourceId);
 			return [
 				'success' => $result['success'],
 				'message' => $result['api']['message'],
