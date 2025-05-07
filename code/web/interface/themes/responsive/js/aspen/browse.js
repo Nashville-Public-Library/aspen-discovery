@@ -728,11 +728,18 @@ AspenDiscovery.Browse = (function(){
 			return $.getJSON(url, params)
 			.done(function(data){
 				if (data.success === false) {
-					AspenDiscovery.showMessage('Error loading subcategories', 'Sorry, unable to load subcategories for that category');
+					AspenDiscovery.showMessage('Error Loading Subcategories', 'Sorry, unable to load subcategories for that category.');
 				} else {
-					// Replace placeholder with actual tabs
-					AspenDiscovery.Browse.changingDisplay = false;
-					$('#tabs-' + categoryTextId).html(data.subcategories);
+					// Replace placeholder with actual tabs.
+					const $tabs = $('#tabs-' + categoryTextId);
+					$tabs.html(data.subcategories);
+
+					// Load the first subcategory.
+					const firstTabBtn = $tabs.find('[role="tab"]').first();
+					if (firstTabBtn.length) {
+						const subCategoryId = firstTabBtn.attr('id').replace('browse-sub-category-tab-', '');
+						AspenDiscovery.Browse.changeBrowseSubCategoryTab(subCategoryId, categoryTextId);
+					}
 				}
 			}).fail(AspenDiscovery.ajaxFail).always(function() {
 				AspenDiscovery.Browse.changingDisplay = false;
