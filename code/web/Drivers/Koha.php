@@ -8276,10 +8276,8 @@ class Koha extends AbstractIlsDriver {
 	}
 
 	public function bypassReadingHistoryUpdate($patron, $isNightlyUpdate) : bool {
-		//Last seen only updates once a day so only do this check if we're running the nightly update
+		// Last seen only updates once a day so only do this check if we're running the nightly update.
 		if (!$isNightlyUpdate) {
-			return false;
-		} else {
 			$this->initDatabaseConnection();
 			/** @noinspection SqlResolve */
 			$sql = "SELECT lastseen, dateexpiry FROM borrowers where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
@@ -8289,26 +8287,26 @@ class Koha extends AbstractIlsDriver {
 			if ($results !== false) {
 				while ($curRow = $results->fetch_assoc()) {
 					if (!is_null($curRow['lastseen'])) {
-						$lastSeenDate =  strtotime($curRow['lastseen']);
+						$lastSeenDate = strtotime($curRow['lastseen']);
 					}
 					if (!is_null($curRow['dateexpiry'])) {
-						$expirationDate =  strtotime($curRow['dateexpiry']);
+						$expirationDate = strtotime($curRow['dateexpiry']);
 					}
 				}
 
 				$results->close();
 			}
 
-			//Don't update reading history if we've never seen the patron or the patron was last seen before we last updated reading history
+			// Don't update reading history if we've never seen the patron or the patron was last seen before we last updated reading history.
 			$lastReadingHistoryUpdate = $patron->lastReadingHistoryUpdate;
 			if ($lastSeenDate != null && ($lastSeenDate > $lastReadingHistoryUpdate)) {
-				//Also do not update if the patron's account expired more than 4 weeks ago.
+				// Do not update if the patron's account expired more than 4 weeks ago.
 				if ($expirationDate == null || ($expirationDate > (time() - 4 * 7 * 24 * 60 * 60))) {
-					return false;
+					return true;
 				}
 			}
-			return true;
 		}
+		return false;
 	}
 
 	public function hasAPICheckout() : bool {
