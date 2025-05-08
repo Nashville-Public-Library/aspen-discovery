@@ -26,6 +26,8 @@ class User extends DataObject {
 	public $myLocation2Id; // int(11)
 	public $trackReadingHistory; // tinyint
 	public $initialReadingHistoryLoaded;
+	public $forceReadingHistoryLoad;
+	public $readingHistoryImportStartedAt;
 	public $lastReadingHistoryUpdate;
 	public $bypassAutoLogout; //tinyint
 	public $disableRecommendations; //tinyint
@@ -151,6 +153,7 @@ class User extends DataObject {
 			'trackReadingHistory',
 			'hooplaCheckOutConfirmation',
 			'initialReadingHistoryLoaded',
+			'forceReadingHistoryLoad',
 			'updateMessageIsError',
 			'rememberHoldPickupLocation',
 			'materialsRequestSendEmailOnAssign',
