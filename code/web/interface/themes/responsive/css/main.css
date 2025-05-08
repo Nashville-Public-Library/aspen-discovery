@@ -11368,4 +11368,36 @@ input[type="radio"][name="colorScheme"]:checked + label::after {
   height: 25px;
   position: relative;
 }
+@media print {
+  /* Make sure descriptions are visible when printing */
+  .hidden-xs {
+    display: block !important;
+  }
+  /* Make sure list title is prominently displayed */
+  #listTitle {
+    font-size: 24px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    display: block !important;
+  }
+  /* Hide buttons and controls that aren't needed for print */
+  .btn-toolbar,
+  .btn-group,
+  .resultActions {
+    display: none !important;
+  }
+  /* Prevent page breaks inside list items and their descriptions */
+  .result,
+  .resultsList.listEntry,
+  [id^="descriptionValue"],
+  .result-value,
+  .user-list-entry-note {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  /* Hide mobile-only toggle rows (e.g. "Click to view") in print */
+  .visible-xs {
+    display: none !important;
+  }
+}
 /*# sourceMappingURL=main.css.map */
