@@ -4712,7 +4712,19 @@ var AspenDiscovery = (function(){
 			}
 		});
 
+		// Handle search box clear button visibility.
+		const $lookfor = aspenJQ("#lookfor");
+		const $clearAddon = $lookfor.siblings('.clear-search');
 
+		$lookfor.on("input", function() {
+			if (aspenJQ(this).val().length > 0) {
+				$clearAddon.css('display', 'block');
+			} else {
+				$clearAddon.css('display', 'none');
+			}
+		});
+		// Set initial visibility.
+		$lookfor.trigger("input");
 	});
 
 	return {
@@ -5381,7 +5393,11 @@ var AspenDiscovery = (function(){
 			return false;
 		},
 		resetSearchBox: function() {
-			document.getElementById("lookfor").value = "";
+			const $lookfor = aspenJQ("#lookfor");
+			$lookfor.val("");
+			$lookfor.trigger("focus");
+			$lookfor.siblings('.clear-search').css('display', 'none');
+			return false;
 		},
 		autoOpenPanel: function() {
 			var hash = window.location.hash.substr(1);
