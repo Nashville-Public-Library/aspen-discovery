@@ -1,10 +1,10 @@
 @media print {
-  /* Make sure descriptions are visible when printing */
+  /* Make sure descriptions are visible. */
   .hidden-xs {
     display: block !important;
   }
 
-  /* Make sure list title is prominently displayed */
+  /* Make sure list title is prominently displayed. */
   #listTitle {
     font-size: 24px;
     margin-top: 20px;
@@ -12,19 +12,26 @@
     display: block !important;
   }
 
-  /* Hide buttons and controls that aren't needed for print */
+  /* Hide buttons and controls that aren't needed for print. */
   .btn-toolbar, .btn-group, .resultActions {
     display: none !important;
   }
 
-  /* Prevent page breaks inside list items and their descriptions */
+  /* Prevent page breaks inside list items and their descriptions. */
   .result, .resultsList.listEntry, [id^="descriptionValue"], .result-value, .user-list-entry-note {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
-  /* Hide mobile-only toggle rows (e.g. "Click to view") in print */
+  /* Hide mobile-only toggle rows (e.g. "Click to view") in print. */
   .visible-xs {
     display: none !important;
+  }
+
+  /* Strip out any screen‐only height/overflow rules to allow landscape printing. */
+  html, body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 }
