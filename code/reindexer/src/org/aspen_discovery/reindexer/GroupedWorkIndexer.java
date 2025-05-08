@@ -1217,13 +1217,12 @@ public class GroupedWorkIndexer {
 			loadLexileDataForWork(groupedWork);
 			//Load accelerated reader data for the work
 			loadAcceleratedDataForWork(groupedWork);
-			//Update Series index data
-			updateSeriesDataForWork(groupedWork);
-			// else use Novelist the old way
 			//Load Novelist data
 			loadNovelistInfo(groupedWork);
 			//Load Display Info
 			loadDisplayInfo(groupedWork);
+			//Update Series index data - this needs to happen after load display info in case the user has overridden the display
+			updateSeriesDataForWork(groupedWork);
 
 			//Write the record to Solr.
 			try {
@@ -1408,7 +1407,7 @@ public class GroupedWorkIndexer {
 	}
 
 	private void loadNovelistInfo(AbstractGroupedWorkSolr groupedWork){
-		if (enableNovelistSeriesIntegration) {
+		if (enableNovelistSeriesIntegration && !seriesModuleEnabled) {
 			try {
 				getNovelistStmt.setString(1, groupedWork.getId());
 				ResultSet novelistRS = getNovelistStmt.executeQuery();
