@@ -198,11 +198,11 @@ class Search_Home extends Action {
 	}
 
 	/**
-	 * @param BrowseCategoryGroup|null $localBrowseCategories
+	 * @param BrowseCategoryGroupEntry[]|null $localBrowseCategories
 	 * @return BrowseCategory[]
 	 */
-	private function getInitialBrowseCategoryFeed($localBrowseCategories = null): array {
-		// Build basic list of categories, marking those with subcategories
+	private function getInitialBrowseCategoryFeed(array $localBrowseCategories = null): array {
+		// Build basic list of categories, marking those with subcategories.
 		require_once ROOT_DIR . '/services/API/SearchAPI.php';
 		$searchAPI = new SearchAPI();
 		$browseCategories = [];

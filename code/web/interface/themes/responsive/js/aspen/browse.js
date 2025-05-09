@@ -614,7 +614,6 @@ AspenDiscovery.Browse = (function(){
 					const swiper = self.subCategorySwipers[subCategoryTextId];
 					swiper.virtual.slides = slides;
 					swiper.virtual.update();
-					if (swiper.lazy) swiper.lazy.load();
 				}
 
 				$panel.attr('aria-busy','false');
@@ -755,7 +754,6 @@ AspenDiscovery.Browse = (function(){
 			function _next(){
 				if (!ids.length) return;
 				const id = ids.shift();
-				// Load this one, then when done, load the next.
 				self.loadBrowseCategoryTabs(id).done(_next);
 			}
 			_next();
