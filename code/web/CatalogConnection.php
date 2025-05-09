@@ -1578,6 +1578,13 @@ class CatalogConnection {
 		return $this->driver->patronEligibleForHolds($patron);
 	}
 
+	public function patronEligibleForRenewals($patron){
+		if( empty($this->driver)){
+			return false;
+		}
+		return $this->driver->patronEligibleForHolds($patron);
+	}
+	
 	public function getShowAutoRenewSwitch(User $patron) {
 		if (empty($this->driver)) {
 			return false;

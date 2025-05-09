@@ -276,6 +276,14 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		];
 	}
 
+	public function patronEligibleForRenewals($patron){
+		$result = [
+			'isEligible' => true,
+			'message' => '',
+		];
+		return $result;
+	}
+
 	public function getShowAutoRenewSwitch(User $patron) {
 		return false;
 	}
