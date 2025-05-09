@@ -6648,37 +6648,43 @@ class Koha extends AbstractIlsDriver {
 		}
 
 
-		//Check if the patron is expired
+		// Check if the patron is expired
 		if ($accountSummary->isExpired()) {
-			//Check the patron category as well
+
+			// Check the patron category as well
 			/** @noinspection SqlResolve */
 			$patronCategorySql = "select BlockExpiredPatronOpacActions from categories where categorycode = '$patron->patronType'";
 			$patronCategoryResult = mysqli_query($this->dbConnection, $patronCategorySql, MYSQLI_USE_RESULT);
-			$useSystemPreference = true;
-			$blockExpiredPatronOpacActions = true;
-			if ($patronCategoryResult !== false) {
-				$patronCategoryInfo = $patronCategoryResult->fetch_assoc();
-				if ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == 0) {
-					$blockExpiredPatronOpacActions = false;
-					$useSystemPreference = false;
-				} elseif ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == 1) {
-					$blockExpiredPatronOpacActions = true;
-					$useSystemPreference = false;
-				} elseif ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == -1) {
-					$blockExpiredPatronOpacActions = true;
-					$useSystemPreference = true;
-				}
-				$patronCategoryResult->close();
-			}
 
-			if ($useSystemPreference) {
-				$blockExpiredPatronOpacActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+			// From where to calculate the blocked actions
+			if ($patronCategoryResult) {
+				$patronCategoryInfo = $patronCategoryResult->fetch_assoc();
+				$patronCategoryResult->close();
+				if(str_starts_with($patronCategoryInfo['BlockExpiredPatronOpacActions'],"follow_syspref")){
+					$blockedActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+				} else {
+					$blockedActions = $patronCategoryInfo['BlockExpiredPatronOpacActions'];
+				}
 			}
-			if ($blockExpiredPatronOpacActions == 1) {
+			
+			// Check if there are blocked actions for being an expired account
+			if ($blockedActions) {
+				$blockedActions = explode(',',$blockedActions);
 				$result['isEligible'] = false;
-				$result['expiredPatronWhoCannotPlaceHolds'] = true;
+
+				$text = "Sorry, your account has expired. Please renew it to be able to : ";
+
+				foreach($blockedActions as $blockedAction){
+					if (strcmp($blockedAction,"hold") == 0){
+						$result['expiredPatronWhoCannotPlaceHolds'] = true;
+						$blockedAction = "Place Holds";
+						$text .= $blockedAction;
+						break;
+					}
+				}
+
 				$result['message'] = translate([
-					'text' => 'Sorry, your account has expired. Please renew your account to place holds.',
+					'text' => $text,
 					'isPublicFacing' => true,
 				]);
 			}
