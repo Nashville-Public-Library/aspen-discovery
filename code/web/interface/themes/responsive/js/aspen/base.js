@@ -100,14 +100,17 @@ var AspenDiscovery = (function(){
 
 		changeSort: function(){
 			var url = window.location.href;
-			if (url.match(/[&?]sort=([A-Za-z_]|%20)+/)) {
-				url = url.replace(/sort=([A-Za-z_]|%20)+/, "sort=" + aspenJQ("#sort").val());
+			if (url.match(/[&?]sort=([A-Za-z_+]|%20)+/)) {
+				url = url.replace(/sort=([A-Za-z_+]|%20)+/, "sort=" + aspenJQ("#sort").val());
 			} else {
 				if (url.indexOf("?", 0) > 0){
 					url = url+ "&sort=" + aspenJQ("#sort").val();
 				}else{
 					url = url+ "?sort=" + aspenJQ("#sort").val();
 				}
+			}
+			if (url.match(/[&?]page=(\d)+/)) {
+				url = url.replace(/page=(\d)+/, "page=1");
 			}
 			window.location.href = url;
 			return false;
