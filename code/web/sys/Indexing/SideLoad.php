@@ -16,6 +16,9 @@ class SideLoad extends DataObject {
 		$useLinkTextForButtonLabel;
 	public $showStatus;
 	public $marcPath;
+	public $owningLibrary;
+	public $sharing;
+
 	public /** @noinspection PhpUnused */
 		$filenamesToInclude;
 
@@ -85,6 +88,9 @@ class SideLoad extends DataObject {
 		$sideLoadScopeStructure = SideLoadScope::getObjectStructure($context);
 		unset($sideLoadScopeStructure['sideLoadId']);
 
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Browse Categories'));
+		$libraryList[-1] = 'All Libraries';
+
 		global $serverName;
 		return [
 			'id' => [
@@ -100,6 +106,24 @@ class SideLoad extends DataObject {
 				'maxLength' => 50,
 				'description' => 'A name for this side load',
 				'required' => true,
+			],
+			'owningLibrary' => [
+				'property' => 'owningLibrary',
+				'type' => 'enum',
+				'values' => $libraryList,
+				'label' => 'Owning Library',
+				'description' => 'Which library owns this side load',
+			],
+			'sharing' => [
+				'property' => 'sharing',
+				'type' => 'enum',
+				'values' => [
+					0 => 'Not Shared',
+					1 => 'Shared with All Libraries',
+					2 => 'Shared with All Libraries, Editable by Owning Library Only'
+				],
+				'label' => 'Share With',
+				'description' => 'Who the category should be shared with',
 			],
 			'accessButtonLabel' => [
 				'property' => 'accessButtonLabel',
@@ -486,6 +510,19 @@ class SideLoad extends DataObject {
 		} else {
 			parent::__set($name, $value);
 		}
+	}
+
+	public function canActiveUserEdit(): bool {
+		if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+			$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+			$libraryId = $library == null ? -1 : $library->libraryId;
+			if ($this->owningLibrary == $libraryId) {
+				return true;
+			}
+		} elseif (UserAccount::userHasPermission('Administer Side Loads')) {
+			return true;
+		}
+		return false;
 	}
 
 }

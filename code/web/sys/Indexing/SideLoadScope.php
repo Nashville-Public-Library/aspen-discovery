@@ -33,7 +33,15 @@ class SideLoadScope extends DataObject {
 		$sideLoad->orderBy('name');
 		$sideLoad->find();
 		while ($sideLoad->fetch()) {
-			$validSideLoads[$sideLoad->id] = $sideLoad->name;
+			if (UserAccount::userHasPermission('Administer Side Load Scopes for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+				$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+				$libraryId = $library == null ? -1 : $library->libraryId;
+				if ($sideLoad->owningLibrary == -1 || $sideLoad->owningLibrary == $libraryId) {
+					$validSideLoads[$sideLoad->id] = $sideLoad->name;
+				}
+			} else {
+				$validSideLoads[$sideLoad->id] = $sideLoad->name;
+			}
 		}
 
 		$librarySideLoadScopeStructure = LibrarySideLoadScope::getObjectStructure($context);
