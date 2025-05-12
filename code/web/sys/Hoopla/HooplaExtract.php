@@ -15,6 +15,7 @@ class HooplaExtract extends DataObject {
 	public $rawChecksum;
 	public $rawResponse;
 	public $dateFirstDetected;
+	public $hooplaType;
 
 	public $__table = 'hoopla_export';
 

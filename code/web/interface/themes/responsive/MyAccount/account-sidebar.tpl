@@ -111,6 +111,14 @@
 											</a>
 										</li>
 									{/if}
+									{if $user->isValidForEContentSource('hoopla_flex')}
+										<li class="myAccountLink">
+											&nbsp;&nbsp;&raquo;&nbsp;
+											<a href="/MyAccount/Holds?tab=hoopla" id="holdsHoopla" title="View holds from Hoopla">
+												{translate text="Hoopla" isPublicFacing=true} {if empty($offline)}<span class="badge"><span class="hoopla-holds-placeholder">??</span></span> <span class="hoopla-available-holds" style="display: none"> <span class="label label-success"><span class="hoopla-available-holds-placeholder"></span> {translate text="Available Now" isPublicFacing=true}</span></span>{/if}
+											</a>
+										</li>
+									{/if}
 									{if $user->isValidForEContentSource('palace_project')}
 										<li class="myAccountLink">
 											&nbsp;&nbsp;&raquo;&nbsp;

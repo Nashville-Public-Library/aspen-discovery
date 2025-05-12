@@ -27,34 +27,43 @@ class Hoopla_Dashboard extends Admin_Dashboard {
 		[
 			$activeRecordsThisMonth,
 			$loansThisMonth,
+			$holdsThisMonth,
 		] = $this->getRecordStats($instanceName, $this->thisMonth, $this->thisYear);
 		$interface->assign('activeRecordsThisMonth', $activeRecordsThisMonth);
 		$interface->assign('loansThisMonth', $loansThisMonth);
+		$interface->assign('holdsThisMonth', $holdsThisMonth);
 		[
 			$activeRecordsLastMonth,
 			$loansLastMonth,
+			$holdsLastMonth,
 		] = $this->getRecordStats($instanceName, $this->lastMonth, $this->lastMonthYear);
 		$interface->assign('activeRecordsLastMonth', $activeRecordsLastMonth);
 		$interface->assign('loansLastMonth', $loansLastMonth);
+		$interface->assign('holdsLastMonth', $holdsLastMonth);
 		[
 			$activeRecordsThisYear,
 			$loansThisYear,
+			$holdsThisYear,
 		] = $this->getRecordStats($instanceName, null, $this->thisYear);
 		$interface->assign('activeRecordsThisYear', $activeRecordsThisYear);
 		$interface->assign('loansThisYear', $loansThisYear);
+		$interface->assign('holdsThisYear', $holdsThisYear);
 		[
 			$activeRecordsLastYear,
 			$loansLastYear,
+			$holdsLastYear,
 		] = $this->getRecordStats($instanceName, null, $this->lastYear);
 		$interface->assign('activeRecordsLastYear', $activeRecordsLastYear);
 		$interface->assign('loansLastYear', $loansLastYear);
+		$interface->assign('holdsLastYear', $holdsLastYear);
 		[
 			$activeRecordsAllTime,
 			$loansAllTime,
+			$holdsAllTime,
 		] = $this->getRecordStats($instanceName, null, null);
 		$interface->assign('activeRecordsAllTime', $activeRecordsAllTime);
 		$interface->assign('loansAllTime', $loansAllTime);
-
+		$interface->assign('holdsAllTime', $holdsAllTime);
 		$this->display('dashboard.tpl', 'Hoopla Dashboard');
 	}
 
@@ -98,12 +107,14 @@ class Hoopla_Dashboard extends Admin_Dashboard {
 		$usage->selectAdd(null);
 		$usage->selectAdd('COUNT(id) as recordsUsed');
 		$usage->selectAdd('SUM(timesCheckedOut) as totalCheckouts');
+		$usage->selectAdd('SUM(timesHeld) as totalHolds');
 		$usage->find(true);
 
 		/** @noinspection PhpUndefinedFieldInspection */
 		return [
 			$usage->recordsUsed,
 			(($usage->totalCheckouts != null) ? $usage->totalCheckouts : 0),
+			(($usage->totalHolds != null) ? $usage->totalHolds : 0),
 		];
 	}
 

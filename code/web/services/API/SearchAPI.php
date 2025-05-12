@@ -447,7 +447,6 @@ class SearchAPI extends AbstractAPI {
 					$logEntry = new $aspenModule->logClassName();
 					$logEntry->orderBy("id DESC");
 					$numEntriesToCheck = 3;
-					$isHooplaIndexByDay = false;
 					if ($aspenModule->name == 'Web Builder') {
 						/** @noinspection PhpPossiblePolymorphicInvocationInspection */
 						$logEntry->websiteName = 'Web Builder Content';
@@ -458,20 +457,8 @@ class SearchAPI extends AbstractAPI {
 						$checkEntriesInLast26Hours = true;
 						$checkEntriesInLast24Hours = false;
 						$checkEntriesInLast1Hours = false;
-						$isHooplaIndexByDay = true;
-						while ($hooplaSettings->fetch()) {
-							if ($hooplaSettings->indexByDay == 0) {
-								$isHooplaIndexByDay = false;
-								$checkEntriesInLast26Hours = false;
-								$checkEntriesInLast24Hours = true;
-								$checkEntriesInLast1Hours = true;
-								break;
-							}
-						}
 					}
-					if ($isHooplaIndexByDay) {
-						$numEntriesToCheck = 1;
-					}
+					$numEntriesToCheck = 1;
 					$logEntry->limit(0, $numEntriesToCheck * $numSettings);
 					$logErrors = 0;
 					$logEntry->find();
@@ -546,14 +533,6 @@ class SearchAPI extends AbstractAPI {
 						$checkEntriesInLast26Hours = true;
 						$checkEntriesInLast24Hours = false;
 						$checkEntriesInLast1Hours = false;
-						while ($hooplaSettings->fetch()) {
-							if ($hooplaSettings->indexByDay == 0) {
-								$checkEntriesInLast26Hours = false;
-								$checkEntriesInLast24Hours = true;
-								$checkEntriesInLast1Hours = true;
-								break;
-							}
-						}
 					}
 					if ($checkEntriesInLast26Hours && !$isFirstEntryRunning && ($lastFinishTime < time() - 26 * 60 * 60)) {
 						$this->addCheck($checks, $aspenModule->name, self::STATUS_CRITICAL, "No log entries for $aspenModule->name have completed in the last 26 hours");
