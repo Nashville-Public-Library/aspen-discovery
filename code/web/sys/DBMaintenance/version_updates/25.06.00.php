@@ -13,6 +13,14 @@ function getUpdates25_06_00(): array {
 		 ], //name*/
 
 		//mark - Grove
+		'delete_orphaned_series_members' => [
+			'title' => 'Delete Orphaned Series Members',
+			'description' => 'Delete Series Members that are no longer linked to a valid grouped Work',
+			'continueOnError' => false,
+			'sql' => [
+				'DELETE from series_member where id IN (select series_member.id from series_member left join grouped_work on series_member.groupedWorkPermanentId = permanent_id left join grouped_work_records on grouped_work_records.groupedWorkId = grouped_work.id where grouped_work_records.groupedWorkId IS NULL and userAdded = 0);'
+			]
+		], //delete_orphaned_series_members
 
 		//katherine - Grove
 
