@@ -9143,6 +9143,36 @@ a.placard-link {
     display: block;
   }
 }
+.input-group-addon.clear-search {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  display: none;
+  cursor: pointer;
+  color: #aaa;
+  background: none;
+  border: none;
+  padding: 0;
+  z-index: 2;
+}
+@media (max-width: 768px) {
+  .input-group-addon.clear-search {
+    right: 20px;
+  }
+}
+.input-group-addon.clear-search svg {
+  width: 20px;
+  height: 20px;
+  fill: #555;
+}
+.input-group-addon.clear-search:hover svg {
+  fill: #222;
+}
+#horizontal-search-box .input-group input#lookfor,
+#home-search-box .input-group input#lookfor {
+  padding-right: 30px !important;
+}
 #home-page-browse-header {
   background-color: #d7dce3;
   padding-bottom: 15px;
