@@ -7362,8 +7362,7 @@ class Koha extends AbstractIlsDriver {
 			$message .= 'Item is an onsite checkout';
 		} elseif ($code == "has_fine") {
 			$message .= 'Item has an outstanding fine';
-		} elseif (!empty($code))
-		{
+		} elseif (!empty($code)) {
 			$message = 'Unknown error:' . $code;
 		} else {
 			$message = 'Unknown error';
