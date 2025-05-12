@@ -7342,7 +7342,6 @@ class Koha extends AbstractIlsDriver {
 		} elseif (!empty($code))
 		{
 			$message = 'Unknown error:' . $code;
-		}
 		} else {
 			$message = 'Unknown error';
 		}
