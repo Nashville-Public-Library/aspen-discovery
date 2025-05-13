@@ -14,7 +14,7 @@ AspenDiscovery.FormFields = (function() {
 		const $container = $(container);
 		if (!$container.length) return;
 
-		// Canvas for text-width measuring (reuse for all fields)
+		// Canvas for text-width measuring (reuse for all fields).
 		const ccCanvas = document.createElement('canvas');
 		const ccCtx = ccCanvas.getContext('2d');
 		const buffer = 8;
@@ -52,7 +52,7 @@ AspenDiscovery.FormFields = (function() {
 		});
 		observer.observe($container[0], { childList: true, subtree: true });
 
-		// Handle input events on fields with maxlength
+		// Handle input events on fields with maxlength.
 		$container.on('input', 'input[maxlength], textarea[maxlength]', function() {
 			const $f = $(this);
 			const fld = $f[0];
@@ -71,7 +71,7 @@ AspenDiscovery.FormFields = (function() {
 			const ls = style.letterSpacing === 'normal' ? 0 : parseFloat(style.letterSpacing);
 			const textW = rawW + ls * Math.max(0, val.length - 1);
 
-			// Compute truly available width inside the field
+			// Compute truly available width inside the field.
 			const paddingLeft = parseFloat(style.paddingLeft);
 			const paddingRight = parseFloat(style.paddingRight);
 			const avail = fld.clientWidth - paddingLeft - paddingRight - $ctr[0].offsetWidth - buffer;
