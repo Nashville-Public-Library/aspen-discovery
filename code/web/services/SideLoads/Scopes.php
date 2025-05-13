@@ -55,7 +55,6 @@ class SideLoads_Scopes extends ObjectEditor {
 				$sideLoad->find(true);
 				if ($sideLoad->owningLibrary == -1 || $sideLoad->owningLibrary == $libraryId) {
 					$obj = new LibrarySideLoadScope();
-					$obj->sideLoadScopeId = $sideLoad->id;
 					$obj->libraryId = $libraryId;
 					$obj->find();
 					while ($obj->fetch()) {
@@ -101,6 +100,10 @@ class SideLoads_Scopes extends ObjectEditor {
 		if ($sideLoadScope->find(true)) {
 			$existingLibrariesSideLoadScopes = $sideLoadScope->getLibraries();
 			$library = new Library();
+			if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+				$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+				$library->libraryId = $library == null ? -1 : $library->libraryId;
+			}
 			$library->find();
 			while ($library->fetch()) {
 				$alreadyAdded = false;
@@ -141,6 +144,11 @@ class SideLoads_Scopes extends ObjectEditor {
 		if ($sideLoadScope->find(true)) {
 			$existingLocationSideLoadScopes = $sideLoadScope->getLocations();
 			$location = new Location();
+			if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+				$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+				$library->libraryId = $library == null ? -1 : $library->libraryId;
+				$location->libraryId = $library->libraryId;
+			}
 			$location->find();
 			while ($location->fetch()) {
 				$alreadyAdded = false;

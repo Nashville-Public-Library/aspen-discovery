@@ -125,6 +125,12 @@ class SideLoads_SideLoads extends ObjectEditor {
 		return 'side_loads';
 	}
 
+	function canBatchEdit(): bool {
+		return UserAccount::userHasPermission([
+			'Administer Side Loads',
+		]);
+	}
+
 	function canView(): bool {
 		return UserAccount::userHasPermission(['Administer Side Loads', 'Administer Side Loads for Home Library']);
 	}
