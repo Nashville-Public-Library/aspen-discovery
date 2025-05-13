@@ -7557,6 +7557,12 @@ a.bg-overdue:focus {
 .goog-te-gadget {
   display: inline-block;
 }
+input.field-error,
+textarea.field-error {
+  border: 1px solid #d9534f !important;
+  box-shadow: 0 0 4px rgba(217, 83, 79, 0.8) !important;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
 .ui-rater > span {
   vertical-align: top;
 }
