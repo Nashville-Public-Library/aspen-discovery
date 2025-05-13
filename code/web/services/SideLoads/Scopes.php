@@ -196,6 +196,12 @@ class SideLoads_Scopes extends ObjectEditor {
 		return 'side_loads';
 	}
 
+	function canBatchEdit(): bool {
+		return UserAccount::userHasPermission([
+			'Administer Side Loads',
+		]);
+	}
+
 	function canView(): bool {
 		return UserAccount::userHasPermission(['Administer Side Loads', 'Administer Side Load Scopes for Home Library']);
 	}
