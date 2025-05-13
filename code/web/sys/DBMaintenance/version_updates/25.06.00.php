@@ -21,6 +21,15 @@ function getUpdates25_06_00(): array {
 				'DELETE from series_member where id IN (select series_member.id from series_member left join grouped_work on series_member.groupedWorkPermanentId = permanent_id left join grouped_work_records on grouped_work_records.groupedWorkId = grouped_work.id where grouped_work_records.groupedWorkId IS NULL and userAdded = 0);'
 			]
 		], //delete_orphaned_series_members
+		'correct_default_include_only_holdable_for_records_to_include' => [
+			'title' => 'Correct Default Include Only Holdable for Records To Include',
+			'description' => 'Correct Default Include Only Holdable for Records To Include',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE library_records_to_include CHANGE COLUMN includeHoldableOnly includeHoldableOnly tinyint(1) NOT NULL DEFAULT 0',
+				'ALTER TABLE location_records_to_include CHANGE COLUMN includeHoldableOnly includeHoldableOnly tinyint(1) NOT NULL DEFAULT 0'
+			]
+		], //correct_default_include_only_holdable_for_records_to_include
 
 		//katherine - Grove
 
