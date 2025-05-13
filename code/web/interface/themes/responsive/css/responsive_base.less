@@ -362,11 +362,35 @@ div.striped {
   display: inline-block;
 }
 
-input.field-error, textarea.field-error {
-  border: 1px solid #d9534f !important;
-  box-shadow: 0 0 4px rgba(217,83,79,0.8) !important;
-  transition: background-color 0.3s, box-shadow 0.3s;
+.field-wrapper {
+  position: relative;
+  display: block;
 }
+.field-wrapper.outside {
+  padding-bottom: 1.6em;
+}
+
+.char-counter {
+  position: absolute;
+  right: 0.5em;
+  font-size: 0.85em;
+  color: #666;
+  pointer-events: none;
+
+  opacity: 0;
+  transition: opacity 0.2s ease, bottom 0.2s ease;
+}
+.char-counter.visible {
+  opacity: 1;
+}
+
+.char-counter.inside {
+  bottom: 0.3em;
+}
+.char-counter.outside {
+  bottom: 0;
+}
+
 
 // Third party imports
 @import "ratings.less";

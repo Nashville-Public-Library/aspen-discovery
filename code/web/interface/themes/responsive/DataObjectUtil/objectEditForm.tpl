@@ -141,14 +141,7 @@
 				{include file="DataObjectUtil/validationRule.tpl"}
 			{/foreach}
 			objectEditorObject.data('serialize',objectEditorObject.serialize()); // On load save form current state
-			// Highlight fields in error upon input.
-			objectEditorObject.on('input', 'input[maxlength], textarea[maxlength]', function(){
-				const $field = $(this);
-				const max = parseInt($field.attr('maxlength'), 10);
-				$field.toggleClass('field-error', $field.val().length >= max);
-			});
-			// Initialize highlight state for all current fields.
-			objectEditorObject.find('input[maxlength], textarea[maxlength]').trigger('input');
+			AspenDiscovery.FormFields.initializeCharacterCounters(objectEditorObject);
 			{if !empty($initializationJs)}
 				{$initializationJs}
 			{/if}
