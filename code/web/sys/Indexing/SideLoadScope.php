@@ -300,12 +300,46 @@ class SideLoadScope extends DataObject {
 	}
 
 	public function clearLibraries() {
-		$this->clearOneToManyOptions('LibrarySideLoadScope', 'sideLoadScopeId');
+		if (UserAccount::userHasPermission('Administer Side Load Scopes for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+			$librarySideLoadScopes = [];
+			$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+			$librarySideLoadScope = new LibrarySideLoadScope();
+			$librarySideLoadScope->libraryId = $library->libraryId;
+			$librarySideLoadScope->sideLoadScopeId = $this->id;
+			$librarySideLoadScope->find();
+			while ($librarySideLoadScope->fetch()) {
+				$librarySideLoadScopes[$librarySideLoadScope->id] = $librarySideLoadScope;
+			}
+			$this->clearOneToManyOptions('LibrarySideLoadScope', 'sideLoadScopeId', $librarySideLoadScopes);
+		} else {
+			$this->clearOneToManyOptions('LibrarySideLoadScope', 'sideLoadScopeId');
+		}
 		unset($this->_libraries);
 	}
 
 	public function clearLocations() {
-		$this->clearOneToManyOptions('LocationSideLoadScope', 'sideLoadScopeId');
+		if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+			$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+			$location = new Location();
+			$location->libraryId = $library->libraryId;
+			$location->find();
+			$locationIds = [];
+			$locationSideLoadScopes = [];
+			while ($location->fetch()) {
+				$locationIds[] = $location->locationId;
+			}
+			foreach ($locationIds as $locationId) {
+				$locationSideLoadScope = new LocationSideLoadScope();
+				$locationSideLoadScope->locationId = $locationId;
+				$locationSideLoadScope->find();
+				while ($locationSideLoadScope->fetch()) {
+					$locationSideLoadScopes[$locationSideLoadScope->id] = $locationSideLoadScope;
+				}
+			}
+			$this->clearOneToManyOptions('LocationSideLoadScope', 'sideLoadScopeId', $locationSideLoadScopes);
+		} else {
+			$this->clearOneToManyOptions('LocationSideLoadScope', 'sideLoadScopeId');
+		}
 		unset($this->_locations);
 	}
 }

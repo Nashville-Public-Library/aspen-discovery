@@ -54,12 +54,7 @@ class SideLoads_Scopes extends ObjectEditor {
 				$sideLoad->id = $object->sideLoadId;
 				$sideLoad->find(true);
 				if ($sideLoad->owningLibrary == -1 || $sideLoad->owningLibrary == $libraryId) {
-					$obj = new LibrarySideLoadScope();
-					$obj->libraryId = $libraryId;
-					$obj->find();
-					while ($obj->fetch()) {
-						$objectList[$object->id] = clone $object;
-					}
+					$objectList[$object->id] = clone $object;
 				}
 			} else {
 				$objectList[$object->id] = clone $object;
