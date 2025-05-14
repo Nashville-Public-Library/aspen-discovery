@@ -952,7 +952,7 @@ class Koha extends AbstractIlsDriver {
 							$lookupUserResult->close();
 						}
 						$result['messages'][] = translate([
-							'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
+							'text' => $this->getKohaSystemPreference('FailedLoginAttempts') > 0 ? 'Unable to authenticate with the ILS. Please try again later. Note that, after a given amount of failed login attempts, your account will be locked. If the issue persists, please contact the library.' : 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
 							'isPublicFacing' => true,
 						]);
 					}
@@ -1056,7 +1056,7 @@ class Koha extends AbstractIlsDriver {
 			}
 		}
 		if ($userExistsInDB) {
-			return new AspenError('Sorry that login information was not correct, please try again.');
+			return new AspenError($this->getKohaSystemPreference('FailedLoginAttempts') > 0 ? 'Sorry that login information was not correct. Please try again and note that, after a given amount of failed login attempts, your account will be locked. If the issue persists, please contact the library.': 'Sorry that login information was not correct, please try again.');
 		} else {
 			return null;
 		}
