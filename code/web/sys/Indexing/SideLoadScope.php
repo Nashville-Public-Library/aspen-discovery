@@ -205,8 +205,10 @@ class SideLoadScope extends DataObject {
 	public function __get($name) {
 		if ($name == "libraries") {
 			if (!isset($this->_libraries) && $this->id) {
+				$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Side Loads'));
 				$this->_libraries = [];
 				$obj = new LibrarySideLoadScope();
+				$obj->whereAddIn('libraryId', array_keys($libraryList), false);
 				$obj->sideLoadScopeId = $this->id;
 				$obj->find();
 				while ($obj->fetch()) {
@@ -216,8 +218,10 @@ class SideLoadScope extends DataObject {
 			return $this->_libraries;
 		} elseif ($name == "locations") {
 			if (!isset($this->_locations) && $this->id) {
+				$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer Side Loads'));
 				$this->_locations = [];
 				$obj = new LocationSideLoadScope();
+				$obj->whereAddIn('locationId', array_keys($locationList), false);
 				$obj->sideLoadScopeId = $this->id;
 				$obj->find();
 				while ($obj->fetch()) {
@@ -319,16 +323,9 @@ class SideLoadScope extends DataObject {
 
 	public function clearLocations() {
 		if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
-			$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
-			$location = new Location();
-			$location->libraryId = $library->libraryId;
-			$location->find();
-			$locationIds = [];
+			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer Side Loads'));
 			$locationSideLoadScopes = [];
-			while ($location->fetch()) {
-				$locationIds[] = $location->locationId;
-			}
-			foreach ($locationIds as $locationId) {
+			foreach ($locationList as $locationId => $value) {
 				$locationSideLoadScope = new LocationSideLoadScope();
 				$locationSideLoadScope->locationId = $locationId;
 				$locationSideLoadScope->find();
