@@ -938,6 +938,7 @@ class Koha extends AbstractIlsDriver {
 	
 							$lookupUserResult = mysqli_query($this->dbConnection, $sql);
 							if ($lookupUserResult->num_rows > 0) {
+								$userExistsInDB = true;
 								if ($error == 'Password expired') {
 									$lookupUserRow = $lookupUserResult->fetch_assoc();
 
