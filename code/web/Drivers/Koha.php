@@ -933,17 +933,19 @@ class Koha extends AbstractIlsDriver {
 						$authenticationSuccess = true;
 					} else {
 						$error = $response['content']['error'];
-						if (!empty($response['content']) && !empty($error) && $error == 'Password expired') {
+						if (!empty($response['content']) && !empty($error) && ($error == 'Password expired' || $error == 'Validation failed')) {
 							$sql = "SELECT borrowernumber, cardnumber, userId, login_attempts from borrowers where cardnumber = '" . mysqli_escape_string($this->dbConnection, $barcode) . "' OR userId = '" . mysqli_escape_string($this->dbConnection, $barcode) . "'";
 	
 							$lookupUserResult = mysqli_query($this->dbConnection, $sql);
 							if ($lookupUserResult->num_rows > 0) {
-								$lookupUserRow = $lookupUserResult->fetch_assoc();
-	
-								$expiredPasswordResult = $this->processExpiredPassword($lookupUserRow['borrowernumber'], $barcode);
-								if ($expiredPasswordResult != null) {
-									$lookupUserResult->close();
-									return $expiredPasswordResult;
+								if ($error == 'Password expired') {
+									$lookupUserRow = $lookupUserResult->fetch_assoc();
+
+									$expiredPasswordResult = $this->processExpiredPassword($lookupUserRow['borrowernumber'], $barcode);
+									if ($expiredPasswordResult != null) {
+										$lookupUserResult->close();
+										return $expiredPasswordResult;
+									}
 								}
 							}
 							$lookupUserResult->close();
