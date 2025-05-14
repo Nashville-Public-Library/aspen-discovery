@@ -166,6 +166,14 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return 'not supported';
 	}
 
+	function patronEligibleForILLRequests(User $user) {
+		$result = [
+			'isEligible' => false,
+			'message' => '',
+		];
+		return $result;
+	}
+
 	/**
 	 * @param User $user
 	 * @return string[]

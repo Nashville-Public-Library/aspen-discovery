@@ -1495,6 +1495,13 @@ class CatalogConnection {
 		return $this->driver->getNewMaterialsRequestForm($user);
 	}
 
+	function patronEligibleForILLRequests(User $user){
+		if( empty($this->driver)){
+			return false;
+		}
+		return $this->driver->patronEligibleForILLRequests($user);
+	}
+
 	function processMaterialsRequestForm($user) {
 		return $this->driver->processMaterialsRequestForm($user);
 	}

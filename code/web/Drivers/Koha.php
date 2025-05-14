@@ -1,6 +1,6 @@
 <?php
 
-use LDAP\Result;
+
 
 require_once ROOT_DIR . '/Drivers/KohaApiUserAgent.php';
 require_once ROOT_DIR . '/sys/CurlWrapper.php';
@@ -5159,6 +5159,81 @@ class Koha extends AbstractIlsDriver {
 		$interface->assign('materialsRequestForm', $fieldsForm);
 
 		return 'new-koha-request.tpl';
+	}
+
+	function patronEligibleForILLRequests(User $user) {
+		$result = [
+			'isEligible' => true,
+			'message' => '',
+		];
+
+		//Get account summary
+		$accountSummary = $this->getAccountSummary($user);
+
+		//Check if patron is expired
+		if ($accountSummary->isExpired()) {
+
+			$endpoint = "/api/v1/patron_categories";
+			$extraHeaders = [
+				'Accept-Encoding: gzip, deflate, br',
+				'Content-Type: application/json'
+			];
+			$response = $this->kohaApiUserAgent->get($endpoint,'koha.patronEligibleForRenewals',[],$extraHeaders);
+
+			if ($response) {
+				if ($response['code'] == 200) {
+					$patronCategories = $response['content'];
+					foreach($patronCategories as $patronCategory) {
+						if ($patronCategory['category_type'] == $user->patronType ){
+							$blockedActions = $patronCategory['block_expired_patron_opac_actions'];
+							break;
+						}
+					}
+
+					if(str_starts_with($blockedActions,"follow_syspref")){
+						$blockedActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+					}
+
+				} else {
+					$error = $response['content']['error'];
+					$result['isEligible'] = false;
+					$result['message'] = translate([
+						'text' => $error,
+						'isPublicFacing' => true,
+					]);
+					return $result;
+				}
+			} else {
+
+				$result['message'] = translate([
+					'text' => $response,
+					'isPublicFacing' => true,
+				]);
+				return $result;
+			}
+
+				// Check if there are blocked actions for being an expired account
+			if ($blockedActions) {
+				$blockedActions = explode(',',$blockedActions);
+				$result['isEligible'] = false;
+
+				$text = "Sorry, your account has expired. Please renew it to be able to : ";
+
+				foreach($blockedActions as $blockedAction){
+					if (strcmp($blockedAction,"ill_request") == 0){
+						$result['expiredPatronWhoCannotRenewItems'] = true;
+						$blockedAction = "Make new material requests";
+						$text .= "$blockedAction";
+						break;
+					}
+				}
+
+				$result['message'] = translate([
+					'text' => $text,
+					'isPublicFacing' => true,
+				]);
+			}
+		}
 	}
 
 	/**
