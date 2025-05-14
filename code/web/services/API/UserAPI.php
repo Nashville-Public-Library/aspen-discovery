@@ -5734,7 +5734,7 @@ class UserAPI extends AbstractAPI {
 							}
 							if (UserAccount::userHasPermission('Masquerade as any user')) {
 								//The user can masquerade as anyone, no additional checks needed
-							} elseif (UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
+							} elseif (UserAccount::userHasPermission('Masquerade as unrestricted patron types') && !UserAccount::userHasPermission('Masquerade as patrons with same home library') && !UserAccount::userHasPermission('Masquerade as unrestricted patrons with same home location')) {
 								if ($isRestrictedUser) {
 									return [
 										'success' => false,
