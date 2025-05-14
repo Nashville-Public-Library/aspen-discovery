@@ -481,11 +481,12 @@ class SideLoad extends DataObject {
 				'sortable' => false,
 				'storeDb' => true,
 				'allowEdit' => true,
-				'canEdit' => true,
+				'canEdit' => !$readOnly,
 				'canAddNew' => true,
 				'canDelete' => true,
 				'additionalOneToManyActions' => [],
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 		];
 	}

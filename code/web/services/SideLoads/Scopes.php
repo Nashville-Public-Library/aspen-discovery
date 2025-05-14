@@ -95,7 +95,7 @@ class SideLoads_Scopes extends ObjectEditor {
 		if ($sideLoadScope->find(true)) {
 			$existingLibrariesSideLoadScopes = $sideLoadScope->getLibraries();
 			$library = new Library();
-			if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+			if (UserAccount::userHasPermission('Administer Side Load Scopes for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
 				$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
 				$library->libraryId = $library == null ? -1 : $library->libraryId;
 			}
@@ -139,7 +139,7 @@ class SideLoads_Scopes extends ObjectEditor {
 		if ($sideLoadScope->find(true)) {
 			$existingLocationSideLoadScopes = $sideLoadScope->getLocations();
 			$location = new Location();
-			if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+			if (UserAccount::userHasPermission('Administer Side Load Scopes for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
 				$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
 				$library->libraryId = $library == null ? -1 : $library->libraryId;
 				$location->libraryId = $library->libraryId;

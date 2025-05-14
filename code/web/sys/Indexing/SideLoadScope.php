@@ -322,7 +322,7 @@ class SideLoadScope extends DataObject {
 	}
 
 	public function clearLocations() {
-		if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+		if (UserAccount::userHasPermission('Administer Side Load Scopes for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
 			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer Side Loads'));
 			$locationSideLoadScopes = [];
 			foreach ($locationList as $locationId => $value) {
