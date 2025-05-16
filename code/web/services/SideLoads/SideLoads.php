@@ -64,6 +64,11 @@ class SideLoads_SideLoads extends ObjectEditor {
 		$object->orderBy($this->getSort());
 		$this->applyFilters($object);
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
+		if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+			$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+			$libraryId = $library == null ? -1 : $library->libraryId;
+			$object->whereAdd("sharing != 0 OR owningLibrary = -1 OR owningLibrary = " . $libraryId);
+		}
 		$object->find();
 		while ($object->fetch()) {
 			$list[$object->id] = clone $object;
@@ -120,7 +125,13 @@ class SideLoads_SideLoads extends ObjectEditor {
 		return 'side_loads';
 	}
 
+	function canBatchEdit(): bool {
+		return UserAccount::userHasPermission([
+			'Administer Side Loads',
+		]);
+	}
+
 	function canView(): bool {
-		return UserAccount::userHasPermission('Administer Side Loads');
+		return UserAccount::userHasPermission(['Administer Side Loads', 'Administer Side Loads for Home Library']);
 	}
 }
