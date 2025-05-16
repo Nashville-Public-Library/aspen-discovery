@@ -16,6 +16,9 @@ class SideLoad extends DataObject {
 		$useLinkTextForButtonLabel;
 	public $showStatus;
 	public $marcPath;
+	public $owningLibrary;
+	public $sharing;
+
 	public /** @noinspection PhpUnused */
 		$filenamesToInclude;
 
@@ -85,6 +88,23 @@ class SideLoad extends DataObject {
 		$sideLoadScopeStructure = SideLoadScope::getObjectStructure($context);
 		unset($sideLoadScopeStructure['sideLoadId']);
 
+		$allLibraryList = Library::getLibraryList(false);
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Side Loads') && UserAccount::userHasPermission('Administer Side Loads for Home Library'));
+		$libraryList[-1] = 'All Libraries';
+
+		$readOnly = false;
+		if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads') && !empty($_GET['id'])) {
+			$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+			$libraryId = $library == null ? -1 : $library->libraryId;
+			$sideLoad = new SideLoad();
+			$sideLoad->id = $_GET['id'];
+			$sideLoad->find(true);
+			if (($sideLoad->owningLibrary != -1 && $sideLoad->owningLibrary != $libraryId) || ($sideLoad->owningLibrary == -1 && $sideLoad->sharing != 1)) {
+				$libraryList = Library::getLibraryList(false);
+				$readOnly = true;
+			}
+		}
+
 		global $serverName;
 		return [
 			'id' => [
@@ -100,6 +120,28 @@ class SideLoad extends DataObject {
 				'maxLength' => 50,
 				'description' => 'A name for this side load',
 				'required' => true,
+				'readOnly' => $readOnly,
+			],
+			'owningLibrary' => [
+				'property' => 'owningLibrary',
+				'type' => 'enum',
+				'values' => $libraryList,
+				'allValues' => $allLibraryList,
+				'label' => 'Owning Library',
+				'description' => 'Which library owns this side load',
+				'readOnly' => $readOnly,
+			],
+			'sharing' => [
+				'property' => 'sharing',
+				'type' => 'enum',
+				'values' => [
+					0 => 'Not Shared',
+					1 => 'Shared with All Libraries',
+					2 => 'Shared with All Libraries, Editable by Owning Library Only'
+				],
+				'label' => 'Share With',
+				'description' => 'Who the category should be shared with',
+				'readOnly' => $readOnly,
 			],
 			'accessButtonLabel' => [
 				'property' => 'accessButtonLabel',
@@ -109,6 +151,7 @@ class SideLoad extends DataObject {
 				'description' => 'A label for the button to use when accessing the record',
 				'required' => true,
 				'default' => 'Access Online',
+				'readOnly' => $readOnly,
 			],
 			'useLinkTextForButtonLabel' => [
 				'property' => 'useLinkTextForButtonLabel',
@@ -117,6 +160,7 @@ class SideLoad extends DataObject {
 				'description' => 'Whether the link text in the 856 should be used for the button text',
 				'default' => false,
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 			'showStatus' => [
 				'property' => 'showStatus',
@@ -124,6 +168,7 @@ class SideLoad extends DataObject {
 				'label' => 'Show Status',
 				'description' => 'Whether or not status should be shown for the record',
 				'default' => 1,
+				'readOnly' => $readOnly,
 			],
 			'recordUrlComponent' => [
 				'property' => 'recordUrlComponent',
@@ -133,6 +178,7 @@ class SideLoad extends DataObject {
 				'description' => 'The Module to use within the URL',
 				'required' => true,
 				'default' => '{Change based on name}',
+				'readOnly' => $readOnly,
 			],
 
 			'deletedRecordsIds' => [
@@ -141,6 +187,7 @@ class SideLoad extends DataObject {
 				'label' => 'Deleted Records',
 				'description' => 'A list of records to that have been deleted, can be separated by commas or line breaks',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 
 			'marcPath' => [
@@ -152,6 +199,7 @@ class SideLoad extends DataObject {
 				'required' => true,
 				'default' => "/data/aspen-discovery/{$serverName}/{sideload_name}/marc",
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 			'filenamesToInclude' => [
 				'property' => 'filenamesToInclude',
@@ -162,6 +210,7 @@ class SideLoad extends DataObject {
 				'required' => true,
 				'default' => '.*\.ma?rc',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 			'marcEncoding' => [
 				'property' => 'marcEncoding',
@@ -176,6 +225,7 @@ class SideLoad extends DataObject {
 				],
 				'default' => 'UTF8',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 			'indexingClass' => [
 				'property' => 'indexingClass',
@@ -187,6 +237,7 @@ class SideLoad extends DataObject {
 				'hideInLists' => true,
 				'default' => 'SideLoadedEContentProcessor',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 
 			'recordNumberTag' => [
@@ -198,6 +249,7 @@ class SideLoad extends DataObject {
 				'required' => true,
 				'default' => '001',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 			'recordNumberSubfield' => [
 				'property' => 'recordNumberSubfield',
@@ -208,6 +260,7 @@ class SideLoad extends DataObject {
 				'required' => true,
 				'default' => 'a',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 			'recordNumberPrefix' => [
 				'property' => 'recordNumberPrefix',
@@ -216,6 +269,7 @@ class SideLoad extends DataObject {
 				'maxLength' => 10,
 				'description' => 'A prefix to identify the bib record number if multiple MARC tags exist',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 
 			'treatUnknownLanguageAs' => [
@@ -226,6 +280,7 @@ class SideLoad extends DataObject {
 				'description' => 'Records with an Unknown Language will use this language instead.  Leave blank for Unknown',
 				'default' => 'English',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 			'treatUndeterminedLanguageAs' => [
 				'property' => 'treatUndeterminedLanguageAs',
@@ -235,6 +290,7 @@ class SideLoad extends DataObject {
 				'description' => 'Records with an Undetermined Language will use this language instead.  Leave blank for Unknown',
 				'default' => 'English',
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 			'includePersonalAndCorporateNamesInTopics' => [
 				'property' => 'includePersonalAndCorporateNamesInTopics',
@@ -243,6 +299,7 @@ class SideLoad extends DataObject {
 				'description' => 'Whether or not personal and corporate names are included in the topics facet',
 				'default' => true,
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 
 			'itemSection' => [
@@ -258,6 +315,7 @@ class SideLoad extends DataObject {
 						'maxLength' => 3,
 						'description' => 'The MARC tag where items can be found',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'itemRecordNumber' => [
 						'property' => 'itemRecordNumber',
@@ -266,6 +324,7 @@ class SideLoad extends DataObject {
 						'maxLength' => 1,
 						'description' => 'Subfield for the record number for the item',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'location' => [
 						'property' => 'location',
@@ -274,6 +333,7 @@ class SideLoad extends DataObject {
 						'maxLength' => 1,
 						'description' => 'Subfield for location',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'locationsToSuppress' => [
 						'property' => 'locationsToSuppress',
@@ -282,6 +342,7 @@ class SideLoad extends DataObject {
 						'maxLength' => 255,
 						'description' => 'A regular expression for any locations that should be suppressed',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'itemUrl' => [
 						'property' => 'itemUrl',
@@ -290,6 +351,7 @@ class SideLoad extends DataObject {
 						'maxLength' => 1,
 						'description' => 'Subfield for a URL specific to the item',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'format' => [
 						'property' => 'format',
@@ -298,6 +360,7 @@ class SideLoad extends DataObject {
 						'maxLength' => 1,
 						'description' => 'The subfield to use when determining format based on item information',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 				],
 			],
@@ -319,6 +382,7 @@ class SideLoad extends DataObject {
 						],
 						'default' => 'bib',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'convertFormatToEContent' => [
 						'property' => 'convertFormatToEContent',
@@ -327,6 +391,7 @@ class SideLoad extends DataObject {
 						'description' => 'Whether the format from the bib record or item record should be converted to eContent',
 						'default' => true,
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'specifiedFormat' => [
 						'property' => 'specifiedFormat',
@@ -337,6 +402,7 @@ class SideLoad extends DataObject {
 						'required' => false,
 						'default' => '',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'specifiedFormatCategory' => [
 						'property' => 'specifiedFormatCategory',
@@ -356,6 +422,7 @@ class SideLoad extends DataObject {
 						'required' => false,
 						'default' => '',
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 					'specifiedFormatBoost' => [
 						'property' => 'specifiedFormatBoost',
@@ -372,6 +439,7 @@ class SideLoad extends DataObject {
 						'default' => '8',
 						'required' => false,
 						'forcesReindex' => true,
+						'readOnly' => $readOnly,
 					],
 				],
 			],
@@ -382,6 +450,7 @@ class SideLoad extends DataObject {
 				'label' => 'Run Full Update',
 				'description' => 'Whether or not a full update of all records should be done on the next pass of indexing',
 				'default' => 0,
+				'readOnly' => $readOnly,
 			],
 			'lastUpdateOfChangedRecords' => [
 				'property' => 'lastUpdateOfChangedRecords',
@@ -389,6 +458,7 @@ class SideLoad extends DataObject {
 				'label' => 'Last Update of Changed Records',
 				'description' => 'The timestamp when just changes were loaded',
 				'default' => 0,
+				'readOnly' => $readOnly,
 			],
 			'lastUpdateOfAllRecords' => [
 				'property' => 'lastUpdateOfAllRecords',
@@ -396,6 +466,7 @@ class SideLoad extends DataObject {
 				'label' => 'Last Update of All Records',
 				'description' => 'The timestamp when all records were loaded from the API',
 				'default' => 0,
+				'readOnly' => $readOnly,
 			],
 
 			'scopes' => [
@@ -410,11 +481,12 @@ class SideLoad extends DataObject {
 				'sortable' => false,
 				'storeDb' => true,
 				'allowEdit' => true,
-				'canEdit' => true,
+				'canEdit' => !$readOnly,
 				'canAddNew' => true,
 				'canDelete' => true,
 				'additionalOneToManyActions' => [],
 				'forcesReindex' => true,
+				'readOnly' => $readOnly,
 			],
 		];
 	}

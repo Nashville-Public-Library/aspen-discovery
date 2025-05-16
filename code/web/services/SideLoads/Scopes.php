@@ -47,7 +47,18 @@ class SideLoads_Scopes extends ObjectEditor {
 		$object->find();
 		$objectList = [];
 		while ($object->fetch()) {
-			$objectList[$object->id] = clone $object;
+			if (UserAccount::userHasPermission('Administer Side Load Scopes for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+				$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+				$libraryId = $library == null ? -1 : $library->libraryId;
+				$sideLoad = new SideLoad();
+				$sideLoad->id = $object->sideLoadId;
+				$sideLoad->find(true);
+				if ($sideLoad->owningLibrary == -1 || $sideLoad->owningLibrary == $libraryId) {
+					$objectList[$object->id] = clone $object;
+				}
+			} else {
+				$objectList[$object->id] = clone $object;
+			}
 		}
 		return $objectList;
 	}
@@ -84,6 +95,10 @@ class SideLoads_Scopes extends ObjectEditor {
 		if ($sideLoadScope->find(true)) {
 			$existingLibrariesSideLoadScopes = $sideLoadScope->getLibraries();
 			$library = new Library();
+			if (UserAccount::userHasPermission('Administer Side Load Scopes for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+				$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+				$library->libraryId = $library == null ? -1 : $library->libraryId;
+			}
 			$library->find();
 			while ($library->fetch()) {
 				$alreadyAdded = false;
@@ -124,6 +139,11 @@ class SideLoads_Scopes extends ObjectEditor {
 		if ($sideLoadScope->find(true)) {
 			$existingLocationSideLoadScopes = $sideLoadScope->getLocations();
 			$location = new Location();
+			if (UserAccount::userHasPermission('Administer Side Load Scopes for Home Library') && !UserAccount::userHasPermission('Administer Side Loads')) {
+				$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
+				$library->libraryId = $library == null ? -1 : $library->libraryId;
+				$location->libraryId = $library->libraryId;
+			}
 			$location->find();
 			while ($location->fetch()) {
 				$alreadyAdded = false;
@@ -171,7 +191,13 @@ class SideLoads_Scopes extends ObjectEditor {
 		return 'side_loads';
 	}
 
+	function canBatchEdit(): bool {
+		return UserAccount::userHasPermission([
+			'Administer Side Loads',
+		]);
+	}
+
 	function canView(): bool {
-		return UserAccount::userHasPermission('Administer Side Loads');
+		return UserAccount::userHasPermission(['Administer Side Loads', 'Administer Side Load Scopes for Home Library']);
 	}
 }
