@@ -56,7 +56,8 @@ class SideLoad extends DataObject {
 
 	public /** @noinspection PhpUnused */
 		$formatSource;
-	public $convertFormatToEContent;
+	public /** @noinspection PhpUnused */
+		$convertFormatToEContent;
 	public /** @noinspection PhpUnused */
 		$specifiedFormat;
 	public /** @noinspection PhpUnused */
@@ -70,7 +71,7 @@ class SideLoad extends DataObject {
 	public $lastUpdateOfChangedRecords;
 	public $lastUpdateOfAllRecords;
 
-	private $_scopes;
+	protected $_scopes;
 
 	static function getObjectStructure($context = ''): array {
 		$translationMapStructure = TranslationMap::getObjectStructure($context);
@@ -88,25 +89,23 @@ class SideLoad extends DataObject {
 		$sideLoadScopeStructure = SideLoadScope::getObjectStructure($context);
 		unset($sideLoadScopeStructure['sideLoadId']);
 
-		$allLibraryList = Library::getLibraryList(false);
-		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Side Loads') && UserAccount::userHasPermission('Administer Side Loads for Home Library'));
-		$libraryList[-1] = 'All Libraries';
-
-		$readOnly = false;
-		if (UserAccount::userHasPermission('Administer Side Loads for Home Library') && !UserAccount::userHasPermission('Administer Side Loads') && !empty($_GET['id'])) {
-			$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
-			$libraryId = $library == null ? -1 : $library->libraryId;
-			$sideLoad = new SideLoad();
-			$sideLoad->id = $_GET['id'];
-			$sideLoad->find(true);
-			if (($sideLoad->owningLibrary != -1 && $sideLoad->owningLibrary != $libraryId) || ($sideLoad->owningLibrary == -1 && $sideLoad->sharing != 1)) {
-				$libraryList = Library::getLibraryList(false);
-				$readOnly = true;
-			}
+		$allSharingOptions = [
+			0 => 'Not Shared',
+			1 => 'Shared with All Libraries',
+			2 => 'Shared with All Libraries, Editable by Owning Library Only'
+		];
+		$allowableSharingOptions = $allSharingOptions;
+		$allLibraryList[-1] = 'All Libraries';
+		$allLibraryList = $allLibraryList + Library::getLibraryList(false);
+		if (!UserAccount::userHasPermission('Administer Side Loads') && (UserAccount::userHasPermission('Administer Side Loads for Home Library') || UserAccount::userHasPermission('Administer Side Load Scopes for Home Library'))) {
+			$libraryList = Library::getLibraryList(true);
+			unset($allowableSharingOptions[1]);
+		}else{
+			$libraryList = $allLibraryList;
 		}
 
 		global $serverName;
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -120,7 +119,7 @@ class SideLoad extends DataObject {
 				'maxLength' => 50,
 				'description' => 'A name for this side load',
 				'required' => true,
-				'readOnly' => $readOnly,
+				'serverValidation' => 'validateName',
 			],
 			'owningLibrary' => [
 				'property' => 'owningLibrary',
@@ -129,19 +128,14 @@ class SideLoad extends DataObject {
 				'allValues' => $allLibraryList,
 				'label' => 'Owning Library',
 				'description' => 'Which library owns this side load',
-				'readOnly' => $readOnly,
 			],
 			'sharing' => [
 				'property' => 'sharing',
 				'type' => 'enum',
-				'values' => [
-					0 => 'Not Shared',
-					1 => 'Shared with All Libraries',
-					2 => 'Shared with All Libraries, Editable by Owning Library Only'
-				],
+				'values' => $allowableSharingOptions,
+				'allValues' => $allSharingOptions,
 				'label' => 'Share With',
 				'description' => 'Who the category should be shared with',
-				'readOnly' => $readOnly,
 			],
 			'accessButtonLabel' => [
 				'property' => 'accessButtonLabel',
@@ -151,7 +145,6 @@ class SideLoad extends DataObject {
 				'description' => 'A label for the button to use when accessing the record',
 				'required' => true,
 				'default' => 'Access Online',
-				'readOnly' => $readOnly,
 			],
 			'useLinkTextForButtonLabel' => [
 				'property' => 'useLinkTextForButtonLabel',
@@ -160,7 +153,6 @@ class SideLoad extends DataObject {
 				'description' => 'Whether the link text in the 856 should be used for the button text',
 				'default' => false,
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 			'showStatus' => [
 				'property' => 'showStatus',
@@ -168,39 +160,41 @@ class SideLoad extends DataObject {
 				'label' => 'Show Status',
 				'description' => 'Whether or not status should be shown for the record',
 				'default' => 1,
-				'readOnly' => $readOnly,
 			],
-			'recordUrlComponent' => [
-				'property' => 'recordUrlComponent',
-				'type' => 'text',
-				'label' => 'Record URL Component',
-				'maxLength' => 50,
-				'description' => 'The Module to use within the URL',
-				'required' => true,
-				'default' => '{Change based on name}',
-				'readOnly' => $readOnly,
-			],
-
-			'deletedRecordsIds' => [
-				'property' => 'deletedRecordsIds',
-				'type' => 'textarea',
-				'label' => 'Deleted Records',
-				'description' => 'A list of records to that have been deleted, can be separated by commas or line breaks',
-				'forcesReindex' => true,
-				'readOnly' => $readOnly,
-			],
-
-			'marcPath' => [
-				'property' => 'marcPath',
-				'type' => 'text',
-				'label' => 'MARC Path',
-				'maxLength' => 100,
-				'description' => 'The path on the server where MARC records can be found',
-				'required' => true,
-				'default' => "/data/aspen-discovery/{$serverName}/{sideload_name}/marc",
-				'forcesReindex' => true,
-				'readOnly' => $readOnly,
-			],
+		];
+		if ($context != 'addNew') {
+			$structure += [
+				'recordUrlComponent' => [
+					'property' => 'recordUrlComponent',
+					'type' => 'text',
+					'label' => 'Record URL Component',
+					'maxLength' => 50,
+					'description' => 'The Module to use within the URL',
+					'required' => true,
+					'default' => '{Change based on name}',
+					'readOnly' => !UserAccount::userHasPermission(['Administer Side Loads']),
+				],
+				'deletedRecordsIds' => [
+					'property' => 'deletedRecordsIds',
+					'type' => 'textarea',
+					'label' => 'Deleted Records',
+					'description' => 'A list of records to that have been deleted, can be separated by commas or line breaks',
+					'forcesReindex' => true,
+				],
+				'marcPath' => [
+					'property' => 'marcPath',
+					'type' => 'text',
+					'label' => 'MARC Path',
+					'maxLength' => 100,
+					'description' => 'The path on the server where MARC records can be found',
+					'required' => true,
+					'default' => "/data/aspen-discovery/$serverName/{sideload_name}/marc",
+					'forcesReindex' => true,
+					'readOnly' => !UserAccount::userHasPermission(['Administer Side Loads']),
+				],
+			];
+		}
+		$structure += [
 			'filenamesToInclude' => [
 				'property' => 'filenamesToInclude',
 				'type' => 'text',
@@ -210,7 +204,6 @@ class SideLoad extends DataObject {
 				'required' => true,
 				'default' => '.*\.ma?rc',
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 			'marcEncoding' => [
 				'property' => 'marcEncoding',
@@ -225,7 +218,6 @@ class SideLoad extends DataObject {
 				],
 				'default' => 'UTF8',
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 			'indexingClass' => [
 				'property' => 'indexingClass',
@@ -237,7 +229,6 @@ class SideLoad extends DataObject {
 				'hideInLists' => true,
 				'default' => 'SideLoadedEContentProcessor',
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 
 			'recordNumberTag' => [
@@ -249,7 +240,6 @@ class SideLoad extends DataObject {
 				'required' => true,
 				'default' => '001',
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 			'recordNumberSubfield' => [
 				'property' => 'recordNumberSubfield',
@@ -260,7 +250,6 @@ class SideLoad extends DataObject {
 				'required' => true,
 				'default' => 'a',
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 			'recordNumberPrefix' => [
 				'property' => 'recordNumberPrefix',
@@ -269,7 +258,6 @@ class SideLoad extends DataObject {
 				'maxLength' => 10,
 				'description' => 'A prefix to identify the bib record number if multiple MARC tags exist',
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 
 			'treatUnknownLanguageAs' => [
@@ -280,7 +268,6 @@ class SideLoad extends DataObject {
 				'description' => 'Records with an Unknown Language will use this language instead.  Leave blank for Unknown',
 				'default' => 'English',
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 			'treatUndeterminedLanguageAs' => [
 				'property' => 'treatUndeterminedLanguageAs',
@@ -290,7 +277,6 @@ class SideLoad extends DataObject {
 				'description' => 'Records with an Undetermined Language will use this language instead.  Leave blank for Unknown',
 				'default' => 'English',
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 			'includePersonalAndCorporateNamesInTopics' => [
 				'property' => 'includePersonalAndCorporateNamesInTopics',
@@ -299,7 +285,6 @@ class SideLoad extends DataObject {
 				'description' => 'Whether or not personal and corporate names are included in the topics facet',
 				'default' => true,
 				'forcesReindex' => true,
-				'readOnly' => $readOnly,
 			],
 
 			'itemSection' => [
@@ -315,7 +300,6 @@ class SideLoad extends DataObject {
 						'maxLength' => 3,
 						'description' => 'The MARC tag where items can be found',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'itemRecordNumber' => [
 						'property' => 'itemRecordNumber',
@@ -324,7 +308,6 @@ class SideLoad extends DataObject {
 						'maxLength' => 1,
 						'description' => 'Subfield for the record number for the item',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'location' => [
 						'property' => 'location',
@@ -333,7 +316,6 @@ class SideLoad extends DataObject {
 						'maxLength' => 1,
 						'description' => 'Subfield for location',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'locationsToSuppress' => [
 						'property' => 'locationsToSuppress',
@@ -342,7 +324,6 @@ class SideLoad extends DataObject {
 						'maxLength' => 255,
 						'description' => 'A regular expression for any locations that should be suppressed',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'itemUrl' => [
 						'property' => 'itemUrl',
@@ -351,7 +332,6 @@ class SideLoad extends DataObject {
 						'maxLength' => 1,
 						'description' => 'Subfield for a URL specific to the item',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'format' => [
 						'property' => 'format',
@@ -360,7 +340,6 @@ class SideLoad extends DataObject {
 						'maxLength' => 1,
 						'description' => 'The subfield to use when determining format based on item information',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 				],
 			],
@@ -382,7 +361,6 @@ class SideLoad extends DataObject {
 						],
 						'default' => 'bib',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'convertFormatToEContent' => [
 						'property' => 'convertFormatToEContent',
@@ -391,7 +369,6 @@ class SideLoad extends DataObject {
 						'description' => 'Whether the format from the bib record or item record should be converted to eContent',
 						'default' => true,
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'specifiedFormat' => [
 						'property' => 'specifiedFormat',
@@ -402,7 +379,6 @@ class SideLoad extends DataObject {
 						'required' => false,
 						'default' => '',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'specifiedFormatCategory' => [
 						'property' => 'specifiedFormatCategory',
@@ -422,7 +398,6 @@ class SideLoad extends DataObject {
 						'required' => false,
 						'default' => '',
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 					'specifiedFormatBoost' => [
 						'property' => 'specifiedFormatBoost',
@@ -439,59 +414,150 @@ class SideLoad extends DataObject {
 						'default' => '8',
 						'required' => false,
 						'forcesReindex' => true,
-						'readOnly' => $readOnly,
 					],
 				],
 			],
-
-			'runFullUpdate' => [
-				'property' => 'runFullUpdate',
-				'type' => 'checkbox',
-				'label' => 'Run Full Update',
-				'description' => 'Whether or not a full update of all records should be done on the next pass of indexing',
-				'default' => 0,
-				'readOnly' => $readOnly,
-			],
-			'lastUpdateOfChangedRecords' => [
-				'property' => 'lastUpdateOfChangedRecords',
-				'type' => 'timestamp',
-				'label' => 'Last Update of Changed Records',
-				'description' => 'The timestamp when just changes were loaded',
-				'default' => 0,
-				'readOnly' => $readOnly,
-			],
-			'lastUpdateOfAllRecords' => [
-				'property' => 'lastUpdateOfAllRecords',
-				'type' => 'timestamp',
-				'label' => 'Last Update of All Records',
-				'description' => 'The timestamp when all records were loaded from the API',
-				'default' => 0,
-				'readOnly' => $readOnly,
-			],
-
-			'scopes' => [
-				'property' => 'scopes',
-				'type' => 'oneToMany',
-				'label' => 'Scopes',
-				'description' => 'Define scopes for the sideload',
-				'keyThis' => 'id',
-				'keyOther' => 'sideLoadId',
-				'subObjectType' => 'SideLoadScope',
-				'structure' => $sideLoadScopeStructure,
-				'sortable' => false,
-				'storeDb' => true,
-				'allowEdit' => true,
-				'canEdit' => !$readOnly,
-				'canAddNew' => true,
-				'canDelete' => true,
-				'additionalOneToManyActions' => [],
-				'forcesReindex' => true,
-				'readOnly' => $readOnly,
-			],
 		];
+
+		if ($context != 'addNew') {
+			$structure += [
+				'runFullUpdate' => [
+					'property' => 'runFullUpdate',
+					'type' => 'checkbox',
+					'label' => 'Run Full Update',
+					'description' => 'Whether or not a full update of all records should be done on the next pass of indexing',
+					'default' => 0,
+				],
+				'lastUpdateOfChangedRecords' => [
+					'property' => 'lastUpdateOfChangedRecords',
+					'type' => 'timestamp',
+					'label' => 'Last Update of Changed Records',
+					'description' => 'The timestamp when just changes were loaded',
+					'default' => 0,
+				],
+				'lastUpdateOfAllRecords' => [
+					'property' => 'lastUpdateOfAllRecords',
+					'type' => 'timestamp',
+					'label' => 'Last Update of All Records',
+					'description' => 'The timestamp when all records were loaded from the API',
+					'default' => 0,
+				]
+			];
+		}
+
+		$structure['scopes'] = [
+			'property' => 'scopes',
+			'type' => 'oneToMany',
+			'label' => 'Scopes',
+			'description' => 'Define scopes for the sideload',
+			'keyThis' => 'id',
+			'keyOther' => 'sideLoadId',
+			'subObjectType' => 'SideLoadScope',
+			'structure' => $sideLoadScopeStructure,
+			'sortable' => false,
+			'storeDb' => true,
+			'allowEdit' => true,
+			'canEdit' => true,
+			'canAddNew' => true,
+			'canDelete' => true,
+			'additionalOneToManyActions' => [],
+			'forcesReindex' => true,
+		];
+		return $structure;
 	}
 
-	public function update($context = '') {
+	/** @noinspection PhpUnused */
+	function validateName() : array {
+		$validationResults = [
+			'validatedOk' => true,
+			'errors' => [],
+		];
+
+		//Check to see if the name is unique
+		$sideLoad = new SideLoad();
+		$sideLoad->name = $this->name;
+		$sideLoad->owningLibrary = $this->owningLibrary;
+		if (!empty($this->id)) {
+			$sideLoad->whereAdd("id != " . $this->id);
+		}
+		if ($sideLoad->count() > 0) {
+			$validationResults['errors'][] = "A Side Load has already been created with that name for this library.  Please select another name.";
+		}
+
+		//Make sure there aren't errors
+		if (count($validationResults['errors']) > 0) {
+			$validationResults['validatedOk'] = false;
+		}
+		return $validationResults;
+	}
+
+	public function updateStructureForEditingObject($structure) : array {
+		if ($this->isReadOnly()) {
+			$structure['name']['readOnly'] = true;
+			$structure['owningLibrary']['readOnly'] = true;
+			$structure['sharing']['readOnly'] = true;
+			$structure['accessButtonLabel']['readOnly'] = true;
+			$structure['useLinkTextForButtonLabel']['readOnly'] = true;
+			$structure['showStatus']['readOnly'] = true;
+			if (isset($structure['recordUrlComponent'])) {
+				$structure['recordUrlComponent']['readOnly'] = true;
+			}
+			if (isset($structure['deletedRecordsIds'])) {
+				$structure['deletedRecordsIds']['readOnly'] = true;
+			}
+			if (isset($structure['marcPath'])) {
+				$structure['marcPath']['readOnly'] = true;
+			}
+			$structure['filenamesToInclude']['readOnly'] = true;
+			$structure['marcEncoding']['readOnly'] = true;
+			$structure['indexingClass']['readOnly'] = true;
+			$structure['recordNumberTag']['readOnly'] = true;
+			$structure['recordNumberSubfield']['readOnly'] = true;
+			$structure['recordNumberPrefix']['readOnly'] = true;
+			$structure['treatUnknownLanguageAs']['readOnly'] = true;
+			$structure['treatUndeterminedLanguageAs']['readOnly'] = true;
+			$structure['includePersonalAndCorporateNamesInTopics']['readOnly'] = true;
+			$structure['itemSection']['properties']['itemTag']['readOnly'] = true;
+			$structure['itemSection']['properties']['itemRecordNumber']['readOnly'] = true;
+			$structure['itemSection']['properties']['location']['readOnly'] = true;
+			$structure['itemSection']['properties']['locationsToSuppress']['readOnly'] = true;
+			$structure['itemSection']['properties']['itemUrl']['readOnly'] = true;
+			$structure['itemSection']['properties']['format']['readOnly'] = true;
+			$structure['formatSection']['properties']['formatSource']['readOnly'] = true;
+			$structure['formatSection']['properties']['convertFormatToEContent']['readOnly'] = true;
+			$structure['formatSection']['properties']['specifiedFormat']['readOnly'] = true;
+			$structure['formatSection']['properties']['specifiedFormatCategory']['readOnly'] = true;
+			$structure['formatSection']['properties']['specifiedFormatBoost']['readOnly'] = true;
+			if (isset($structure['runFullUpdate'])) {
+				$structure['runFullUpdate']['readOnly'] = true;
+			}
+			if (isset($structure['lastUpdateOfChangedRecords'])) {
+				$structure['lastUpdateOfChangedRecords']['readOnly'] = true;
+			}
+			if (isset($structure['lastUpdateOfAllRecords'])) {
+				$structure['lastUpdateOfAllRecords']['readOnly'] = true;
+			}
+			$structure['scopes']['readOnly'] = true;
+		}
+		return $structure;
+	}
+
+	public function delete($useWhere = false) : int {
+		//Delete all scopes for the sideload
+		if (!$useWhere) {
+			if (!empty($this->id)) {
+				$sideLoadScope = new SideLoadScope();
+				$sideLoadScope->sideLoadId = $this->id;
+				$sideLoadScope->find();
+				while ($sideLoadScope->fetch()) {
+					$sideLoadScope->delete($useWhere);
+				}
+			}
+		}
+		return parent::delete($useWhere);
+	}
+
+	public function update($context = '') : bool|int {
 		if (!empty($this->_changedFields) && in_array('deletedRecordsIds', $this->_changedFields)) {
 			$this->runFullUpdate = true;
 		}
@@ -507,7 +573,20 @@ class SideLoad extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert($context = ''): int|bool {
+		//Generate the default record url component
+		global $serverName;
+		$defaultUrlComponent = $this->name;
+		if ($this->owningLibrary != -1) {
+			//Add the library code for the owning library
+			$library = new Library();
+			if ($library->get($this->owningLibrary)){
+				$defaultUrlComponent .= '_' . $library->displayName;
+			}
+		}
+		$this->recordUrlComponent = preg_replace('/[^a-zA-Z0-9_]/', '', $defaultUrlComponent);
+		$this->marcPath = "/data/aspen-discovery/$serverName/" . strtolower($this->recordUrlComponent) . "/marc";
+
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			if (!file_exists($this->marcPath)) {
@@ -521,6 +600,35 @@ class SideLoad extends DataObject {
 				$allScope = new SideLoadScope();
 				$allScope->sideLoadId = $this->id;
 				$allScope->name = "All Records";
+				$allScope->includeAdult = 1;
+				$allScope->includeTeen = 1;
+				$allScope->includeKids = 1;
+				$allScope->insert();
+				
+				//If the user has access to only create side loads for their own library, automatically assign to all libraries and locations. 
+				if (!UserAccount::userHasPermission('Administer Side Loads')) {
+					$libraryList = Library::getLibraryList(true);
+					$libraryScopeLinks = [];
+					foreach ($libraryList as $libraryId => $name) {
+						$libraryScopeLink = new LibrarySideLoadScope();
+						$libraryScopeLink->sideLoadScopeId = $allScope->id;
+						$libraryScopeLink->libraryId = $libraryId;
+						$libraryScopeLink->insert();
+						$libraryScopeLinks[] = $libraryScopeLink;
+					}
+					$allScope->setLibraries($libraryScopeLinks);
+					$locationList = Location::getLocationList(true);
+					$locationScopeLinks = [];
+					foreach ($locationList as $locationId => $name) {
+						$locationScopeLink = new LocationSideLoadScope();
+						$locationScopeLink->sideLoadScopeId = $allScope->id;
+						$locationScopeLink->locationId = $locationId;
+						$locationScopeLink->insert();
+						$locationScopeLinks[] = $locationScopeLink;
+					}
+					$allScope->setLocations($locationScopeLinks);
+				}
+				
 				$this->_scopes[] = $allScope;
 			}
 			$this->saveScopes();
@@ -528,7 +636,7 @@ class SideLoad extends DataObject {
 		return $ret;
 	}
 
-	public function saveScopes() {
+	public function saveScopes() : void  {
 		if (isset ($this->_scopes) && is_array($this->_scopes)) {
 			$this->saveOneToManyOptions($this->_scopes, 'sideLoadId');
 			unset($this->_scopes);
@@ -558,6 +666,55 @@ class SideLoad extends DataObject {
 		} else {
 			parent::__set($name, $value);
 		}
+	}
+
+	/**
+	 * Determine if the active user can view the side load details in the edit form.
+	 * The form may still be largely read-only depending on how it is shared.
+	 * @return bool
+	 */
+	public function canActiveUserEdit() : bool {
+		//Active user can edit if they have permission to edit everything or this is for their home location or sharing allows editing
+		if (UserAccount::userHasPermission('Administer Side Loads')) {
+			return true;
+		}elseif (UserAccount::userHasPermission('Administer Side Loads for Home Library') || UserAccount::userHasPermission('Administer Side Load Scopes for Home Library')){
+			//If we see it, we can edit it, but it might be read-only
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	private ?bool $_isReadOnly = null;
+	/**
+	 * Determine whether the SideLoad can be changed by the active user.
+	 * This is slightly different from canActiveUserEdit because we want the user to be able to view
+	 * but not change the side load and access the scope(s) they have access to
+	 *
+	 * @return bool
+	 */
+	public function isReadOnly() : bool {
+		if ($this->_isReadOnly === null) {
+			//Active user can edit if they have permission to edit everything or this is for their home location or sharing allows editing
+			if (UserAccount::userHasPermission('Administer Side Loads')) {
+				$this->_isReadOnly = false;
+			}elseif (UserAccount::userHasPermission('Administer Side Loads for Home Library')){
+				$allowableLibraries = Library::getLibraryList(true);
+				if (array_key_exists($this->owningLibrary, $allowableLibraries)) {
+					$this->_isReadOnly = false;
+				}else{
+					//Ok if shared by everyone
+					if ($this->sharing == 1) {
+						$this->_isReadOnly = false;
+					}else{
+						$this->_isReadOnly = true;
+					}
+				}
+			}else{ //Administer Scopes for Home Library Only
+				$this->_isReadOnly = true;
+			}
+		}
+		return $this->_isReadOnly;
 	}
 
 }

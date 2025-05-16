@@ -54,6 +54,19 @@ function getUpdates25_06_00(): array {
 			],
 		], //side_loads_owning_and_sharing
 
+		//Mark - Grove
+		'side_loads_uniqueness' => [
+			'title' => 'Side Load Uniqueness',
+			'description' => 'Update Uniqueness for Side Loads to be unique based on name and owning library and also add uniqueness for marc path and record url component.',
+			'continueOnError' => true,
+			'sql' => [
+				"ALTER TABLE sideloads DROP INDEX name",
+				"ALTER TABLE sideloads ADD UNIQUE name(name, owningLibrary)",
+				"ALTER TABLE sideloads ADD UNIQUE (marcPath)",
+				"ALTER TABLE sideloads ADD UNIQUE (recordUrlComponent)",
+			],
+		], //side_loads_uniqueness
+
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS

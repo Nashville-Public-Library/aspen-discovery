@@ -4605,8 +4605,8 @@ class User extends DataObject {
 			$sections['side_loads'] = new AdminSection('Side Loads');
 			$sideLoadsSettingsAction = new AdminAction('Settings', 'Define connection information between Side Loads and Aspen Discovery.', '/SideLoads/SideLoads');
 			$sideLoadsScopesAction = new AdminAction('Scopes', 'Define which records are loaded for each library and location.', '/SideLoads/Scopes');
-			if ($sections['side_loads']->addAction($sideLoadsSettingsAction, ['Administer Side Loads', 'Administer Side Loads for Home Library'])) {
-				$sideLoadsSettingsAction->addSubAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Load Scopes for Home Library']);
+			if ($sections['side_loads']->addAction($sideLoadsSettingsAction, ['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library'])) {
+				$sideLoadsSettingsAction->addSubAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library']);
 			} else {
 				$sections['side_loads']->addAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Load Scopes for Home Library']);
 			}
