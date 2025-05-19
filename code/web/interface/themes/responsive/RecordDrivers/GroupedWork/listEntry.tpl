@@ -99,7 +99,7 @@
 
 			{* Description Section *}
 			{if !empty($summDescription)}
-				<div class="row visible-xs">
+				<div class="row visible-xs list-entry-desc-toggle">
 					<div class="result-label col-tn-3 col-xs-3">{translate text="Description" isPublicFacing=true}</div>
 					<div class="result-value col-tn-9 col-xs-9"><a id="descriptionLink{$summId|escape}" href="#" onclick="$('#descriptionValue{$summId|escape},#descriptionLink{$summId|escape}').toggleClass('hidden-xs');return false;">{translate text="Click to view" isPublicFacing=true}</a></div>
 				</div>

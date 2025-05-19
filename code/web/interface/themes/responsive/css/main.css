@@ -11437,7 +11437,7 @@ input[type="radio"][name="colorScheme"]:checked + label::after {
     display: none !important;
   }
   /* Hide mobile-only toggle rows "Description" and "Click to view". */
-  body#MyAccount-MyList .row.visible-xs {
+  body#MyAccount-MyList .list-entry-desc-toggle {
     display: none !important;
   }
   /* Hide the back-to-top arrow. */
