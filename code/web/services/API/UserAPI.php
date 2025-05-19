@@ -5765,7 +5765,11 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($guidingUserLibrary->libraryId != $masqueradedUserLibrary->libraryId && !UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
+								$sameHomeLibrary = true;
+								if ($guidingUserLibrary->libraryId != $masqueradedUserLibrary->libraryId) {
+									$sameHomeLibrary = false;
+								}
+								if (!$sameHomeLibrary && !UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
 									return [
 										'success' => false,
 										'error' => translate([
@@ -5774,14 +5778,26 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($isRestrictedUser && (!UserAccount::userHasPermission('Masquerade as patrons with same home library') || $guidingUserLibrary->libraryId != $masqueradedUserLibrary->libraryId)) {
-									return [
-										'success' => false,
-										'error' => translate([
-											'text' => 'Cannot masquerade as patrons of this type.',
-											'isAdminFacing' => true,
-										]),
-									];
+								if ($isRestrictedUser) {
+									if (!UserAccount::userHasPermission('Masquerade as patrons with same home library')) {
+										return [
+											'success' => false,
+											'error' => translate([
+												'text' => 'Cannot masquerade as patrons of this type.',
+												'isAdminFacing' => true,
+											]),
+										];
+									}
+									if (UserAccount::userHasPermission('Masquerade as patrons with same home library') && !$sameHomeLibrary) {
+										return [
+											'success' => false,
+											'error' => translate([
+												'text' => 'You do not have the same home library branch as the patron.',
+												'isAdminFacing' => true,
+											]),
+										];
+									}
+
 								}
 							} elseif (UserAccount::userHasPermission('Masquerade as patrons with same home location') || UserAccount::userHasPermission('Masquerade as unrestricted patrons with same home location')) {
 								if (empty($user->homeLocationId)) {
@@ -5802,7 +5818,11 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($user->homeLocationId != $masqueradedUser->homeLocationId && !UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
+								$sameHomeLibraryBranch = true;
+								if ($user->homeLocationId != $masqueradedUser->homeLocationId) {
+									$sameHomeLibraryBranch = false;
+								}
+								if (!$sameHomeLibraryBranch && !UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
 									return [
 										'success' => false,
 										'error' => translate([
@@ -5811,14 +5831,25 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($isRestrictedUser && (!UserAccount::userHasPermission('Masquerade as patrons with same home location') || $user->homeLocationId != $masqueradedUser->homeLocationId)) {
-									return [
-										'success' => false,
-										'error' => translate([
-											'text' => 'Cannot masquerade as patrons of this type.',
-											'isAdminFacing' => true,
-										]),
-									];
+								if ($isRestrictedUser) {
+									if (!UserAccount::userHasPermission('Masquerade as patrons with same home location')) {
+										return [
+											'success' => false,
+											'error' => translate([
+												'text' => 'Cannot masquerade as patrons of this type.',
+												'isAdminFacing' => true,
+											]),
+										];
+									}
+									if (UserAccount::userHasPermission('Masquerade as patrons with same home location') && !$sameHomeLibraryBranch) {
+										return [
+											'success' => false,
+											'error' => translate([
+												'text' => 'You do not have the same home library branch as the patron.',
+												'isAdminFacing' => true,
+											]),
+										];
+									}
 								}
 							}
 
