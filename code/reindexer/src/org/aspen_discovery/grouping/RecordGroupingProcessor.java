@@ -923,7 +923,7 @@ public class RecordGroupingProcessor {
 				if (rawResponse != null && !rawResponse.isEmpty()) {
 					try {
 						MarcReader reader = new MarcPermissiveStreamReader(new ByteArrayInputStream(rawResponse.getBytes(StandardCharsets.UTF_8)), true, false, "UTF-8");
-						Record marcRecord;
+						org.marc4j.marc.Record marcRecord;
 						if (reader.hasNext()) {
 							marcRecord = reader.next();
 							return groupCloudLibraryRecord(cloudLibraryId, marcRecord);
