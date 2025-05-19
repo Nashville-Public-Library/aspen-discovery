@@ -88,7 +88,7 @@
 
 			{* Formats Section *}
 			<div class="row">
-				<div class="{if empty($hasHiddenFormats) && count($relatedManifestations) != 1}hidden-xs {/if}col-sm-12" id="relatedManifestationsValue{$summId|escape}">
+				<div class="{if empty($hasHiddenFormats) && count($relatedManifestations) != 1}list-entry-hidden-format hidden-xs {/if}col-sm-12" id="relatedManifestationsValue{$summId|escape}">
 					{* Hide Formats section on mobile view, unless there is a single format or a format has been selected by the user *}
 					{* relatedManifestationsValue ID is used by the Formats button *}
 
@@ -109,7 +109,7 @@
 			{if !empty($summDescription)}
 				<div class="row">
 					{* Hide in mobile view *}
-					<div class="result-value hidden-xs col-sm-12" id="descriptionValue{$summId|escape}">
+					<div class="list-entry-hidden-desc result-value hidden-xs col-sm-12" id="descriptionValue{$summId|escape}">
 						{$summDescription|highlight|truncate_html:450:"..."}
 					</div>
 				</div>
