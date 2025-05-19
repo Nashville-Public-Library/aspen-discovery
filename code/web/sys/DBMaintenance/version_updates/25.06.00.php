@@ -81,6 +81,13 @@ function getUpdates25_06_00(): array {
 		// Laura Escamilla - ByWater Solutions
 
 		//alexander - Open Fifth
+		'add_admin_control_over_campaign_leaderboard' => [
+			'title' => 'Add Admin Control Over Campaign Leaderboard',
+			'description' => 'Add ability for admin to control whether leaderbaord displays',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN displayCampaignLeaderboard TINYINT(1) DEFAULT 0",
+			]
+		], //add_admin_control_over_campaign_leaderboard
 
 		//chloe - Open Fifth
 
