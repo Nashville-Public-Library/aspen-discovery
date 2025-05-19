@@ -11399,7 +11399,7 @@ input[type="radio"][name="colorScheme"]:checked + label::after {
   position: relative;
 }
 @media print {
-  /* Make sure descriptions are visible. */
+  /* Initially, make sure descriptions are visible. */
   .hidden-xs {
     display: block !important;
   }
@@ -11411,9 +11411,10 @@ input[type="radio"][name="colorScheme"]:checked + label::after {
     display: block !important;
   }
   /* Hide buttons and controls that aren't needed for print. */
+  /* Hide mobile-only toggle rows (e.g. "Click to view") in print. */
   .btn-toolbar,
   .btn-group,
-  .resultActions {
+  .resultActions .visible-xs {
     display: none !important;
   }
   /* Prevent page breaks inside list items and their descriptions. */
@@ -11425,8 +11426,17 @@ input[type="radio"][name="colorScheme"]:checked + label::after {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
-  /* Hide mobile-only toggle rows (e.g. "Click to view") in print. */
-  .visible-xs {
+  /* Allow page breaks in list items when descriptions are omitted. */
+  body.no-print-descriptions .result,
+  body.no-print-descriptions .resultsList.listEntry {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  /* Optionally hide descriptions when selected. */
+  body.no-print-descriptions .listDescription,
+  body.no-print-descriptions .result-value,
+  body.no-print-descriptions .user-list-entry-note,
+  body.no-print-descriptions [id^="descriptionValue"] {
     display: none !important;
   }
   /* Strip out any screen‐only height/overflow rules to allow landscape printing. */
