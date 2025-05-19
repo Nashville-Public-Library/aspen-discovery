@@ -141,7 +141,7 @@
 									{/if}
 									<div class="btn-group">
 										<button id="PrintOptions" type="button" class="btn btn-sm btn-default dropdown-toggle listViewButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-											{translate text='Print Options' isPublicFacing=true} <span class="caret"></span>
+											{translate text='Print List Options' isPublicFacing=true} <span class="caret"></span>
 										</button>
 										<ul class="dropdown-menu">
 											<li><a href="#" onclick="return AspenDiscovery.Lists.printListWithoutDescriptions()">{translate text='Print Without Descriptions' isPublicFacing=true}</a></li>
