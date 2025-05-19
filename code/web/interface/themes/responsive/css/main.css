@@ -11429,10 +11429,13 @@ input[type="radio"][name="colorScheme"]:checked + label::after {
     display: block !important;
   }
   /* Hide buttons and controls that aren't needed for print. */
-  /* Hide mobile-only toggle rows (e.g. "Click to view") in print. */
   .btn-toolbar,
   .btn-group,
-  .resultActions .visible-xs {
+  .resultActions {
+    display: none !important;
+  }
+  /* Hide mobile-only toggle rows (e.g. "Description" and "Click to view") in print. */
+  .visible-xs {
     display: none !important;
   }
   /* Prevent page breaks inside list items and their descriptions. */

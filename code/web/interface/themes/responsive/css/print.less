@@ -13,8 +13,12 @@
   }
 
   /* Hide buttons and controls that aren't needed for print. */
-  /* Hide mobile-only toggle rows (e.g. "Click to view") in print. */
-  .btn-toolbar, .btn-group, .resultActions .visible-xs {
+  .btn-toolbar, .btn-group, .resultActions {
+    display: none !important;
+  }
+
+  /* Hide mobile-only toggle rows (e.g. "Description" and "Click to view") in print. */
+  .visible-xs {
     display: none !important;
   }
 
