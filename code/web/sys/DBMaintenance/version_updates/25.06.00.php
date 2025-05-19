@@ -30,6 +30,14 @@ function getUpdates25_06_00(): array {
 				'ALTER TABLE location_records_to_include CHANGE COLUMN includeHoldableOnly includeHoldableOnly tinyint(1) NOT NULL DEFAULT 0'
 			]
 		], //correct_default_include_only_holdable_for_records_to_include
+		'cloud_library_setting_name' => [
+			'title' => 'Add CloudLibrary setting name',
+			'description' => 'Add a name for CloudLibrary settings',
+			'sql' => [
+				"ALTER TABLE cloud_library_settings ADD COLUMN name VARCHAR(100) DEFAULT ''",
+				"UPDATE cloud_library_settings set name = concat('Setting ', id)",
+			]
+		], //cloud_library_setting_name
 
 		//katherine - Grove
 
