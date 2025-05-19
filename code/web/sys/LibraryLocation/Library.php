@@ -458,6 +458,7 @@ class Library extends DataObject {
 	public $campaignLeaderboardDisplay;
 	public $sendStaffEmailOnCampaignCompletion;
 	public $campaignCompletionNewEmail;
+	public $displayCampaignLeaderboard;
 
 	//SHAREit
 	public $repeatInShareIt;
@@ -3772,6 +3773,14 @@ class Library extends DataObject {
 				'renderAsHeading' => true,
 				'expandByDefault' => false,
 				'properties' => [
+					'displayCampaignLeaderboard' => [
+						'property' => 'displayCampaignLeaderboard',
+						'type' => 'checkbox',
+						'label' => 'Include Campaign Leaderboard',
+						'description' => 'Whether or not to include a campaign leaderboard',
+						'hideInLists' => true,
+						'default' => 0,
+					],
 					'campaignLeaderboardDisplay' => [
 						'property' => 'campaignLeaderboardDisplay',
 						'type' => 'enum',
