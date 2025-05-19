@@ -5734,7 +5734,7 @@ class UserAPI extends AbstractAPI {
 							}
 							if (UserAccount::userHasPermission('Masquerade as any user')) {
 								//The user can masquerade as anyone, no additional checks needed
-							} elseif (UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
+							} elseif (UserAccount::userHasPermission('Masquerade as unrestricted patron types') && !UserAccount::userHasPermission('Masquerade as patrons with same home library') && !UserAccount::userHasPermission('Masquerade as patrons with same home location')) {
 								if ($isRestrictedUser) {
 									return [
 										'success' => false,
@@ -5765,7 +5765,7 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($guidingUserLibrary->libraryId != $masqueradedUserLibrary->libraryId) {
+								if ($guidingUserLibrary->libraryId != $masqueradedUserLibrary->libraryId && !UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
 									return [
 										'success' => false,
 										'error' => translate([
@@ -5774,7 +5774,7 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($isRestrictedUser && !UserAccount::userHasPermission('Masquerade as patrons with same home library')) {
+								if ($isRestrictedUser && (!UserAccount::userHasPermission('Masquerade as patrons with same home library') || $guidingUserLibrary->libraryId != $masqueradedUserLibrary->libraryId)) {
 									return [
 										'success' => false,
 										'error' => translate([
@@ -5802,7 +5802,7 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($user->homeLocationId != $masqueradedUser->homeLocationId) {
+								if ($user->homeLocationId != $masqueradedUser->homeLocationId && !UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
 									return [
 										'success' => false,
 										'error' => translate([
@@ -5811,7 +5811,7 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($isRestrictedUser && !UserAccount::userHasPermission('Masquerade as patrons with same home location')) {
+								if ($isRestrictedUser && (!UserAccount::userHasPermission('Masquerade as patrons with same home location') || $user->homeLocationId != $masqueradedUser->homeLocationId)) {
 									return [
 										'success' => false,
 										'error' => translate([
