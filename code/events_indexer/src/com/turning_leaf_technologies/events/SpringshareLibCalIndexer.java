@@ -157,17 +157,6 @@ class SpringshareLibCalIndexer {
 			return;
 		}
 
-		//We do not need to delete from the index proactively, because we delete existing records individually below
-//		try {
-//			solrUpdateServer.deleteByQuery("type:event_libcal AND source:" + this.settingsId);
-//			//3-19-2019 Don't commit so the index does not get cleared during run (but will clear at the end).
-//		} catch (BaseHttpSolrClient.RemoteSolrException rse) {
-//			logEntry.incErrors("Solr is not running properly, try restarting " + rse);
-//			System.exit(-1);
-//		} catch (Exception e) {
-//			logEntry.incErrors("Error deleting from index ", e);
-//		}
-
 		Date lastDateToIndex = new Date();
 		long numberOfDays = numberOfDaysToIndex * 24L;
 		lastDateToIndex.setTime(lastDateToIndex.getTime() + (numberOfDays * 60 * 60 * 1000));
@@ -427,6 +416,27 @@ class SpringshareLibCalIndexer {
 			logEntry.setFinished();
 			logEntry.saveResults();
 			System.exit(-3);
+		}
+
+		// Close prepared statements.
+		try {
+			if (addEventStmt != null) {
+				addEventStmt.close();
+			}
+			if (updateEventStmt != null) {
+				updateEventStmt.close();
+			}
+			if (deleteEventStmt != null) {
+				deleteEventStmt.close();
+			}
+			if (addRegistrantStmt != null) {
+				addRegistrantStmt.close();
+			}
+			if (deleteRegistrantStmt != null) {
+				deleteRegistrantStmt.close();
+			}
+		} catch (SQLException e) {
+			logEntry.incErrors("Error closing prepared statements: ", e);
 		}
 
 		logEntry.setFinished();
