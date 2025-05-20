@@ -94,6 +94,13 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE cloud_library_export_log ADD COLUMN IF NOT EXISTS numRegrouped int(11) DEFAULT 0 AFTER settingId",
 			]
 		], //add_num_regrouped_to_cloudlibrary_extract_logs
+		'add_static_location_id_to_portal_cell' => [
+			'title' => 'Add staticLocationId Column to Web Builder Portal Cells',
+			'description' => 'Adds a staticLocationId column to the web_builder_portal_cell table to represent the location ID of the static location chosen.',
+			'sql' => [
+				"ALTER TABLE web_builder_portal_cell ADD COLUMN IF NOT EXISTS staticLocationId int(11) NOT NULL DEFAULT -1",
+			]
+		], //add_static_location_id_to_portal_cell
 
 		// Laura Escamilla - ByWater Solutions
 
