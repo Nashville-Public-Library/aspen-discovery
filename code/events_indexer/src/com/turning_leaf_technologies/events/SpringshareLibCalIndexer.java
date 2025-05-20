@@ -458,15 +458,15 @@ class SpringshareLibCalIndexer {
 				if (curEvent.get(keyName) instanceof JSONObject){
 					JSONObject keyObj = curEvent.getJSONObject(keyName);
 					if (keyObj.has("name")) {
-						return keyObj.getString("name");
+						return AspenStringUtils.trimTrailingPunctuation(keyObj.getString("name"));
 					}else{
 						for (String objKey: keyObj.keySet()){
-							return keyObj.getString(objKey);
+							return AspenStringUtils.trimTrailingPunctuation(keyObj.getString(objKey));
 						}
 						return null;
 					}
 				}else{
-					return curEvent.get(keyName).toString();
+					return AspenStringUtils.trimTrailingPunctuation(curEvent.get(keyName).toString());
 				}
 			}
 		}else{
@@ -480,13 +480,13 @@ class SpringshareLibCalIndexer {
 			if (curEvent.get(keyName) instanceof JSONObject) {
 				JSONObject keyObj = curEvent.getJSONObject(keyName);
 				for (String keyValue : keyObj.keySet()) {
-					values.add(keyObj.getString(keyValue));
+					values.add(AspenStringUtils.trimTrailingPunctuation(keyObj.getString(keyValue)));
 				}
 			}else{
 				JSONArray keyArray = curEvent.getJSONArray(keyName);
 				for (int i = 0; i < keyArray.length(); i++){
 					if (keyArray.get(i) instanceof JSONObject && keyArray.getJSONObject(i).has("name")) {
-						values.add(keyArray.getJSONObject(i).getString("name"));
+						values.add(AspenStringUtils.trimTrailingPunctuation(keyArray.getJSONObject(i).getString("name")));
 					}
 				}
 			}
