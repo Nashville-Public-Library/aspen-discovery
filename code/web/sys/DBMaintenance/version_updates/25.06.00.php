@@ -30,6 +30,23 @@ function getUpdates25_06_00(): array {
 				'ALTER TABLE location_records_to_include CHANGE COLUMN includeHoldableOnly includeHoldableOnly tinyint(1) NOT NULL DEFAULT 0'
 			]
 		], //correct_default_include_only_holdable_for_records_to_include
+		'cloud_library_setting_name' => [
+			'title' => 'Add CloudLibrary setting name',
+			'description' => 'Add a name for CloudLibrary settings',
+			'sql' => [
+				"ALTER TABLE cloud_library_settings ADD COLUMN name VARCHAR(100) DEFAULT ''",
+				"UPDATE cloud_library_settings set name = concat('Setting ', id)",
+			]
+		], //cloud_library_setting_name
+		'indexing_profile_status_alt' => [
+			'title' => 'Indexing Profile Status Alt',
+			'description' => 'Add the ability to define a second item status field for use while indexing symphony records',
+			'sql' => [
+				"ALTER TABLE indexing_profiles ADD COLUMN statusAlt CHAR(1) DEFAULT ' '",
+				"ALTER TABLE status_map_values ADD COLUMN appliesToStatusSubfield TINYINT(1) DEFAULT 1",
+				"ALTER TABLE status_map_values ADD COLUMN appliesToStatusAltSubfield TINYINT(1) DEFAULT 0",
+			]
+		], //indexing_profile_status_alt
 
 		//katherine - Grove
 
