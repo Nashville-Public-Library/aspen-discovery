@@ -311,6 +311,18 @@ class AssabetIndexer {
 			}
 		}
 
+		// Close prepared statements.
+		try {
+			if (addEventStmt != null) {
+				addEventStmt.close();
+			}
+			if (deleteEventStmt != null) {
+				deleteEventStmt.close();
+			}
+		} catch (SQLException e) {
+			logEntry.incErrors("Error closing database statements: ", e);
+		}
+
 		logEntry.setFinished();
 	}
 
