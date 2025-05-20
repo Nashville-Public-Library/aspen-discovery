@@ -38,6 +38,15 @@ function getUpdates25_06_00(): array {
 				"UPDATE cloud_library_settings set name = concat('Setting ', id)",
 			]
 		], //cloud_library_setting_name
+		'indexing_profile_status_alt' => [
+			'title' => 'Indexing Profile Status Alt',
+			'description' => 'Add the ability to define a second item status field for use while indexing symphony records',
+			'sql' => [
+				"ALTER TABLE indexing_profiles ADD COLUMN statusAlt CHAR(1) DEFAULT ' '",
+				"ALTER TABLE status_map_values ADD COLUMN appliesToStatusSubfield TINYINT(1) DEFAULT 1",
+				"ALTER TABLE status_map_values ADD COLUMN appliesToStatusAltSubfield TINYINT(1) DEFAULT 0",
+			]
+		], //indexing_profile_status_alt
 
 		//katherine - Grove
 
