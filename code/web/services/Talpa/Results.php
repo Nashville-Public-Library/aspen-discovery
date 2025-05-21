@@ -92,6 +92,7 @@ class Talpa_Results extends ResultsAction {
 
 		// for reviewing api time taken in html results output
 		$interface->assign('querySpeed', $searchObject->getQuerySpeed());
+		$interface->assign('recordFetchSpeed', $searchObject->getRecordFetchSpeed());
 
 		$rawIsbns =  explode(',', $result['response']['isbnS_for_summary_retrieval']);
 		$summaryIsbnsJSON = json_encode($rawIsbns);

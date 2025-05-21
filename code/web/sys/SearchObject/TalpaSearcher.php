@@ -9,7 +9,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	static $instance;
 	/** @var TalpaSettings */
 //	private $talpaBaseApi ='https://www.librarything.com/api/talpa.php';
-	private $talpaBaseApi ='lp-ltfl.dev.librarything.com/api_talpa.php'; //TO
+	private $talpaBaseApi ='https://www.librarything.com/api_talpa.php';
 
 	/**Build URL */
 //	private $sessionId;
@@ -33,6 +33,11 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	protected $queryStartTime = null;
 	protected $queryEndTime = null;
 	protected $queryTime = null;
+
+	/**Track record fetch time info */
+	protected $recordFetchStartTime = null;
+	protected $recordFetchEndTime = null;
+	protected $recordFetchTime = null;
 
 	// STATS
 	protected $resultsTotal = 0;
@@ -306,6 +311,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			$this->lastSearchResults['response']['global_count'] = 0;
 			$resultsList = $recordData['response']['resultlist'];
 
+			$this->startRecordFetchTimer();
 			$inLibraryResults = array();
 			$allGroupedWorks = explode(',',$recordData['response']['all_grouped_workidA'] );
 			$allGroupedWorks_chunked = array_chunk($allGroupedWorks,20, true);
@@ -363,6 +369,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 //				$this->resultsTotal = count($resultsList);
 			}
+			$this->stopRecordFetchTimer();
 			return $recordData;
 		}
 		return false;
@@ -1160,10 +1167,41 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	}
 
 	/**
+	 * Start the timer to work out how long it takes to fetch record data.
+	 * stopRecordFetchTimer().
+	 *
+	 * @access protected
+	 */
+	protected function startRecordFetchTimer() {
+		// Get time before the query
+		$time = explode(" ", microtime());
+		$this->recordFetchStartTime = $time[1] + $time[0];
+	}
+
+	/**
+	 * End the timer to work out how long a query takes.  Complements
+	 * startRecordFetchTimer().
+	 *
+	 * @access protected
+	 */
+	protected function stopRecordFetchTimer() {
+		$time = explode(" ", microtime());
+		$this->recordFetchEndTime = $time[1] + $time[0];
+		$this->recordFetchTime = $this->recordFetchEndTime - $this->recordFetchStartTime;
+	}
+
+	/**
 	 * Work out how long the query took
 	 */
 	public function getQuerySpeed() {
 		return $this->queryTime;
+	}
+
+	/**
+	 * Work out how long the record fetch
+	 */
+	public function getRecordFetchSpeed() {
+		return $this->recordFetchTime;
 	}
 
 	 /**

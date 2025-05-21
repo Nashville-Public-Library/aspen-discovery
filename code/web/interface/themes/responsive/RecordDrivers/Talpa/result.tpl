@@ -335,6 +335,9 @@
 	</div>
 
 	<div id="talpa_stats" style="display:none">
-		talpa api query time: {$querySpeed}
+		<datalist>
+		<data value="{$querySpeed}">api</data>
+			<data value="{$recordFetchSpeed}">record fetch</data>
+		</datalist>
 	</div>
 {/strip}
