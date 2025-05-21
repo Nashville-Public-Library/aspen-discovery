@@ -513,7 +513,9 @@ class MaterialsRequest_AJAX extends Action {
 		//Need the format as well as isbn, issn or title + author
 		if (!empty($format)) {
 			$okToProcess = false;
-			if (!empty($isbn) || !empty($issn) || !empty($upc)) {
+			if ((!empty($isbn) && preg_match('/[0-9]/', $isbn))
+				|| (!empty($issn) && preg_match('/[0-9]/', $issn))
+				|| (!empty($upc) && preg_match('/[0-9]/', $upc))) {
 				$okToProcess = true;
 			}else if (!empty($title) && !empty($author)){
 				$okToProcess = true;

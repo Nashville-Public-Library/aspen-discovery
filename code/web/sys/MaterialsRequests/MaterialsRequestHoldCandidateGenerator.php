@@ -99,7 +99,11 @@ function generateMaterialsRequestsHoldCandidates() : int {
 						$existingHoldCandidates[] = $existingHoldCandidate->source . ':' . $existingHoldCandidate->sourceId;
 					}
 
-					$formatMappingsForRequest = $requestFormatMappings[$requestToCheck->formatId];
+					$formatMappingsForRequest = $requestFormatMappings[$requestToCheck->formatId] ?? [];
+					if (empty($formatMappingsForRequest)) {
+						$logEntry->addNote("Skipping request {$requestToCheck->id}: no catalog-format mappings defined for format {$requestToCheck->formatId} ({$requestToCheck->displayFormat}).");
+						continue;
+					}
 					$recordSet = $searchObject->getResultRecordSet();
 					foreach ($recordSet as $recordKey => $record) {
 						//If we are doing a title/author search, make sure the title and author are correct?
