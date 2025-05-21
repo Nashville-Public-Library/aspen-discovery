@@ -263,6 +263,20 @@ class Koha extends AbstractIlsDriver {
 						$result['success'] = true;
 						$result['messages'][] = 'Your account was updated successfully.';
 
+						// Immediately update the user's displayed name.
+						$forceDisplayNameUpdate = false;
+						if (isset($_REQUEST['borrower_firstname'])) {
+							$patron->firstname = $_REQUEST['borrower_firstname'];
+							$forceDisplayNameUpdate = true;
+						}
+						if (isset($_REQUEST['borrower_surname'])) {
+							$patron->lastname = $_REQUEST['borrower_surname'];
+							$forceDisplayNameUpdate = true;
+						}
+						if ($forceDisplayNameUpdate) {
+							$patron->displayName = '';
+						}
+
 						// check for patron attributes
 						if ($this->getKohaVersion() > 21.05) {
 							$jsonResponse = json_decode($response);
@@ -5916,9 +5930,10 @@ class Koha extends AbstractIlsDriver {
 	 * @param string $requestFieldName
 	 * @param bool $convertToUpperCase
 	 * @param bool $stripNonNumericCharacters
+	 * @param array $validFieldsToUpdate
 	 * @return array
 	 */
-	private function setPostFieldWithDifferentName(array $postFields, string $postFieldName, string $requestFieldName, $convertToUpperCase = false, $stripNonNumericCharacters = false, $validFieldsToUpdate = []): array {
+	private function setPostFieldWithDifferentName(array $postFields, string $postFieldName, string $requestFieldName, bool $convertToUpperCase = false, bool $stripNonNumericCharacters = false, $validFieldsToUpdate = []): array {
 		if (isset($_REQUEST[$requestFieldName])) {
 			if (!empty($validFieldsToUpdate) && !array_key_exists($requestFieldName, $validFieldsToUpdate)) {
 				return $postFields;
@@ -7060,7 +7075,7 @@ class Koha extends AbstractIlsDriver {
 		$response = $this->kohaApiUserAgent->get("/api/v1/patrons/$borrowerNumber/extended_attributes",'koha.getUserExtendedAttributes',[],[]);
 		$responseCode = $response['code'];
 		if ($responseCode == 200) {
-			$body = $response['body'];
+			$body = $response['body'] ?? [];
 			foreach($body as $elem ) { 
 				$attribute = [
 					'id' => $elem['extended_attribute_id'],
