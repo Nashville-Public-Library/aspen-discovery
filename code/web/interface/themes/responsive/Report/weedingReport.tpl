@@ -54,7 +54,7 @@
 				<style>
 				#weedingReportTable tbody tr {
 					border: black 1px solid;
-					page-break-inside: avoid;
+					page-break-inside: auto;
 				}
 				.weedingReport-discard {
 					background-color: #FFCCCC !important;
@@ -79,6 +79,8 @@
 					}
 					body {
 						margin: 0in !important; /* margin you want for the content */
+						height: auto !important;
+						overflow: visible !important;
 					}
 					.container {
 						width: 100% !important;
