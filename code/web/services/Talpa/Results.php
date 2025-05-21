@@ -90,6 +90,9 @@ class Talpa_Results extends ResultsAction {
 		$interface->assign('uniq_key_for_summary_retrieval', $result['response']['uniq_key_for_summary_retrieval']);
 		$interface->assign('uniq_val_for_summary_retrieval', $result['response']['uniq_val_for_summary_retrieval']);
 
+		// for reviewing api time taken in html results output
+		$interface->assign('querySpeed', $searchObject->getQuerySpeed());
+
 		$rawIsbns =  explode(',', $result['response']['isbnS_for_summary_retrieval']);
 		$summaryIsbnsJSON = json_encode($rawIsbns);
 		$isbnS_for_summary_retrieval = htmlspecialchars($summaryIsbnsJSON, ENT_QUOTES, 'UTF-8');

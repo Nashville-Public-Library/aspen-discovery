@@ -333,4 +333,8 @@
 
 		</div>
 	</div>
+
+	<div id="talpa_stats" style="display:none">
+		talpa api query time: {$querySpeed}
+	</div>
 {/strip}
