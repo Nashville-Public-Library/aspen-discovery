@@ -583,8 +583,9 @@ class KohaRecordProcessor extends IlsRecordProcessor {
 
 		boolean allItemsExcluded = true;
 		for (DataField itemField : itemRecords) {
-			String itemStatus = getItemStatus(itemField, "");
-			if (itemStatus.equals("On Shelf") || itemStatus.equals("Checked Out")) {
+			ItemStatus itemStatus = getItemStatus(itemField, "");
+			String status = itemStatus.getStatus();
+			if ("On Shelf".equals(status) || "Checked Out".equals(status)) {
 				// Found an available item, so the record should not be excluded.
 				allItemsExcluded = false;
 				break;
