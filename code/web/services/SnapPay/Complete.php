@@ -6,6 +6,7 @@ class SnapPay_Complete extends Action {
 		global $logger;
 		global $library;
 		$error = true;
+		require_once ROOT_DIR . '/sys/Account/UserPayment.php';
 		$message = '';
 		$emailNotifications = 0; // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 		require_once ROOT_DIR . '/sys/ECommerce/SnapPaySetting.php';
@@ -125,7 +126,6 @@ class SnapPay_Complete extends Action {
 						$error = true;
 						$message = "Invalid signature returned from SnapPay for Payment Reference ID $paymentId.";
 					} else {
-						require_once ROOT_DIR . '/sys/Account/UserPayment.php';
 						$result = UserPayment::completeSnapPayPayment();
 						$message = $result['message'];
 						if ($result['error'] === true) {
