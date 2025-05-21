@@ -124,7 +124,7 @@ class SnapPay_Complete extends Action {
 					$validated = $this->validateSnapPayHMAC($_POST['signature'], $hppHMACParamValue);
 					if ($validated != 'Valid signature.') {
 						$error = true;
-						$message = "Invalid signature returned from SnapPay for Payment Reference ID $paymentId.";
+						$message = "Invalid signature returned from SnapPay for Payment Reference ID" . $_GET['u'];
 					} else {
 						$result = UserPayment::completeSnapPayPayment();
 						$message = $result['message'];
