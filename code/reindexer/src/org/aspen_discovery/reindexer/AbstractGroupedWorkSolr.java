@@ -1356,6 +1356,18 @@ public abstract class AbstractGroupedWorkSolr {
 		}
 	}
 
+	/**
+	 * Get the RecordInfo for a specific source and identifier.
+	 *
+	 * @param source The source of the record (e.g. "koha").
+	 * @param recordIdentifier The identifier of the record.
+	 * @return The {@code RecordInfo} object if found, null otherwise.
+	 */
+	RecordInfo getRecordInfo(String source, String recordIdentifier) {
+		String recordIdentifierWithType = source + ":" + recordIdentifier;
+		return relatedRecords.get(recordIdentifierWithType);
+	}
+
 	void addLCSubject(String lcSubject) {
 		this.lcSubjects.add(AspenStringUtils.normalizeSubject(lcSubject));
 	}
