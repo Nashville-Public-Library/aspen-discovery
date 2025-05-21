@@ -28,9 +28,9 @@ class SnapPay_Complete extends Action {
 		// But what James thinks is mostly going on is that users are restoring their browsers with a tab on the SnapPay/Complete page
 		$referringUrl = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'Unknown';
 		if ($snapPaySetting->sandboxMode == 1) {
-			$snapPayURL = 'https://stage.snappayglobal.com/Interop/HostedPaymentPage';
+			$snapPayURL = 'https://stage.snappayglobal.com/';
 		} else {
-			$snapPayURL = 'https://www.snappayglobal.com/Interop/HostedPaymentPage';
+			$snapPayURL = 'https://www.snappayglobal.com/';
 		}
 		$userPayment = new UserPayment();
 		$userPayment->id = $_GET['u']; // Payment Reference ID from the query string
