@@ -151,7 +151,7 @@ class SnapPay_Complete extends Action {
 					$this->display('paymentResult.tpl', 'Payment Error');
 				} else {
 					if (empty($message)) {
-						$message = "SnapPay Payment completed with no message for Payment Reference ID $paymentId.";
+						$message = "SnapPay Payment completed with no message for Payment Reference ID " . $_GET['u'];
 					}
 					$interface->assign('message', $message);
 					$logger->log($message, Logger::LOG_DEBUG);
