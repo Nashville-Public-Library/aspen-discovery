@@ -51,6 +51,15 @@ function getUpdates25_06_00(): array {
 		//katherine - Grove
 
 		//kirstien - Grove
+        'last_used_sort_for_user' => [
+            'title' => 'Store the last used sort value a patron used for holds and checkouts',
+            'description' => 'Store the last used sort value a patron used for holds and checkouts',
+            'sql' => [
+                "ALTER TABLE user ADD COLUMN holdSortAvailable VARCHAR(75) DEFAULT 'expire'",
+                "ALTER TABLE user ADD COLUMN holdSortUnavailable VARCHAR(75) DEFAULT 'title'",
+                "ALTER TABLE user ADD COLUMN checkoutSort VARCHAR(75) DEFAULT 'dueDate'"
+            ],
+        ], //last_used_sort_for_user
 
 		//kodi - Grove
 		'side_loads_library_permissions' => [

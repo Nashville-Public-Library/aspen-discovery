@@ -3714,9 +3714,17 @@ class MyAccount_AJAX extends JSON_Action {
 
 				$interface->assign('renewableCheckouts', $renewableCheckouts);
 				$selectedSortOption = $this->setSort('sort', 'checkout');
+
+                $user->updateSortPreferences();
+
 				if ($selectedSortOption == null || !array_key_exists($selectedSortOption, $sortOptions)) {
 					$selectedSortOption = 'dueDate';
 				}
+
+                if (array_key_exists($user->checkoutSort, $sortOptions)) {
+                    $selectedSortOption = $user->checkoutSort;
+                }
+
 				$interface->assign('defaultSortOption', $selectedSortOption);
 				$allCheckedOut = $this->sortCheckouts($selectedSortOption, $allCheckedOut);
 
@@ -3957,6 +3965,7 @@ class MyAccount_AJAX extends JSON_Action {
 				]);
 			} else {
 				$selectedUser = $this->setFilterLinkedUser();
+                $user->updateSortPreferences();
 				if ($user->getHomeLibrary() != null) {
 					$allowSelectingHoldsToExport = $user->getHomeLibrary()->allowSelectingHoldsToExport;
 				} else {
@@ -4037,6 +4046,15 @@ class MyAccount_AJAX extends JSON_Action {
 				if ($selectedUnavailableSortOption == null || !array_key_exists($selectedUnavailableSortOption, $unavailableHoldSortOptions)) {
 					$selectedUnavailableSortOption = ($showPosition ? 'position' : 'title');
 				}
+
+                if (array_key_exists($user->holdSortAvailable, $availableHoldSortOptions)) {
+                    $selectedAvailableSortOption = $user->holdSortAvailable;
+                }
+
+                if (array_key_exists($user->holdSortUnavailable, $unavailableHoldSortOptions)) {
+                    $selectedUnavailableSortOption = $user->holdSortUnavailable;
+                }
+
 				$interface->assign('defaultSortOption', [
 					'available' => $selectedAvailableSortOption,
 					'unavailable' => $selectedUnavailableSortOption,
