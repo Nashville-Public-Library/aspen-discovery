@@ -2560,7 +2560,10 @@ class Koha extends AbstractIlsDriver {
 					/** @noinspection PhpArrayIndexImmediatelyRewrittenInspection */
 					$result = [
 						'success' => false,
-						'message' => 'Unknown error canceling hold.',
+						'message' => translate([
+							'text' => 'Unknown error canceling hold.',
+							'isPublicFacing' => true,
+						]),
 						'isPending' => false,
 					];
 
@@ -7562,101 +7565,58 @@ class Koha extends AbstractIlsDriver {
 		return $result;
 	}
 
-	public function hasCurbsidePickups($patron) {
+	public function hasCurbsidePickups($patron): array {
 		$result = ['success' => false,];
+		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickups";
+		$response = $this->kohaApiUserAgent->get($endpoint, 'koha.curbsidePickup_getPatrons');
 
-		$basicAuthToken = $this->getBasicAuthToken();
-		$this->apiCurlWrapper->addCustomHeaders([
-			'Authorization: Basic ' . $basicAuthToken,
-			'User-Agent: Aspen Discovery',
-			'Accept: */*',
-			'Cache-Control: no-cache',
-			'Content-Type: application/json;charset=UTF-8',
-			'Host: ' . preg_replace('~http[s]?://~', '', $this->getWebServiceURL()),
-		], true);
-
-		$apiUrl = $this->getWebServiceURL() . "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickups";
-
-		$response = $this->apiCurlWrapper->curlSendPage($apiUrl, 'GET');
-		ExternalRequestLogEntry::logRequest('koha.curbsidePickup_getPatrons', 'GET', $apiUrl, $this->apiCurlWrapper->getHeaders(), "", $this->apiCurlWrapper->getResponseCode(), $response, []);
-		$response = json_decode($response);
-
-		if ($this->apiCurlWrapper->getResponseCode() == 200) {
+		if ($response['code'] == 200) {
 			$result['success'] = true;
 			$result['hasPickups'] = false;
 			$result['numPickups'] = 0;
-			if (!empty($response)) {
+			if (!empty($response['content'])) {
 				$result['hasPickups'] = true;
-				$result['numPickups'] = count($response);
+				$result['numPickups'] = count($response['content']);
 			}
 		} else {
-			$result['message'] = $response->error;
+			$result['message'] = $response['content']->error ?? 'Unknown Error: Please contact a librarian for assistance.';
 		}
 
 		return $result;
 	}
 
-	public function getPatronCurbsidePickups($patron) {
+	public function getPatronCurbsidePickups($patron): array {
 		$result = ['success' => false,];
+		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickups";
+		$response = $this->kohaApiUserAgent->get($endpoint, 'koha.curbsidePickup_getPatrons', [], ['x-koha-library: ' . $patron->getHomeLocationCode()]);
 
-		$basicAuthToken = $this->getBasicAuthToken();
-		$this->apiCurlWrapper->addCustomHeaders([
-			'Authorization: Basic ' . $basicAuthToken,
-			'User-Agent: Aspen Discovery',
-			'Accept: */*',
-			'Cache-Control: no-cache',
-			'Content-Type: application/json;charset=UTF-8',
-			'Host: ' . preg_replace('~http[s]?://~', '', $this->getWebServiceURL()),
-			'x-koha-library: ' .  $patron->getHomeLocationCode(),
-		], true);
-
-		$apiUrl = $this->getWebServiceURL() . "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickups";
-
-		$response = $this->apiCurlWrapper->curlSendPage($apiUrl, 'GET');
-		ExternalRequestLogEntry::logRequest('koha.curbsidePickup_getPatrons', 'GET', $apiUrl, $this->apiCurlWrapper->getHeaders(), "", $this->apiCurlWrapper->getResponseCode(), $response, []);
-		$response = json_decode($response);
-
-		if ($this->apiCurlWrapper->getResponseCode() == 200) {
+		if ($response['code'] == 200) {
 			$result['success'] = true;
-			$result['pickups'] = $response;
+			$result['pickups'] = $response['content'];
 		} else {
-			$result['message'] = $response->error;
+			$result['message'] = $response['content']->error ?? 'Unknown Error: Please contact a librarian for assistance.';
 		}
 
 		return $result;
 	}
 
-	public function newCurbsidePickup($patron, $location, $time, $note) {
+	public function newCurbsidePickup($patron, $location, $time, $note): array {
 		$result = ['success' => false,];
-
-		$basicAuthToken = $this->getBasicAuthToken();
-		$this->apiCurlWrapper->addCustomHeaders([
-			'Authorization: Basic ' . $basicAuthToken,
-			'User-Agent: Aspen Discovery',
-			'Accept: */*',
-			'Cache-Control: no-cache',
-			'Content-Type: application/json;charset=UTF-8',
-			'Host: ' . preg_replace('~http[s]?://~', '', $this->getWebServiceURL()),
-			'x-koha-library: ' .  $patron->getHomeLocationCode(),
-		], true);
 		$postVariables = [
 			'library_id' => $location,
-			'pickup_datetime' => $time,
+			'pickup_datetime' => "2025-05-23T13:00:00Z",
 			'notes' => $note,
 		];
-		$postParams = json_encode($postVariables);
-		$apiUrl = $this->getWebServiceURL() . "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickup";
-		$response = $this->apiCurlWrapper->curlSendPage($apiUrl, 'GET', $postParams);
-		ExternalRequestLogEntry::logRequest('koha.curbsidePickup_createNew', 'POST', $apiUrl, $this->apiCurlWrapper->getHeaders(), $postParams, $this->apiCurlWrapper->getResponseCode(), $response, []);
-		$response = json_decode($response);
+		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/{$patron->unique_ils_id}/pickup";
+		$response = $this->kohaApiUserAgent->post($endpoint, $postVariables, 'koha.curbsidePickup_createNew');
 
-		if ($this->apiCurlWrapper->getResponseCode() != 200) {
+		if ($response['code'] != 200) {
 			$result['message'] = translate([
 				'text' => 'Unable to schedule this curbside pickup.',
 				'isPublicFacing' => true,
 			]);
-			if (isset($response->error)) {
-				$result['message'] .= ' ' . $response->error;
+			if (!empty($response['content']->error)) {
+				$result['message'] .= ' ' . $response['content']->error;
 			}
 		} else {
 			$result['success'] = true;
@@ -7668,103 +7628,60 @@ class Koha extends AbstractIlsDriver {
 		return $result;
 	}
 
-	public function cancelCurbsidePickup($patron, $pickupId) {
+	public function cancelCurbsidePickup($patron, $pickupId): array {
 		$result = ['success' => false,];
-		$basicAuthToken = $this->getBasicAuthToken();
-		$this->apiCurlWrapper->addCustomHeaders([
-			'Authorization: Basic ' . $basicAuthToken,
-			'User-Agent: Aspen Discovery',
-			'Accept: */*',
-			'Cache-Control: no-cache',
-			'Content-Type: application/json;charset=UTF-8',
-			'Host: ' . preg_replace('~http[s]?://~', '', $this->getWebServiceURL()),
-			'x-koha-library: ' .  $patron->getHomeLocationCode(),
-		], true);
+		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickup/" . $pickupId;
+		$response = $this->kohaApiUserAgent->delete(
+			$endpoint,
+			'koha.curbsidePickup_cancel',
+			[],
+			['x-koha-library: ' . $patron->getHomeLocationCode()]
+		);
 
-		$apiUrl = $this->getWebServiceURL() . "/api/v1/contrib/curbsidepickup/patrons/" . $patron . "/pickup/" . $pickupId;
-		$response = $this->apiCurlWrapper->curlSendPage($apiUrl, 'DELETE');
-
-		ExternalRequestLogEntry::logRequest('koha.curbsidePickup_cancel', 'DELETE', $apiUrl, $this->apiCurlWrapper->getHeaders(), "", $this->apiCurlWrapper->getResponseCode(), $response, []);
-		$response = json_decode($response);
-
-		if ($this->apiCurlWrapper->getResponseCode() == 200) {
-			if (isset($response->error)) {
-				$result['message'] = translate([
-					'text' => "Unable to cancel this pickup.",
-					'isPublicFacing' => true,
-				]);
-				$result['message'] .= " " . translate([
-						'text' => $response->error,
-						'isPublicFacing' => true,
-					]);
-			} else {
-				$result['success'] = true;
-				$result['message'] = translate([
-					'text' => 'Pickup has been successfully canceled.',
-					'isPublicFacing' => true,
-				]);
-			}
+		if ($response['code'] == 204) {
+			$result['success'] = true;
+			$result['message'] = translate([
+				'text' => 'Pickup has been successfully canceled.',
+				'isPublicFacing' => true,
+			]);
 		} else {
 			$result['message'] = translate([
 				'text' => 'Unable to cancel this pickup.',
 				'isPublicFacing' => true,
 			]);
-			if (isset($response->error)) {
-				$result['message'] .= ' ' . $response->error;
+			if (!empty($response['content']->error)) {
+				$result['message'] .= ' ' . $response['content']->error;
 			}
 		}
 
 		return $result;
 	}
 
-	public function checkInCurbsidePickup($patron, $pickupId) {
+	public function checkInCurbsidePickup($patron, $pickupId): array {
 		$result = ['success' => false,];
+		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/mark_arrived/" . $pickupId;
+		$response = $this->kohaApiUserAgent->get($endpoint, 'koha.curbsidePickup_markArrived', [], ['x-koha-library: ' . $patron->getHomeLocationCode()]);
 
-		$basicAuthToken = $this->getBasicAuthToken();
-		$this->apiCurlWrapper->addCustomHeaders([
-			'Authorization: Basic ' . $basicAuthToken,
-			'User-Agent: Aspen Discovery',
-			'Accept: */*',
-			'Cache-Control: no-cache',
-			'Content-Type: application/json;charset=UTF-8',
-			'Host: ' . preg_replace('~http[s]?://~', '', $this->getWebServiceURL()),
-			'x-koha-library: ' .  $patron->getHomeLocationCode(),
-		], true);
-
-		$apiUrl = $this->getWebServiceURL() . "/api/v1/contrib/curbsidepickup/patrons/" . $patron . "/mark_arrived/" . $pickupId;
-
-		$response = $this->apiCurlWrapper->curlSendPage($apiUrl, 'GET');
-		ExternalRequestLogEntry::logRequest('koha.curbsidePickup_markArrived', 'GET', $apiUrl, $this->apiCurlWrapper->getHeaders(), "", $this->apiCurlWrapper->getResponseCode(), $response, []);
-		$response = json_decode($response);
-
-		if ($this->apiCurlWrapper->getResponseCode() == 200) {
-			if (isset($response->error)) {
-				$result['message'] = translate([
-					'text' => "Unable to check-in for this pickup.",
-					'isPublicFacing' => true,
-				]);
-				$result['message'] .= " " . translate([
-						'text' => $response->error,
-						'isPublicFacing' => true,
-					]);
-			} else {
-				$result['success'] = true;
-				$result['message'] = translate([
-					'text' => 'You are checked-in.',
-					'isPublicFacing' => true,
-				]);
-			}
+		if ($response['code'] == 200) {
+			$result['success'] = true;
+			$result['message'] = translate([
+				'text' => 'You are checked-in.',
+				'isPublicFacing' => true,
+			]);
 		} else {
-			$result['message'] = "Unable to check-in for this pickup.";
-			if (isset($response->error)) {
-				$result['message'] .= ' ' . $response->error;
+			$result['message'] = translate([
+				'text' => 'Unable to check-in for this pickup.',
+				'isPublicFacing' => true,
+			]);
+			if (!empty($response['content']->error)) {
+				$result['message'] .= ' ' . $response['content']->error;
 			}
 		}
 
 		return $result;
 	}
 
-	public function getAllCurbsidePickups() {
+	public function getAllCurbsidePickups(): array {
 		$result = ['success' => false,];
 
 		$oauthToken = $this->getOAuthToken();
