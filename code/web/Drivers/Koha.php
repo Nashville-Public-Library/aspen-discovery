@@ -7683,35 +7683,14 @@ class Koha extends AbstractIlsDriver {
 
 	public function getAllCurbsidePickups(): array {
 		$result = ['success' => false,];
+		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/pickups";
+		$response = $this->kohaApiUserAgent->get($endpoint, 'koha.curbsidePickup_allPickups');
 
-		$oauthToken = $this->getOAuthToken();
-		if ($oauthToken == false) {
-			$result['messages'][] = translate([
-				'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
-				'isPublicFacing' => true,
-			]);
+		if ($response['code'] == 200) {
+			$result['success'] = true;
+			$result['pickups'] = $response['content'];
 		} else {
-			$this->apiCurlWrapper->addCustomHeaders([
-				'Authorization: Bearer ' . $oauthToken,
-				'User-Agent: Aspen Discovery',
-				'Accept: */*',
-				'Cache-Control: no-cache',
-				'Content-Type: application/json;charset=UTF-8',
-				'Host: ' . preg_replace('~http[s]?://~', '', $this->getWebServiceURL()),
-			], true);
-
-			$apiUrl = $this->getWebServiceURL() . "/api/v1/contrib/curbsidepickup/patrons/pickups";
-
-			$response = $this->apiCurlWrapper->curlSendPage($apiUrl, 'GET');
-			ExternalRequestLogEntry::logRequest('koha.curbsidePickup_allPickups', 'GET', $apiUrl, $this->apiCurlWrapper->getHeaders(), "", $this->apiCurlWrapper->getResponseCode(), $response, []);
-			$response = json_decode($response);
-
-			if ($this->apiCurlWrapper->getResponseCode() == 200) {
-				$result['success'] = true;
-				$result['pickups'] = $response;
-			} else {
-				$result['message'] = "Error getting curbside pickups";
-			}
+			$result['message'] = "Error getting curbside pickups";
 		}
 		return $result;
 	}
