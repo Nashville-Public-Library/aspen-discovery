@@ -101,7 +101,7 @@ function generateMaterialsRequestsHoldCandidates() : int {
 
 					$formatMappingsForRequest = $requestFormatMappings[$requestToCheck->formatId] ?? [];
 					if (empty($formatMappingsForRequest)) {
-						$logEntry->addNote("Skipping request {$requestToCheck->id}: no catalog-format mappings defined for format {$requestToCheck->formatId} ({$requestToCheck->displayFormat}).");
+						$logEntry->addNote("Skipping request {$requestToCheck->id}: No Materials Request Format Mapping defined for format {$requestToCheck->formatId} ({$requestToCheck->displayFormat}).");
 						continue;
 					}
 					$recordSet = $searchObject->getResultRecordSet();
