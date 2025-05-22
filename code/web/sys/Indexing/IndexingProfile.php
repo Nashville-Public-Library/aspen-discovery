@@ -650,7 +650,6 @@ class IndexingProfile extends DataObject {
 						'type' => 'checkbox',
 						'label' => 'Prioritize Available Records for Title Selection',
 						'description' => 'When checked, if there are available records in a grouped work, titles from those available records will be prioritized as the display title for the grouped work.',
-						'hideInLists' => true,
 						'default' => 0,
 						'forcesReindex' => true,
 					],
