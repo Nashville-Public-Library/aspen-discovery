@@ -102,7 +102,8 @@ class UserAPI extends AbstractAPI {
 					'getMaterialsRequestDetails',
 					'createMaterialsRequest',
 					'cancelMaterialsRequest',
-					'deleteAspenUser'
+                    'deleteAspenUser',
+                    'updateSortPreferences'
 				])) {
 					header("Cache-Control: max-age=10800");
 					require_once ROOT_DIR . '/sys/SystemLogging/APIUsage.php';
