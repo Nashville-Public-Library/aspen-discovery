@@ -1032,6 +1032,10 @@ class UserAPI extends AbstractAPI {
 				$userData->yearInReviewName = translate(['text' => $yearInReviewName, 'isPublicFacing' => true]);
 			}
 
+            $userData->holdSortAvailable = $user->holdSortAvailable;
+            $userData->holdSortUnavailable = $user->holdSortUnavailable;
+            $userData->checkoutSort = $user->checkoutSort;
+
 			return [
 				'success' => true,
 				'profile' => $userData,
@@ -6665,4 +6669,24 @@ class UserAPI extends AbstractAPI {
 			'message' => 'Unable to validate user',
 		];
 	}
+
+    function updateSortPreferences()
+    {
+        $user = $this->getUserForApiCall();
+        if ($user && !($user instanceof AspenError)) {
+            $user->updateSortPreferences();
+        } else {
+            return [
+                'success' => false,
+                'title' => translate([
+                    'text' => 'Error',
+                    'isPublicFacing' => true,
+                ]),
+                'message' => translate([
+                    'text' => 'Unable to validate user',
+                    'isPublicFacing' => true,
+                ]),
+            ];
+        }
+    }
 }
