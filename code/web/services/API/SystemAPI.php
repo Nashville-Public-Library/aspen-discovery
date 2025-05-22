@@ -1073,6 +1073,7 @@ class SystemAPI extends AbstractAPI {
 						'settings' => [
 							'isEnabled' => $scoSettings->isEnabled,
 							'barcodeStyles' => $validBarcodeStyles,
+							'barcodeEntryKeyboardType' => $scoSettings->barcodeEntryKeyboardType,
 						],
 					];
 				} else {
