@@ -5891,6 +5891,26 @@ class Koha extends AbstractIlsDriver {
 	}
 
 	/**
+	 * Check if the patron is debarred (frozen).
+	 *
+	 * The debarment status could be useful to allow or disallow the user to perform certain actions.
+	 * @param User $patron
+	 * @return bool $debarmentStatus
+	 */
+	public function getDebarmentStatus(User $patron) {
+		$debarmentStatus = false;
+		$borrowerNumber = $patron->unique_ils_id;
+		$endpoint = "/api/v1/patrons/$borrowerNumber";
+		$response = $this->kohaApiUserAgent->get($endpoint,'koha.getDebarmentStatus',[],[]);
+		if($response){
+			if($response['code'] == 200){
+				$debarmentStatus = $response['content']['restricted'];
+			}
+		}
+		return $debarmentStatus;
+	}
+
+	/**
 	 * @param array $postFields
 	 * @param string $postFieldName
 	 * @param string $requestFieldName
@@ -6614,6 +6634,19 @@ class Koha extends AbstractIlsDriver {
 				'isPublicFacing' => true,
 			]);
 		}
+
+		//Check if the patron is frozen
+		if($this->getDebarmentStatus($patron)){
+			$result['isEligible'] = false;
+			if (strlen($result['message']) > 0) {
+				$result['message'] .= '<br/>';
+			}
+			$result['message'] .= translate([
+				'text' => 'Sorry, your account is debarred and you are not able to place holds.',
+				'isPublicFacing' => true,
+			]);
+		}
+
 
 		//Check if the patron is expired
 		if ($accountSummary->isExpired()) {
@@ -7362,6 +7395,8 @@ class Koha extends AbstractIlsDriver {
 			$message .= 'Item is an onsite checkout';
 		} elseif ($code == "has_fine") {
 			$message .= 'Item has an outstanding fine';
+		} elseif (!empty($code)) {
+			$message = 'Unknown error:' . $code;
 		} else {
 			$message = 'Unknown error';
 		}
