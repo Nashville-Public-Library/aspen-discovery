@@ -67,15 +67,20 @@ class SnapPay_Complete extends Action {
 			}
 			if (!empty($incomingSessionId)) {
 				$retrievedSessionData = $session->read($incomingSessionId);
-				if (!empty($retrievedSessionData) && str_contains($retrievedSessionData, 'activeUserId|i:' . $_POST['customerId'])) {
+				if (!empty($retrievedSessionData) && isset($_POST['customerid'])) {
+					if(str_contains($retrievedSessionData, 'activeUserId|i:' . $_POST['customerid'])) {
 					$session->write($incomingSessionId, $retrievedSessionData);
-					$_SESSION = unserialize($retrievedSessionData);
-					// Destroy the current session
-					session_unset();
-					session_destroy();
-					// Set the new session ID and start the session
-					session_id($incomingSessionId);
-					session_start();
+					try {
+						$_SESSION = unserialize($retrievedSessionData);
+						// Destroy the current session
+						session_unset();
+						session_destroy();
+						// Set the new session ID and start the session
+						session_id($incomingSessionId);
+						session_start();
+					} catch (Exception $e) {
+						$logger->log('Error restoring session: ' . $e->getMessage(), Logger::LOG_ERROR);
+					}
 					// Check if an aspen_session cookie exists
 					if (isset($_COOKIE['aspen_session']) && $_COOKIE['aspen_session'] !== $incomingSessionId) {
 						// Destroy the existing aspen_session cookie with a different value
