@@ -68,113 +68,110 @@ class SnapPay_Complete extends Action {
 			if (!empty($incomingSessionId)) {
 				$retrievedSessionData = $session->read($incomingSessionId);
 				if (!empty($retrievedSessionData) && isset($_POST['customerid'])) {
-					if(str_contains($retrievedSessionData, 'activeUserId|i:' . $_POST['customerid'])) {
-					$session->write($incomingSessionId, $retrievedSessionData);
-					try {
-						$_SESSION = unserialize($retrievedSessionData);
-						// Destroy the current session
-						session_unset();
-						session_destroy();
-						// Set the new session ID and start the session
-						session_id($incomingSessionId);
-						session_start();
-					} catch (Exception $e) {
-						$logger->log('Error restoring session: ' . $e->getMessage(), Logger::LOG_ERROR);
-					}
-					// Check if an aspen_session cookie exists
-					if (isset($_COOKIE['aspen_session']) && $_COOKIE['aspen_session'] !== $incomingSessionId) {
-						// Destroy the existing aspen_session cookie with a different value
-						setcookie('aspen_session', $_COOKIE['aspen_session'], [
-							'expires' => time() - 3600, // Set expiration to a past time
+					if (str_contains($retrievedSessionData, 'activeUserId|i:' . $_POST['customerid'])) {
+						$session->write($incomingSessionId, $retrievedSessionData);
+						try {
+							$_SESSION = unserialize($retrievedSessionData);
+							// Destroy the current session
+							session_unset();
+							session_destroy();
+							// Set the new session ID and start the session
+							session_id($incomingSessionId);
+							session_start();
+						} catch (Exception $e) {
+							$logger->log('Error restoring session: ' . $e->getMessage(), Logger::LOG_ERROR);
+						}
+						// Check if an aspen_session cookie exists
+						if (isset($_COOKIE['aspen_session']) && $_COOKIE['aspen_session'] !== $incomingSessionId) {
+							// Destroy the existing aspen_session cookie with a different value
+							setcookie('aspen_session', $_COOKIE['aspen_session'], [
+								'expires' => time() - 3600, // Set expiration to a past time
+								'path' => '/',            // Cookie is available across the entire domain
+								'secure' => true,        // Cookie is sent only over HTTPS
+								'httponly' => '',        // Cookie is accessible through HTTP(S) and JavaScript
+								'samesite' => ''        // Does NOT prevent the cookie from being sent with cross-site requests
+							]);
+						}
+						// Set the new aspen_session cookie
+						setcookie('aspen_session', $incomingSessionId, [ // Based on aspen-discovery\install\php.ini
+							'expires' => 0,        // Session cookie, ends when browser closes
 							'path' => '/',            // Cookie is available across the entire domain
 							'secure' => true,        // Cookie is sent only over HTTPS
 							'httponly' => '',        // Cookie is accessible through HTTP(S) and JavaScript
 							'samesite' => ''        // Does NOT prevent the cookie from being sent with cross-site requests
 						]);
 					}
-					// Set the new aspen_session cookie
-					setcookie('aspen_session', $incomingSessionId, [ // Based on aspen-discovery\install\php.ini
-						'expires' => 0,        // Session cookie, ends when browser closes
-						'path' => '/',            // Cookie is available across the entire domain
-						'secure' => true,        // Cookie is sent only over HTTPS
-						'httponly' => '',        // Cookie is accessible through HTTP(S) and JavaScript
-						'samesite' => ''        // Does NOT prevent the cookie from being sent with cross-site requests
-					]);
 				}
 			}
 		}
-
- else {
-			if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) {
-
-				if (empty($_GET['u'])) { // Payment Reference ID from the query string
-					$error = true;
-					$message = 'No Payment Reference ID was provided in the URL.';
-				}
-				if (empty($_POST['udf1'])) {
-					$error = true;
-					$message = 'No Transaction ID was provided from SnapPay.';
-				} else {
-					if ($_GET['u'] !== $_POST['udf1']) {
-						$error = true;
-						$message = 'Payment Reference ID from SnapPay does not match Payment Reference ID in the URL. ' . $_GET['u'] . ' !== ' . $_POST['udf1'];
-					}
-					$params = explode(',', $_POST['hpphmacresponseparameters']);
-					$hppHMACParamValue = '';
-					foreach ($params as $param) {
-						if ($param != 'nonce' && $param != 'timestamp') {
-							$hppHMACParamValue .= $_POST[$param];
-						}
-					}
-					$validated = $this->validateSnapPayHMAC($_POST['signature'], $hppHMACParamValue);
-					if ($validated != 'Valid signature.') {
-						$error = true;
-						$message = "Invalid signature returned from SnapPay for Payment Reference ID" . $_GET['u'];
-					} else {
-						$result = UserPayment::completeSnapPayPayment();
-						$message = $result['message'];
-						if ($result['error'] === true) {
-							$error = true;
-						} else {
-							$error = false;
-						}
-					}
-				}
-				if ($error === true && $result['cancelled'] === true) {
-					$interface->assign('error', $message);
-					$logger->log($message, Logger::LOG_ERROR);
-					if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-						$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
-					}
-					$this->display('paymentResult.tpl', 'Payment Cancelled');
-				} elseif ($error === true) {
-					$interface->assign('error', $message);
-					$logger->log($message, Logger::LOG_ERROR);
-					if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-						$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
-					}
-					$this->display('paymentResult.tpl', 'Payment Error');
-				} else {
-					if (empty($message)) {
-						$message = "SnapPay Payment completed with no message for Payment Reference ID " . $_GET['u'];
-					}
-					$interface->assign('message', $message);
-					$logger->log($message, Logger::LOG_DEBUG);
-					if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
-						$mailer->send($emailNotificationsAddresses, "$serverName SnapPay Payment", $message);
-					}
-					$this->display('paymentResult.tpl', 'Payment Completed');
-				}
-			} else {
+		if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) {
+			if (empty($_GET['u'])) { // Payment Reference ID from the query string
 				$error = true;
-				$message = 'Invalid request method. Only POST requests are allowed.';
+				$message = 'No Payment Reference ID was provided in the URL.';
+			}
+			if (empty($_POST['udf1'])) {
+				$error = true;
+				$message = 'No Transaction ID was provided from SnapPay.';
+			} else {
+				if ($_GET['u'] !== $_POST['udf1']) {
+					$error = true;
+					$message = 'Payment Reference ID from SnapPay does not match Payment Reference ID in the URL. ' . $_GET['u'] . ' !== ' . $_POST['udf1'];
+				}
+				$params = explode(',', $_POST['hpphmacresponseparameters']);
+				$hppHMACParamValue = '';
+				foreach ($params as $param) {
+					if ($param != 'nonce' && $param != 'timestamp') {
+						$hppHMACParamValue .= $_POST[$param];
+					}
+				}
+				$validated = $this->validateSnapPayHMAC($_POST['signature'], $hppHMACParamValue);
+				if ($validated != 'Valid signature.') {
+					$error = true;
+					$message = "Invalid signature returned from SnapPay for Payment Reference ID" . $_GET['u'];
+				} else {
+					$result = UserPayment::completeSnapPayPayment();
+					$message = $result['message'];
+					if ($result['error'] === true) {
+						$error = true;
+					} else {
+						$error = false;
+					}
+				}
+			}
+			if ($error === true && $result['cancelled'] === true) {
+				$interface->assign('error', $message);
+				$logger->log($message, Logger::LOG_ERROR);
+				if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
+					$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
+				}
+				$this->display('paymentResult.tpl', 'Payment Cancelled');
+			} elseif ($error === true) {
 				$interface->assign('error', $message);
 				$logger->log($message, Logger::LOG_ERROR);
 				if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 					$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
 				}
 				$this->display('paymentResult.tpl', 'Payment Error');
+			} else {
+				if (empty($message)) {
+					$message = "SnapPay Payment completed with no message for Payment Reference ID " . $_GET['u'];
+				}
+				$interface->assign('message', $message);
+				$logger->log($message, Logger::LOG_DEBUG);
+				if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
+					$mailer->send($emailNotificationsAddresses, "$serverName SnapPay Payment", $message);
+				}
+				$this->display('paymentResult.tpl', 'Payment Completed');
 			}
+		} else {
+			$error = true;
+			$message = 'Invalid request method. Only POST requests are allowed. Payment Reference ID ' . $_GET['u'];
+			$interface->assign('error', $message);
+			$logger->log($message, Logger::LOG_ERROR);
+			if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
+				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
+			}
+			$this->display('paymentResult.tpl', 'Payment Error');
 		}
 	}
 
