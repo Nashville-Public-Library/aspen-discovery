@@ -12,20 +12,37 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class UpdateReadingHistoryTask implements Runnable {
 	private static long numTasksRun = 0;
+	private static final AtomicLong loginUnsuccessfulCount = new AtomicLong();
+	private static final AtomicLong userNotFoundCount = new AtomicLong();
 	private final String aspenUrl;
-	private final String cat_username;
-	private final String cat_password;
+	private final String ilsBarcode;
+	private final String ilsPassword;
 	private final CronProcessLogEntry processLog;
 	private final Logger logger;
-	UpdateReadingHistoryTask(String aspenUrl, String cat_username, String cat_password, CronProcessLogEntry processLog, Logger logger) {
+	UpdateReadingHistoryTask(String aspenUrl, String ilsBarcode, String ilsPassword, CronProcessLogEntry processLog, Logger logger) {
 		this.aspenUrl = aspenUrl;
-		this.cat_username = cat_username;
-		this.cat_password = cat_password;
+		this.ilsBarcode = ilsBarcode;
+		this.ilsPassword = ilsPassword;
 		this.processLog = processLog;
 		this.logger = logger;
+	}
+
+	/**
+	 * @return Number of skipped updates due to an unsuccessful login.
+	 */
+	public static long getLoginUnsuccessfulCount() {
+		return loginUnsuccessfulCount.get();
+	}
+
+	/**
+	 * @return Number of skipped updates because a user could not be found by barcode.
+	 */
+	public static long getUserNotFoundCount() {
+		return userNotFoundCount.get();
 	}
 
 	@Override
@@ -38,77 +55,84 @@ public class UpdateReadingHistoryTask implements Runnable {
 			while (retry) {
 				numTries++;
 				if (numTries > 1){
-					logger.debug("Try " + numTries + " for " + cat_username);
-					//Wait 2 minutes to give solr a chance to restart if needed
+					logger.debug("Try {} for {}.", numTries, ilsBarcode);
 					try {
-						Thread.sleep(120000);
+						// Wait 30 seconds before retrying.
+						Thread.sleep(30000);
 					} catch (InterruptedException e) {
-						processLog.incErrors("Interrupted sleep when retrying to load");
+						processLog.incErrors("Interrupted sleep when retrying to load.");
 					}
-				}else{
-					logger.debug(++numTasksRun + ") Updating reading history for " + cat_username);
+				} else {
+					logger.debug("{}) Updating reading history for {}.", ++numTasksRun, ilsBarcode);
 				}
 				retry = false;
-				// Call the patron API to get their checked out items
-				URL patronApiUrl = new URL(aspenUrl + "/API/UserAPI?method=updatePatronReadingHistory&username=" + URLEncoder.encode(cat_username, StandardCharsets.UTF_8));
-				//logger.error("Updating reading history for " + cat_username);
+				// Call the patron API to get their checked out items.
+				URL patronApiUrl = new URL(aspenUrl + "/API/UserAPI?method=updatePatronReadingHistory&username=" + URLEncoder.encode(ilsBarcode, StandardCharsets.UTF_8));
 				HttpURLConnection conn = (HttpURLConnection) patronApiUrl.openConnection();
-				//Give 10 seconds for connection timeout and 10 minutes for read timeout
-				conn.setConnectTimeout(10000);
-				conn.setReadTimeout(600000);
+				// Give 5 seconds for connection timeout and 5 minutes for read timeout.
+				conn.setConnectTimeout(5000);
+				conn.setReadTimeout(300000);
 				conn.addRequestProperty("User-Agent", "Aspen Discovery");
 				conn.addRequestProperty("Accept", "*/*");
 				conn.addRequestProperty("Cache-Control", "no-cache");
 				if (conn.getResponseCode() == 200) {
 					String patronDataJson = AspenStringUtils.convertStreamToString(conn.getInputStream());
-					logger.debug("Got results for " + cat_username);
+					logger.debug("Got results for {}.", ilsBarcode);
 					try {
 						JSONObject patronData = new JSONObject(patronDataJson);
-						JSONObject result = patronData.getJSONObject("result");
+						JSONObject result;
+						if (patronData.has("result")) {
+							result = patronData.getJSONObject("result");
+						} else {
+							result = patronData;
+						}
 						hadError = !result.getBoolean("success");
 						if (hadError) {
 							String message = result.getString("message");
-							if (!message.equals("Login unsuccessful")) {
-								processLog.incErrors("Updating reading history failed for " + cat_username + " " + message);
-							} else {
-								//This happens if the patron has changed their login or no longer exists.
+							// Treat login failure or missing user as skipped rather than an error.
+							// The missing-user case may be an odd race condition, where users are being deleted as the API endpoint is reached.
+							if (message.equals("Login unsuccessful")) {
+								loginUnsuccessfulCount.incrementAndGet();
 								processLog.incSkipped();
-								//Don't log that we couldn't update them, the skipped is enough
-								logger.debug("Updating reading history failed for " + cat_username + " " + message);
+								logger.debug("Updating reading history skipped for {}: login unsuccessful.", ilsBarcode);
 								wasSkipped = true;
-								//processLog.addNote("Updating reading history failed for " + cat_username + " " + message);
+							} else if (message.equals("Could not find a user with that barcode")) {
+								userNotFoundCount.incrementAndGet();
+								processLog.incSkipped();
+								logger.debug("Updating reading history skipped for {}: user not found.", ilsBarcode);
+								wasSkipped = true;
+							} else {
+								processLog.incErrors("Updating reading history failed for " + ilsBarcode + ": " + message + ".");
 							}
-						}else{
-							//We can also have things skipped if the last changed hasn't updated or the patron expires
+						} else {
+							// Updates may be skipped if the last changed hasn't updated or the patron's account expired.
 							if (result.getBoolean("skipped")){
 								processLog.incSkipped();
 								wasSkipped = true;
 							}
 						}
 					} catch (JSONException e) {
-						processLog.incErrors("Unable to load patron information for " + cat_username + " exception loading response ", e);
+						processLog.incErrors("Unable to load patron information for " + ilsBarcode + " exception loading response: ", e);
 						logger.error(patronDataJson);
 						hadError = true;
 					}
 				} else {
-					//Received an error
 					String errorResponse = AspenStringUtils.convertStreamToString(conn.getErrorStream());
 					if (numTries < 3){
 						retry = true;
 					}else{
-						processLog.incErrors("Error " + conn.getResponseCode() + " retrieving information from patron API for " + cat_username + " base url is " + aspenUrl + " " + errorResponse);
+						processLog.incErrors("Failed " + conn.getResponseCode() + " retrieving information from patron API for " + ilsBarcode + " base url is " + aspenUrl + ": " + errorResponse);
 						hadError = true;
 					}
 				}
 			}
 		} catch (MalformedURLException e) {
-			processLog.incErrors("Bad url for patron API " + e);
+			processLog.incErrors("Bad URL for patron API: " + e);
 			hadError = true;
 		} catch (IOException e) {
 			String errorMessage = e.getMessage();
-			//noinspection SpellCheckingInspection
-			errorMessage = errorMessage.replaceAll(cat_password, "XXXX");
-			processLog.incErrors("Unable to retrieve information from patron API for " + cat_username + " base url is " + aspenUrl + " " + errorMessage);
+            errorMessage = errorMessage.replaceAll(ilsPassword, "XXXX");
+			processLog.incErrors("Unable to retrieve information from patron API for " + ilsBarcode + "; base URL is " + aspenUrl + ": " + errorMessage);
 			hadError = true;
 		}
 		if (!hadError && !wasSkipped){
