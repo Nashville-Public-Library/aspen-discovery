@@ -7579,7 +7579,7 @@ class Koha extends AbstractIlsDriver {
 				$result['numPickups'] = count($response['content']);
 			}
 		} else {
-			$result['message'] = $response['content']->error ?? 'Unknown Error: Please contact a librarian for assistance.';
+			$result['message'] = $response['content']['error'] ?? 'Unknown Error: Please contact a librarian for assistance.';
 		}
 
 		return $result;
@@ -7594,7 +7594,7 @@ class Koha extends AbstractIlsDriver {
 			$result['success'] = true;
 			$result['pickups'] = $response['content'];
 		} else {
-			$result['message'] = $response['content']->error ?? 'Unknown Error: Please contact a librarian for assistance.';
+			$result['message'] = $response['content']['error'] ?? 'Unknown Error: Please contact a librarian for assistance.';
 		}
 
 		return $result;
@@ -7602,9 +7602,12 @@ class Koha extends AbstractIlsDriver {
 
 	public function newCurbsidePickup($patron, $location, $time, $note): array {
 		$result = ['success' => false,];
+		global $logger;
+		$pickupDatetime = date('Y-m-d\TH:i:s\Z', strtotime($time));
+		$logger->log("$time, $pickupDatetime", Logger::LOG_ERROR);
 		$postVariables = [
 			'library_id' => $location,
-			'pickup_datetime' => "2025-05-23T13:00:00Z",
+			'pickup_datetime' => $pickupDatetime,
 			'notes' => $note,
 		];
 		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/{$patron->unique_ils_id}/pickup";
@@ -7615,8 +7618,8 @@ class Koha extends AbstractIlsDriver {
 				'text' => 'Unable to schedule this curbside pickup.',
 				'isPublicFacing' => true,
 			]);
-			if (!empty($response['content']->error)) {
-				$result['message'] .= ' ' . $response['content']->error;
+			if (!empty($response['content']['error'])) {
+				$result['message'] .= ' ' . $response['content']['error'];
 			}
 		} else {
 			$result['success'] = true;
@@ -7631,12 +7634,7 @@ class Koha extends AbstractIlsDriver {
 	public function cancelCurbsidePickup($patron, $pickupId): array {
 		$result = ['success' => false,];
 		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickup/" . $pickupId;
-		$response = $this->kohaApiUserAgent->delete(
-			$endpoint,
-			'koha.curbsidePickup_cancel',
-			[],
-			['x-koha-library: ' . $patron->getHomeLocationCode()]
-		);
+		$response = $this->kohaApiUserAgent->delete($endpoint, 'koha.curbsidePickup_cancel', [], ['x-koha-library: ' . $patron->getHomeLocationCode()]);
 
 		if ($response['code'] == 204) {
 			$result['success'] = true;
@@ -7649,8 +7647,8 @@ class Koha extends AbstractIlsDriver {
 				'text' => 'Unable to cancel this pickup.',
 				'isPublicFacing' => true,
 			]);
-			if (!empty($response['content']->error)) {
-				$result['message'] .= ' ' . $response['content']->error;
+			if (!empty($response['content']['error'])) {
+				$result['message'] .= ' ' . $response['content']['error'];
 			}
 		}
 
@@ -7661,7 +7659,8 @@ class Koha extends AbstractIlsDriver {
 		$result = ['success' => false,];
 		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/mark_arrived/" . $pickupId;
 		$response = $this->kohaApiUserAgent->get($endpoint, 'koha.curbsidePickup_markArrived', [], ['x-koha-library: ' . $patron->getHomeLocationCode()]);
-
+		global $logger;
+		$logger->log("checkInCurbsidePickup response: ". print_r($response, true), Logger::LOG_ERROR);
 		if ($response['code'] == 200) {
 			$result['success'] = true;
 			$result['message'] = translate([
@@ -7673,8 +7672,8 @@ class Koha extends AbstractIlsDriver {
 				'text' => 'Unable to check-in for this pickup.',
 				'isPublicFacing' => true,
 			]);
-			if (!empty($response['content']->error)) {
-				$result['message'] .= ' ' . $response['content']->error;
+			if (!empty($response['content']['error'])) {
+				$result['message'] .= ' ' . $response['content']['error'];
 			}
 		}
 
