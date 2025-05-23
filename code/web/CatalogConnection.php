@@ -1536,6 +1536,14 @@ class CatalogConnection {
 		return $summary;
 	}
 
+	public function getExpirationInformation(User $user) : ExpirationInformation {
+		return $this->driver->getExpirationInformation($user);
+	}
+
+	public function getDebarmentStatus(User $user) {
+		return $this->driver->getDebarmentStatus($user);
+	}
+
 	/**
 	 * @return bool
 	 */
