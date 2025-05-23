@@ -9196,14 +9196,14 @@ class MyAccount_AJAX extends JSON_Action {
 		];
 		if (!$user) {
 			$result['message'] = translate([
-				'text' => 'You must be logged in to schedule a curbside pickup.  Please close this dialog and login again.',
+				'text' => 'You must be logged in to schedule a curbside pickup. Please close this dialog and log in again.',
 				'isPublicFacing' => true,
 			]);
 		} elseif (!empty($_REQUEST['patronId'])) {
 			$patronId = $_REQUEST['patronId'];
 			$patronOwningHold = $user->getUserReferredTo($patronId);
 
-			if ($patronOwningHold == false) {
+			if (!$patronOwningHold) {
 				$result['message'] = translate([
 					'text' => 'Sorry, you do not have access to schedule a curbside pickup for this patron.',
 					'isPublicFacing' => true,
@@ -9331,9 +9331,19 @@ class MyAccount_AJAX extends JSON_Action {
 			}
 
 			$user = UserAccount::getActiveUserObj();
-			$result = $user->getCatalogDriver()->checkInCurbsidePickup($patronId, $pickupId);
+			$patron = $user->getUserReferredTo($patronId);
+			if ($patron === false) {
+				$results['message'] = translate([
+					'text' => 'Invalid patron specified.',
+					'isPublicFacing' => true,
+				]);
+				return $results;
+			}
+			$result = $user->getCatalogDriver()->checkInCurbsidePickup($patron, $pickupId);
 
 			if ($result['success']) {
+				$interface->assign('scheduleResultMessage', $result['message']);
+				$interface->assign('contentSuccess', $curbsidePickupSetting->contentCheckedIn);
 				$results = [
 					'success' => true,
 					'title' => translate([
@@ -9364,7 +9374,7 @@ class MyAccount_AJAX extends JSON_Action {
 		$results = [
 			'success' => false,
 			'title' => translate([
-				'text' => 'Cancel curbside pickup',
+				'text' => 'Cancel Curbside Pickup',
 				'isPublicFacing' => true,
 			]),
 		];
@@ -9382,7 +9392,15 @@ class MyAccount_AJAX extends JSON_Action {
 			$pickupId = $_REQUEST['pickupId'];
 
 			$user = UserAccount::getActiveUserObj();
-			$result = $user->getCatalogDriver()->cancelCurbsidePickup($patronId, $pickupId);
+			$patron = $user->getUserReferredTo($patronId);
+			if ($patron === false) {
+				$results['message'] = translate([
+					'text' => 'Invalid patron specified.',
+					'isPublicFacing' => true,
+				]);
+				return $results;
+			}
+			$result = $user->getCatalogDriver()->cancelCurbsidePickup($patron, $pickupId);
 
 			if ($result['success']) {
 				$results = [
@@ -9430,8 +9448,8 @@ class MyAccount_AJAX extends JSON_Action {
 		}
 		$user = UserAccount::getActiveUserObj();
 		$pickupSettings = $user->getCatalogDriver()->getCurbsidePickupSettings($pickupLocation);
-		if ($pickupSettings['disabledDays']) {
-			return $pickupSettings['disabledDays'];
+		if (!empty($pickupSettings['disabledDays']) && is_array($pickupSettings['disabledDays'])) {
+			return array_values($pickupSettings['disabledDays']);
 		}
 
 		return [
@@ -9443,7 +9461,6 @@ class MyAccount_AJAX extends JSON_Action {
 		if (isset($_REQUEST['locationCode']) && isset($_REQUEST['date'])) {
 			$pickupLocation = $_REQUEST['locationCode'];
 			$pickupDate = $_REQUEST['date'];
-			// check to make sure the date has been sent
 		} else {
 			return [
 				'title' => translate([
@@ -9457,20 +9474,10 @@ class MyAccount_AJAX extends JSON_Action {
 			];
 		}
 
-		$days = [
-			0 => 'Mon',
-			1 => 'Tue',
-			2 => 'Wed',
-			3 => 'Thu',
-			4 => 'Fri',
-			5 => 'Sat',
-			6 => 'Sun',
-		];
-
 		$user = UserAccount::getActiveUserObj();
 		$pickupSettings = $user->getCatalogDriver()->getCurbsidePickupSettings($pickupLocation);
 
-		if ($pickupSettings['success'] == true && $pickupSettings['enabled'] == 1) {
+		if ($pickupSettings['success'] && $pickupSettings['enabled'] == 1) {
 
 			$date = strtotime($pickupDate);
 			$dayOfWeek = date('D', $date);
@@ -9492,8 +9499,8 @@ class MyAccount_AJAX extends JSON_Action {
 						if ($formattedTime > strtotime($now)) {
 							if (!empty($allScheduledPickups['pickups'])) {
 								foreach ($allScheduledPickups['pickups'] as $pickup) {
-									if ($pickupLocation == $pickup->branchcode) {
-										$scheduledDate = strtotime($pickup->scheduled_pickup_datetime);
+									if ($pickupLocation == $pickup['branchcode']) {
+										$scheduledDate = strtotime($pickup['scheduled_pickup_datetime']);
 										$scheduledDay = date('D', $scheduledDate);
 										$scheduledTime = date('H:i', $scheduledDate);
 										if ($dayOfWeek == $scheduledDay) {
@@ -9513,8 +9520,8 @@ class MyAccount_AJAX extends JSON_Action {
 					} else {
 						if (!empty($allScheduledPickups['pickups'])) {
 							foreach ($allScheduledPickups['pickups'] as $pickup) {
-								if ($pickupLocation == $pickup->branchcode) {
-									$scheduledDate = strtotime($pickup->scheduled_pickup_datetime);
+								if ($pickupLocation == $pickup['branchcode']) {
+									$scheduledDate = strtotime($pickup['scheduled_pickup_datetime']);
 									$scheduledDay = date('D', $scheduledDate);
 									$scheduledTime = date('H:i', $scheduledDate);
 									if ($dayOfWeek == $scheduledDay) {
@@ -9542,7 +9549,7 @@ class MyAccount_AJAX extends JSON_Action {
 				'isPublicFacing' => true,
 			]),
 			'body' => translate([
-				'text' => "There was an error loading curbside pickup availability",
+				'text' => "There was an error loading curbside pickup availability.",
 				'isPublicFacing' => true,
 			]),
 		];

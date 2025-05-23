@@ -9,7 +9,6 @@ class MyAccount_CurbsidePickups extends MyAccount {
 		global $library;
 		$user = UserAccount::getActiveUserObj();
 		$interface->assign('patronId', $user->id);
-		$interface->assign('patron', $user->unique_ils_id);
 
 		$curbsidePickupSetting = new CurbsidePickupSetting();
 		$curbsidePickupSetting->id = $library->curbsidePickupSettingId;
@@ -22,21 +21,30 @@ class MyAccount_CurbsidePickups extends MyAccount {
 			$hasPickups = $catalog->hasCurbsidePickups($user);
 			$interface->assign('hasPickups', false);
 			if (isset($hasPickups['hasPickups'])) {
-				if ($hasPickups['hasPickups'] == true) {
-					$interface->assign('hasPickups', true);
+				if ($hasPickups['hasPickups']) {
 					$currentPickups = $catalog->getPatronCurbsidePickups($user);
+					// Remove any pickups that have already been delivered.
+					if (!empty($currentPickups['pickups']) && is_array($currentPickups['pickups'])) {
+						$currentPickups['pickups'] = array_values(
+							array_filter($currentPickups['pickups'], function($pickup) {
+								return empty($pickup['delivered_datetime']);
+							})
+						);
+					}
+					global $logger;
+					$logger->log($currentPickups, Logger::LOG_ERROR);
 					$interface->assign('currentCurbsidePickups', $currentPickups);
 					$pickupsByLocation = [];
 					foreach ($currentPickups['pickups'] as $pickup) {
 						if (!isset($pickupsByLocation)) {
-							$pickupsByLocation[$pickup->branchcode]['code'] = $pickup->branchcode;
-							$pickupsByLocation[$pickup->branchcode]['count'] += 1;
-						} elseif (!in_array($pickup->branchcode, array_column($pickupsByLocation, 'code'))) {
-							$pickupsByLocation[$pickup->branchcode]['code'] = $pickup->branchcode;
-							$pickupsByLocation[$pickup->branchcode]['count'] = 1;
+							$pickupsByLocation[$pickup['branchcode']]['code'] = $pickup['branchcode'];
+							$pickupsByLocation[$pickup['branchcode']]['count'] += 1;
+						} elseif (!in_array($pickup['branchcode'], array_column($pickupsByLocation, 'code'))) {
+							$pickupsByLocation[$pickup['branchcode']]['code'] = $pickup['branchcode'];
+							$pickupsByLocation[$pickup['branchcode']]['count'] = 1;
 
 							$location = new Location();
-							$location->code = $pickup->branchcode;
+							$location->code = $pickup['branchcode'];
 							if ($location->find(true)) {
 								if ($location->curbsidePickupInstructions) {
 									$interface->assign('pickupInstructions', $location->curbsidePickupInstructions);
@@ -47,7 +55,7 @@ class MyAccount_CurbsidePickups extends MyAccount {
 
 							$interface->assign('withinTime', false);
 							$allowedTime = $curbsidePickupSetting->timeAllowedBeforeCheckIn;
-							$pickupTime = $pickup->scheduled_pickup_datetime;
+							$pickupTime = $pickup['scheduled_pickup_datetime'];
 							$scheduledTime = date_create($pickupTime);
 							$now = date_create();
 							$difference = date_diff($now, $scheduledTime);

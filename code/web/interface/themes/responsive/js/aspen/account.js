@@ -2457,9 +2457,7 @@ AspenDiscovery.Account = (function () {
 					}
 				});
 			} else {
-				AspenDiscovery.Account.ajaxLogin(null, function () {
-					return AspenDiscovery.Account.getCurbsidePickupScheduler(locationId);
-				}, false);
+				this.ajaxLogin(null, this.getCurbsidePickupScheduler, false);
 			}
 			return false;
 		},
@@ -2477,13 +2475,11 @@ AspenDiscovery.Account = (function () {
 					if (data.success) {
 						AspenDiscovery.showMessage(data.title, data.body, true, 2000)
 					} else {
-						AspenDiscovery.showMessage(data.title, data.message);
+						AspenDiscovery.showMessage(data.title, data.message, false);
 					}
-				});
+				}).fail(AspenDiscovery.ajaxFail);
 			} else {
-				AspenDiscovery.Account.ajaxLogin(null, function () {
-					return AspenDiscovery.Account.createCurbsidePickup(patronId, locationId, dateTime, note);
-				}, false);
+				this.ajaxLogin(null, this.createCurbsidePickup, false);
 			}
 			return false;
 		},
@@ -2499,7 +2495,12 @@ AspenDiscovery.Account = (function () {
 			AspenDiscovery.loadingMessage();
 			// noinspection JSUnresolvedFunction
 			$.getJSON(Globals.path + "/MyAccount/AJAX?method=cancelCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
-				AspenDiscovery.showMessage(data.title, data.body, true, 2000); // automatically close when successful
+				if (data.success) {
+					AspenDiscovery.showMessage(data.title, data.body, true, 2000);
+				}
+				else {
+					AspenDiscovery.showMessage(data.title, data.body, false);
+				}
 			}).fail(AspenDiscovery.ajaxFail);
 			return false
 		},
@@ -2507,12 +2508,22 @@ AspenDiscovery.Account = (function () {
 			AspenDiscovery.loadingMessage();
 			// noinspection JSUnresolvedFunction
 			$.getJSON(Globals.path + "/MyAccount/AJAX?method=checkInCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
-				AspenDiscovery.showMessage(data.title, data.body, false);
+				if (data.success) {
+					AspenDiscovery.showMessage(data.title, data.body, true, 2000);
+				}
+				else {
+					AspenDiscovery.showMessage(data.title, data.body, false);
+				}
 			}).fail(AspenDiscovery.ajaxFail);
 			return false
 		},
 		curbsidePickupScheduler: function (locationCode) {
 			$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupUnavailableDays&locationCode=" + locationCode, function (data) {
+				// if (!data.success) {
+				// 	AspenDiscovery.showMessage(data.title, data.body, false);
+				// 	return false
+				// }
+				console.log(data);
 				$("#pickupDate").flatpickr(
 					{
 						minDate: "today",
@@ -2530,49 +2541,75 @@ AspenDiscovery.Account = (function () {
 							"firstDayOfWeek": 0
 						},
 						onChange: function (selectedDates, dateStr, instance) {
-							//... send dateStr to check what times are available
-							$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupAvailableTimes&date=" + dateStr + "&locationCode=" + locationCode, function (data) {
-								// return available timeslots to dom
-								var numOfSlots = data.length;
-								var morningSlots = 0;
-								var afternoonSlots = 0;
-								var eveningSlots = 0;
-								var morningTimeSlotContainer = document.getElementById("morningTimeSlots");
-								morningTimeSlotContainer.innerHTML = "";
-								var afternoonTimeSlotContainer = document.getElementById("afternoonTimeSlots");
-								afternoonTimeSlotContainer.innerHTML = "";
-								var eveningTimeSlotContainer = document.getElementById("eveningTimeSlots");
-								eveningTimeSlotContainer.innerHTML = "";
-								for (var i = 0; i < numOfSlots; i++) {
-									var slot = moment(data[i], "HH:mm").format("h:mm a");
-									if (data[i] < "12:00") {
-										morningSlots++;
-										morningTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									} else if (data[i] < "17:00") {
-										afternoonSlots++;
-										afternoonTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									} else {
-										eveningSlots++;
-										eveningTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									}
-								}
+							// Reset time slot sections before loading new ones
+							$("#morningTimeSlotsAccordion, #afternoonTimeSlotsAccordion, #eveningTimeSlotsAccordion").hide();
+							$("#morningTimeSlots, #afternoonTimeSlots, #eveningTimeSlots").empty();
+							$("#availableTimeSlots").hide();
 
-								if (morningSlots === 0) {
-									$("#morningTimeSlotsAccordion").hide();
-								}
-								if (afternoonSlots === 0) {
-									$("#afternoonTimeSlotsAccordion").hide();
-								}
-								if (eveningSlots === 0) {
-									$("#eveningTimeSlotsAccordion").hide();
-								}
-								$('#availableTimeSlots').find('div.panel:visible:first').addClass('active');
-								$("#availableTimeSlots").show();
-							});
+							// Get available times for selected date
+							$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupAvailableTimes&date=" + dateStr + "&locationCode=" + locationCode)
+								.done(function (data) {
+									if (!data || data.error) {
+										AspenDiscovery.showMessage("Error", "Could not load time slots. Please try again.", false);
+										return;
+									}
+
+									if (data.length === 0) {
+										AspenDiscovery.showMessage("No Times Available", "Sorry, there are no available pickup times for the selected date. Please select a different date.", false);
+										return;
+									}
+
+									let morningSlots = 0;
+									let afternoonSlots = 0;
+									let eveningSlots = 0;
+
+									const morningContainer = document.getElementById("morningTimeSlots");
+									const afternoonContainer = document.getElementById("afternoonTimeSlots");
+									const eveningContainer = document.getElementById("eveningTimeSlots");
+
+									data.forEach(time => {
+										const slot = moment(time, "HH:mm").format("h:mm a");
+										const slotHTML = `
+											<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'>
+												<input type='radio' name='pickupTime' id='slot_${time}' value='${slot}'> ${slot}
+											</label>
+										`;
+
+										if (time < "12:00") {
+											morningSlots++;
+											morningContainer.insertAdjacentHTML("beforeend", slotHTML);
+										} else if (time < "17:00") {
+											afternoonSlots++;
+											afternoonContainer.insertAdjacentHTML("beforeend", slotHTML);
+										} else {
+											eveningSlots++;
+											eveningContainer.insertAdjacentHTML("beforeend", slotHTML);
+										}
+									});
+
+									if (morningSlots > 0) $("#morningTimeSlotsAccordion").show();
+									if (afternoonSlots > 0) $("#afternoonTimeSlotsAccordion").show();
+									if (eveningSlots > 0) $("#eveningTimeSlotsAccordion").show();
+
+									// Make the first visible panel active
+									const panels = $('#availableTimeSlots');
+									panels.find('.panel-collapse').removeClass('in');
+									panels.find('.panel:visible:first .panel-collapse').addClass('in');
+
+									$("#availableTimeSlots").show();
+								})
+								.fail(function(jqXHR, textStatus, errorThrown) {
+									AspenDiscovery.closeLightbox();
+									AspenDiscovery.showMessage("Error", "Failed to load available times. Please try again later.", false);
+									console.error("Error loading time slots:", textStatus, errorThrown);
+								});
 						}
 					}
 				);
-			}).fail(AspenDiscovery.ajaxFail);
+			}).fail(function(jqXHR, textStatus, errorThrown) {
+				AspenDiscovery.showMessage("Error", "Failed to load calendar. Please try again later.", false);
+				console.error("Error loading calendar:", textStatus, errorThrown);
+			});
 			return false
 		},
 		show2FAEnrollment: function (mandatoryEnroll) {
