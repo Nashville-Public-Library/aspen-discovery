@@ -142,7 +142,7 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
-		
+
 		exportOnlySelectedHolds: function (source, availableHoldsSort, unavailableHoldsSort) {
 			var url = Globals.path + "/MyAccount/AJAX?method=exportHolds&source=" + source;
 			var selectedTitles = AspenDiscovery.getSelectedTitles();
@@ -444,7 +444,7 @@ AspenDiscovery.Account = (function () {
 						var summary = data.summary;
 						$(".ils-checkouts-placeholder").html(summary.numCheckedOut);
 						totalCheckouts += parseInt(summary.numCheckedOut);
-						$(".checkouts-placeholder").html(totalCheckouts);						
+						$(".checkouts-placeholder").html(totalCheckouts);
 						if (summary.numOverdue > 0) {
 							$(".ils-overdue-placeholder").html(summary.numOverdue);
 							$(".ils-overdue").show();
@@ -1396,7 +1396,7 @@ AspenDiscovery.Account = (function () {
 				AspenDiscovery.Account.loadCheckouts(AspenDiscovery.Account.currentCheckoutsSource, sort, showCovers, selectedUser);
 			}
 		},
-		
+
 
 		saveSearch: function (searchId) {
 			if (!Globals.loggedIn) {
@@ -2519,35 +2519,34 @@ AspenDiscovery.Account = (function () {
 		},
 		curbsidePickupScheduler: function (locationCode) {
 			$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupUnavailableDays&locationCode=" + locationCode, function (data) {
-				// if (!data.success) {
-				// 	AspenDiscovery.showMessage(data.title, data.body, false);
-				// 	return false
-				// }
 				console.log(data);
-				$("#pickupDate").flatpickr(
-					{
-						minDate: "today",
-						maxDate: new Date().fp_incr(14),
-						altInput: true,
-						altFormat: "M j, Y",
-						"disable": [
-							function (date) {
-								if (data.includes(date.getDay())) {
-									return data.includes(date.getDay())
-								}
-							}
-						],
-						"locale": {
-							"firstDayOfWeek": 0
-						},
-						onChange: function (selectedDates, dateStr, instance) {
-							// Reset time slot sections before loading new ones
-							$("#morningTimeSlotsAccordion, #afternoonTimeSlotsAccordion, #eveningTimeSlotsAccordion").hide();
-							$("#morningTimeSlots, #afternoonTimeSlots, #eveningTimeSlots").empty();
-							$("#availableTimeSlots").hide();
+				const todayISO = moment().format("YYYY-MM-DD");
+				$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupAvailableTimes&date=" + todayISO + "&locationCode=" + locationCode)
+				.done(function (times) {
+					// If today has no time slots because the current time is past them all, then disable today.
+					console.log(times);
+					console.log(times.result)
+					if (!times || times.length === 0) data.push(todayISO);
 
-							// Get available times for selected date
-							$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupAvailableTimes&date=" + dateStr + "&locationCode=" + locationCode)
+					console.log(data);
+					$("#pickupDate").flatpickr(
+						{
+							minDate: "today",
+							maxDate: new Date().fp_incr(14),
+							altInput: true,
+							altFormat: "M j, Y",
+							"disable": [ date => data.includes(date.getDay()) || data.includes(todayISO) ],
+							"locale": {
+								"firstDayOfWeek": 0
+							},
+							onChange: function (selectedDates, dateStr, instance) {
+								// Reset time slot sections before loading new ones.
+								$("#morningTimeSlotsAccordion, #afternoonTimeSlotsAccordion, #eveningTimeSlotsAccordion").hide();
+								$("#morningTimeSlots, #afternoonTimeSlots, #eveningTimeSlots").empty();
+								$("#availableTimeSlots").hide();
+
+								// Get available times for selected date
+								$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupAvailableTimes&date=" + dateStr + "&locationCode=" + locationCode)
 								.done(function (data) {
 									if (!data || data.error) {
 										AspenDiscovery.showMessage("Error", "Could not load time slots. Please try again.", false);
@@ -2590,6 +2589,10 @@ AspenDiscovery.Account = (function () {
 									if (morningSlots > 0) $("#morningTimeSlotsAccordion").show();
 									if (afternoonSlots > 0) $("#afternoonTimeSlotsAccordion").show();
 									if (eveningSlots > 0) $("#eveningTimeSlotsAccordion").show();
+									if (morningSlots === 0 && afternoonSlots === 0 && eveningSlots === 0) {
+										AspenDiscovery.showMessage("No Times Available", "Sorry, there are no available pickup times for the selected date. Please select a different date.", false);
+										return;
+									}
 
 									// Make the first visible panel active
 									const panels = $('#availableTimeSlots');
@@ -2603,9 +2606,10 @@ AspenDiscovery.Account = (function () {
 									AspenDiscovery.showMessage("Error", "Failed to load available times. Please try again later.", false);
 									console.error("Error loading time slots:", textStatus, errorThrown);
 								});
+							}
 						}
-					}
-				);
+					);
+				});
 			}).fail(function(jqXHR, textStatus, errorThrown) {
 				AspenDiscovery.showMessage("Error", "Failed to load calendar. Please try again later.", false);
 				console.error("Error loading calendar:", textStatus, errorThrown);

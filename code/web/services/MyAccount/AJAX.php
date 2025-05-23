@@ -9489,58 +9489,49 @@ class MyAccount_AJAX extends JSON_Action {
 			$maxPatrons = $pickupSettings['maxPickupsPerInterval'];
 			$allScheduledPickups = $user->getCatalogDriver()->getAllCurbsidePickups();
 
-			if ($allPossibleTimes) {
+			if ($allPossibleTimes && $allPossibleTimes['available']) {
 				$range = range(strtotime($allPossibleTimes['startTime']), strtotime($allPossibleTimes['endTime']), $pickupSettings['interval'] * 60);
 				$timeWindow = [];
+				// Check if this is today's date.
+				$isToday = date('Y-m-d', $date) === date('Y-m-d');
+
 				foreach ($range as $time) {
 					$numPickups = 0;
 					$formattedTime = strtotime(date('H:i', $time));
-					if ($dayOfWeek == $todayDay) {
-						if ($formattedTime > strtotime($now)) {
-							if (!empty($allScheduledPickups['pickups'])) {
-								foreach ($allScheduledPickups['pickups'] as $pickup) {
-									if ($pickupLocation == $pickup['branchcode']) {
-										$scheduledDate = strtotime($pickup['scheduled_pickup_datetime']);
-										$scheduledDay = date('D', $scheduledDate);
-										$scheduledTime = date('H:i', $scheduledDate);
-										if ($dayOfWeek == $scheduledDay) {
-											if ($formattedTime == strtotime($scheduledTime)) {
-												$numPickups += 1;
-											}
-										}
-									}
+
+					// Only filter times by current time if this is today's date.
+					if ($isToday && $formattedTime <= strtotime($now)) {
+						// Skip times that are in the past for today.
+						continue;
+					}
+
+					if (!empty($allScheduledPickups['pickups'])) {
+						foreach ($allScheduledPickups['pickups'] as $pickup) {
+							if ($pickupLocation == $pickup['branchcode']) {
+								$scheduledDate = strtotime($pickup['scheduled_pickup_datetime']);
+								$scheduledPickupDate = date('Y-m-d', $scheduledDate);
+								$pickupSelectedDate = date('Y-m-d', $date);
+								$scheduledTime = date('H:i', $scheduledDate);
+
+								// Only count pickups for the exact date selected, not just day of week.
+								if ($scheduledPickupDate == $pickupSelectedDate && $formattedTime == strtotime($scheduledTime)) {
+									$numPickups += 1;
 								}
-								if ($numPickups < $maxPatrons) {
-									$timeWindow[] = date("H:i", $time);
-								}
-							} else {
-								$timeWindow[] = date("H:i", $time);
 							}
 						}
-					} else {
-						if (!empty($allScheduledPickups['pickups'])) {
-							foreach ($allScheduledPickups['pickups'] as $pickup) {
-								if ($pickupLocation == $pickup['branchcode']) {
-									$scheduledDate = strtotime($pickup['scheduled_pickup_datetime']);
-									$scheduledDay = date('D', $scheduledDate);
-									$scheduledTime = date('H:i', $scheduledDate);
-									if ($dayOfWeek == $scheduledDay) {
-										if ($formattedTime == strtotime($scheduledTime)) {
-											$numPickups += 1;
-										}
-									}
-								}
-							}
-							if ($numPickups < $maxPatrons) {
-								$timeWindow[] = date("H:i", $time);
-							}
-						} else {
+						if ($numPickups < $maxPatrons) {
 							$timeWindow[] = date("H:i", $time);
 						}
+					} else {
+						$timeWindow[] = date("H:i", $time);
 					}
 				}
-
-				return $timeWindow;
+				global $logger;
+				$logger->log("Time window: " . print_r($timeWindow, true), Logger::LOG_ERROR);
+				return [
+					'success' => true,
+					'pickupTimes' => $timeWindow
+				];
 			}
 		}
 		return [
