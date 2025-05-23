@@ -706,7 +706,8 @@ class CatalogConnection {
 		} elseif ($sortOption == "title") {
 			$readingHistoryDB->orderBy('title ASC, MAX(checkOutDate) DESC');
 		} elseif ($sortOption == "author") {
-			$readingHistoryDB->orderBy('author ASC, title ASC, MAX(checkOutDate) DESC');
+			// Push entries with no author to the bottom when sorting by author.
+			$readingHistoryDB->orderBy("CASE WHEN author IS NULL OR author = '' THEN 1 ELSE 0 END ASC, author ASC, title ASC, MAX(checkOutDate) DESC");
 		} elseif ($sortOption == "format") {
 			$readingHistoryDB->orderBy('format ASC, title ASC, MAX(checkOutDate) DESC');
 		}
@@ -1533,14 +1534,6 @@ class CatalogConnection {
 			$summary->update();
 		}
 		return $summary;
-	}
-
-	public function getExpirationInformation(User $user) : ExpirationInformation {
-		return $this->driver->getExpirationInformation($user);
-	}
-
-	public function getDebarmentStatus(User $user) {
-		return $this->driver->getDebarmentStatus($user);
 	}
 
 	/**
