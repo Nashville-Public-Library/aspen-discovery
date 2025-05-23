@@ -145,10 +145,10 @@ class User extends DataObject {
 	public $materialsRequestReplyToAddress;
 	public $materialsRequestSendEmailOnAssign;
 
-    //Sort Settings
-    public $holdSortAvailable;
-    public $holdSortUnavailable;
-    public $checkoutSort;
+	//Sort Settings
+	public $holdSortAvailable;
+	public $holdSortUnavailable;
+	public $checkoutSort;
 
 	function getNumericColumnNames(): array {
 		return [
@@ -6174,28 +6174,27 @@ class User extends DataObject {
 		return $validationResults;
 	}
 
-    function updateSortPreferences(): void
-    {
-        if (isset($_REQUEST['availableHoldSort'])) {
-            if ($this->holdSortAvailable !== $_REQUEST['availableHoldSort']) {
-                $this->holdSortAvailable = $_REQUEST['availableHoldSort'];
-            }
-        }
+	function updateSortPreferences(): void {
+		if (isset($_REQUEST['availableHoldSort'])) {
+			if ($this->holdSortAvailable !== $_REQUEST['availableHoldSort']) {
+				$this->holdSortAvailable = $_REQUEST['availableHoldSort'];
+			}
+		}
 
-        if (isset($_REQUEST['unavailableHoldSort'])) {
-            if ($this->holdSortUnavailable !== $_REQUEST['unavailableHoldSort']) {
-                $this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
-            }
-        }
+		if (isset($_REQUEST['unavailableHoldSort'])) {
+			if ($this->holdSortUnavailable !== $_REQUEST['unavailableHoldSort']) {
+				$this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
+			}
+		}
 
-        if (isset($_REQUEST['sort'])) {
-            if ($this->checkoutSort !== $_REQUEST['sort']) {
-                $this->checkoutSort = $_REQUEST['sort'];
-            }
-        }
+		if (isset($_REQUEST['sort'])) {
+			if ($this->checkoutSort !== $_REQUEST['sort']) {
+				$this->checkoutSort = $_REQUEST['sort'];
+			}
+		}
 
-        $this->update();
-    }
+		$this->update();
+	}
 }
 
 function modifiedEmpty($var): bool {

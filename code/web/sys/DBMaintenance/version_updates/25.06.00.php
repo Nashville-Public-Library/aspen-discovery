@@ -57,7 +57,7 @@ function getUpdates25_06_00(): array {
 			]
 		], //add_lida_barcode_entry_keyboard_type_setting
 
-		//kirstien - Grove
+        //kirstien - Grove
         'last_used_sort_for_user' => [
             'title' => 'Store the last used sort value a patron used for holds and checkouts',
             'description' => 'Store the last used sort value a patron used for holds and checkouts',
