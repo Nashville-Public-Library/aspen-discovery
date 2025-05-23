@@ -57,47 +57,39 @@ class SnapPay_Complete extends Action {
 		if (!UserAccount::$isLoggedIn) { // if the user is NOT logged in, i.e., the session has been lost...
 			global $session;
 			require_once ROOT_DIR . '/sys/Session/MySQLSession.php';
-			session_name('aspen_session');
-			$session = new MySQLSession();
+
+			// Get the incoming session ID (originally provided by Aspen Discovery during createSnapPayOrder then returned by SnapPay as udf8)
 			$incomingSessionId = '';
 			if (isset($_POST['udf8']) && preg_match('/^[0-9a-z]{26}$/', $_POST['udf8'])) {
 				$incomingSessionId = $_POST['udf8'];
 			}
 			if (!empty($incomingSessionId)) {
-				$retrievedSessionData = $session->read($incomingSessionId);
-				if (!empty($retrievedSessionData) && isset($_POST['customerid'])) {
-					if (str_contains($retrievedSessionData, 'activeUserId|i:' . $_POST['customerid'])) {
-						$session->write($incomingSessionId, $retrievedSessionData);
-						try {
-							$_SESSION = unserialize($retrievedSessionData);
-							// Destroy the current session
-							session_unset();
-							session_destroy();
-							// Set the new session ID and start the session
-							session_id($incomingSessionId);
-							session_start();
-						} catch (Exception $e) {
-							$logger->log('Error restoring session: ' . $e->getMessage(), Logger::LOG_ERROR);
-						}
-						// Check if an aspen_session cookie exists
-						if (isset($_COOKIE['aspen_session']) && $_COOKIE['aspen_session'] !== $incomingSessionId) {
-							// Destroy the existing aspen_session cookie with a different value
-							setcookie('aspen_session', $_COOKIE['aspen_session'], [
-								'expires' => time() - 3600, // Set expiration to a past time
-								'path' => '/',            // Cookie is available across the entire domain
-								'secure' => true,        // Cookie is sent only over HTTPS
-								'httponly' => '',        // Cookie is accessible through HTTP(S) and JavaScript
-								'samesite' => ''        // Does NOT prevent the cookie from being sent with cross-site requests
-							]);
-						}
-						// Set the new aspen_session cookie
-						setcookie('aspen_session', $incomingSessionId, [ // Based on aspen-discovery\install\php.ini
-							'expires' => 0,        // Session cookie, ends when browser closes
-							'path' => '/',            // Cookie is available across the entire domain
-							'secure' => true,        // Cookie is sent only over HTTPS
-							'httponly' => '',        // Cookie is accessible through HTTP(S) and JavaScript
-							'samesite' => ''        // Does NOT prevent the cookie from being sent with cross-site requests
-						]);
+				// End the current, not-logged-in session
+				session_write_close();
+				// Clear any existing session cookie
+				if (isset($_COOKIE['aspen_session'])) {
+					// Destroy the existing aspen_session cookie with a different value
+					setcookie('aspen_session', $_COOKIE['aspen_session'], [
+						'expires' => time() - 3600, // Set expiration to a past time
+						'path' => '/',            // Cookie is available across the entire domain
+						'secure' => true,        // Cookie is sent only over HTTPS
+						'httponly' => '',        // Cookie is accessible through HTTP(S) and JavaScript
+						'samesite' => ''        // Does NOT prevent the cookie from being sent with cross-site requests
+					]);
+				}
+				// Start a new session with the incoming ID
+				session_id($incomingSessionId);
+				session_name('aspen_session');
+				session_start();
+
+				// Initialize the session handler
+				$session = new MySQLSession();
+
+				// Check if the session is valid
+				if (isset($_POST['customerid'])) {
+					if (!isset($_SESSION['activeUserId']) || $_SESSION['activeUserId'] != $_POST['customerid']) {
+						// If the session doesn't match the customer ID, reset it
+						session_unset();
 					}
 				}
 			}
