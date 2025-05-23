@@ -6461,7 +6461,7 @@ class MyAccount_AJAX extends JSON_Action {
 		if (array_key_exists('success', $result) && $result['success'] === false) {
 			return $result;
 		} else {
-			// Get the current sessionId to set cookie SameSite=None AND pass to SnapPay as udf9
+			// Get the current sessionId to set cookie SameSite=None AND pass to SnapPay as udf8
 			$sessionVariable = $_COOKIE['aspen_session'] ?? '';
 			$sessionValue = '';
 			// Check if the session variable matches the pattern
@@ -6547,7 +6547,7 @@ class MyAccount_AJAX extends JSON_Action {
 
 				$postParams = [
 					'udf1' => $payment->id,
-					'udf9' => $sessionValue,
+					'udf8' => $sessionValue,
 					'accountid' => $snapPaySetting->accountId,
 					'customerid' => $patron->id,
 					// TO DO: ensure correct ID

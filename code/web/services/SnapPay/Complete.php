@@ -60,10 +60,8 @@ class SnapPay_Complete extends Action {
 			session_name('aspen_session');
 			$session = new MySQLSession();
 			$incomingSessionId = '';
-			if (isset($_POST['udf9']) && preg_match('/^[0-9a-z]{26}$/', $_POST['udf9'])) { // As of 2025 04 21, the aspen_session ID is passed in udf9, but *sometimes* is returned in Nashville's SnapPay configuration in udf0
-				$incomingSessionId = $_POST['udf9'];
-			} elseif (isset($_POST['udf0']) && preg_match('/^[0-9a-z]{26}$/', $_POST['udf0'])) { // As of 2025 04 21, the aspen_session ID is passed in udf9, but *sometimes* is returned in Nashville's SnapPay configuration in udf0
-				$incomingSessionId = $_POST['udf0'];
+			if (isset($_POST['udf8']) && preg_match('/^[0-9a-z]{26}$/', $_POST['udf8'])) {
+				$incomingSessionId = $_POST['udf8'];
 			}
 			if (!empty($incomingSessionId)) {
 				$retrievedSessionData = $session->read($incomingSessionId);
