@@ -6547,6 +6547,7 @@ class MyAccount_AJAX extends JSON_Action {
 
 				$postParams = [
 					'udf1' => $payment->id,
+					'udf9' => $payment->id, // Aspen user payment id is duplicated in udf1 and udf9. As of 2025 05 23, Nashville's SnapPay configuration has udf9 associated with the SnapPay 'orderId' field, which is searchable via SnapPay GetTransaction API.
 					'udf8' => $sessionValue,
 					'accountid' => $snapPaySetting->accountId,
 					'customerid' => $patron->id,
