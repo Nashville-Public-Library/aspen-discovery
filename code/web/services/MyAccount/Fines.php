@@ -264,8 +264,8 @@ class MyAccount_Fines extends MyAccount {
 					if (!empty($_REQUEST['s'])) {
 						require_once ROOT_DIR . '/sys/Account/UserPayment.php';
 						require_once ROOT_DIR . '/sys/Utils/EncryptionUtils.php';
-						// Decrypt the token to get the user_payment_id
-						$paymentId = EncryptionUtils::decryptField(urldecode($_REQUEST['s']));
+						// Decrypt the token to get the user_payments.id
+						$paymentId = EncryptionUtils::decryptField($_REQUEST['s']);
 						if ($paymentId) {
 							$payment = new UserPayment();
 							$payment->id = $paymentId;
