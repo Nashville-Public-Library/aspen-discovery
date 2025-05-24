@@ -261,7 +261,7 @@ class MyAccount_Fines extends MyAccount {
 						$interface->assign('paymentRequestUrl', $paymentRequestUrl);
 					}
 					// Catch incoming payment results
-					if (!empty($_REQUEST['u'])) {
+					if (!empty($_REQUEST['s'])) {
 						require_once ROOT_DIR . '/sys/Account/UserPayment.php';
 						require_once ROOT_DIR . '/sys/Utils/EncryptionUtils.php';
 						// Decrypt the token to get the user_payment_id
