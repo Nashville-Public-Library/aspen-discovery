@@ -7,6 +7,7 @@ class SnapPay_Complete extends Action {
 		global $library;
 		$error = true;
 		require_once ROOT_DIR . '/sys/Account/UserPayment.php';
+		require_once ROOT_DIR . '/sys/Utils/EncryptionUtils.php';
 		$message = '';
 		$emailNotifications = 0; // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 		require_once ROOT_DIR . '/sys/ECommerce/SnapPaySetting.php';
@@ -23,32 +24,34 @@ class SnapPay_Complete extends Action {
 			$emailNotificationsAddresses = $snapPaySetting->emailNotificationsAddresses;
 		}
 
+		$userPayment = new UserPayment();
+		$userPayment->id = $_GET['u']; // Payment Reference ID from the query string
+		// If the payment has already been completed, immediately redirect the user to /MyAccount/Fines . This should be effective in cases where user's browser is reloading SnapPay/Complete as well as "supportive" traffic like from Google-Read-Aloud
+		if ($userPayment->find(true) && $userPayment->completed != 0) {
+			// TO DO: add conditional that checks SnapPay for duplicate payments
+			// Redirect the user to /MyAccount/Fines, perhaps requiring a login
+			header('Location: /MyAccount/Fines?s=' . urlencode(EncryptionUtils::encryptField($_GET['u'])));
+			return;
+		}
 		// Eliminate requests NOT originating from SnapPay
 		// This check is necessary to prevent session hijacking and replay attacks
 		// But what James thinks is mostly going on is that users are restoring their browsers with a tab on the SnapPay/Complete page
 		$referringUrl = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'Unknown';
 		if ($snapPaySetting->sandboxMode == 1) {
 			$snapPayURL = 'https://stage.snappayglobal.com/';
-		} else {
+		} elseif ($snapPaySetting->sandboxMode == 0) {
 			$snapPayURL = 'https://www.snappayglobal.com/';
-		}
-		$userPayment = new UserPayment();
-		$userPayment->id = $_GET['u']; // Payment Reference ID from the query string
-		if ($userPayment->find(true) && $userPayment->completed != 0) {
-			// TO DO: add conditional that checks SnapPay for duplicate payments
-			// Redirect the user to /MyAccount/Fines, perhaps requiring a login
-			header('Location: /MyAccount/Fines');
-			return;
 		}
 		if (!str_contains($referringUrl, $snapPayURL)) {
 			$error = true;
+			// NB: This particular error is ONLY written to Aspen's messages.log. It is not written to the user interface nor to the user_payments table.
 			$message = 'Invalid referring URL. The request must originate from SnapPay. Payment Reference ID ' . $_GET['u'];
 			$interface->assign('error', $message);
 			$logger->log($message, Logger::LOG_ERROR);
 			if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
 			}
-			$this->display('paymentResult.tpl', 'Payment Error');
+			header('Location: /MyAccount/Fines?s=' . urlencode(EncryptionUtils::encryptField($_GET['u'])));
 			return;
 		}
 
@@ -60,8 +63,10 @@ class SnapPay_Complete extends Action {
 
 			// Get the incoming session ID (originally provided by Aspen Discovery during createSnapPayOrder then returned by SnapPay as udf8)
 			$incomingSessionId = '';
-			if (isset($_POST['udf8']) && preg_match('/^[0-9a-z]{26}$/', $_POST['udf8'])) {
-				$incomingSessionId = $_POST['udf8'];
+			if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) { // TO DO: what if there is no POST data?
+				if (isset($_POST['udf8']) && preg_match('/^[0-9a-z]{26}$/', $_POST['udf8'])) {
+					$incomingSessionId = $_POST['udf8'];
+				}
 			}
 			if (!empty($incomingSessionId)) {
 				// End the current, not-logged-in session
@@ -134,14 +139,14 @@ class SnapPay_Complete extends Action {
 				if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 					$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
 				}
-				$this->display('paymentResult.tpl', 'Payment Cancelled');
+				header('Location: /MyAccount/Fines?s=' . urlencode(EncryptionUtils::encryptField($_GET['u'])));
 			} elseif ($error === true) {
 				$interface->assign('error', $message);
 				$logger->log($message, Logger::LOG_ERROR);
 				if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 					$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
 				}
-				$this->display('paymentResult.tpl', 'Payment Error');
+				header('Location: /MyAccount/Fines?s=' . urlencode(EncryptionUtils::encryptField($_GET['u'])));
 			} else {
 				if (empty($message)) {
 					$message = "SnapPay Payment completed with no message for Payment Reference ID " . $_GET['u'];
@@ -151,9 +156,10 @@ class SnapPay_Complete extends Action {
 				if ($emailNotifications === 2) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 					$mailer->send($emailNotificationsAddresses, "$serverName SnapPay Payment", $message);
 				}
-				$this->display('paymentResult.tpl', 'Payment Completed');
+				header('Location: /MyAccount/Fines?s=' . urlencode(EncryptionUtils::encryptField($_GET['u'])));
 			}
 		} else {
+			// NB: This particular error is ONLY written to Aspen's messages.log. It is not written to the user interface nor to the user_payments table.
 			$error = true;
 			$message = 'Invalid request method. Only POST requests are allowed. Payment Reference ID ' . $_GET['u'];
 			$interface->assign('error', $message);
@@ -161,7 +167,7 @@ class SnapPay_Complete extends Action {
 			if ($emailNotifications > 0) { // emailNotifications 0 = Do not send email; 1 = Email errors; 2 = Email all transactions
 				$mailer->send($emailNotificationsAddresses, "$serverName Error with SnapPay Payment", $message);
 			}
-			$this->display('paymentResult.tpl', 'Payment Error');
+			header('Location: /MyAccount/Fines?s=' . urlencode(EncryptionUtils::encryptField($_GET['u'])));
 		}
 	}
 
