@@ -1,4 +1,7 @@
 <?php
+
+
+
 require_once ROOT_DIR . '/Drivers/KohaApiUserAgent.php';
 require_once ROOT_DIR . '/sys/CurlWrapper.php';
 require_once ROOT_DIR . '/Drivers/AbstractIlsDriver.php';
@@ -2756,6 +2759,13 @@ class Koha extends AbstractIlsDriver {
 			]);
 			return $result;
 		}
+		$patronEligibleForRenewals = $this->patronEligibleForRenewals($patron);
+		if (!$patronEligibleForRenewals['isEligible']) {
+			$hold_result['message'] = $patronEligibleForRenewals['message'];
+			// Result for API or app use
+			$hold_result['api']['message'] = $patronEligibleForRenewals['message'];
+			return $hold_result;
+		}
 
 		/** @noinspection PhpBooleanCanBeSimplifiedInspection */
 		if (false && $this->getKohaVersion() >= 19.11) {
@@ -2942,6 +2952,78 @@ class Koha extends AbstractIlsDriver {
 			$result['message'] = $message;
 		}
 
+		return $result;
+	}
+
+	public function patronEligibleForRenewals($patron){
+		$result = [
+			'isEligible' => true,
+			'message' => '',
+		];
+
+		//Get account summary
+		$accountSummary = $this->getAccountSummary($patron);
+
+		//Check if patron is expired
+		if ($accountSummary->isExpired()) {
+
+			$endpoint = "/api/v1/patron_categories";
+			$response = $this->kohaApiUserAgent->get($endpoint,'koha.patronEligibleForRenewals',[],['Accept-Encoding: gzip, deflate, br',
+		'Content-Type: application/json']);
+
+			if ($response) {
+				if ($response['code'] == 200) {
+					$patronCategories = $response['content'];
+					foreach($patronCategories as $patronCategory) {
+						if ($patronCategory['category_type'] == $patron->patronType ){
+							$blockedActions = $patronCategory['block_expired_patron_opac_actions'];
+							break;
+						}
+					}
+
+					if(str_starts_with($blockedActions,"follow_syspref")){
+						$blockedActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+					}
+
+				} else {
+					$error = $response['content']['error'];
+					$result['isEligible'] = false;
+					$result['message'] = translate([
+						'text' => $error,
+						'isPublicFacing' => true,
+					]);
+					return $result;
+				}
+			} else {
+				$result['message'] = translate([
+					'text' => $response,
+					'isPublicFacing' => true,
+				]);
+				return $result;
+			}
+
+			// Check if there are blocked actions for being an expired account
+			if ($blockedActions) {
+				$blockedActions = explode(',',$blockedActions);
+				$result['isEligible'] = false;
+
+				$text = "Sorry, your account has expired. Please renew it to be able to : ";
+
+				foreach($blockedActions as $blockedAction){
+					if (strcmp($blockedAction,"renew") == 0){
+						$result['expiredPatronWhoCannotRenewItems'] = true;
+						$blockedAction = "Renew Items";
+						$text .= "$blockedAction";
+						break;
+					}
+				}
+
+				$result['message'] = translate([
+					'text' => $text,
+					'isPublicFacing' => true,
+				]);
+			}
+		}
 		return $result;
 	}
 
@@ -5079,6 +5161,81 @@ class Koha extends AbstractIlsDriver {
 		return 'new-koha-request.tpl';
 	}
 
+	function patronEligibleForILLRequests(User $user) {
+		$result = [
+			'isEligible' => true,
+			'message' => '',
+		];
+
+		//Get account summary
+		$accountSummary = $this->getAccountSummary($user);
+
+		//Check if patron is expired
+		if ($accountSummary->isExpired()) {
+
+			$endpoint = "/api/v1/patron_categories";
+			$extraHeaders = [
+				'Accept-Encoding: gzip, deflate, br',
+				'Content-Type: application/json'
+			];
+			$response = $this->kohaApiUserAgent->get($endpoint,'koha.patronEligibleForRenewals',[],$extraHeaders);
+
+			if ($response) {
+				if ($response['code'] == 200) {
+					$patronCategories = $response['content'];
+					foreach($patronCategories as $patronCategory) {
+						if ($patronCategory['category_type'] == $user->patronType ){
+							$blockedActions = $patronCategory['block_expired_patron_opac_actions'];
+							break;
+						}
+					}
+
+					if(str_starts_with($blockedActions,"follow_syspref")){
+						$blockedActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+					}
+
+				} else {
+					$error = $response['content']['error'];
+					$result['isEligible'] = false;
+					$result['message'] = translate([
+						'text' => $error,
+						'isPublicFacing' => true,
+					]);
+					return $result;
+				}
+			} else {
+
+				$result['message'] = translate([
+					'text' => $response,
+					'isPublicFacing' => true,
+				]);
+				return $result;
+			}
+
+				// Check if there are blocked actions for being an expired account
+			if ($blockedActions) {
+				$blockedActions = explode(',',$blockedActions);
+				$result['isEligible'] = false;
+
+				$text = "Sorry, your account has expired. Please renew it to be able to : ";
+
+				foreach($blockedActions as $blockedAction){
+					if (strcmp($blockedAction,"ill_request") == 0){
+						$result['expiredPatronWhoCannotRenewItems'] = true;
+						$blockedAction = "Make new material requests";
+						$text .= "$blockedAction";
+						break;
+					}
+				}
+
+				$result['message'] = translate([
+					'text' => $text,
+					'isPublicFacing' => true,
+				]);
+			}
+		}
+	}
+
 	/**
 	 * @param User $user
 	 * @return string[]
@@ -6648,37 +6805,43 @@ class Koha extends AbstractIlsDriver {
 		}
 
 
-		//Check if the patron is expired
+		// Check if the patron is expired
 		if ($accountSummary->isExpired()) {
-			//Check the patron category as well
+
+			// Check the patron category as well
 			/** @noinspection SqlResolve */
 			$patronCategorySql = "select BlockExpiredPatronOpacActions from categories where categorycode = '$patron->patronType'";
 			$patronCategoryResult = mysqli_query($this->dbConnection, $patronCategorySql, MYSQLI_USE_RESULT);
-			$useSystemPreference = true;
-			$blockExpiredPatronOpacActions = true;
-			if ($patronCategoryResult !== false) {
-				$patronCategoryInfo = $patronCategoryResult->fetch_assoc();
-				if ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == 0) {
-					$blockExpiredPatronOpacActions = false;
-					$useSystemPreference = false;
-				} elseif ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == 1) {
-					$blockExpiredPatronOpacActions = true;
-					$useSystemPreference = false;
-				} elseif ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == -1) {
-					$blockExpiredPatronOpacActions = true;
-					$useSystemPreference = true;
-				}
-				$patronCategoryResult->close();
-			}
 
-			if ($useSystemPreference) {
-				$blockExpiredPatronOpacActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+			// From where to calculate the blocked actions
+			if ($patronCategoryResult) {
+				$patronCategoryInfo = $patronCategoryResult->fetch_assoc();
+				$patronCategoryResult->close();
+				if(str_starts_with($patronCategoryInfo['BlockExpiredPatronOpacActions'],"follow_syspref")){
+					$blockedActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+				} else {
+					$blockedActions = $patronCategoryInfo['BlockExpiredPatronOpacActions'];
+				}
 			}
-			if ($blockExpiredPatronOpacActions == 1) {
+			
+			// Check if there are blocked actions for being an expired account
+			if ($blockedActions) {
+				$blockedActions = explode(',',$blockedActions);
 				$result['isEligible'] = false;
-				$result['expiredPatronWhoCannotPlaceHolds'] = true;
+
+				$text = "Sorry, your account has expired. Please renew it to be able to : ";
+
+				foreach($blockedActions as $blockedAction){
+					if (strcmp($blockedAction,"hold") == 0){
+						$result['expiredPatronWhoCannotPlaceHolds'] = true;
+						$blockedAction = "Place Holds";
+						$text .= $blockedAction;
+						break;
+					}
+				}
+
 				$result['message'] = translate([
-					'text' => 'Sorry, your account has expired. Please renew your account to place holds.',
+					'text' => $text,
 					'isPublicFacing' => true,
 				]);
 			}
