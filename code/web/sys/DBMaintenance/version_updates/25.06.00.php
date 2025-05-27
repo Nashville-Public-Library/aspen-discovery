@@ -56,6 +56,13 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE aspen_lida_self_check_settings ADD COLUMN barcodeEntryKeyboardType TINYINT(1) NOT NULL DEFAULT 1;",
 			]
 		], //add_lida_barcode_entry_keyboard_type_setting
+		'run_full_series_index_update' => [
+			'title' => 'Run Full Series Index Update',
+			'description' => 'Run full Series Index update to clean up deleted series records that are still in the index',
+			'sql' => [
+				"UPDATE series_indexing_settings SET runFullUpdate = 1;"
+			]
+		], //run_full_series_index
 
 		//kirstien - Grove
         'last_used_sort_for_user' => [
