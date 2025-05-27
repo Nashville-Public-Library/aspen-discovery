@@ -30,7 +30,7 @@ class Admin_AlternateTitles extends ObjectEditor {
 	}
 
 	function getDefaultSort(): string {
-		return 'alternateTitle asc';
+		return 'dateAdded desc';
 	}
 
 	function getObjectStructure($context = ''): array {
