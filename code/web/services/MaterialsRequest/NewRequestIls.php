@@ -12,11 +12,23 @@ class MaterialsRequest_NewRequestIls extends MyAccount {
 		$user = UserAccount::getActiveUserObj();
 		$patronId = empty($_REQUEST['patronId']) ? $user->id : $_REQUEST['patronId'];
 		$patron = $user->getUserReferredTo($patronId);
+		
 		$interface->assign('patronId', $patronId);
 
 		$interface->assign('newMaterialsRequestSummary', $library->newMaterialsRequestSummary);
 
 		$catalogConnection = CatalogFactory::getCatalogConnectionInstance();
+
+		$isElegible = $catalogConnection->patronEligibleForILLRequests($patron)['isEligible'];
+		if (!$isElegible) {
+			$interface->assign('module', 'Error');
+			$interface->assign('action', 'Handle403');
+			require_once ROOT_DIR . "/services/Error/Handle403.php";
+			$actionClass = new Error_Handle403();
+			$actionClass->launch();
+			die();
+		}
+		
 		if (isset($_REQUEST['submit'])) {
 			$result = $catalogConnection->processMaterialsRequestForm($patron);
 			if ($result['success']) {
