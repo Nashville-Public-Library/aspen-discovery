@@ -2,7 +2,7 @@
 
 require_once ROOT_DIR . '/JSON_Action.php';
 
-class CurbsidePickup_AJAX extends JSON_Action {
+class CurbsidePickups_AJAX extends JSON_Action {
 
 	function launch($method = null): void {
 		$method = (isset($_GET['method']) && !is_array($_GET['method'])) ? $_GET['method'] : '';
