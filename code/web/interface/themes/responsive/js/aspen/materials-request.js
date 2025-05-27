@@ -42,21 +42,9 @@ AspenDiscovery.MaterialsRequest = (function(){
 
 		updateSelectedRequests: function(){
 			var newStatus = $("#newStatus").val();
-			if (newStatus === "unselected"){
-				alert("Please select a status to update the requests to.");
-				return false;
-			}
-			var selectedRequests = this.getSelectedRequests(false);
-			if (selectedRequests.length !== 0){
-				$("#updateRequests").submit();
-			}
-			return false;
-		},
-
-		assignSelectedRequests: function(){
 			var newAssignee = $("#newAssignee").val();
-			if (newAssignee === "unselected"){
-				alert("Please select a user to assign the requests to.");
+			if (newAssignee === "unselected" && newStatus === "unselected"){
+				alert("Please select a new assignee and/or status to update.");
 				return false;
 			}
 			var selectedRequests = this.getSelectedRequests(false);
