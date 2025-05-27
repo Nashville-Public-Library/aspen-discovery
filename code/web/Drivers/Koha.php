@@ -4781,7 +4781,20 @@ class Koha extends AbstractIlsDriver {
 			$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'gender', 'borrower_sex', $library->useAllCapsWhenSubmittingSelfRegistration);
 			$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'initials', 'borrower_initials', $library->useAllCapsWhenSubmittingSelfRegistration);
 			if (!isset($_REQUEST['borrower_branchcode']) || $_REQUEST['borrower_branchcode'] == -1) {
-				$postVariables['library_id'] = $library->code;
+				// TODO when Koha bug 28495 is complete update this to
+				// match the validation in Koha (bugs.koha-community.org/bugzilla3/show_bug.cgi?id=28495)
+				if($library->ilsCode && $library->ilsCode != ".*")
+				{
+					$postVariables['library_id'] = $library->ilsCode;
+				}
+				else if ($library->getMainLocation())
+				{
+					$postVariables['library_id'] = $library->getMainLocation()->code;
+				}
+				else {
+					return ['success' => false,
+							'message' => "Could not create your Account.  No location to register found."];
+				}
 			} else {
 				$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'library_id', 'borrower_branchcode', $library->useAllCapsWhenSubmittingSelfRegistration);
 			}
