@@ -107,6 +107,15 @@ function getUpdates25_06_00(): array {
 			],
 		], //side_loads_uniqueness
 
+		// Myranda - Grove
+		'theme_series_image_explore_more' => [
+			 'title' => 'Theme - Add custom image uploads for series results',
+			 'description' => 'Update theme table to have a custom image value for series results in explore more.',
+			 'sql' => [
+				 "ALTER TABLE themes ADD COLUMN seriesImage VARCHAR(100) default ''",
+			 ]
+		], //theme_series_image_explore_more
+
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
