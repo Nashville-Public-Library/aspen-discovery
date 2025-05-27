@@ -4,7 +4,6 @@ class CurbsidePickupSetting extends DataObject {
 	public $__table = 'curbside_pickup_settings';
 	public $id;
 	public $name;
-	public $alwaysAllowPickups;
 	public $allowCheckIn;
 	public $timeAllowedBeforeCheckIn;
 	public $useNote;
@@ -20,112 +19,108 @@ class CurbsidePickupSetting extends DataObject {
 
 	static function getObjectStructure($context = ''): array {
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
+		$disabledLibraries = [];
+		$currentId = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
+		foreach (array_keys($libraryList) as $libraryId) {
+			$libraryCheck = new Library();
+			$libraryCheck->libraryId = $libraryId;
+			if ($libraryCheck->find(true) && $libraryCheck->curbsidePickupSettingId > 0 && $libraryCheck->curbsidePickupSettingId != $currentId) {
+				$disabledLibraries[] = $libraryId;
+			}
+		}
 
 		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
 				'label' => 'Id',
-				'description' => 'The unique id',
+				'description' => 'The unique id of this setting.',
 			],
 			'name' => [
 				'property' => 'name',
 				'type' => 'text',
 				'label' => 'Name',
-				'description' => 'A name for the settings',
+				'description' => 'A name for this setting.',
 				'maxLength' => 50,
-			],
-			'alwaysAllowPickups' => [
-				'property' => 'alwaysAllowPickups',
-				'type' => 'checkbox',
-				'label' => 'Allow patrons to always schedule curbside pickups',
-				'description' => 'Whether or not patrons can schedule curbside pickups even if they do not have holds ready.',
-				'default' => 1,
+				'required' => true
 			],
 			'allowCheckIn' => [
 				'property' => 'allowCheckIn',
 				'type' => 'checkbox',
-				'label' => 'Allow patrons to use "Mark Arrived" as part of the plugin workflow',
-				'description' => 'Whether or not patrons can check-in.',
+				'label' => 'Allow Patrons to Use "Mark Arrived" as Part of the Plugin Workflow',
+				'description' => 'Whether or not patrons can check-in to indicate their arrival to the library.',
 				'default' => 1,
-				'note' => 'If unchecked, you should instead specify instructions such as calling the front desk to check-in',
+				'note' => 'If unchecked, you should instead specify instructions (e.g., "Please call the front desk to check in.").',
+				'onchange' => 'return AspenDiscovery.CurbsidePickup.updateCurbsidePickupSettingsFields();',
+			],
+			'curbsidePickupInstructions' => [
+				'property' => 'curbsidePickupInstructions',
+				'type' => 'textarea',
+				'label' => 'Patron Instructions for Curbside Pickup',
+				'description' => 'General instructions shown to patrons during check-in for curbside pickups at the selected libraries.',
+				'maxLength' => 255,
+				'note' => 'For custom instructions per location/branch, edit this mirrored field under the ILS/Account Integration section of the <a href="/Admin/Locations">Location settings</a>.',
 			],
 			'timeAllowedBeforeCheckIn' => [
 				'property' => 'timeAllowedBeforeCheckIn',
 				'type' => 'integer',
-				'label' => 'Time allowed (in minutes) before a pickup that patrons can see check-in instructions',
-				'description' => '',
-				'note' => 'If the pickup is marked as "Staged & Ready" in Koha, the instructions will display regardless of this time',
-				'default' => 15,
+				'label' => 'Check-In Instruction Lead Time (Minutes)',
+				'description' => 'The number of minutes before a scheduled pickup when patrons can view check-in instructions.',
+				'note' => 'Set to -1 to display at all times. If the pickup is marked as "Staged & Ready,", the instructions will display regardless of this set time.',
+				'default' => -1,
 			],
 			'useNote' => [
 				'property' => 'useNote',
 				'type' => 'checkbox',
-				'label' => 'Allow patrons to leave a note for their pickup',
-				'description' => 'Whether or not patrons can leave a note',
+				'label' => 'Allow Patrons to Leave a Note for Their Pickup',
+				'description' => 'Whether or not patrons can leave a note regarding their pickup.',
 				'default' => 1,
 			],
 			'noteLabel' => [
 				'property' => 'noteLabel',
 				'type' => 'text',
 				'label' => 'Note Field Label',
-				'description' => 'The label for the Note field',
-				'maxLength' => 50,
-				'hideInLists' => true,
+				'description' => 'The label for the Note field in the scheduling pickup modal.',
+				'maxLength' => 75,
 				'default' => 'Note',
 			],
 			'noteInstruction' => [
 				'property' => 'noteInstruction',
 				'type' => 'text',
 				'label' => 'Note Field Instructions',
-				'description' => 'The instructions for the Note field, i.e. if you need them to include specific information.',
+				'description' => 'The instructions for the Note field in the scheduling pickup modal.',
 				'maxLength' => 255,
-				'hideInLists' => true,
 			],
 			'instructionSchedule' => [
 				'property' => 'instructionSchedule',
 				'type' => 'html',
-				'label' => 'Content for the main curbside pickup page',
-				'description' => 'General information about the curbside pickup service for the patron',
-				'hideInLists' => true,
+				'label' => 'Subheading Content on the Curbside Pickup Page',
+				'description' => 'General information about the curbside pickup service for patrons.',
 			],
 			'instructionNewPickup' => [
 				'property' => 'instructionNewPickup',
 				'type' => 'html',
-				'label' => 'Content for scheduling a new curbside pickup',
-				'description' => 'Instructions for the patron as they schedule a curbside pickup',
-				'hideInLists' => true,
+				'label' => 'Subheading Content on the Scheduling Curbside Pickup Modal',
+				'description' => 'Instructions for patrons as they schedule curbside pickups.',
 			],
 			'contentSuccess' => [
 				'property' => 'contentSuccess',
 				'type' => 'html',
-				'label' => 'Content for confirmation page',
-				'description' => 'General information and instruction for the next steps in the pickup process',
-				'hideInLists' => true,
+				'label' => 'Message for the Patron after Successfully Scheduling a Curbside Pickup ',
+				'description' => 'Information about the next steps in the process after the patron has successfully scheduled a curbside pickup.',
 			],
-			'curbsidePickupInstructions' => [
-				'property' => 'curbsidePickupInstructions',
-				'type' => 'textarea',
-				'label' => 'Patron instructions for curbside pickup',
-				'description' => 'General instructions to patrons when checking-in for picking up curbside',
-				'hideInLists' => true,
-				'note' => 'Use Location Settings to specify instructions per branch',
-			],
-
 			'libraries' => [
 				'property' => 'libraries',
 				'type' => 'multiSelect',
 				'listStyle' => 'checkboxSimple',
 				'label' => 'Libraries',
-				'description' => 'Define libraries that use these settings',
+				'description' => 'Define libraries that use these settings in Aspen.',
 				'values' => $libraryList,
-				'hideInLists' => true,
+				'disabledValues' => $disabledLibraries,
+				'note' => 'This setting dictates which library catalogs allow patrons to schedule curbside pickups in Aspen. However, whether a library actually allows curbside pickups is configured within the respective ILS.',
 			],
 		];
 
-		if (!UserAccount::userHasPermission('Administer Curbside Pickup')) {
-			unset($structure['libraries']);
-		}
 		return $structure;
 	}
 
@@ -154,7 +149,7 @@ class CurbsidePickupSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update($context = ''): bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -170,8 +165,31 @@ class CurbsidePickupSetting extends DataObject {
 		return $ret;
 	}
 
-	public function saveLibraries() {
-		if (isset ($this->_libraries) && is_array($this->_libraries)) {
+	/**
+	 * Filter out libraries assigned to other Curbside Pickup settings.
+	 *
+	 * @param array $libraries
+	 * @return array
+	 */
+	private function filterAssignedLibraries(array $libraries): array {
+		$filtered = [];
+		foreach ($libraries as $libraryId) {
+			$libraryCheck = new Library();
+			$libraryCheck->libraryId = $libraryId;
+			if ($libraryCheck->find(true)) {
+				if ($libraryCheck->curbsidePickupSettingId <= 0 || $libraryCheck->curbsidePickupSettingId == $this->id) {
+					$filtered[] = $libraryId;
+				}
+			}
+		}
+		return $filtered;
+	}
+
+	public function saveLibraries(): void {
+		if (isset($this->_libraries) && is_array($this->_libraries)) {
+			// Filter out libraries assigned to other settings.
+			$this->_libraries = $this->filterAssignedLibraries($this->_libraries);
+
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 			foreach ($libraryList as $libraryId => $displayName) {
 				$library = new Library();
@@ -195,7 +213,7 @@ class CurbsidePickupSetting extends DataObject {
 		}
 	}
 
-	function getEditLink($context): string {
+	function getEditLink(): string {
 		return '/CurbsidePickup/Settings?objectAction=edit&id=' . $this->id;
 	}
 }

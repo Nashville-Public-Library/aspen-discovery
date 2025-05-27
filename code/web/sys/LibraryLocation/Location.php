@@ -280,13 +280,11 @@ class Location extends DataObject {
 		}
 
 		$hasScoping = false;
-		$isKohaActive = false;
 		foreach (UserAccount::getAccountProfiles() as $accountProfileInfo) {
 			/** @var AccountProfile $accountProfile */
 			$accountProfile = $accountProfileInfo['accountProfile'];
 			if ($accountProfile->ils == 'sierra' || $accountProfile->ils == 'millennium') {
 				$hasScoping = true;
-				$isKohaActive = true;
 			}
 		}
 		global $enabledModules;
@@ -680,6 +678,15 @@ class Location extends DataObject {
 						'default' => '1',
 						'permissions' => ['Location ILS Options'],
 					],
+					'curbsidePickupInstructionsSetting' => [
+						'property' => 'curbsidePickupInstructions',
+						'type' => 'textarea',
+						'label' => 'Patron Instructions for Curbside Pickup',
+						'description' => 'Custom instructions shown to patrons during check-in for curbside pickups at this location.',
+						'hideInLists' => true,
+						'permissions' => ['Location ILS Connection'],
+						'note' => 'Requires the Koha Curbside Pickup plugin.',
+					],
 					[
 						'property' => 'validSelfRegistrationBranch',
 						'type' => 'enum',
@@ -732,17 +739,6 @@ class Location extends DataObject {
 						'default' => 1,
 					],
 				],
-			],
-
-			//Curbside pickup for Koha plugin
-			'curbsidePickupSettings' => [
-				'property' => 'curbsidePickupInstructions',
-				'type' => 'textarea',
-				'label' => 'Patron instructions for curbside pickup',
-				'description' => 'Instructions specific to this location for instructions to patrons when checking-in for picking up curbside.',
-				'hideInLists' => true,
-				'permissions' => ['Location ILS Connection'],
-				'note' => 'Koha only, requires Curbside Pickup plugin',
 			],
 
 			//Grouped Work Display
@@ -1464,9 +1460,6 @@ class Location extends DataObject {
 		if (!$hasScoping) {
 			unset($structure['ilsSection']['properties']['scope']);
 			unset($structure['ilsSection']['properties']['useScope']);
-		}
-		if (!$isKohaActive) {
-			unset($structure['curbsidePickupSettings']);
 		}
 
 		if (!$vdxActive) {
@@ -3198,5 +3191,39 @@ class Location extends DataObject {
 			$this->saveOneToManyOptions($this->_sublocations, 'locationId');
 			unset($this->_sublocations);
 		}
+	}
+
+	/**
+	 * Dynamically adjust object structure when editing an existing Location.
+	 * - Remove curbsidePickupInstructionsSetting if the ILS is not Koha.
+	 * - Disable and change the note of curbsidePickupInstructionsSetting if allowCheckIn is enabled.
+	 *
+	 * @param array $structure
+	 * @return array
+	 */
+	public function updateStructureForEditingObject($structure): array {
+		$parentLibrary = $this->getParentLibrary();
+		if ($parentLibrary) {
+			$accountProfile = $parentLibrary->getAccountProfile();
+			$ils = $accountProfile ? $accountProfile->ils : '';
+			// Currently, only Koha curbside pickups are implemented in Aspen.
+			if ($ils !== 'koha') {
+				unset($structure['ilsSection']['properties']['curbsidePickupInstructionsSetting']);
+			} else {
+				// Check if "Mark Arrived" is enabled in the CurbsidePickupSetting.
+				require_once ROOT_DIR . '/sys/CurbsidePickups/CurbsidePickupSetting.php';
+				$curbsidePickupSetting = new CurbsidePickupSetting();
+				$curbsidePickupSetting->id = $parentLibrary->curbsidePickupSettingId;
+				if ($curbsidePickupSetting->find(true) && $curbsidePickupSetting->allowCheckIn) {
+					if (isset($structure['ilsSection']['properties']['curbsidePickupInstructionsSetting'])) {
+						$structure['ilsSection']['properties']['curbsidePickupInstructionsSetting']['readOnly'] = true;
+						$structure['ilsSection']['properties']['curbsidePickupInstructionsSetting']['note'] =
+							'This field is disabled because "Mark Arrived" is enabled in the <a href="/ILS/CurbsidePickupSettings">Curbside Pickup settings</a> for this location\'s library. When patrons can check in, these instructions are not used.';
+					}
+				}
+			}
+		}
+
+		return $structure;
 	}
 }

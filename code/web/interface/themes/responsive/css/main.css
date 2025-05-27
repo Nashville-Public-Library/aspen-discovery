@@ -11416,4 +11416,102 @@ input[type="radio"][name="colorScheme"]:checked + label::after {
   height: 25px;
   position: relative;
 }
+.curbside-pickup-table {
+  vertical-align: middle;
+  word-wrap: break-word;
+}
+.curbside-pickup-table th,
+.curbside-pickup-table td {
+  vertical-align: middle;
+}
+.curbside-date-cell,
+.curbside-location-cell,
+.curbside-note-cell,
+.curbside-actions-cell {
+  min-width: 80px;
+}
+.curbside-note-cell {
+  white-space: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  word-break: break-word;
+}
+.curbside-status-badge {
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+@media (max-width: 767px) {
+  .curbside-pickup-table {
+    table-layout: fixed;
+  }
+  .curbside-pickup-table td,
+  .curbside-pickup-table th {
+    padding: 0.5rem;
+  }
+  .curbside-checkin-btn,
+  .curbside-cancel-btn {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.875rem;
+  }
+}
+@media (max-width: 480px) {
+  .curbside-pickup-table td,
+  .curbside-pickup-table th {
+    padding: 0.25rem;
+    font-size: 0.9rem;
+  }
+}
+.curbside-checkin-btn[disabled] {
+  opacity: 1 !important;
+}
+.time-slots-container {
+  margin-top: 15px;
+}
+.time-slot-section {
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.time-slot-heading {
+  padding: 10px 15px;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+}
+.time-slot-heading .toggle-icon i {
+  transition: transform 0.3s ease;
+}
+.time-slot-heading .toggle-icon i.rotated {
+  transform: rotate(90deg);
+}
+.time-slot-options {
+  padding: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.time-slot-options label.btn {
+  margin: 0;
+  border-radius: 4px;
+  flex: 0 0 auto;
+  font-weight: normal;
+}
+.time-slot-options input[type="radio"] {
+  position: absolute;
+  clip: rect(0, 0, 0, 0);
+}
+@media (max-width: 768px) {
+  .time-slot-options label.btn {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+}
+#newCurbsidePickupForm input.form-control[readonly] {
+  cursor: pointer !important;
+}
 /*# sourceMappingURL=main.css.map */

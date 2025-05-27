@@ -46,9 +46,7 @@
 				</div>
 			</div>
 
-			{* 2 column row to show information *}
 			<div class="row">
-				{* Information column author, format, etc *}
 				<div class="resultDetails col-xs-12">
 					{if !empty($record->volume)}
 						<div class="row">

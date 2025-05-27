@@ -11,7 +11,10 @@
 			{if empty($property.readOnly)}
 				<div class="form-group checkbox">
 					<label for="selectAll{$propName}">
-						<input type="checkbox" name="selectAll{$propName}" id="selectAll{$propName}" onchange="AspenDiscovery.toggleCheckboxes('.{$propName}', '#selectAll{$propName}');">
+						<input type="checkbox" name="selectAll{$propName}" id="selectAll{$propName}"
+							   {if isset($property.disabledValues) && count($property.disabledValues) > 0}disabled title="Some options are unavailable for selection."{/if}
+							   onchange="AspenDiscovery.toggleCheckboxes('.{$propName}', '#selectAll{$propName}');"
+						>
 						<strong>{translate text="Select All" isAdminFacing=true}</strong>
 					</label>
 				</div>
@@ -20,7 +23,12 @@
 				{* Modified Behavior: $propertyValue is used only as a display name to the user *}
 				{foreach from=$property.values item=propertyName key=propertyValue}
 					<label for="{$propName}_{$propertyValue|escapeCSS}">
-						<input class="{$propName}" id="{$propName}_{$propertyValue|escapeCSS}" name='{$propName}[]' type="checkbox" value='{$propertyValue}' {if is_array($propValue) && array_key_exists($propertyValue, $propValue)}checked='checked'{/if} {if !empty($property.readOnly)}readonly disabled{/if}> {if !empty($property.translateValues)}{translate text=$propertyName|escape inAttribute=true isPublicFacing=$property.isPublicFacing isAdminFacing=$property.isAdminFacing }{else}{$propertyName|escape}{/if}<br>
+						<input class="{$propName}" id="{$propName}_{$propertyValue|escapeCSS}" name='{$propName}[]' type="checkbox" value='{$propertyValue}'
+							   {if is_array($propValue) && array_key_exists($propertyValue, $propValue)}checked='checked'{/if}
+								{if !empty($property.readOnly)}readonly disabled{/if}
+								{if isset($property.disabledValues) && in_array($propertyValue, $property.disabledValues)}disabled{/if}
+						>
+						{if !empty($property.translateValues)}{translate text=$propertyName|escape inAttribute=true isPublicFacing=$property.isPublicFacing isAdminFacing=$property.isAdminFacing }{else}{$propertyName|escape}{/if}<br>
 					</label>
 				{/foreach}
 			</div>

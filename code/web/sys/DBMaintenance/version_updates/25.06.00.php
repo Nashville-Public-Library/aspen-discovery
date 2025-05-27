@@ -125,6 +125,14 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE web_builder_portal_cell ADD COLUMN IF NOT EXISTS staticLocationId int(11) NOT NULL DEFAULT -1",
 			]
 		], //add_static_location_id_to_portal_cell
+		'curbside_pickups_overhaul_05_2025' => [
+			'title' => 'Modifications to the Curbside Pickup Settings Table',
+			'description' => 'Drops the unused alwaysAllowPickups column and change the default of timeAllowedBeforeCheckIn to -1.',
+			'sql' => [
+				'ALTER TABLE curbside_pickup_settings DROP COLUMN IF EXISTS alwaysAllowPickups',
+				'ALTER TABLE curbside_pickup_settings MODIFY COLUMN timeAllowedBeforeCheckIn int(11) DEFAULT -1'
+			]
+		], //curbside_pickups_overhaul_05_2025
 
 		// Laura Escamilla - ByWater Solutions
 

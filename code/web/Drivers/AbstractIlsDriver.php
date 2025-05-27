@@ -384,52 +384,85 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		];
 	}
 
-	public function getCurbsidePickupSettings($locationCode) {
+	/**
+	 * Retrieves the curbside pickup settings for a given location code.
+	 *
+	 * @param string $locationCode The code identifying the pickup location.
+	 * @return array An array containing success status and a message.
+	 */
+	public function getCurbsidePickupSettings(string $locationCode): array {
 		return [
 			'success' => false,
-			'message' => 'This functionality has not been implemented for this ILS',
+			'message' => 'This functionality has not been implemented for this ILS.',
 		];
 	}
 
-	public function hasCurbsidePickups($patron) {
+	/**
+	 * Retrieves all curbside pickups associated with the given patron.
+	 *
+	 * @param User $patron The user for whom to retrieve curbside pickups.
+	 * @return array An array containing success status and a message.
+	 */
+	public function getPatronCurbsidePickups(User $patron): array {
 		return [
 			'success' => false,
-			'message' => 'This functionality has not been implemented for this ILS',
+			'message' => 'This functionality has not been implemented for this ILS.',
 		];
 	}
 
-	public function getPatronCurbsidePickups($patron) {
+	/**
+	 * Creates a new curbside pickup for the given patron.
+	 *
+	 * @param User $patron The user requesting the curbside pickup.
+	 * @param string $location The pickup location.
+	 * @param string $time The requested pickup time in 'Y-m-d H:i:s' format.
+	 * @param string|null $note Optional note from the patron for the library.
+	 * @return array An array containing success status and a message.
+	 */
+	public function newCurbsidePickup(User $patron, string $location, string $time, ?string $note): array {
 		return [
 			'success' => false,
-			'message' => 'This functionality has not been implemented for this ILS',
+			'message' => 'This functionality has not been implemented for this ILS.',
 		];
 	}
 
-	public function newCurbsidePickup($patron, $location, $time, $note) {
+	/**
+	 * Cancels a specific curbside pickup for the given patron.
+	 *
+	 * @param User $patron The user requesting the cancellation.
+	 * @param string $pickupId The identifier for the pickup to cancel.
+	 * @return array An array containing success status and a message.
+	 */
+	public function cancelCurbsidePickup(User $patron, string $pickupId): array {
 		return [
 			'success' => false,
-			'message' => 'This functionality has not been implemented for this ILS',
+			'message' => 'This functionality has not been implemented for this ILS.',
 		];
 	}
 
-	public function cancelCurbsidePickup($patron, $pickupId) {
+	/**
+	 * Marks a curbside pickup as checked in for the given patron.
+	 *
+	 * @param User $patron The user checking in.
+	 * @param string $pickupId The identifier for the pickup to check in.
+	 * @return array An array containing success status and a message.
+	 */
+	public function checkInCurbsidePickup(User $patron, string $pickupId): array {
 		return [
 			'success' => false,
-			'message' => 'This functionality has not been implemented for this ILS',
+			'message' => 'This functionality has not been implemented for this ILS.',
 		];
 	}
 
-	public function checkInCurbsidePickup($patron, $pickupId) {
+	/**
+	 * Retrieves all curbside pickup records in the system.
+	 *
+	 * @return array An array containing success status and a message.
+	 */
+	public function getAllCurbsidePickups(): array {
 		return [
 			'success' => false,
-			'message' => 'This functionality has not been implemented for this ILS',
-		];
-	}
-
-	public function getAllCurbsidePickups() {
-		return [
-			'success' => false,
-			'message' => 'This functionality has not been implemented for this ILS',
+			'message' => 'This functionality has not been implemented for this ILS.',
 		];
 	}
 

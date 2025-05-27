@@ -5361,7 +5361,7 @@ class User extends DataObject {
 		}
 	}
 
-	function newCurbsidePickup($pickupLocation, $pickupTime, $pickupNote) {
+	function newCurbsidePickup($pickupLocation, $pickupTime, $pickupNote): array {
 		$result = $this->getCatalogDriver()->newCurbsidePickup($this, $pickupLocation, $pickupTime, $pickupNote);
 		$this->clearCache();
 		return $result;

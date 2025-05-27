@@ -22,42 +22,36 @@
 						{foreach from=$holdsReadyForPickup item=location name="locationGroup"}
 							<table class="table table-striped">
 								<thead>
-									<tr>
-										<th style="vertical-align: middle;">
-											<h4 class="margin: 0">{$location.name} </h4>
-										</th>
-										<th class="text-right">
-											{if !empty($location.pickupScheduled)}
-												<button class="btn btn-primary" disabled>{translate text="Pickup already scheduled at %1%" 1=$location.name|escape isPublicFacing=true inAttribute=true}</button>
-											{else}
-												<button class="btn btn-primary" onclick="return AspenDiscovery.Account.getCurbsidePickupScheduler('{$location.id}')">{translate text="Schedule a pickup at %1%" 1=$location.name|escape isPublicFacing=true inAttribute=true}</button>
-											{/if}
-										</th>
-									</tr>
+								<tr>
+									<th style="vertical-align: middle;">
+										<h4 class="margin: 0">{$location.name} </h4>
+									</th>
+									<th class="text-right">
+										{if !empty($location.pickupScheduled)}
+											<button class="btn btn-primary" disabled>{translate text="Pickup Scheduled at %1%" 1=$location.name|escape isPublicFacing=true inAttribute=true}</button>
+										{else}
+											<button class="btn btn-primary" onclick="return AspenDiscovery.CurbsidePickup.getCurbsidePickupScheduler('{$location.id}')">{translate text="Schedule a Pickup at %1%" 1=$location.name|escape isPublicFacing=true inAttribute=true}</button>
+										{/if}
+									</th>
+								</tr>
 								</thead>
 								<tbody>
-									<tr>
-										<td colspan="2">
-											<div class="striped-content">
-												{foreach from=$location.holds item=record name="recordLoop"}
-													{include file="MyAccount/curbsidePickupsHoldsReady.tpl" record=$record resultIndex=$smarty.foreach.recordLoop.iteration}
-													{if !$smarty.foreach.recordLoop.last}<hr class="margin-top-0 margin-bottom-1">{/if}
-												{/foreach}
-											</div>
-										</td>
-									</tr>
+								<tr>
+									<td colspan="2">
+										<div class="striped-content">
+											{foreach from=$location.holds item=record name="recordLoop"}
+												{include file="MyAccount/curbsidePickupsHoldsReady.tpl" record=$record resultIndex=$smarty.foreach.recordLoop.iteration}
+												{if !$smarty.foreach.recordLoop.last}<hr class="margin-top-0 margin-bottom-1">{/if}
+											{/foreach}
+										</div>
+									</td>
+								</tr>
 								</tbody>
 							</table>
 
 						{/foreach}
 					</div>
 				</div>
-			{else}
-				{if !empty($showScheduleButton)}
-					<div class="col-xs-12">
-						<button class="btn btn-primary" onclick="return AspenDiscovery.Account.getCurbsidePickupScheduler('{$userHomePickupLocation->locationId}')">{translate text="Schedule a pickup at %1%" 1=$userHomePickupLocation->displayName|escape isPublicFacing=true inAttribute=true}</button>
-					</div>
-				{/if}
 			{/if}
 		</div>
 	{else}

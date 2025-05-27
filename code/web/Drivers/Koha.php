@@ -7406,7 +7406,7 @@ class Koha extends AbstractIlsDriver {
 		return $message;
 	}
 
-	public function getCurbsidePickupSettings($locationCode) {
+	public function getCurbsidePickupSettings(string $locationCode): array {
 		$result = ['success' => false,];
 
 		$this->initDatabaseConnection();
@@ -7585,11 +7585,12 @@ class Koha extends AbstractIlsDriver {
 		return $result;
 	}
 
-	public function getPatronCurbsidePickups($patron): array {
+	public function getPatronCurbsidePickups(User $patron): array {
 		$result = ['success' => false,];
 		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickups";
 		$response = $this->kohaApiUserAgent->get($endpoint, 'koha.curbsidePickup_getPatrons', [], ['x-koha-library: ' . $patron->getHomeLocationCode()]);
-
+		global $logger;
+		$logger->log("Get Patron Curbside Pickups Response: ". print_r($response['content'], true), Logger::LOG_ERROR);
 		if ($response['code'] == 200) {
 			$result['success'] = true;
 			$result['pickups'] = $response['content'];
@@ -7600,11 +7601,11 @@ class Koha extends AbstractIlsDriver {
 		return $result;
 	}
 
-	public function newCurbsidePickup($patron, $location, $time, $note): array {
+	public function newCurbsidePickup(User $patron, string $location, string $time, ?string $note): array {
 		$result = ['success' => false,];
 		global $logger;
 		$pickupDatetime = date('Y-m-d\TH:i:s\Z', strtotime($time));
-		$logger->log("$time, $pickupDatetime", Logger::LOG_ERROR);
+		$logger->log("Note: $note", Logger::LOG_ERROR);
 		$postVariables = [
 			'library_id' => $location,
 			'pickup_datetime' => $pickupDatetime,
@@ -7618,7 +7619,7 @@ class Koha extends AbstractIlsDriver {
 				'text' => 'Unable to schedule this curbside pickup.',
 				'isPublicFacing' => true,
 			]);
-			if (!empty($response['content']['error'])) {
+			if (!empty($response['content']['error']) && IPAddress::showDebuggingInformation()) {
 				$result['message'] .= ' ' . $response['content']['error'];
 			}
 		} else {
@@ -7631,7 +7632,7 @@ class Koha extends AbstractIlsDriver {
 		return $result;
 	}
 
-	public function cancelCurbsidePickup($patron, $pickupId): array {
+	public function cancelCurbsidePickup(User $patron, string $pickupId): array {
 		$result = ['success' => false,];
 		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/pickup/" . $pickupId;
 		$response = $this->kohaApiUserAgent->delete($endpoint, 'koha.curbsidePickup_cancel', [], ['x-koha-library: ' . $patron->getHomeLocationCode()]);
@@ -7655,7 +7656,7 @@ class Koha extends AbstractIlsDriver {
 		return $result;
 	}
 
-	public function checkInCurbsidePickup($patron, $pickupId): array {
+	public function checkInCurbsidePickup(User $patron, string $pickupId): array {
 		$result = ['success' => false,];
 		$endpoint = "/api/v1/contrib/curbsidepickup/patrons/" . $patron->unique_ils_id . "/mark_arrived/" . $pickupId;
 		$response = $this->kohaApiUserAgent->get($endpoint, 'koha.curbsidePickup_markArrived', [], ['x-koha-library: ' . $patron->getHomeLocationCode()]);
