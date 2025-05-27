@@ -103,7 +103,7 @@ class UserAPI extends AbstractAPI {
 					'createMaterialsRequest',
 					'cancelMaterialsRequest',
                     'deleteAspenUser',
-                    'updateSortPreferences'
+					'updateSortPreferences'
 				])) {
 					header("Cache-Control: max-age=10800");
 					require_once ROOT_DIR . '/sys/SystemLogging/APIUsage.php';
@@ -6671,23 +6671,22 @@ class UserAPI extends AbstractAPI {
 		];
 	}
 
-    function updateSortPreferences()
-    {
-        $user = $this->getUserForApiCall();
-        if ($user && !($user instanceof AspenError)) {
-            $user->updateSortPreferences();
-        } else {
-            return [
-                'success' => false,
-                'title' => translate([
-                    'text' => 'Error',
-                    'isPublicFacing' => true,
-                ]),
-                'message' => translate([
-                    'text' => 'Unable to validate user',
-                    'isPublicFacing' => true,
-                ]),
-            ];
-        }
-    }
+	function updateSortPreferences() {
+		$user = $this->getUserForApiCall();
+		if ($user && !($user instanceof AspenError)) {
+			$user->updateSortPreferences();
+		} else {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => 'Unable to validate user',
+					'isPublicFacing' => true,
+				]),
+			];
+		}
+	}
 }
