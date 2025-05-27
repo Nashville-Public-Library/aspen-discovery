@@ -115,11 +115,13 @@ class SeriesRecordDriver extends IndexRecordDriver {
 	public function checkIfContainsNewTitles() {
 		global $solrScope;
 		$series = $this->getSeriesObject();
-		$records = $series->getSeriesRecords(0, 1, 'recordDrivers', 'id desc', false);
-		foreach ($records as $record) {
-			if ($record->fields && isset($record->fields["local_time_since_added_$solrScope"])) {
-				if (in_array('Week', $record->fields["local_time_since_added_$solrScope"])) {
-					return true;
+		if (!empty($series)) {
+			$records = $series->getSeriesRecords(0, 1, 'recordDrivers', 'id desc', false);
+			foreach ($records as $record) {
+				if ($record->fields && isset($record->fields["local_time_since_added_$solrScope"])) {
+					if (in_array('Week', $record->fields["local_time_since_added_$solrScope"])) {
+						return true;
+					}
 				}
 			}
 		}

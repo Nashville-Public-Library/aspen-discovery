@@ -102,7 +102,8 @@ class UserAPI extends AbstractAPI {
 					'getMaterialsRequestDetails',
 					'createMaterialsRequest',
 					'cancelMaterialsRequest',
-					'deleteAspenUser'
+                    'deleteAspenUser',
+                    'updateSortPreferences'
 				])) {
 					header("Cache-Control: max-age=10800");
 					require_once ROOT_DIR . '/sys/SystemLogging/APIUsage.php';
@@ -1031,6 +1032,10 @@ class UserAPI extends AbstractAPI {
 				$yearInReviewName = $yearInReviewSetting->name;
 				$userData->yearInReviewName = translate(['text' => $yearInReviewName, 'isPublicFacing' => true]);
 			}
+
+            $userData->holdSortAvailable = $user->holdSortAvailable;
+            $userData->holdSortUnavailable = $user->holdSortUnavailable;
+            $userData->checkoutSort = $user->checkoutSort;
 
 			return [
 				'success' => true,
@@ -5734,7 +5739,7 @@ class UserAPI extends AbstractAPI {
 							}
 							if (UserAccount::userHasPermission('Masquerade as any user')) {
 								//The user can masquerade as anyone, no additional checks needed
-							} elseif (UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
+							} elseif (UserAccount::userHasPermission('Masquerade as unrestricted patron types') && !UserAccount::userHasPermission('Masquerade as patrons with same home library') && !UserAccount::userHasPermission('Masquerade as patrons with same home location')) {
 								if ($isRestrictedUser) {
 									return [
 										'success' => false,
@@ -5765,7 +5770,11 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
+								$sameHomeLibrary = true;
 								if ($guidingUserLibrary->libraryId != $masqueradedUserLibrary->libraryId) {
+									$sameHomeLibrary = false;
+								}
+								if (!$sameHomeLibrary && !UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
 									return [
 										'success' => false,
 										'error' => translate([
@@ -5774,14 +5783,26 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($isRestrictedUser && !UserAccount::userHasPermission('Masquerade as patrons with same home library')) {
-									return [
-										'success' => false,
-										'error' => translate([
-											'text' => 'Cannot masquerade as patrons of this type.',
-											'isAdminFacing' => true,
-										]),
-									];
+								if ($isRestrictedUser) {
+									if (!UserAccount::userHasPermission('Masquerade as patrons with same home library')) {
+										return [
+											'success' => false,
+											'error' => translate([
+												'text' => 'Cannot masquerade as patrons of this type.',
+												'isAdminFacing' => true,
+											]),
+										];
+									}
+									if (UserAccount::userHasPermission('Masquerade as patrons with same home library') && !$sameHomeLibrary) {
+										return [
+											'success' => false,
+											'error' => translate([
+												'text' => 'You do not have the same home library branch as the patron.',
+												'isAdminFacing' => true,
+											]),
+										];
+									}
+
 								}
 							} elseif (UserAccount::userHasPermission('Masquerade as patrons with same home location') || UserAccount::userHasPermission('Masquerade as unrestricted patrons with same home location')) {
 								if (empty($user->homeLocationId)) {
@@ -5802,7 +5823,11 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
+								$sameHomeLibraryBranch = true;
 								if ($user->homeLocationId != $masqueradedUser->homeLocationId) {
+									$sameHomeLibraryBranch = false;
+								}
+								if (!$sameHomeLibraryBranch && !UserAccount::userHasPermission('Masquerade as unrestricted patron types')) {
 									return [
 										'success' => false,
 										'error' => translate([
@@ -5811,14 +5836,25 @@ class UserAPI extends AbstractAPI {
 										]),
 									];
 								}
-								if ($isRestrictedUser && !UserAccount::userHasPermission('Masquerade as patrons with same home location')) {
-									return [
-										'success' => false,
-										'error' => translate([
-											'text' => 'Cannot masquerade as patrons of this type.',
-											'isAdminFacing' => true,
-										]),
-									];
+								if ($isRestrictedUser) {
+									if (!UserAccount::userHasPermission('Masquerade as patrons with same home location')) {
+										return [
+											'success' => false,
+											'error' => translate([
+												'text' => 'Cannot masquerade as patrons of this type.',
+												'isAdminFacing' => true,
+											]),
+										];
+									}
+									if (UserAccount::userHasPermission('Masquerade as patrons with same home location') && !$sameHomeLibraryBranch) {
+										return [
+											'success' => false,
+											'error' => translate([
+												'text' => 'You do not have the same home library branch as the patron.',
+												'isAdminFacing' => true,
+											]),
+										];
+									}
 								}
 							}
 
@@ -6634,4 +6670,24 @@ class UserAPI extends AbstractAPI {
 			'message' => 'Unable to validate user',
 		];
 	}
+
+    function updateSortPreferences()
+    {
+        $user = $this->getUserForApiCall();
+        if ($user && !($user instanceof AspenError)) {
+            $user->updateSortPreferences();
+        } else {
+            return [
+                'success' => false,
+                'title' => translate([
+                    'text' => 'Error',
+                    'isPublicFacing' => true,
+                ]),
+                'message' => translate([
+                    'text' => 'Unable to validate user',
+                    'isPublicFacing' => true,
+                ]),
+            ];
+        }
+    }
 }
