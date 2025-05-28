@@ -4,6 +4,11 @@
 	{if !empty($error)}
 		<div class="alert alert-danger">{$error}</div>
 	{/if}
+	{if !empty($updateMessage)}
+		<div class="alert {if !empty($updateMessageIsError)}alert-danger{else}alert-success{/if}">
+			{$updateMessage}
+		</div>
+	{/if}
 	{if !empty($loggedIn)}
 		<div id="materialsRequestFilters" class="accordion">
 			<div class="panel panel-default">
