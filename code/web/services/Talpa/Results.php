@@ -87,10 +87,16 @@ class Talpa_Results extends ResultsAction {
 
 
 		//Assign vars for Talpa Summaries to be ajaxed in.
-		$interface->assign('uniq_key_for_summary_retrieval', $result['response']['uniq_key_for_summary_retrieval']);
-		$interface->assign('uniq_val_for_summary_retrieval', $result['response']['uniq_val_for_summary_retrieval']);
+		$interface->assign('uniq_key_for_summary_retrieval', $result['response']['bib_info']['uniq_key_for_summary_retrieval']);
+		$interface->assign('uniq_val_for_summary_retrieval', $result['response']['bib_info']['uniq_val_for_summary_retrieval']);
 
-		$rawIsbns =  explode(',', $result['response']['isbnS_for_summary_retrieval']);
+		// for reviewing api time taken in html results output
+		$interface->assign('querySpeed', $searchObject->getQuerySpeed());
+		$interface->assign('recordFetchSpeed', $searchObject->getRecordFetchSpeed());
+		$interface->assign('preliminarySearchSpeed',  $searchObject->getPreliminarySearchSpeed());
+
+
+		$rawIsbns =  explode(',', $result['response']['bib_info']['isbnS_for_summary_retrieval']);
 		$summaryIsbnsJSON = json_encode($rawIsbns);
 		$isbnS_for_summary_retrieval = htmlspecialchars($summaryIsbnsJSON, ENT_QUOTES, 'UTF-8');
 

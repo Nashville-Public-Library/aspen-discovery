@@ -160,6 +160,18 @@ class BookCoverProcessor {
 				}
 			} elseif (stripos($this->type, 'talpa') !== false) {
 				$this->isn = $this->id;
+
+				if($this->type=='talpa') {
+					$record=array(
+						'isbn' => $_GET['isbn']?:'',
+						'title' => $_GET['title'],
+						'author' => $_GET['author'],
+						'upc' => $_GET['upc']?:'',
+					);
+					$recordToString = json_encode($record);
+					$this->id = $recordToString;
+				}
+
 				if ($this->getCoverFromProvider()) {
 					return true;
 				}
@@ -176,7 +188,7 @@ class BookCoverProcessor {
 
 			if ($this->type == 'grouped_work' && $this->getUploadedGroupedWorkCover($this->id)) {
 				return true;
-			} elseif ($this->type != 'grouped_work') {
+			} elseif ($this->type != 'grouped_work' && $this->type != 'talpa') {
 				//Check to see if we have have an uploaded cover for the work
 				if ($this->loadGroupedWork()) {
 					if ($this->getUploadedGroupedWorkCover($this->groupedWork->getPermanentId())) {
@@ -198,7 +210,7 @@ class BookCoverProcessor {
 				return true;
 			}
 
-			if ($this->getGroupedWorkCover()) {
+			if ($this->type != 'talpa' && $this->getGroupedWorkCover()) {
 				return true;
 			}
 		}
@@ -742,6 +754,17 @@ class BookCoverProcessor {
 			}
 		} else {
 			if ($recordDriver == null) {
+				if($this->type=='talpa') {
+					$record=array(
+						'isbn' => $_GET['isbn'],
+						'title' => $_GET['title'],
+						'author' => $_GET['author'],
+						'upc' => $_GET['upc']
+					);
+					$recordToString = json_encode($record);
+					$this->id = $recordToString;
+
+				}
 				require_once ROOT_DIR . '/RecordDrivers/RecordDriverFactory.php';
 				$recordDriver = RecordDriverFactory::initRecordDriverById($this->type . ':' . $this->id);
 			}
