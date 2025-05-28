@@ -18,11 +18,9 @@ import java.util.concurrent.*;
 public class UpdateReadingHistory implements IProcessHandler {
 
 	public void doCronProcess(String servername, Ini configIni, Section processSettings, Connection dbConn, CronLogEntry cronEntry, Logger logger) {
-		CronProcessLogEntry processLog = new CronProcessLogEntry(cronEntry, "Starting nightly reading history updates....", dbConn, logger);
+		CronProcessLogEntry processLog = new CronProcessLogEntry(cronEntry, "Updating Reading History", dbConn, logger);
 		processLog.saveResults();
-
-		logger.info("Updating Reading History");
-		processLog.addNote("Updating Reading History");
+		processLog.addNote("Starting nightly reading history updates....");
 
 		String aspenUrl = configIni.get("Site", "url");
 		if (aspenUrl == null || aspenUrl.isEmpty()) {
