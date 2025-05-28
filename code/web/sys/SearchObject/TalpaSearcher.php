@@ -9,7 +9,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	static $instance;
 	/** @var TalpaSettings */
 //	private $talpaBaseApi ='https://www.librarything.com/api/talpa.php';
-	private $talpaBaseApi ='https://www.librarything.com/api_talpa.php';
+	private $talpaBaseApi ='lp-ltfl.dev.librarything.com/api_talpa.php'; //TO
 
 	/**Build URL */
 //	private $sessionId;
@@ -295,46 +295,61 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	public function processData($recordData, $textQuery = null)
 	{
 		global $configArray;
-//		$this->indexEngine = new GroupedWorksSolrConnector2($configArray['Index']['url']);
 		require_once ROOT_DIR.'/sys/SolrConnector/GroupedWorksSolrConnector2.php';
 		$GroupedWorksSolrConnector2 = new GroupedWorksSolrConnector2($configArray['Index']['url']);
 
-		$recordData = $this->process($recordData, $textQuery);
-//var_dump(is_array($recordData));
+		$recordData = $this->process($recordData, $textQuery); //TODO LAUREN add api limit error into process()
+
 		if (is_array($recordData)) {
 			$this->lastSearchResults = $recordData;
 			$this->lastSearchResults['response']['talpa_result_count'] = 0;
 			$this->lastSearchResults['response']['global_count'] = 0;
 			$resultsList = $recordData['response']['resultlist'];
 
+			$inLibraryResults = array();
+			$allGroupedWorks = explode(',',$recordData['response']['all_grouped_workidA'] );
+			$allGroupedWorks_chunked = array_chunk($allGroupedWorks,20, true);
+			foreach ($allGroupedWorks_chunked as $chunk) {
+				$foundGroupedWorks = $GroupedWorksSolrConnector2->searchForRecordIds($chunk);
+
+				foreach ($foundGroupedWorks['response']['docs'] as $recordItem) {
+					extract($recordItem);
+					$inLibraryResults[$id] = $recordItem;
+				}
+			}
+
+//var_dump(array_keys($inLibraryResults));
 			for ($x = 0; $x < count($resultsList); $x++) {
 				$current = &$resultsList[$x];
 
 				require_once ROOT_DIR . '/RecordDrivers/TalpaRecordDriver.php';
 				$record = new TalpaRecordDriver($current);
 
-				if ($groupedWorkID = $record->isInLibrary()) {
-					require_once ROOT_DIR.'/RecordDrivers/GroupedWorkDriver.php';
-					$groupedWorkDriver = new GroupedWorkDriver($groupedWorkID);
-					if ($groupedWorkDriver->isValid()) {
-						//add the groupedWork data into the recordData
-						$this->lastSearchResults['response']['resultlist'][$x]['groupedWork'] = $groupedWorkDriver->getFields();
-						$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 1;
-						$this->lastSearchResults['response']['resultlist'][$x]['groupedWorkID'] = $groupedWorkID;
+				$groupedWorkIds = $current['groupedworkidA'];
+				$foundLibraryResult = false;
+				foreach ($groupedWorkIds  as $groupedWorkId) {
+					if ($inLibraryResults[$groupedWorkId]) {
+						require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
+						$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
+						if ($groupedWorkDriver->isValid()) {
+							//add the groupedWork data into the recordData
+							$this->lastSearchResults['response']['resultlist'][$x]['groupedWork'] = $inLibraryResults[$groupedWorkId];
+							$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 1;
+							$this->lastSearchResults['response']['resultlist'][$x]['groupedWorkID'] = $groupedWorkId;
 
-						//add solr data into recordData
-//						$_recordData = $this->indexEngine->getRecord($groupedWorkID, $this->getFieldsToReturn());
-						$_recordData = $GroupedWorksSolrConnector2->getRecord($groupedWorkID, $this->getFieldsToReturn());
-//						var_dump($_recordData);
+							//add solr data into recordData
+							$_recordData = $GroupedWorksSolrConnector2->getRecord($groupedWorkId, $this->getFieldsToReturn());
+							$this->lastSearchResults['response']['resultlist'][$x]['solrRecord'] = $_recordData;
 
-						$this->lastSearchResults['response']['resultlist'][$x]['solrRecord'] = $_recordData;
-
-						//get count of in-library records
-						$this->lastSearchResults['response']['global_count']++;
-						$this->resultsTotal++;
+							//get count of in-library records
+							$this->lastSearchResults['response']['global_count']++;
+							$this->resultsTotal++;
+							$foundLibraryResult = true;
+							break;
+						}
 					}
-
-				} elseif ($record->isValid()) {
+				}
+				if(!$foundLibraryResult) {
 
 					$bibInfo = $record->getRecord();
 					$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 0;
@@ -350,6 +365,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			}
 			return $recordData;
 		}
+		return false;
 	}
 	public function splitFacets($combinedFacets) {
 		$splitFacets = [];
@@ -696,12 +712,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 					$facetCounts['global']['count']++;
 					$allFacets['availability_toggle'][]= array('global', 1);
 				}
-//				foreach ($availableAt as $location){
-//					if(preg_match('mpl#', $location)){
-//						$allFacets['available_at'][]= array($location, 1);
-//					}
-//
-//				}
+
 			} elseif ($talpaResultB) {
 //				$allFacets['availability_toggle']['talpa_result']['count']++;
 				$facetCounts['talpa_result']['count']++;
@@ -873,18 +884,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		return $this->limitList;
 	}
 
-	//Retreive a specific record - used to retreive bookcovers
-	public function retrieveRecord ($id) {
-
-//		$baseUrl = $this->talpaBaseApi . '/' .$this->version . '/' .$this->service;
-//		$settings = $this->getSettings();
-//		$queryString = "s.q=ID:($id)";
-//		$headers = $this->authenticate($settings, $queryString);
-//		$recordData = $this->httpRequest($baseUrl, $queryString, $headers);
-//		if (!empty($recordData)){
-//			$recordData = $this->processData($recordData, $queryString);
-//		}return $recordData['documents'][0];
-	}
 
 	//Compile filter options chosen in side facets and add to filter array to be passed in via options array
 	public function getTalpaFilters() {
@@ -1105,11 +1104,17 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		foreach ($headers as $key =>$value) {
 			$modified_headers[] = $key.": ".$value;
 		}
-
-		$requestUrl = $baseUrl.'?search='.$queryString.'&token='.$headers['token'].'&limit='.$this->getLimit().'&bib_info=1';
-		if($queryId){
-			$requestUrl =$baseUrl.'?query_id='.$queryId.'&token='.$headers['token'].'&limit='.$this->getLimit().'&bib_info=1';
+		$params = array(
+			'search' => $queryString,
+			'token' => $headers['token'],
+			'limit' => $this ->getLimit(),
+			'aspen'=> 1
+		);
+		if($queryId) {
+			$params['query_id'] = $queryId;
 		}
+
+		$requestUrl = $baseUrl.'?'.http_build_query($params);
 
 		$curlConnection = $this->getCurlConnection();
 		$curlOptions = array(
@@ -1384,18 +1389,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		if (isset($_REQUEST['allFields'])) {
 			$fieldsToReturn = '*,score';
 		} else {
-			$fieldsToReturn = SearchObject_GroupedWorkSearcher2::$fields_to_return;
-			global $solrScope;
-			if ($solrScope != false) {
-				$fieldsToReturn .= ',local_days_since_added_' . $solrScope;
-				$fieldsToReturn .= ',local_time_since_added_' . $solrScope;
-				$fieldsToReturn .= ',local_callnumber_' . $solrScope;
-				$fieldsToReturn .= ',scoping_details_' . $solrScope;
-			} else {
-				$fieldsToReturn .= ',days_since_added';
-				$fieldsToReturn .= ',local_callnumber';
-			}
-			$fieldsToReturn .= ',collection';
+			$fieldsToReturn = 'collection';
 			$fieldsToReturn .= ',detailed_location';
 			$fieldsToReturn .= ',owning_location';
 			$fieldsToReturn .= ',owning_library';

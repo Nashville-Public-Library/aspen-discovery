@@ -11,13 +11,7 @@ class TalpaRecordDriver extends RecordInterface {
 	 * @access  public
 	 */
 	public function __construct($record) {
-		if (is_string($record)) {
-			/** @var SearchObject_TalpaSearcher $TalpaSearcher */
-			$TalpaSearcher = SearchObjectFactory::initSearchObject("Talpa");
-			$this->record = $TalpaSearcher->retrieveRecord($record);
-		}else{
-			$this->record= $record;
-		}
+		$this->record= $record;
 	}
 
 	public function isInLibrary() {
