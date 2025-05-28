@@ -56,17 +56,24 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE aspen_lida_self_check_settings ADD COLUMN barcodeEntryKeyboardType TINYINT(1) NOT NULL DEFAULT 1;",
 			]
 		], //add_lida_barcode_entry_keyboard_type_setting
+		'run_full_series_index_update' => [
+			'title' => 'Run Full Series Index Update',
+			'description' => 'Run full Series Index update to clean up deleted series records that are still in the index',
+			'sql' => [
+				"UPDATE series_indexing_settings SET runFullUpdate = 1;"
+			]
+		], //run_full_series_index
 
 		//kirstien - Grove
-        'last_used_sort_for_user' => [
-            'title' => 'Store the last used sort value a patron used for holds and checkouts',
-            'description' => 'Store the last used sort value a patron used for holds and checkouts',
-            'sql' => [
-                "ALTER TABLE user ADD COLUMN holdSortAvailable VARCHAR(75) DEFAULT 'expire'",
-                "ALTER TABLE user ADD COLUMN holdSortUnavailable VARCHAR(75) DEFAULT 'title'",
-                "ALTER TABLE user ADD COLUMN checkoutSort VARCHAR(75) DEFAULT 'dueDate'"
-            ],
-        ], //last_used_sort_for_user
+		'last_used_sort_for_user' => [
+			'title' => 'Store the last used sort value a patron used for holds and checkouts',
+			'description' => 'Store the last used sort value a patron used for holds and checkouts',
+			'sql' => [
+				"ALTER TABLE user ADD COLUMN holdSortAvailable VARCHAR(75) DEFAULT 'expire'",
+				"ALTER TABLE user ADD COLUMN holdSortUnavailable VARCHAR(75) DEFAULT 'title'",
+				"ALTER TABLE user ADD COLUMN checkoutSort VARCHAR(75) DEFAULT 'dueDate'"
+			],
+		], //last_used_sort_for_user
 
 		//kodi - Grove
 		'side_loads_library_permissions' => [
@@ -129,6 +136,13 @@ function getUpdates25_06_00(): array {
 		// Laura Escamilla - ByWater Solutions
 
 		//alexander - Open Fifth
+		'update_award_reward_automatically_to_false_by_default' => [
+			'title' => 'Update Award Reward Automaticaly to False By Default',
+			'description' => 'Update default for award automatically to false',
+			'sql' => [
+				"ALTER TABLE ce_reward ALTER awardAutomatically SET DEFAULT 0",
+			]
+		], //update_award_reward_automatically_to_false_by_default
 
 		//chloe - Open Fifth
 

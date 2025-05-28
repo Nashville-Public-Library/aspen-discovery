@@ -82,6 +82,13 @@ class MaterialsRequest_Update extends Admin_Admin {
 						$statusChanged = true;
 					}
 				}
+				$assigneeChanged = false;
+				if (!empty($_REQUEST['assignedTo'])) {
+					if ($materialsRequest->assignedTo != $_REQUEST['assignedTo']) {
+						$materialsRequest->assignedTo = $_REQUEST['assignedTo'];
+						$assigneeChanged = true;
+					}
+				}
 
 				$materialsRequest->libraryId = $requestUser->getHomeLibrary()->libraryId;
 
@@ -114,6 +121,10 @@ class MaterialsRequest_Update extends Admin_Admin {
 					if ($statusChanged) {
 						//Send an email as needed
 						$materialsRequest->sendStatusChangeEmail();
+					}
+					if ($assigneeChanged) {
+						//Send an email as needed
+						$materialsRequest->sendStaffNewMaterialsRequestAssignedEmail();
 					}
 				} else {
 					$interface->assign('success', false);
