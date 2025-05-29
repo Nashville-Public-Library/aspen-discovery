@@ -166,7 +166,7 @@
 							<input name="{$materialRequestTableColumnName}" id="{$materialRequestTableColumnName}"
 								size="90" maxlength="255" class="form-control"
 								value="{$materialsRequest->$materialRequestTableColumnName}"
-							   	oninput="this.value=this.value.replace(/\D/g,'')"
+								{if $formField->fieldType == 'isbn' || $formField->fieldType == 'upc' || $formField->fieldType == 'issn'} oninput="this.value=this.value.toUpperCase().replace(/[^0-9X]/g,'')" {/if}
 								{if $formField->fieldType == 'isbn'|| $formField->fieldType == 'upc' || $formField->fieldType == 'issn'} onblur="AspenDiscovery.MaterialsRequest.checkForExistingRecord();"{/if}
 							>
 						</div>
