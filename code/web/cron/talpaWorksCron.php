@@ -33,7 +33,7 @@ $talpaSettings->find();
 while ($talpaSettings->fetch(true)) {
 	$token = $talpaSettings->talpaApiToken;
 
-	$logger->log("Running Talpa ISBNs cron for settings " . $talpaSettings->id, Logger::LOG_NOTICE);
+	$logger->log("Running Talpa groupedWorks cron for settings " . $talpaSettings->id, Logger::LOG_NOTICE);
 
 	$noIsbns = 0;
 	$noIsbnA = array();
@@ -47,7 +47,7 @@ while ($talpaSettings->fetch(true)) {
 
 	if ($results) {
 		while ($result = $results->fetch()) {
-			$logger->log('found '. $result['total'] . ' permanent IDs needing associating with librarything works', Logger::LOG_NOTICE);
+			$logger->log('found '. $result['total'] . ' permanent IDs to send to Talpa for processing', Logger::LOG_NOTICE);
 		}
 	}
 
@@ -228,12 +228,10 @@ while ($talpaSettings->fetch(true)) {
 								$talpaData = new TalpaData();
 								$talpaData->groupedRecordPermanentId = $permanent_id;
 								if ($talpaData->find(true)) {
-									$talpaData->lt_workcode=$lt_workcode;
 									$talpaData->checked = 1;
 									$talpaData->update();
 									$updatedN++;
 								} else {
-									$talpaData->lt_workcode = $lt_workcode;
 									$talpaData->groupedRecordPermanentId = $permanent_id;
 									$talpaData->checked = 1;
 									$talpaData->insert();
