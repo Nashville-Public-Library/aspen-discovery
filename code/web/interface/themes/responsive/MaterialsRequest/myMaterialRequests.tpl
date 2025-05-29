@@ -17,6 +17,11 @@
 	{else}
 		{assign var="canSuggestMaterials" value=$user->canSuggestMaterials()}
 		{if $canSuggestMaterials > 0}
+			{if !empty($updateMessage)}
+				<div class="alert {if !empty($updateMessageIsError)}alert-danger{else}alert-success{/if}">
+					{$updateMessage}
+				</div>
+			{/if}
 			{if $canSuggestMaterials == 1}
 				<div id="materialsRequestSummary" class="alert alert-info">
 					{translate text="You have used <strong>%1%</strong> of your %2% yearly material requests.  We also limit patrons to %3% active material requests at a time.  You currently have <strong>%4%</strong> active material requests." 1=$requestsThisYear 2=$maxRequestsPerYear 3=$maxActiveRequests 4=$openRequests isPublicFacing=true}
