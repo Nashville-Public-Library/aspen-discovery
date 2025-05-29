@@ -185,6 +185,25 @@
 						</div>
 					</div>
 
+				{elseif $formField->fieldType == 'assignedTo'}
+					{assign var="materialRequestTableColumnName" value=$formField->fieldType}
+					<div class="request_detail_field row">
+						<label for="{$materialRequestTableColumnName}" class="control-label col-sm-3">{translate text=$formField->fieldLabel isPublicFacing=true isAdminEnteredData=true} </label>
+						<div class=" request_detail_field_value col-sm-9">
+							{if !empty($assignees)}
+								<select name="{$materialRequestTableColumnName}" id="{$materialRequestTableColumnName}" class="form-control">
+									<option value="unselected">{translate text="Select One" inAttribute=true isAdminFacing=true}</option>
+									<option value="unassign">{translate text="Un-assign (remove assignee)" inAttribute=true isAdminFacing=true}</option>
+										{foreach from=$assignees item=displayName key=assigneeId}
+											<option value="{$assigneeId}"{if $assigneeId == $materialsRequest->assignedTo} selected="selected"{/if}>{$displayName|escape}</option>
+										{/foreach}
+								</select>
+							{else}
+								<span class="text-warning">{translate text="No Valid Assignees Found" isAdminFacing=true}</span>
+							{/if}
+						</div>
+					</div>
+
 				{elseif $formField->fieldType == 'status'}
 					{assign var="materialRequestTableColumnName" value=$formField->fieldType}
 					<div class="request_detail_field row">

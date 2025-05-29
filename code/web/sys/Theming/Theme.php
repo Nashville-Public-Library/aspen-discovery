@@ -45,6 +45,8 @@ class Theme extends DataObject {
 	/** @noinspection PhpUnused */
 	public $listsImage;
 	/** @noinspection PhpUnused */
+	public $seriesImage;
+	/** @noinspection PhpUnused */
 	public $libraryWebsiteImage;
 	/** @noinspection PhpUnused */
 	public $historyArchivesImage;
@@ -1449,6 +1451,16 @@ class Theme extends DataObject {
 						'type' => 'image',
 						'label' => 'Lists (400x400px max)',
 						'description' => 'An image for list results in Explore More',
+						'required' => false,
+						'maxWidth' => 400,
+						'maxHeight' => 400,
+						'hideInLists' => true,
+					],
+					'seriesImage' => [
+						'property' => 'seriesImage',
+						'type' => 'image',
+						'label' => 'Series (400x400px max)',
+						'description' => 'An image for series results in Explore More',
 						'required' => false,
 						'maxWidth' => 400,
 						'maxHeight' => 400,
