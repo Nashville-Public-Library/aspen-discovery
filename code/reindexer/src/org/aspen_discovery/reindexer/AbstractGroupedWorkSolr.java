@@ -1154,18 +1154,25 @@ public abstract class AbstractGroupedWorkSolr {
 
 	protected Set<String> getRatingFacet(Float rating) {
 		Set<String> ratingFacet = new HashSet<>();
-		if (rating >= 4.9) {
-			ratingFacet.add("fiveStar");
-		} else if (rating >= 4) {
-			ratingFacet.add("fourStar");
-		} else if (rating >= 3) {
-			ratingFacet.add("threeStar");
-		} else if (rating >= 2) {
-			ratingFacet.add("twoStar");
-		} else if (rating >= 0.0001) {
-			ratingFacet.add("oneStar");
-		} else {
+		// Default or near-zero ratings (e.g., -1f) are treated as unrated; use 0.0001 as epsilon for float precision.
+		if (rating < 0.0001) {
 			ratingFacet.add("Unrated");
+		} else {
+			// Always include oneStar for any positive rating.
+			ratingFacet.add("oneStar");
+			if (rating >= 2) {
+				ratingFacet.add("twoStar");
+			}
+			if (rating >= 3) {
+				ratingFacet.add("threeStar");
+			}
+			if (rating >= 4) {
+				ratingFacet.add("fourStar");
+			}
+			// Include fiveStar for ratings >= 4.9 to capture values approaching the top of the 5-star scale.
+			if (rating >= 4.9) {
+				ratingFacet.add("fiveStar");
+			}
 		}
 		return ratingFacet;
 	}

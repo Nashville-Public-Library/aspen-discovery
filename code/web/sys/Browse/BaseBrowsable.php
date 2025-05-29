@@ -21,7 +21,7 @@ abstract class BaseBrowsable extends DataObject {
 		} elseif ($this->defaultSort == 'title') {
 			return 'title,author';
 		} elseif ($this->defaultSort == 'user_rating') {
-			return 'rating desc,title';
+			return 'rating asc,title';
 		} elseif ($this->defaultSort == 'holds') {
 			return 'total_holds desc';
 		} elseif ($this->defaultSort == 'publication_year_desc') {
