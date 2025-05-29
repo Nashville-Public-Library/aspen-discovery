@@ -310,7 +310,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			$this->lastSearchResults['response']['talpa_result_count'] = 0;
 			$this->lastSearchResults['response']['global_count'] = 0;
 			$resultsList = $recordData['response']['resultlist'];
-
+//var_dump($resultsList);
 			$this->startRecordFetchTimer();
 			$inLibraryResults = array();
 			$allGroupedWorks = explode(',',$recordData['response']['all_grouped_workidA'] );
@@ -324,7 +324,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				}
 			}
 
-//var_dump(array_keys($inLibraryResults));
 			for ($x = 0; $x < count($resultsList); $x++) {
 				$current = &$resultsList[$x];
 
@@ -342,7 +341,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 							$this->lastSearchResults['response']['resultlist'][$x]['groupedWork'] = $inLibraryResults[$groupedWorkId];
 							$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 1;
 							$this->lastSearchResults['response']['resultlist'][$x]['groupedWorkID'] = $groupedWorkId;
-
 							//add solr data into recordData
 							$_recordData = $GroupedWorksSolrConnector2->getRecord($groupedWorkId, $this->getFieldsToReturn());
 							$this->lastSearchResults['response']['resultlist'][$x]['solrRecord'] = $_recordData;
@@ -370,6 +368,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 //				$this->resultsTotal = count($resultsList);
 			}
 			$this->stopRecordFetchTimer();
+
 			return $recordData;
 		}
 		return false;
@@ -510,6 +509,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				$resultlist = [];
 			}
 			$this->lastSearchResults['response']['global_count']++;
+
 			for ($x = 0; $x < count($resultlist); $x++) {
 				$current = &$resultlist[$x];
 				$interface->assign('recordIndex', $x + 1);
@@ -1111,11 +1111,14 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		foreach ($headers as $key =>$value) {
 			$modified_headers[] = $key.": ".$value;
 		}
+		global $activeLanguage;;
+
 		$params = array(
 			'search' => $queryString,
 			'token' => $headers['token'],
 			'limit' => $this ->getLimit(),
-			'aspen'=> 1
+			'aspen'=> 1,
+			'lang_code' => $activeLanguage->code,
 		);
 		if($queryId) {
 			$params['query_id'] = $queryId;
