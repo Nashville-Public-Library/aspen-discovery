@@ -29,7 +29,7 @@
 						</td>
 					{/if}
 					{foreach from=$property.structure item=subProperty}
-						{if in_array($subProperty.type, array('text', 'regularExpression', 'enum', 'date', 'time', 'checkbox', 'integer', 'textarea', 'html', 'dynamic_label', 'multiSelect'))  && empty($subProperty.hideInLists)}
+						{if ((in_array($subProperty.type, array('text', 'regularExpression', 'enum', 'date', 'time', 'checkbox', 'integer', 'textarea', 'html', 'dynamic_label')) || ($subProperty.type == 'multiSelect' && $subProperty.listStyle != 'checkboxList')) && empty($subProperty.hideInLists))}
 							<td class="oneToManyCell" {if !empty($subProperty.relatedIls)}data-related-ils="~{implode subject=$subProperty.relatedIls glue='~'}~"{/if}>
 								{assign var=subPropName value=$subProperty.property}
 								{assign var=subPropValue value=$subObject->$subPropName}
