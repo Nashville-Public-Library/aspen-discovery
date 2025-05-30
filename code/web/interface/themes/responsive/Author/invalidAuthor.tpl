@@ -1,5 +1,19 @@
 <h1>{translate text='Invalid Author' isPublicFacing=true}</h1>
 
+{if !empty($solrSearchDebug)}
+	<div id="solrSearchOptionsToggle" onclick="$('#solrSearchOptions').toggle()">{translate text="Show Search Options" isAdminFacing=true}</div>
+	<div id="solrSearchOptions" style="display:none">
+		<pre>{translate text="Search options" isPublicFacing=true} {$solrSearchDebug}</pre>
+	</div>
+{/if}
+
+{if !empty($solrLinkDebug)}
+	<div id='solrLinkToggle' onclick='$("#solrLink").toggle()'>{translate text="Show Solr Link" isAdminFacing=true}</div>
+	<div id='solrLink' style='display:none'>
+		<pre>{$solrLinkDebug}</pre>
+	</div>
+{/if}
+
 {if !empty($authorName)}
 	<p class="alert alert-warning">{translate text='Sorry, we could not find the author <strong>%1%</strong> in our catalog. Please try your search again.' 1=$authorName isPublicFacing=true}</p>
 {else}

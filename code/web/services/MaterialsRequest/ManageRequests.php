@@ -252,6 +252,18 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 				}
 				$interface->assign('assignees', $assignees);
 			}
+
+			$updateMessage = '';
+			$updateMessageIsError = false;
+			if (!empty($user->updateMessage)) {
+				$updateMessage = $user->updateMessage;
+				$updateMessageIsError = $user->updateMessageIsError;
+				$user->updateMessage = '';
+				$user->updateMessageIsError = 0;
+				$user->update();
+			}
+			$interface->assign('updateMessage', $updateMessage);
+			$interface->assign('updateMessageIsError', $updateMessageIsError);
 		} else {
 			$interface->assign('error', "You must be logged in to manage requests.");
 		}
