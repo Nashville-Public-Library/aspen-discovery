@@ -1211,18 +1211,18 @@ abstract class ObjectEditor extends Admin_Admin {
 				}
 			} elseif ($filter['filterType'] == 'beforeTime') {
 				$filterTime = strtotime($filter['filterValue2']);
-				if ($compareValue !== false && $filterTime !== false && $compareValue < $filterTime) {
+				if ($filterTime !== false && $compareValue < $filterTime) {
 					$matchings[] = $targetObject->{$options['targetField']};
 				}
 			} elseif ($filter['filterType'] == 'afterTime') {
 				$filterTime = strtotime($filter['filterValue']);
-				if ($compareValue !== false && $filterTime !== false && $compareValue > $filterTime) {
+				if ($filterTime !== false && $compareValue > $filterTime) {
 					$matchings[] = $targetObject->{$options['targetField']};
 				}
 			} elseif ($filter['filterType'] == 'betweenTimes') {
 				$startTime = strtotime($filter['filterValue']);
 				$endTime = strtotime($filter['filterValue2']);
-				if ($compareValue !== false && $startTime !== false && $endTime !== false && $compareValue >= $startTime && $compareValue <= $endTime) {
+				if ($startTime !== false && $endTime !== false && $compareValue >= $startTime && $compareValue <= $endTime) {
 					$matchings[] = $targetObject->{$options['targetField']};
 				}
 			}
