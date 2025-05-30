@@ -182,7 +182,6 @@ class TalpaRecordDriver extends RecordInterface {
 		else{ //Not a library result
 			$interface->assign('summId', $this->record['work_id']);
 			$this->isn = $this->record['isbns'][0];
-//			$interface->assign('summUrl', 'https://www.librarything.com/work/'.$this->record['work_id']);
 			$interface->assign('summTitle', $this->record['title']);
 			$interface->assign('bookCoverUrlMedium',$this->getBookcoverUrl());
 			$interface->assign('summAuthor', $this->record['author']);

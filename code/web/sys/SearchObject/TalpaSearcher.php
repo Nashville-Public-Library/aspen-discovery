@@ -337,32 +337,38 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 						$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
 						if ($groupedWorkDriver->isValid()) {
-							//add the groupedWork data into the recordData
-							$this->lastSearchResults['response']['resultlist'][$x]['groupedWork'] = $inLibraryResults[$groupedWorkId];
-							$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 1;
-							$this->lastSearchResults['response']['resultlist'][$x]['groupedWorkID'] = $groupedWorkId;
-							//add solr data into recordData
-							$_recordData = $GroupedWorksSolrConnector2->getRecord($groupedWorkId, $this->getFieldsToReturn());
-							$this->lastSearchResults['response']['resultlist'][$x]['solrRecord'] = $_recordData;
+							$relatedManifestations = $groupedWorkDriver->getRelatedManifestations();
+							if(!empty($relatedManifestations)) {
+								//add the groupedWork data into the recordData
+								$this->lastSearchResults['response']['resultlist'][$x]['groupedWork'] = $inLibraryResults[$groupedWorkId];
+								$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 1;
+								$this->lastSearchResults['response']['resultlist'][$x]['groupedWorkID'] = $groupedWorkId;
+								//add solr data into recordData
+								$_recordData = $GroupedWorksSolrConnector2->getRecord($groupedWorkId, $this->getFieldsToReturn());
+								$this->lastSearchResults['response']['resultlist'][$x]['solrRecord'] = $_recordData;
 
-							//get count of in-library records
-							$this->lastSearchResults['response']['global_count']++;
-							$this->resultsTotal++;
-							$foundLibraryResult = true;
-							break;
+								//get count of in-library records
+								$this->lastSearchResults['response']['global_count']++;
+								$this->resultsTotal++;
+								$foundLibraryResult = true;
+								break;
+							}
 						}
 					}
 				}
 				if(!$foundLibraryResult) {
 
 					$bibInfo = $record->getRecord();
-					$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 0;
-					$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
-					$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
-					$this->lastSearchResults['response']['resultlist'][$x]['author'] = $bibInfo['author'];
-					$this->lastSearchResults['response']['resultlist'][$x]['pubYear'] = $bibInfo['date'];
-					$this->lastSearchResults['response']['talpa_result_count']++;
-					$this->resultsTotal++;
+					if(!empty($bibInfo['isbns'])) {
+						$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 0;
+						$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
+						$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
+						$this->lastSearchResults['response']['resultlist'][$x]['author'] = $bibInfo['author'];
+						$this->lastSearchResults['response']['resultlist'][$x]['pubYear'] = $bibInfo['date'];
+						$this->lastSearchResults['response']['talpa_result_count']++;
+						$this->resultsTotal++;
+					}
+
 				}
 
 //				$this->resultsTotal = count($resultsList);
@@ -477,6 +483,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			}
 
 			$_resultList = $this->lastSearchResults['response']['resultlist'];
+//			var_dump($_resultList); //TODO LAUREN why is Money management still showing up
 			//used in getSearchResult() to generate item url to return to talpa search results page
 			$interface->assign('searchSource', 'talpa');
 
