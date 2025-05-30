@@ -42,8 +42,7 @@ class MyAccount_CurbsidePickups extends MyAccount {
 
 					// If now is before scheduled time and within the allowed window,
 					// OR if now is after scheduled time.
-					if (($scheduledTime > $now && $minutes <= $allowedTime) ||
-						($scheduledTime < $now)) {
+					if (($scheduledTime > $now && $minutes <= $allowedTime) || ($scheduledTime < $now)) {
 						$pickup['withinTime'] = true;
 					} else {
 						$pickup['withinTime'] = false;
