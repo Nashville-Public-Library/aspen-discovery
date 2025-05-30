@@ -2097,6 +2097,10 @@ class SearchAPI extends AbstractAPI {
 							if ($list->find(true)) {
 								$listEntry = new UserListEntry();
 								$listEntry->listId = $list->id;
+								$sortOptions = UserList::getSortOptions();
+								if (array_key_exists($list->defaultSort, $sortOptions)) {
+									$listEntry->orderBy($sortOptions[$list->defaultSort]);
+								}
 								if ($appVersion && $appVersion < 24.03) {
 									$listEntry->whereAdd("source <> 'Events'");
 								}

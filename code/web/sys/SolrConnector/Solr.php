@@ -656,14 +656,11 @@ abstract class Solr {
 				$cleanedQuery = str_replace('“', '"', $cleanedQuery);
 				$cleanedQuery = str_replace('”', '"', $cleanedQuery);
 				// Fix for date ranges
-				$cleanedQuery = preg_replace("/([0-9a-zA-Z])([-])([0-9a-zA-Z])/", "$1 $3", $cleanedQuery);
+				//This is no longer needed because the - is escaped later
+				//$cleanedQuery = preg_replace("/([0-9a-zA-Z])([-])([0-9a-zA-Z])/", "$1 $3", $cleanedQuery);
 				// Fix for ordinal numbers
 				$cleanedQuery = preg_replace("/([0-9])(st|nd|rd|th)/", "$1 $2", $cleanedQuery);
-				$cleanedQuery = str_replace('-', '\-', $cleanedQuery);
-				$cleanedQuery = str_replace('–', '\-\-', $cleanedQuery);
-				$cleanedQuery = str_replace('+', '\+', $cleanedQuery);
-				$cleanedQuery = str_replace('?', '\?', $cleanedQuery);
-				$cleanedQuery = str_replace('/', '\/', $cleanedQuery);
+				$cleanedQuery = preg_replace('%([-+!(){}\][^~?/\\\\])%', '\\\\$1', $cleanedQuery);
 			} else {
 				$cleanedQuery = $lookfor;
 			}
@@ -736,10 +733,7 @@ abstract class Solr {
 			// tokenization).	We'll just set all possible values to the same thing,
 			// except that we'll try to do the "one phrase" in quotes if possible.
 			$cleanedQuery = str_replace('“', '"', $lookfor);
-			$cleanedQuery = str_replace('”', '"', $cleanedQuery);
-            $cleanedQuery = str_replace('+', '\+', $cleanedQuery);
-            $cleanedQuery = str_replace('?', '\?', $cleanedQuery);
-			$cleanedQuery = str_replace('/', '\/', $cleanedQuery);
+			$cleanedQuery = preg_replace('%([-+!(){}\][^~&?/\\\\])%', '\\\\$1', $cleanedQuery);
             // Fix for ordinal numbers
             $cleanedQuery = preg_replace("/([0-9])([a-zA-Z])/", "$1 $2", $cleanedQuery);
 			if (strlen($cleanedQuery) > 0 && $cleanedQuery[0] == '(') {
