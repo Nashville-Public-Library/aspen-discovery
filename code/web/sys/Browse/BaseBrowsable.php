@@ -9,7 +9,7 @@ abstract class BaseBrowsable extends DataObject {
 	public $sourceCourseReserveId;
 	public $defaultSort;
 
-	public function getSolrSort() {
+	public function getSolrSort(): string {
 		if ($this->defaultSort == 'relevance') {
 			return 'relevance';
 		} elseif ($this->defaultSort == 'popularity') {
@@ -17,11 +17,14 @@ abstract class BaseBrowsable extends DataObject {
 		} elseif ($this->defaultSort == 'newest_to_oldest') {
 			return 'days_since_added asc';
 		} elseif ($this->defaultSort == 'author') {
-			return 'author,title';
+			return 'author';
 		} elseif ($this->defaultSort == 'title') {
-			return 'title,author';
+			return 'title';
 		} elseif ($this->defaultSort == 'user_rating') {
-			return 'rating asc,title';
+			// Although it would be best for this to be "rating asc" (i.e., low to high) for when
+			// users select a rating facet, this logic is also used for sorting titles in browse
+			// categories, where it is most intuitive for the ratings to be from high to low.
+			return 'rating desc';
 		} elseif ($this->defaultSort == 'holds') {
 			return 'total_holds desc';
 		} elseif ($this->defaultSort == 'publication_year_desc') {
@@ -38,7 +41,7 @@ abstract class BaseBrowsable extends DataObject {
 	 *
 	 * @return boolean
 	 */
-	public function updateFromSearch($searchObj) {
+	public function updateFromSearch(SearchObject_SolrSearcher $searchObj): bool {
 		$this->source = $searchObj->getEngineName();
 		//Search terms
 		$searchTerms = $searchObj->getSearchTerms();
@@ -77,15 +80,18 @@ abstract class BaseBrowsable extends DataObject {
 			$this->defaultSort = 'relevance';
 		} elseif ($solrSort == 'popularity desc') {
 			$this->defaultSort = 'popularity';
-		} elseif ($solrSort == 'days_since_added asc' || $solrSort == 'year desc,title asc') {
+		} elseif ($solrSort == 'days_since_added asc') {
 			$this->defaultSort = 'newest_to_oldest';
 		} elseif ($solrSort == 'days_since_added desc') {
 			$this->defaultSort = 'oldest_to_newest';
-		} elseif ($solrSort == 'author,title') {
+		} elseif ($solrSort == 'author') {
 			$this->defaultSort = 'author';
-		} elseif ($solrSort == 'title,author') {
+		} elseif ($solrSort == 'title') {
 			$this->defaultSort = 'title';
-		} elseif ($solrSort == 'rating desc,title') {
+		} elseif ($solrSort == 'rating desc' || $solrSort == 'rating asc') {
+			// Although it is counter intuitive that choosing "User Rating (Ascending)" defaults
+			// to a descending sort, the user expects a rating sort regardless, and most users
+			// probably want highest-rated items first anyway, mainly for browse categories.
 			$this->defaultSort = 'user_rating';
 		} elseif ($solrSort == 'year desc,title asc') {
 			$this->defaultSort = 'publication_year_desc';
