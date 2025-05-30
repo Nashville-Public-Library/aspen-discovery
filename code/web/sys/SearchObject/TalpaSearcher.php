@@ -1059,7 +1059,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 					'errors' => array(
 						array(
 							'code' => 'PHP-Internal',
-							'message' => 'Cannot decode JSON response: ' . $input.' '.$textQuery
+							'message' => 'Cannot decode JSON response.'
 						)
 					)
 				);
