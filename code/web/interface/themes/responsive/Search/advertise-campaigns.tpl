@@ -17,26 +17,30 @@
 									<span style="font-weight: bold;">{$milestone->name}</span>
 									<div style="display: flex; flex-direction: column; align-items: center;">
 										<span>{$milestone->rewardName}</span><br/>
-										{if $milestone->rewardExists && $milestone->rewardType ==1}
-											<img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
+										{if $milestone->rewardExists}
+											<img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
 										{/if}
+										<p>{$milestone->rewardDescription}</p>
 									</div>
 								</li>
 							{/foreach}
 							</ul>
 						</div>
-						<div style="display: flex; justify-content: space-between; align-items: center;">
-							<span style="font-weight: bold">{translate text="Campaign Reward: " isPublicFacing=true}</span>
-							<div>
-								<span>{$campaignRewardName}</span><br/>
-								{if $campaignRewardType == 1 && $campaignRewardExists}
-									<img src="{$campaignRewardImage}" alt="{$campaignRewardName}" style="max-width:100px; max-height:100px;" />
-								{/if}
+						<div class="col-12">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
+								<span style="font-weight: bold">{translate text="Campaign Reward: " isPublicFacing=true}</span>
+								<div style="display: flex; flex-direction: column; align-items: center;">
+									<span>{$campaignRewardName}</span><br/>
+									{if $campaignRewardExists}
+										<img src="{$campaignRewardImage}" alt="{$campaignRewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+									{/if}
+									<p>{$campaignRewardDescription}</p>
+								</div>
 							</div>
 						</div>
 					</div>
 				{/if}
-			<div>
+			</div>
 		</div>
 	</div>
 {/strip}
