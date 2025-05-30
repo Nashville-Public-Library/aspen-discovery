@@ -1160,6 +1160,84 @@ abstract class ObjectEditor extends Admin_Admin {
 		}
 	}
 
+	protected function applySpecialFilter($object, $fieldName, $filter, $filterOptions = []) {
+		$defaults = [
+			'sourceTable' => '',
+			'sourceField' => '',
+			'targetClass' => '',
+			'targetField' => '',
+			'getCompareValueMethod' => '',
+			'compareFormat' => 'default',
+		];
+		$options = array_merge($defaults, $filterOptions);
+
+		$matchings = [];
+
+		if (($filter['filterType'] == 'matches' && $filter['filterValue'] == '')) {
+			$object->whereAdd("{$options['sourceField']} IS NULL");
+			return;
+		}
+
+		if (($filter['filterType'] === 'beforeTime' || $filter['filterType'] === 'afterTime' || $filter['filterType'] === 'betweenTimes') && empty($filter['filterValue']) && empty($filter['filterValue2'])) {
+			return;
+		}
+
+		$targetObject = new $options['targetClass']();
+		$targetObject->whereAdd("{$options['targetField']} IN (SELECT DISTINCT {$options['sourceField']} FROM {$options['sourceTable']} WHERE {$options['sourceField']} IS NOT NULL)");
+		$targetObject->find();
+
+		while ($targetObject->fetch()) {
+			if ($options['compareFormat'] == 'nameWithBarcode') {
+				$compareValue = $targetObject->{$options['getCompareValueMethod']}() . ' (' . $targetObject->getBarcode() . ')';
+			} elseif ($options['compareFormat'] == 'property') {
+				$compareValue = $targetObject->{$options['getCompareValueMethod']};
+			} elseif ($options['compareFormat'] == 'boolean') {
+				$compareValue = $targetObject->{$options['getCompareValueMethod']} ? 'true' : 'false';
+			} else {
+				$compareValue = $targetObject->{$options['getCompareValueMethod']}();
+			}
+
+			if ($filter['filterType'] == 'matches') {
+				if (strcasecmp($compareValue, $filter['filterValue']) == 0) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'contains') {
+				if (stripos($compareValue, $filter['filterValue']) !== false) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'startsWith') {
+				if (stripos($compareValue, $filter['filterValue']) === 0) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'beforeTime') {
+				$filterTime = strtotime($filter['filterValue2']);
+				if ($compareValue !== false && $filterTime !== false && $compareValue < $filterTime) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'afterTime') {
+				$filterTime = strtotime($filter['filterValue']);
+				if ($compareValue !== false && $filterTime !== false && $compareValue > $filterTime) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'betweenTimes') {
+				$startTime = strtotime($filter['filterValue']);
+				$endTime = strtotime($filter['filterValue2']);
+				if ($compareValue !== false && $startTime !== false && $endTime !== false && $compareValue >= $startTime && $compareValue <= $endTime) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			}
+		}
+
+		if (empty($matchings)) {
+				$object->whereAdd("{$options['sourceField']} = ''");
+		} else {
+			$escapedValues = array_map(function($value) {
+				return "'" . addslashes($value) . "'";
+			}, $matchings);
+			$object->whereAdd("{$options['sourceField']} IN (" . implode(',', $escapedValues) . ")");
+		}
+	}
+
 	private function addFieldToBatchUpdateFieldsArray(&$batchFormatFields, $field) {
 		if ($field['type'] == 'section') {
 			foreach ($field['properties'] as $subFieldName => $subField) {
