@@ -313,7 +313,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 //var_dump($resultsList);
 			$this->startRecordFetchTimer();
 			$inLibraryResults = array();
-			$allGroupedWorks = explode(',',$recordData['response']['all_grouped_workidA'] );
+			$allGroupedWorks = explode(',',$recordData['response']['aspen']['all_grouped_workidA'] );
 			$allGroupedWorks_chunked = array_chunk($allGroupedWorks,20, true);
 			foreach ($allGroupedWorks_chunked as $chunk) {
 				$foundGroupedWorks = $GroupedWorksSolrConnector2->searchForRecordIds($chunk);
@@ -331,6 +331,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				$record = new TalpaRecordDriver($current);
 
 				$groupedWorkIds = $current['groupedworkidA'];
+				var_dump($groupedWorkIds);
 				$foundLibraryResult = false;
 				foreach ($groupedWorkIds  as $groupedWorkId) {
 					if ($inLibraryResults[$groupedWorkId]) {
