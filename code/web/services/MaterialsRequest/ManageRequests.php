@@ -4,6 +4,7 @@ require_once ROOT_DIR . '/Action.php';
 require_once(ROOT_DIR . '/services/Admin/Admin.php');
 require_once(ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequest.php');
 require_once(ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequestStatus.php');
+require_once(ROOT_DIR . '/sys/Administration/StickyFilter.php');
 
 class MaterialsRequest_ManageRequests extends Admin_Admin {
 
@@ -26,6 +27,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 
 		$availableStatuses = [];
 		$defaultStatusesToShow = [];
+		$statusesToShow = [];
 		while ($materialsRequestStatus->fetch()) {
 			$availableStatuses[$materialsRequestStatus->id] = $materialsRequestStatus->description;
 			if ($materialsRequestStatus->isOpen == 1 || $materialsRequestStatus->isActive == 1 || $materialsRequestStatus->isDefault == 1) {
@@ -36,10 +38,36 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 
 		if (isset($_REQUEST['statusFilter'])) {
 			$statusesToShow = $_REQUEST['statusFilter'];
-			$_SESSION['materialsRequestStatusFilter'] = $statusesToShow;
-		} elseif (isset($_SESSION['materialsRequestStatusFilter'])) {
-			$statusesToShow = $_SESSION['materialsRequestStatusFilter'];
-		} else {
+			//add filters that have been checked to default filters table for sticky filters
+			foreach ($statusesToShow as $status) {
+				$stickyFilter = new StickyFilter;
+				$stickyFilter->userId = $user->id;
+				$stickyFilter->filterValue = $status;
+				$stickyFilter->filterFor = "MaterialsRequest_Status";
+				if (!$stickyFilter->find(true)) {
+					$stickyFilter->insert();
+				}
+			}
+			//remove filters that have been unchecked
+			$stickyFilterDeletions = new StickyFilter;
+			$stickyFilterDeletions->userId = $user->id;
+			$stickyFilterDeletions->filterFor = "MaterialsRequest_Status";
+			$stickyFilterDeletions->find();
+			while ($stickyFilterDeletions->fetch()) {
+				if (!in_array($stickyFilterDeletions->filterValue, $statusesToShow)) {
+					$stickyFilterDeletions->delete();
+				}
+			}
+		}
+		//check for sticky filter values saved for admin account
+		$adminStickyFilter = new StickyFilter;
+		$adminStickyFilter->userId = $user->id;
+		$adminStickyFilter->filterFor = "MaterialsRequest_Status";
+		if ($adminStickyFilter->find()) {
+			while ($adminStickyFilter->fetch()) {
+				$statusesToShow[] = $adminStickyFilter->filterValue;
+			}
+		} else { //if there are no set or saved filters use default
 			$statusesToShow = $defaultStatusesToShow;
 		}
 		$interface->assign('statusFilter', $statusesToShow);
@@ -47,6 +75,35 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 		$assigneesToShow = [];
 		if (isset($_REQUEST['assigneesFilter'])) {
 			$assigneesToShow = $_REQUEST['assigneesFilter'];
+			//add filters that have been checked to default filters table for sticky filters
+			foreach ($assigneesToShow as $assignee) {
+				$stickyFilter = new StickyFilter;
+				$stickyFilter->userId = $user->id;
+				$stickyFilter->filterValue = $assignee;
+				$stickyFilter->filterFor = "MaterialsRequest_Assignee";
+				if (!$stickyFilter->find(true)) {
+					$stickyFilter->insert();
+				}
+			}
+			//remove filters that have been unchecked
+			$stickyFilterDeletions = new StickyFilter;
+			$stickyFilterDeletions->userId = $user->id;
+			$stickyFilterDeletions->filterFor = "MaterialsRequest_Assignee";
+			$stickyFilterDeletions->find();
+			while ($stickyFilterDeletions->fetch()) {
+				if (!in_array($stickyFilterDeletions->filterValue, $assigneesToShow)) {
+					$stickyFilterDeletions->delete();
+				}
+			}
+		}
+		//check for sticky filter values saved for admin account
+		$adminStickyFilter = new StickyFilter;
+		$adminStickyFilter->userId = $user->id;
+		$adminStickyFilter->filterFor = "MaterialsRequest_Assignee";
+		if ($adminStickyFilter->find()) {
+			while ($adminStickyFilter->fetch()) {
+				$assigneesToShow[] = $adminStickyFilter->filterValue;
+			}
 		}
 		$interface->assign('assigneesFilter', $assigneesToShow);
 		$showUnassigned = !empty($_REQUEST['showUnassigned']) && $_REQUEST['showUnassigned'] == 'on';
