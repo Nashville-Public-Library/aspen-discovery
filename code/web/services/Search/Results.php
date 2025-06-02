@@ -16,6 +16,8 @@ class Search_Results extends ResultsAction {
 		global $aspenUsage;
 		$aspenUsage->groupedWorkSearches++;
 
+		$this->validateAndProcessSearchParameters();
+
 		/** @var string $searchSource */
 		$searchSource = !empty($_REQUEST['searchSource']) ? $_REQUEST['searchSource'] : 'local';
 
@@ -798,6 +800,52 @@ class Search_Results extends ResultsAction {
 			$availableLabel,
 			$availableOnlineLabel,
 		];
+	}
+
+	/**
+	 * Validates and processes search parameters, including handling field prefixes
+	 * and validating searchIndex values against whitelist.
+	 */
+	private function validateAndProcessSearchParameters(): void {
+		// Handle field prefixes in the lookfor parameter (e.g., ISBN:97812345...).
+		if (isset($_REQUEST['lookfor']) && !isset($_REQUEST['searchIndex'])) {
+			$lookforRaw = $_REQUEST['lookfor'];
+			if (preg_match('/^(\w+)\s*:(.+)$/', $lookforRaw, $matches)) {
+				$rawPrefix = $matches[1];
+				$restTerm = trim($matches[2]);
+
+				require_once ROOT_DIR . '/sys/SearchObject/SearchObjectFactory.php';
+				$tmpSearchObj = SearchObjectFactory::initSearchObject();
+				$validIndexes = $tmpSearchObj->getSearchIndexes();
+
+				// Check if the prefix matches any valid search index (case-insensitive).
+				foreach (array_keys($validIndexes) as $idxKey) {
+					if (strcasecmp($idxKey, $rawPrefix) === 0) {
+						$_REQUEST['searchIndex'] = $idxKey;
+						$_GET['searchIndex'] = $idxKey;
+						$_REQUEST['lookfor'] = $restTerm;
+						$_GET['lookfor'] = $restTerm;
+						break;
+					}
+				}
+			}
+		}
+
+		// Validate searchIndex parameter to prevent invalid or malicious index values.
+		if (isset($_REQUEST['searchIndex'])) {
+			if (!isset($tmpSearchObj)) {
+				require_once ROOT_DIR . '/sys/SearchObject/SearchObjectFactory.php';
+				$tmpSearchObj = SearchObjectFactory::initSearchObject();
+			}
+			if (!isset($validIndexes)) {
+				$validIndexes = $tmpSearchObj->getSearchIndexes();
+			}
+
+			if (!array_key_exists($_REQUEST['searchIndex'], $validIndexes)) {
+				header("Location: /Error/Handle404");
+				exit();
+			}
+		}
 	}
 
 }

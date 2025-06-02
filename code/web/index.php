@@ -1384,6 +1384,17 @@ function initializeSession() {
 
 //Look for spammy searches and kill them
 function isSpammySearchTerm($lookfor): bool {
+	// URL‑decode recursively to defeat double/triple encodings.
+	$decoded = $lookfor;
+	for ($i = 0; $i < 3; $i++) {
+		$tmp = urldecode($decoded);
+		if ($tmp === $decoded) {
+			break;
+		}
+		$decoded = $tmp;
+	}
+	$lookfor = $decoded;
+
 	if (strpos($lookfor, 'DBMS_PIPE.RECEIVE_MESSAGE') !== false) {
 		return true;
 	} elseif (strpos($lookfor, 'PG_SLEEP') !== false) {
@@ -1419,6 +1430,15 @@ function isSpammySearchTerm($lookfor): bool {
 	} elseif (strpos($lookfor, 'response.write') !== false) {
 		return true;
 	}
+
+	// Minimal directory‑traversal guards
+	if (str_contains($lookfor, '../') || str_contains($lookfor, '..\\')) {
+		return true;
+	}
+	if (str_contains($lookfor, '/etc/passwd') || str_contains($lookfor, 'boot.ini')) {
+		return true;
+	}
+
 	$termWithoutTags = strip_tags($lookfor);
 	if ($termWithoutTags != $lookfor) {
 		return true;
