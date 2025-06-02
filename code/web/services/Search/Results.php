@@ -807,7 +807,7 @@ class Search_Results extends ResultsAction {
 	 * and validating searchIndex values against whitelist.
 	 */
 	private function validateAndProcessSearchParameters(): void {
-		// Handle field prefixes in the lookfor parameter (e.g., ISBN:97812345...).
+		// Handle field prefixes in the 'lookfor' parameter (e.g., ISBN:97812345...).
 		if (isset($_REQUEST['lookfor']) && !isset($_REQUEST['searchIndex'])) {
 			$lookforRaw = $_REQUEST['lookfor'];
 			if (preg_match('/^(\w+)\s*:(.+)$/', $lookforRaw, $matches)) {
@@ -831,7 +831,7 @@ class Search_Results extends ResultsAction {
 			}
 		}
 
-		// Validate searchIndex parameter to prevent invalid or malicious index values.
+		// Validate 'searchIndex' parameter to prevent invalid or malicious index values.
 		if (isset($_REQUEST['searchIndex'])) {
 			if (!isset($tmpSearchObj)) {
 				require_once ROOT_DIR . '/sys/SearchObject/SearchObjectFactory.php';
