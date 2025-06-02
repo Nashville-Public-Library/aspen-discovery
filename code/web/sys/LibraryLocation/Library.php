@@ -243,6 +243,7 @@ class Library extends DataObject {
 	public $restrictOwningBranchesAndSystems;
 	public $allowNameUpdates;
 	public $setUsePreferredNameInIlsOnUpdate;
+	public $replaceAllFirstNameWithPreferredName;
 	public $allowDateOfBirthUpdates;
 	public $allowPatronAddressUpdates;
 	public $cityStateField;
@@ -1649,11 +1650,13 @@ class Library extends DataObject {
 									'firstinitial_lastname' => 'First Initial. Last Name',
 									'lastinitial_firstname' => 'First Name Last Initial.',
 									'firstinitial_middleinitial_lastname' => 'First Initial. Middle Initial. Last Name',
-									'firstname_middleinitial_lastinitial' => 'First Name Middle Initial. Last Initial.'
+									'firstname_middleinitial_lastinitial' => 'First Name Middle Initial. Last Initial.',
+									'preferredname_lastinitial' => 'Preferred Name Last Initial.'
 								],
 								'label' => 'Patron Display Name Style',
 								'description' => 'How to generate the patron display name',
 								'permissions' => ['Library ILS Options'],
+								'note' => 'Preferred Name Last Initial currently applies to Koha only',
 							],
 							'allowProfileUpdates' => [
 								'property' => 'allowProfileUpdates',
@@ -1704,6 +1707,17 @@ class Library extends DataObject {
 								'note' => 'Applies to Symphony Only',
 								'hideInLists' => true,
 								'default' => 1,
+								'readOnly' => false,
+								'permissions' => ['Library ILS Connection'],
+							],
+							'replaceAllFirstNameWithPreferredName' => [
+								'property' => 'replaceAllFirstNameWithPreferredName',
+								'type' => 'checkbox',
+								'label' => 'Use Preferred Name In Place of First Name',
+								'description' => 'Applies to Koha Only, Verions 24.11 onwards. Use the user\'s preferred name from their ILS in place of their first name in all instances where their first name would be used e.g. email templates',
+								'note' => 'Applies to Koha Only, Verions 24.11 onwards',
+								'hideInLists' => true,
+								'default' => 0,
 								'readOnly' => false,
 								'permissions' => ['Library ILS Connection'],
 							],
@@ -5267,11 +5281,20 @@ class Library extends DataObject {
 		return '/Admin/Libraries?objectAction=edit&id=' . $this->libraryId;
 	}
 
+	private static $_filteredList = null;
+	private static $_fullList = null;
 	/**
 	 * @param boolean $restrictByHomeLibrary whether only the patron's home library should be returned
 	 * @return array
 	 */
 	static function getLibraryList(bool $restrictByHomeLibrary, $accountProfileId = -1): array {
+		if ($accountProfileId == -1) {
+			if ($restrictByHomeLibrary && !is_null(Library::$_filteredList)) {
+				return Library::$_filteredList;
+			}elseif (!is_null(Library::$_fullList)){
+				return Library::$_fullList;
+			}
+		}
 		$library = new Library();
 		$library->orderBy('displayName');
 		if ($accountProfileId != -1) {
@@ -5301,6 +5324,13 @@ class Library extends DataObject {
 		$libraryList = [];
 		while ($library->fetch()) {
 			$libraryList[$library->libraryId] = $library->displayName;
+		}
+		if ($accountProfileId == -1) {
+			if ($restrictByHomeLibrary) {
+				return Library::$_filteredList = $libraryList;
+			}else{
+				return Library::$_fullList = $libraryList;
+			}
 		}
 		return $libraryList;
 	}

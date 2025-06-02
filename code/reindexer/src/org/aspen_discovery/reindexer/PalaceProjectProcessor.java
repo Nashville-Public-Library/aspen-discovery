@@ -154,6 +154,7 @@ public class PalaceProjectProcessor {
 					String threeLetterLanguage = indexer.translateSystemValue("two_to_three_character_language_codes", languageCode, identifier);
 					String language = indexer.translateSystemValue("language", threeLetterLanguage, identifier);
 					palaceProjectRecord.setPrimaryLanguage(language);
+					groupedWork.addLanguage(language);
 					if (language.equalsIgnoreCase("English")){
 						groupedWork.setLanguageBoost(10L);
 					}else if (language.equalsIgnoreCase("Spanish")){

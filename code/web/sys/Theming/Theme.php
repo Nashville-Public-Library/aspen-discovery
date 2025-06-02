@@ -45,6 +45,8 @@ class Theme extends DataObject {
 	/** @noinspection PhpUnused */
 	public $listsImage;
 	/** @noinspection PhpUnused */
+	public $seriesImage;
+	/** @noinspection PhpUnused */
 	public $libraryWebsiteImage;
 	/** @noinspection PhpUnused */
 	public $historyArchivesImage;
@@ -1454,6 +1456,16 @@ class Theme extends DataObject {
 						'maxHeight' => 400,
 						'hideInLists' => true,
 					],
+					'seriesImage' => [
+						'property' => 'seriesImage',
+						'type' => 'image',
+						'label' => 'Series (400x400px max)',
+						'description' => 'An image for series results in Explore More',
+						'required' => false,
+						'maxWidth' => 400,
+						'maxHeight' => 400,
+						'hideInLists' => true,
+					],
 					'libraryWebsiteImage' => [
 						'property' => 'libraryWebsiteImage',
 						'type' => 'image',
@@ -1860,7 +1872,7 @@ class Theme extends DataObject {
 								'description' => 'Hover Border Color',
 								'required' => false,
 								'hideInLists' => true,
-								'primary' => Theme::$defaultPrimaryButtonHoverBorderColor,
+								'default' => Theme::$defaultPrimaryButtonHoverBorderColor,
 							],
 						],
 					],

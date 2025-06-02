@@ -67,6 +67,7 @@ class Campaign extends DataObject {
 				'property' => 'availableMilestones',
 				'type' => 'oneToMany',
 				'label' => 'Milestones',
+				'note' => 'Each milestone can only be used once per campaign',
 				'renderAsHeading' => true,
 				'description' => 'The Milestones to be linked to this campaign',
 				'keyThis' => 'campaignId',
@@ -135,7 +136,7 @@ class Campaign extends DataObject {
 				'type' => 'text',
 				'label' => 'User Age Range ',
 				'note' => 'Applies to Koha Only',
-				'description' => 'Define the age range for this campaign e.g. &quot;14-18&quot;, &quot;14+&quot;, &quot;Over14&quot;, &quot;Under14&quot;, &quot;All Ages&quot;',
+				'description' => 'Define the age range for this campaign e.g. &quot;14-18&quot;, &quot;14+&quot;, &quot;Over 14&quot;, &quot;Under 14&quot;, &quot;All Ages&quot;',
 				'default' => 'All Ages',
 				'maxLength' => 255,
 				'hideInLists' => false,
@@ -295,6 +296,8 @@ class Campaign extends DataObject {
 	}
 
 	public function getRewardDetails() {
+		global $activeLanguageCode;
+
 		$reward = new Reward();
 		$reward->id = $this->campaignReward;
 		if ($reward->find(true)) {
@@ -306,6 +309,7 @@ class Campaign extends DataObject {
 				'rewardExists' => !empty($reward->badgeImage),
 				'displayName' => $reward->displayName,
 				'awardAutomatically' =>$reward->awardAutomatically,
+				'rewardDescription' => $reward->getTextBlockTranslation('description', $activeLanguageCode),
 			];
 		}
 		return null;
@@ -661,12 +665,28 @@ class Campaign extends DataObject {
 		return $userCampaign->find(true);
 	}
 
-    public function saveMilestones() {
-        if (isset($this->_availableMilestones) && is_array($this->_availableMilestones)) {
-            $this->saveOneToManyOptions($this->_availableMilestones, 'campaignId');
-            unset($this->_availableMilestones);
-        }
-    }
+	public function saveMilestones() {
+		if (isset($this->_availableMilestones) && is_array($this->_availableMilestones)) {
+			$seen = [];
+			$filtered = [];
+	
+			foreach ($this->_availableMilestones as $milestoneData) {
+				$milestoneId = $milestoneData->milestoneId ?? null;
+	
+				if ($milestoneId && !isset($seen[$milestoneId])) {
+					$seen[$milestoneId] = true;
+					$filtered[] = $milestoneData;
+				}
+			}
+	
+			$this->saveOneToManyOptions($filtered, 'campaignId');
+			unset($this->_availableMilestones);
+		}
+	}
+	
+	
+	
+	
 
      /**
      * Return an overall leaderboard based on the number of milestones completed by each user across all campaigns.
@@ -736,7 +756,7 @@ class Campaign extends DataObject {
         $user = new User();
     	$user->id = $userCampaignRecord->userId;
 		if (!$user->find(true)) {
-			return;
+			continue;
 		}
 
 		if ($userCampaignRecord->optInToCampaignLeaderboard === 0 ||($userCampaignRecord->optInToCampaignLeaderboard === null && $user->optInToAllCampaignLeaderboards === 0)) {
@@ -953,6 +973,7 @@ class Campaign extends DataObject {
 				$campaign->rewardExists = $rewardDetails['rewardExists'];
                 $campaign->displayName = $rewardDetails['displayName'];
                 $campaign->awardAutomatically = $rewardDetails['awardAutomatically'];
+				$campaign->rewardDescription = $rewardDetails['rewardDescription'];
 			}
 
 				//Fetch milestones for this campaign
@@ -1069,6 +1090,7 @@ class Campaign extends DataObject {
                             'badgeImage' => $rewardDetails['badgeImage'],
                             'rewardExists' => $rewardDetails['rewardExists'],
                             'displayName' => $rewardDetails['displayName'],
+							'rewardDescription' => $rewardDetails['rewardDescription'],
                         ];
                     }
 
@@ -1107,6 +1129,7 @@ class Campaign extends DataObject {
                             'displayName' => $milestone->displayName,
                             'badgeImage' => $milestone->rewardImage,
                             'rewardExists' => $milestone->rewardExists,
+							'rewardDescription' => $milestone->rewardDescription,
                             'progress' => $milestoneProgress['progress'],
                             'extraProgress' => $milestoneProgress['extraProgress'],
                             'completedGoals' => $completedGoals,

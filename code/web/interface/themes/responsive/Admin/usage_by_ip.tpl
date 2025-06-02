@@ -2,6 +2,21 @@
 	<div id="main-content" class="col-sm-12">
 		<h1>{translate text="Aspen Discovery Usage By IP Address" isAdminFacing=true}</h1>
 		{include file="Admin/selectInterfaceForm.tpl"}
+		{if !empty($canSort) && count($sortableFields) > 0}
+			<div class="form-inline row">
+				<div class="form-group col-tn-12">
+					<label for="sort" class="control-label">{translate text='Sort by' isAdminFacing=true}</label>&nbsp;
+					<select name="sort" id="sort" class="form-control input-sm" onchange="return AspenDiscovery.changeSort();">
+						{foreach from=$sortableFields item=field}
+							{capture assign=ascVal}{$field.property} asc{/capture}
+							{capture assign=descVal}{$field.property} desc{/capture}
+							<option value="{$ascVal}" {if $sort == $ascVal}selected{/if}>{translate text="%1% Ascending" 1=$field.label isAdminFacing=true translateParameters=true}</option>
+							<option value="{$descVal}" {if $sort == $descVal}selected{/if}>{translate text="%1% Descending" 1=$field.label isAdminFacing=true translateParameters=true}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+		{/if}
 		<table class="adminTable table table-striped table-condensed smallText table-sticky" id="adminTable" aria-label="{translate text="Statistics by IP Address" isAdminFacing=true inAttribute=true}">
 			<thead>
 				<tr>
@@ -30,10 +45,6 @@
 				{/foreach}
 			</tbody>
 		</table>
+		{if !empty($pageLinks.all)}<div class="text-center">{$pageLinks.all}</div>{/if}
 	</div>
 {/strip}
-<script type="text/javascript">
-{literal}
-	$("#adminTable").tablesorter({cssAsc: 'sortAscHeader', cssDesc: 'sortDescHeader', cssHeader: 'unsortedHeader', widgets:['zebra'] });
-{/literal}
-</script>

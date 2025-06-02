@@ -1138,18 +1138,7 @@ public class GroupedWorkIndexer {
 				} else if (type.equals("axis360")) {
 					newId = getRecordGroupingProcessor().groupAxis360Record(identifier);
 				} else if (type.equals("cloud_library")) {
-					org.marc4j.marc.Record cloudLibraryRecord = loadMarcRecordFromDatabase("cloud_library", identifier, logEntry);
-					if (cloudLibraryRecord == null) {
-						RemoveRecordFromWorkResult result = getRecordGroupingProcessor().removeRecordFromGroupedWork(type, identifier);
-						if (result.reindexWork) {
-							regroupedIdsToProcess.add(result.permanentId);
-						} else if (result.deleteWork) {
-							//Delete the work from solr and the database
-							deleteRecord(result.permanentId, result.groupedWorkId);
-						}
-					} else {
-						newId = getRecordGroupingProcessor().groupCloudLibraryRecord(identifier, cloudLibraryRecord);
-					}
+					newId = getRecordGroupingProcessor().groupCloudLibraryRecord(identifier);
 				} else if (type.equals("hoopla")) {
 					newId = getRecordGroupingProcessor().groupHooplaRecord(identifier);
 				} else if (type.equals("palace_project")) {
@@ -1217,13 +1206,12 @@ public class GroupedWorkIndexer {
 			loadLexileDataForWork(groupedWork);
 			//Load accelerated reader data for the work
 			loadAcceleratedDataForWork(groupedWork);
-			//Update Series index data
-			updateSeriesDataForWork(groupedWork);
-			// else use Novelist the old way
 			//Load Novelist data
 			loadNovelistInfo(groupedWork);
 			//Load Display Info
 			loadDisplayInfo(groupedWork);
+			//Update Series index data - this needs to happen after load display info in case the user has overridden the display
+			updateSeriesDataForWork(groupedWork);
 
 			//Write the record to Solr.
 			try {
@@ -1408,7 +1396,7 @@ public class GroupedWorkIndexer {
 	}
 
 	private void loadNovelistInfo(AbstractGroupedWorkSolr groupedWork){
-		if (enableNovelistSeriesIntegration) {
+		if (enableNovelistSeriesIntegration && !seriesModuleEnabled) {
 			try {
 				getNovelistStmt.setString(1, groupedWork.getId());
 				ResultSet novelistRS = getNovelistStmt.executeQuery();
@@ -1451,6 +1439,9 @@ public class GroupedWorkIndexer {
 				seriesMemberRS.close();
 				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.keySet()) {
 					String[] series = seriesNameWithVolume.split("\\|");
+					if (series.length == 0) {
+						continue;
+					}
 					String normalizedSeriesName = Normalizer.normalize(series[0], Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
 					if (!seriesInDb.containsKey(normalizedSeriesName)) { // Skip if this work is already in the series
 						// Check if series exists
@@ -1542,6 +1533,8 @@ public class GroupedWorkIndexer {
 								if (numSeriesMembersRS.getInt("numMembers") == 0) {
 									deleteSeriesStmt.setInt(1, seriesId); // Deletes if it only had 1 member (this work)
 									deleteSeriesStmt.executeUpdate();
+									// Also remove from Solr
+									updateServer.deleteByQuery("recordtype:series AND id:" + seriesId);
 								}
 							}
 							numSeriesMembersRS.close();
@@ -1567,8 +1560,17 @@ public class GroupedWorkIndexer {
 					int result = deleteSeriesMemberStmt.executeUpdate();
 					// Also delete the series if it no longer has any members
 					if (result != 0) {
-						deleteSeriesStmt.setLong(1, seriesId); // Deletes if it only had 1 member (this work)
-						deleteSeriesStmt.executeUpdate();
+						getNumberOfSeriesMembersStmt.setLong(1, seriesId);
+						ResultSet numSeriesMembersRS = getNumberOfSeriesMembersStmt.executeQuery();
+						if (numSeriesMembersRS.next()) {
+							if (numSeriesMembersRS.getInt("numMembers") == 0) {
+								deleteSeriesStmt.setLong(1, seriesId); // Deletes if it only had 1 member (this work)
+								deleteSeriesStmt.executeUpdate();
+								// Also remove from Solr
+								updateServer.deleteByQuery("recordtype:series AND id:" + seriesId);
+							}
+						}
+						numSeriesMembersRS.close();
 					}
 				}
 				seriesMemberRS.close();

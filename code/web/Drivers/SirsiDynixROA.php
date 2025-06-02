@@ -395,7 +395,7 @@ class SirsiDynixROA extends HorizonAPI {
 			//	$patronStatusInfoDescribeResponse = $this->getWebServiceResponse('patronStatusInfoDescribe', $webServiceURL . '/user/patronStatusInfo/describe', null, $sessionToken);
 			//	$patronAddress1PolicyDescribeResponse = $this->getWebServiceResponse('patronDAddress1PolicyDescribe', $webServiceURL . '/user/patron/address1/describe', null, $sessionToken);
 
-			$includeFields = urlEncode("firstName,lastName,privilegeExpiresDate,preferredAddress,preferredName,address1,address2,address3,library,primaryPhone,profile,blockList{owed},category01,category02,category03,category04,category05,category06,category07,category08,category09,category10,category11,category12}");
+			$includeFields = urlEncode("firstName,lastName,alternateID,barcode,privilegeExpiresDate,preferredAddress,preferredName,address1,address2,address3,library,primaryPhone,profile,blockList{owed},category01,category02,category03,category04,category05,category06,category07,category08,category09,category10,category11,category12}");
 			$accountInfoLookupURL = $webServiceURL . '/user/patron/key/' . $sirsiRoaUserID . '?includeFields=' . $includeFields;
 
 			// phoneList is for texting notification preferences
@@ -409,8 +409,9 @@ class SirsiDynixROA extends HorizonAPI {
 				if ($user->find(true)) {
 					$userExistsInDB = true;
 				}
-				$user->cat_username = $username;
-				$user->ils_barcode = $username;
+				$user->cat_username = $lookupMyAccountInfoResponse->fields->barcode;
+				$user->ils_barcode = $lookupMyAccountInfoResponse->fields->barcode;
+				$user->ils_username = $lookupMyAccountInfoResponse->fields->alternateID;
 				$user->cat_password = $password;
 				$user->ils_password = $password;
 

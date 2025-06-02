@@ -1,4 +1,7 @@
 <?php
+
+
+
 require_once ROOT_DIR . '/Drivers/KohaApiUserAgent.php';
 require_once ROOT_DIR . '/sys/CurlWrapper.php';
 require_once ROOT_DIR . '/Drivers/AbstractIlsDriver.php';
@@ -185,6 +188,9 @@ class Koha extends AbstractIlsDriver {
 				$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'email', 'borrower_email', $library->useAllCapsWhenUpdatingProfile, false, $validFieldsToUpdate);
 				$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'fax', 'borrower_fax', $library->useAllCapsWhenUpdatingProfile, $library->requireNumericPhoneNumbersWhenUpdatingProfile, $validFieldsToUpdate);
 				$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'firstname', 'borrower_firstname', $library->useAllCapsWhenUpdatingProfile, false, $validFieldsToUpdate);
+				if($this->getKohaVersion() >= 24.11) {
+					$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'preferred_name', 'borrower_preferred_name', $library->useAllCapsWhenUpdatingProfile, false, $validFieldsToUpdate);
+				}
 				$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'gender', 'borrower_sex', $library->useAllCapsWhenUpdatingProfile, false, $validFieldsToUpdate);
 				$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'initials', 'borrower_initials', $library->useAllCapsWhenUpdatingProfile, false, $validFieldsToUpdate);
 				if (!isset($_REQUEST['borrower_branchcode']) || $_REQUEST['borrower_branchcode'] == -1) {
@@ -263,6 +269,20 @@ class Koha extends AbstractIlsDriver {
 						$result['success'] = true;
 						$result['messages'][] = 'Your account was updated successfully.';
 
+						// Immediately update the user's displayed name.
+						$forceDisplayNameUpdate = false;
+						if (isset($_REQUEST['borrower_firstname'])) {
+							$patron->firstname = $_REQUEST['borrower_firstname'];
+							$forceDisplayNameUpdate = true;
+						}
+						if (isset($_REQUEST['borrower_surname'])) {
+							$patron->lastname = $_REQUEST['borrower_surname'];
+							$forceDisplayNameUpdate = true;
+						}
+						if ($forceDisplayNameUpdate) {
+							$patron->displayName = '';
+						}
+
 						// check for patron attributes
 						if ($this->getKohaVersion() > 21.05) {
 							$jsonResponse = json_decode($response);
@@ -297,6 +317,9 @@ class Koha extends AbstractIlsDriver {
 					$postVariables = $this->setPostField($postVariables, 'borrower_title', $library->useAllCapsWhenUpdatingProfile);
 					$postVariables = $this->setPostField($postVariables, 'borrower_surname', $library->useAllCapsWhenUpdatingProfile);
 					$postVariables = $this->setPostField($postVariables, 'borrower_firstname', $library->useAllCapsWhenUpdatingProfile);
+					if($this->getKohaVersion() >= 24.11) {
+						$postVariables = $this->setPostField($postVariables, 'borrower_preferred_name', $library->useAllCapsWhenUpdatingProfile);
+					}
 					if (!empty($_REQUEST['borrower_dateofbirth'])) {
 						$postVariables['borrower_dateofbirth'] = $this->aspenDateToKohaDate($_REQUEST['borrower_dateofbirth']);
 					}
@@ -1083,7 +1106,7 @@ class Koha extends AbstractIlsDriver {
 						$user->unique_ils_id = $patronId;
 						if (!$user->find(true)) {
 							$cardNumber = $passwordExpirationRow['cardnumber'];
-							$this->findNewUser($cardNumber, '');
+							$user = $this->findNewUser($cardNumber, '');
 						}
 
 						require_once ROOT_DIR . '/sys/Account/PinResetToken.php';
@@ -1094,6 +1117,9 @@ class Koha extends AbstractIlsDriver {
 						$resetToken = '';
 						if ($pinResetToken->insert()) {
 							$resetToken = $pinResetToken->token;
+						} else {
+							global $logger;
+							$logger->log("Failed to insert PinResetToken for user ID: {$user->id} (ILS ID: {$patronId}). DB Error: {$pinResetToken->getLastError()}", Logger::LOG_ERROR);
 						}
 						require_once ROOT_DIR . '/sys/Account/ExpiredPasswordError.php';
 						$result = new ExpiredPasswordError($patronId, $passwordExpirationRow['password_expiration_date'], $resetToken);
@@ -1110,9 +1136,10 @@ class Koha extends AbstractIlsDriver {
 	private function loadPatronInfoFromDB($patronId, $password, $suppliedUsernameOrBarcode) {
 		global $timer;
 		global $logger;
+		global $library;
 
 		/** @noinspection SqlResolve */
-		$sql = "SELECT *, borrowernumber, cardnumber, surname, firstname, streetnumber, streettype, address, address2, city, state, zipcode, country, email, phone, mobile, categorycode, dateexpiry, password, userid, branchcode, opacnote, privacy, dateofbirth from borrowers where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patronId) . "';";
+		$sql = "SELECT *, borrowernumber, cardnumber, surname, firstname, preferred_name, streetnumber, streettype, address, address2, city, state, zipcode, country, email, phone, mobile, categorycode, dateexpiry, password, userid, branchcode, opacnote, privacy, dateofbirth from borrowers where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patronId) . "';";
 
 		$userExistsInDB = false;
 		$lookupUserResult = mysqli_query($this->dbConnection, $sql, MYSQLI_USE_RESULT);
@@ -1164,7 +1191,11 @@ class Koha extends AbstractIlsDriver {
 			}
 
 			$forceDisplayNameUpdate = false;
-			$firstName = $userFromDb['firstname'];
+			if ($library->replaceAllFirstNameWithPreferredName && !empty($userFromDb['preferred_name'])) {
+				$firstName = $userFromDb['preferred_name'];
+			} else {
+				$firstName = $userFromDb['firstname'];
+			}
 			if ($user->firstname != $firstName) {
 				$user->firstname = $firstName ?? '';
 				$forceDisplayNameUpdate = true;
@@ -1186,6 +1217,17 @@ class Koha extends AbstractIlsDriver {
 					$forceDisplayNameUpdate = true;
 				}
 			}
+			$userPreferredName = $userFromDb['preferred_name'];
+			if ($user->userPreferredName != $userPreferredName) {
+				$user->userPreferredName = $userPreferredName ?? '';
+				$forceDisplayNameUpdate = true;
+			} else {
+				if (!$user->userPreferredName) {
+					$user->userPreferredName = '';
+					$forceDisplayNameUpdate = true;
+				}
+			}
+
 			if ($forceDisplayNameUpdate) {
 				$user->displayName = '';
 			}
@@ -2753,6 +2795,13 @@ class Koha extends AbstractIlsDriver {
 			]);
 			return $result;
 		}
+		$patronEligibleForRenewals = $this->patronEligibleForRenewals($patron);
+		if (!$patronEligibleForRenewals['isEligible']) {
+			$hold_result['message'] = $patronEligibleForRenewals['message'];
+			// Result for API or app use
+			$hold_result['api']['message'] = $patronEligibleForRenewals['message'];
+			return $hold_result;
+		}
 
 		/** @noinspection PhpBooleanCanBeSimplifiedInspection */
 		if (false && $this->getKohaVersion() >= 19.11) {
@@ -2939,6 +2988,78 @@ class Koha extends AbstractIlsDriver {
 			$result['message'] = $message;
 		}
 
+		return $result;
+	}
+
+	public function patronEligibleForRenewals($patron){
+		$result = [
+			'isEligible' => true,
+			'message' => '',
+		];
+
+		//Get account summary
+		$accountSummary = $this->getAccountSummary($patron);
+
+		//Check if patron is expired
+		if ($accountSummary->isExpired()) {
+
+			$endpoint = "/api/v1/patron_categories";
+			$response = $this->kohaApiUserAgent->get($endpoint,'koha.patronEligibleForRenewals',[],['Accept-Encoding: gzip, deflate, br',
+		'Content-Type: application/json']);
+
+			if ($response) {
+				if ($response['code'] == 200) {
+					$patronCategories = $response['content'];
+					foreach($patronCategories as $patronCategory) {
+						if ($patronCategory['category_type'] == $patron->patronType ){
+							$blockedActions = $patronCategory['block_expired_patron_opac_actions'];
+							break;
+						}
+					}
+
+					if(str_starts_with($blockedActions,"follow_syspref")){
+						$blockedActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+					}
+
+				} else {
+					$error = $response['content']['error'];
+					$result['isEligible'] = false;
+					$result['message'] = translate([
+						'text' => $error,
+						'isPublicFacing' => true,
+					]);
+					return $result;
+				}
+			} else {
+				$result['message'] = translate([
+					'text' => $response,
+					'isPublicFacing' => true,
+				]);
+				return $result;
+			}
+
+			// Check if there are blocked actions for being an expired account
+			if ($blockedActions) {
+				$blockedActions = explode(',',$blockedActions);
+				$result['isEligible'] = false;
+
+				$text = "Sorry, your account has expired. Please renew it to be able to : ";
+
+				foreach($blockedActions as $blockedAction){
+					if (strcmp($blockedAction,"renew") == 0){
+						$result['expiredPatronWhoCannotRenewItems'] = true;
+						$blockedAction = "Renew Items";
+						$text .= "$blockedAction";
+						break;
+					}
+				}
+
+				$result['message'] = translate([
+					'text' => $text,
+					'isPublicFacing' => true,
+				]);
+			}
+		}
 		return $result;
 	}
 
@@ -3907,6 +4028,18 @@ class Koha extends AbstractIlsDriver {
 			'autocomplete' => false,
 		];
 
+		if($this->getKohaVersion() >= 24.11) {
+			$fields['identitySection']['properties']['borrower_preferred_name'] = [
+				'property' => 'borrower_preferred_name',
+				'type' => 'text',
+				'label' => 'Preferred Name',
+				'description' => 'Your preferred name',
+				'maxLength' => 25,
+				'required' => true,
+				'autocomplete' => false,
+			];
+		}
+
 		$fields['identitySection']['properties']['borrower_dateofbirth'] = [
 			'property' => 'borrower_dateofbirth',
 			'type' => 'date',
@@ -4572,6 +4705,9 @@ class Koha extends AbstractIlsDriver {
 			$postFields = $this->setPostField($postFields, 'borrower_title', $library->useAllCapsWhenSubmittingSelfRegistration);
 			$postFields = $this->setPostField($postFields, 'borrower_surname', $library->useAllCapsWhenSubmittingSelfRegistration);
 			$postFields = $this->setPostField($postFields, 'borrower_firstname', $library->useAllCapsWhenSubmittingSelfRegistration);
+			if($this->getKohaVersion() >= 24.11) {
+				$postFields = $this->setPostField($postFields, 'borrower_preferred_name', $library->useAllCapsWhenSubmittingSelfRegistration);
+			}
 			if (isset($_REQUEST['borrower_dateofbirth'])) {
 				$postFields['borrower_dateofbirth'] = str_replace('-', '/', $_REQUEST['borrower_dateofbirth']);
 			}
@@ -4693,10 +4829,26 @@ class Koha extends AbstractIlsDriver {
 			$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'email', 'borrower_email', $library->useAllCapsWhenSubmittingSelfRegistration);
 			$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'fax', 'borrower_fax', $library->useAllCapsWhenSubmittingSelfRegistration, $library->requireNumericPhoneNumbersWhenUpdatingProfile);
 			$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'firstname', 'borrower_firstname', $library->useAllCapsWhenSubmittingSelfRegistration);
+			if($this->getKohaVersion() >= 24.11) {
+				$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'preferred_name', 'borrower_preferred_name', $library->useAllCapsWhenSubmittingSelfRegistration);
+			}
 			$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'gender', 'borrower_sex', $library->useAllCapsWhenSubmittingSelfRegistration);
 			$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'initials', 'borrower_initials', $library->useAllCapsWhenSubmittingSelfRegistration);
 			if (!isset($_REQUEST['borrower_branchcode']) || $_REQUEST['borrower_branchcode'] == -1) {
-				$postVariables['library_id'] = $library->code;
+				// TODO when Koha bug 28495 is complete update this to
+				// match the validation in Koha (bugs.koha-community.org/bugzilla3/show_bug.cgi?id=28495)
+				if($library->ilsCode && $library->ilsCode != ".*")
+				{
+					$postVariables['library_id'] = $library->ilsCode;
+				}
+				else if ($library->getMainLocation())
+				{
+					$postVariables['library_id'] = $library->getMainLocation()->code;
+				}
+				else {
+					return ['success' => false,
+							'message' => "Could not create your Account.  No location to register found."];
+				}
 			} else {
 				$postVariables = $this->setPostFieldWithDifferentName($postVariables, 'library_id', 'borrower_branchcode', $library->useAllCapsWhenSubmittingSelfRegistration);
 			}
@@ -5074,6 +5226,81 @@ class Koha extends AbstractIlsDriver {
 		$interface->assign('materialsRequestForm', $fieldsForm);
 
 		return 'new-koha-request.tpl';
+	}
+
+	function patronEligibleForILLRequests(User $user) {
+		$result = [
+			'isEligible' => true,
+			'message' => '',
+		];
+
+		//Get account summary
+		$accountSummary = $this->getAccountSummary($user);
+
+		//Check if patron is expired
+		if ($accountSummary->isExpired()) {
+
+			$endpoint = "/api/v1/patron_categories";
+			$extraHeaders = [
+				'Accept-Encoding: gzip, deflate, br',
+				'Content-Type: application/json'
+			];
+			$response = $this->kohaApiUserAgent->get($endpoint,'koha.patronEligibleForRenewals',[],$extraHeaders);
+
+			if ($response) {
+				if ($response['code'] == 200) {
+					$patronCategories = $response['content'];
+					foreach($patronCategories as $patronCategory) {
+						if ($patronCategory['category_type'] == $user->patronType ){
+							$blockedActions = $patronCategory['block_expired_patron_opac_actions'];
+							break;
+						}
+					}
+
+					if(str_starts_with($blockedActions,"follow_syspref")){
+						$blockedActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+					}
+
+				} else {
+					$error = $response['content']['error'];
+					$result['isEligible'] = false;
+					$result['message'] = translate([
+						'text' => $error,
+						'isPublicFacing' => true,
+					]);
+					return $result;
+				}
+			} else {
+
+				$result['message'] = translate([
+					'text' => $response,
+					'isPublicFacing' => true,
+				]);
+				return $result;
+			}
+
+				// Check if there are blocked actions for being an expired account
+			if ($blockedActions) {
+				$blockedActions = explode(',',$blockedActions);
+				$result['isEligible'] = false;
+
+				$text = "Sorry, your account has expired. Please renew it to be able to : ";
+
+				foreach($blockedActions as $blockedAction){
+					if (strcmp($blockedAction,"ill_request") == 0){
+						$result['expiredPatronWhoCannotRenewItems'] = true;
+						$blockedAction = "Make new material requests";
+						$text .= "$blockedAction";
+						break;
+					}
+				}
+
+				$result['message'] = translate([
+					'text' => $text,
+					'isPublicFacing' => true,
+				]);
+			}
+		}
 	}
 
 	/**
@@ -5564,6 +5791,11 @@ class Koha extends AbstractIlsDriver {
 					if (array_key_exists('borrower_firstname', $patronUpdateFields['identitySection']['properties'])) {
 						$patronUpdateFields['identitySection']['properties']['borrower_firstname']['readOnly'] = true;
 					}
+					if($this->getKohaVersion() >= 24.11) {
+						if (array_key_exists('borrower_preferred_name', $patronUpdateFields['identitySection']['properties'])) {
+							$patronUpdateFields['identitySection']['properties']['borrower_preferred_name']['readOnly'] = true;
+						}
+					}
 					if (array_key_exists('borrower_initials', $patronUpdateFields['identitySection']['properties'])) {
 						$patronUpdateFields['identitySection']['properties']['borrower_initials']['readOnly'] = true;
 					}
@@ -5888,14 +6120,35 @@ class Koha extends AbstractIlsDriver {
 	}
 
 	/**
+	 * Check if the patron is debarred (frozen).
+	 *
+	 * The debarment status could be useful to allow or disallow the user to perform certain actions.
+	 * @param User $patron
+	 * @return bool $debarmentStatus
+	 */
+	public function getDebarmentStatus(User $patron) {
+		$debarmentStatus = false;
+		$borrowerNumber = $patron->unique_ils_id;
+		$endpoint = "/api/v1/patrons/$borrowerNumber";
+		$response = $this->kohaApiUserAgent->get($endpoint,'koha.getDebarmentStatus',[],[]);
+		if($response){
+			if($response['code'] == 200){
+				$debarmentStatus = $response['content']['restricted'];
+			}
+		}
+		return $debarmentStatus;
+	}
+
+	/**
 	 * @param array $postFields
 	 * @param string $postFieldName
 	 * @param string $requestFieldName
 	 * @param bool $convertToUpperCase
 	 * @param bool $stripNonNumericCharacters
+	 * @param array $validFieldsToUpdate
 	 * @return array
 	 */
-	private function setPostFieldWithDifferentName(array $postFields, string $postFieldName, string $requestFieldName, $convertToUpperCase = false, $stripNonNumericCharacters = false, $validFieldsToUpdate = []): array {
+	private function setPostFieldWithDifferentName(array $postFields, string $postFieldName, string $requestFieldName, bool $convertToUpperCase = false, bool $stripNonNumericCharacters = false, $validFieldsToUpdate = []): array {
 		if (isset($_REQUEST[$requestFieldName])) {
 			if (!empty($validFieldsToUpdate) && !array_key_exists($requestFieldName, $validFieldsToUpdate)) {
 				return $postFields;
@@ -6612,37 +6865,56 @@ class Koha extends AbstractIlsDriver {
 			]);
 		}
 
-		//Check if the patron is expired
+		//Check if the patron is frozen
+		if($this->getDebarmentStatus($patron)){
+			$result['isEligible'] = false;
+			if (strlen($result['message']) > 0) {
+				$result['message'] .= '<br/>';
+			}
+			$result['message'] .= translate([
+				'text' => 'Sorry, your account is debarred and you are not able to place holds.',
+				'isPublicFacing' => true,
+			]);
+		}
+
+
+		// Check if the patron is expired
 		if ($accountSummary->isExpired()) {
-			//Check the patron category as well
+
+			// Check the patron category as well
 			/** @noinspection SqlResolve */
 			$patronCategorySql = "select BlockExpiredPatronOpacActions from categories where categorycode = '$patron->patronType'";
 			$patronCategoryResult = mysqli_query($this->dbConnection, $patronCategorySql, MYSQLI_USE_RESULT);
-			$useSystemPreference = true;
-			$blockExpiredPatronOpacActions = true;
-			if ($patronCategoryResult !== false) {
-				$patronCategoryInfo = $patronCategoryResult->fetch_assoc();
-				if ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == 0) {
-					$blockExpiredPatronOpacActions = false;
-					$useSystemPreference = false;
-				} elseif ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == 1) {
-					$blockExpiredPatronOpacActions = true;
-					$useSystemPreference = false;
-				} elseif ($patronCategoryInfo['BlockExpiredPatronOpacActions'] == -1) {
-					$blockExpiredPatronOpacActions = true;
-					$useSystemPreference = true;
-				}
-				$patronCategoryResult->close();
-			}
 
-			if ($useSystemPreference) {
-				$blockExpiredPatronOpacActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+			// From where to calculate the blocked actions
+			if ($patronCategoryResult) {
+				$patronCategoryInfo = $patronCategoryResult->fetch_assoc();
+				$patronCategoryResult->close();
+				if(str_starts_with($patronCategoryInfo['BlockExpiredPatronOpacActions'],"follow_syspref")){
+					$blockedActions = $this->getKohaSystemPreference('BlockExpiredPatronOpacActions');
+				} else {
+					$blockedActions = $patronCategoryInfo['BlockExpiredPatronOpacActions'];
+				}
 			}
-			if ($blockExpiredPatronOpacActions == 1) {
+			
+			// Check if there are blocked actions for being an expired account
+			if ($blockedActions) {
+				$blockedActions = explode(',',$blockedActions);
 				$result['isEligible'] = false;
-				$result['expiredPatronWhoCannotPlaceHolds'] = true;
+
+				$text = "Sorry, your account has expired. Please renew it to be able to : ";
+
+				foreach($blockedActions as $blockedAction){
+					if (strcmp($blockedAction,"hold") == 0){
+						$result['expiredPatronWhoCannotPlaceHolds'] = true;
+						$blockedAction = "Place Holds";
+						$text .= $blockedAction;
+						break;
+					}
+				}
+
 				$result['message'] = translate([
-					'text' => 'Sorry, your account has expired. Please renew your account to place holds.',
+					'text' => $text,
 					'isPublicFacing' => true,
 				]);
 			}
@@ -7024,7 +7296,7 @@ class Koha extends AbstractIlsDriver {
 		$response = $this->kohaApiUserAgent->get("/api/v1/patrons/$borrowerNumber/extended_attributes",'koha.getUserExtendedAttributes',[],[]);
 		$responseCode = $response['code'];
 		if ($responseCode == 200) {
-			$body = $response['body'];
+			$body = $response['body'] ?? [];
 			foreach($body as $elem ) { 
 				$attribute = [
 					'id' => $elem['extended_attribute_id'],
@@ -7359,6 +7631,8 @@ class Koha extends AbstractIlsDriver {
 			$message .= 'Item is an onsite checkout';
 		} elseif ($code == "has_fine") {
 			$message .= 'Item has an outstanding fine';
+		} elseif (!empty($code)) {
+			$message = 'Unknown error:' . $code;
 		} else {
 			$message = 'Unknown error';
 		}
@@ -8273,10 +8547,8 @@ class Koha extends AbstractIlsDriver {
 	}
 
 	public function bypassReadingHistoryUpdate($patron, $isNightlyUpdate) : bool {
-		//Last seen only updates once a day so only do this check if we're running the nightly update
+		// Last seen only updates once a day so only do this check if we're running the nightly update.
 		if (!$isNightlyUpdate) {
-			return false;
-		} else {
 			$this->initDatabaseConnection();
 			/** @noinspection SqlResolve */
 			$sql = "SELECT lastseen, dateexpiry FROM borrowers where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
@@ -8286,26 +8558,26 @@ class Koha extends AbstractIlsDriver {
 			if ($results !== false) {
 				while ($curRow = $results->fetch_assoc()) {
 					if (!is_null($curRow['lastseen'])) {
-						$lastSeenDate =  strtotime($curRow['lastseen']);
+						$lastSeenDate = strtotime($curRow['lastseen']);
 					}
 					if (!is_null($curRow['dateexpiry'])) {
-						$expirationDate =  strtotime($curRow['dateexpiry']);
+						$expirationDate = strtotime($curRow['dateexpiry']);
 					}
 				}
 
 				$results->close();
 			}
 
-			//Don't update reading history if we've never seen the patron or the patron was last seen before we last updated reading history
+			// Don't update reading history if we've never seen the patron or the patron was last seen before we last updated reading history.
 			$lastReadingHistoryUpdate = $patron->lastReadingHistoryUpdate;
 			if ($lastSeenDate != null && ($lastSeenDate > $lastReadingHistoryUpdate)) {
-				//Also do not update if the patron's account expired more than 4 weeks ago.
+				// Do not update if the patron's account expired more than 4 weeks ago.
 				if ($expirationDate == null || ($expirationDate > (time() - 4 * 7 * 24 * 60 * 60))) {
-					return false;
+					return true;
 				}
 			}
-			return true;
 		}
+		return false;
 	}
 
 	public function hasAPICheckout() : bool {

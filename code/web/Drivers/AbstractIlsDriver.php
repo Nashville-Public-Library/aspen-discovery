@@ -166,6 +166,14 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return 'not supported';
 	}
 
+	function patronEligibleForILLRequests(User $user) {
+		$result = [
+			'isEligible' => false,
+			'message' => '',
+		];
+		return $result;
+	}
+
 	/**
 	 * @param User $user
 	 * @return string[]
@@ -226,6 +234,10 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return new ExpirationInformation();
 	}
 
+	public function getDebarmentStatus(User $patron) {
+		return false;
+	}
+
 	/**
 	 * @return bool
 	 */
@@ -270,6 +282,14 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 			'maxPhysicalCheckoutsReached' => false,
 			'expiredPatronWhoCannotPlaceHolds' => false,
 		];
+	}
+
+	public function patronEligibleForRenewals($patron){
+		$result = [
+			'isEligible' => true,
+			'message' => '',
+		];
+		return $result;
 	}
 
 	public function getShowAutoRenewSwitch(User $patron) {
