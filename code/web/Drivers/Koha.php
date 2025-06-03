@@ -5301,6 +5301,8 @@ class Koha extends AbstractIlsDriver {
 				]);
 			}
 		}
+
+		return $result;
 	}
 
 	/**
