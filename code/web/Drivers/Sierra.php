@@ -2010,6 +2010,11 @@ class Sierra extends Millennium {
 				'success' => true,
 				'barcode' => $params['barcodes'][0]
 			];
+			$newUser = $this->findNewUser($barcode, null);
+			if ($newUser != null) {
+				$selfRegResult['newUser'] = $newUser;
+				$selfRegResult['sendWelcomeMessage'] = true;
+			}
 		}
 
 		return $selfRegResult;
