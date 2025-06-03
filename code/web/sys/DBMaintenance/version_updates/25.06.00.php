@@ -93,6 +93,19 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE sideloads ADD COLUMN sharing INT(11) NOT NULL DEFAULT 1",
 			],
 		], //side_loads_owning_and_sharing
+		'admin_sticky_filter_table' => [
+			'title' => 'Sticky Filter Table',
+			'description' => 'Add table for sticky filter options for Admins.',
+			'sql' => [
+				"DROP TABLE IF EXISTS admin_sticky_filters",
+				'CREATE TABLE IF NOT EXISTS admin_sticky_filters (
+					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					userId INT(11),
+					filterFor VARCHAR(100),
+					filterValue VARCHAR(255)
+				) ENGINE INNODB',
+			],
+		], //admin_sticky_filter_table
 
 		//Mark - Grove
 		'side_loads_uniqueness' => [
