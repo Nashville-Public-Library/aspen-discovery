@@ -30,12 +30,91 @@ function getUpdates25_06_00(): array {
 				'ALTER TABLE location_records_to_include CHANGE COLUMN includeHoldableOnly includeHoldableOnly tinyint(1) NOT NULL DEFAULT 0'
 			]
 		], //correct_default_include_only_holdable_for_records_to_include
+		'cloud_library_setting_name' => [
+			'title' => 'Add CloudLibrary setting name',
+			'description' => 'Add a name for CloudLibrary settings',
+			'sql' => [
+				"ALTER TABLE cloud_library_settings ADD COLUMN name VARCHAR(100) DEFAULT ''",
+				"UPDATE cloud_library_settings set name = concat('Setting ', id)",
+			]
+		], //cloud_library_setting_name
+		'indexing_profile_status_alt' => [
+			'title' => 'Indexing Profile Status Alt',
+			'description' => 'Add the ability to define a second item status field for use while indexing symphony records',
+			'sql' => [
+				"ALTER TABLE indexing_profiles ADD COLUMN statusAlt CHAR(1) DEFAULT ' '",
+				"ALTER TABLE status_map_values ADD COLUMN appliesToStatusSubfield TINYINT(1) DEFAULT 1",
+				"ALTER TABLE status_map_values ADD COLUMN appliesToStatusAltSubfield TINYINT(1) DEFAULT 0",
+			]
+		], //indexing_profile_status_alt
 
 		//katherine - Grove
+		'add_lida_barcode_entry_keyboard_type_setting' => [
+			'title' => 'Add a barcode entry keyboard type field to LiDA self check settings',
+			'description' => 'Add keyboard type options to use numeric keyboard, alphanumeric keyboard, or not to allow keyboard entry',
+			'sql' => [
+				"ALTER TABLE aspen_lida_self_check_settings ADD COLUMN barcodeEntryKeyboardType TINYINT(1) NOT NULL DEFAULT 1;",
+			]
+		], //add_lida_barcode_entry_keyboard_type_setting
+		'run_full_series_index_update' => [
+			'title' => 'Run Full Series Index Update',
+			'description' => 'Run full Series Index update to clean up deleted series records that are still in the index',
+			'sql' => [
+				"UPDATE series_indexing_settings SET runFullUpdate = 1;"
+			]
+		], //run_full_series_index
 
 		//kirstien - Grove
+		'last_used_sort_for_user' => [
+			'title' => 'Store the last used sort value a patron used for holds and checkouts',
+			'description' => 'Store the last used sort value a patron used for holds and checkouts',
+			'sql' => [
+				"ALTER TABLE user ADD COLUMN holdSortAvailable VARCHAR(75) DEFAULT 'expire'",
+				"ALTER TABLE user ADD COLUMN holdSortUnavailable VARCHAR(75) DEFAULT 'title'",
+				"ALTER TABLE user ADD COLUMN checkoutSort VARCHAR(75) DEFAULT 'dueDate'"
+			],
+		], //last_used_sort_for_user
 
 		//kodi - Grove
+		'side_loads_library_permissions' => [
+			'title' => 'Side Load Home Library Permissions',
+			'description' => 'Add permissions for administering side loads and side load scopes based on home library.',
+			'sql' => [
+				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES
+					('Cataloging & eContent', 'Administer Side Loads for Home Library', 'Side Loads', 171, 'Allows the user to administer side loads for their home library only.'),
+					('Cataloging & eContent', 'Administer Side Load Scopes for Home Library', 'Side Loads', 172, 'Allows the user to administer side load scopes for their home library only.')",
+			],
+		], //side_loads_library_permissions
+		'side_loads_owning_and_sharing' => [
+			'title' => 'Side Load Owning and Sharing Library',
+			'description' => 'Add owning and sharing library to side loads table.',
+			'sql' => [
+				"ALTER TABLE sideloads ADD COLUMN owningLibrary INT(11) NOT NULL DEFAULT -1",
+				"ALTER TABLE sideloads ADD COLUMN sharing INT(11) NOT NULL DEFAULT 1",
+			],
+		], //side_loads_owning_and_sharing
+
+		//Mark - Grove
+		'side_loads_uniqueness' => [
+			'title' => 'Side Load Uniqueness',
+			'description' => 'Update Uniqueness for Side Loads to be unique based on name and owning library and also add uniqueness for marc path and record url component.',
+			'continueOnError' => true,
+			'sql' => [
+				"ALTER TABLE sideloads DROP INDEX name",
+				"ALTER TABLE sideloads ADD UNIQUE name(name, owningLibrary)",
+				"ALTER TABLE sideloads ADD UNIQUE (marcPath)",
+				"ALTER TABLE sideloads ADD UNIQUE (recordUrlComponent)",
+			],
+		], //side_loads_uniqueness
+
+		// Myranda - Grove
+		'theme_series_image_explore_more' => [
+			 'title' => 'Theme - Add custom image uploads for series results',
+			 'description' => 'Update theme table to have a custom image value for series results in explore more.',
+			 'sql' => [
+				 "ALTER TABLE themes ADD COLUMN seriesImage VARCHAR(100) default ''",
+			 ]
+		], //theme_series_image_explore_more
 
 		//Yanjun Li - ByWater
 
@@ -47,10 +126,59 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE cloud_library_export_log ADD COLUMN IF NOT EXISTS numRegrouped int(11) DEFAULT 0 AFTER settingId",
 			]
 		], //add_num_regrouped_to_cloudlibrary_extract_logs
+		'increase_size_of_collection_codes_to_exclude' => [
+			'title' => 'Increase the Size of the collectionCodesToExclude Column',
+			'description' => 'Increases the size of the collectionCodesToExclude column from VARCHAR(100) to VARCHAR(500).',
+			'sql' => [
+				"ALTER TABLE `library_records_to_include` MODIFY COLUMN `collectionCodesToExclude` varchar(500) NOT NULL DEFAULT ''",
+				"ALTER TABLE `location_records_to_include` MODIFY COLUMN `collectionCodesToExclude` varchar(500) NOT NULL DEFAULT ''"
+			]
+		], //increase_size_of_collection_codes_to_exclude
+		'add_static_location_id_to_portal_cell' => [
+			'title' => 'Add staticLocationId Column to Web Builder Portal Cells',
+			'description' => 'Adds a staticLocationId column to the web_builder_portal_cell table to represent the location ID of the static location chosen.',
+			'sql' => [
+				"ALTER TABLE web_builder_portal_cell ADD COLUMN IF NOT EXISTS staticLocationId int(11) NOT NULL DEFAULT -1",
+			]
+		], //add_static_location_id_to_portal_cell
 
 		// Laura Escamilla - ByWater Solutions
 
 		//alexander - Open Fifth
+		'update_award_reward_automatically_to_false_by_default' => [
+			'title' => 'Update Award Reward Automaticaly to False By Default',
+			'description' => 'Update default for award automatically to false',
+			'sql' => [
+				"ALTER TABLE ce_reward ALTER awardAutomatically SET DEFAULT 0",
+			]
+		], //update_award_reward_automatically_to_false_by_default
+		'add_preferred_name_to_user' => [
+			'title' => 'Add Preferred Name To User',
+			'description' => 'Add preferred name to user table',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE user ADD COLUMN userPreferredName VARCHAR(256) NOT NULL",
+			]
+		],
+		//add_preferred_name
+		'add_preferred_name_option_to_dropdown' => [
+			'title' => 'Add Preferred Name Option To Dropdown',
+			'description' => 'Add the preferred name option to the name display dropdown in the library.',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE library MODIFY COLUMN patronNameDisplayStyle ENUM('firstinitial_lastname','lastinitial_firstname','firstinitial_middleinitial_lastname','firstname_middleinitial_lastinitial', 'preferredname_lastinitial') DEFAULT 'firstinitial_lastname'",
+			]
+		],
+		//add_preferred_name_option_to_dropdown
+		'allow_replacement_of_all_instances_of_first_name' => [
+			'title' => 'Allow Replacement Of All Instances Of First Name',
+			'description' => 'Allow replacement of all instances of first name with the patron\'s preferred name from the ILS id set',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN replaceAllFirstNameWithPreferredName TINYINT(1) DEFAULT 0",
+			]
+		],
+		//allow_replacement_of_all_instances_of_first_name
 
 		//chloe - Open Fifth
 

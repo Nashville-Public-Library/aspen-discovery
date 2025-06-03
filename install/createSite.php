@@ -92,6 +92,17 @@ if (count($_SERVER['argv']) > 1){
 			$variables['ilsDatabaseUser'] = $configArray['Sierra']['DBUser'];
 			$variables['ilsDatabasePassword'] = $configArray['Sierra']['DBPwd'];
 			$variables['ilsDatabasePort'] = $configArray['Sierra']['DBPort'];
+		}elseif ($variables['ils'] == 'CarlX') {
+			$variables['ilsDriver'] = 'CarlX';
+			$variables['ilsClientId'] = $configArray['CarlX']['ClientId'];
+			$variables['ilsClientSecret'] = $configArray['CarlX']['ClientSecret'];
+			$variables['ilsDatabaseHost'] = $configArray['CarlX']['DBHost'];
+			$variables['ilsDatabaseName'] = $configArray['CarlX']['DBName'];
+			$variables['ilsDatabaseUser'] = $configArray['CarlX']['DBUser'];
+			$variables['ilsDatabasePassword'] = $configArray['CarlX']['DBPwd'];
+			$variables['ilsDatabasePort'] = $configArray['CarlX']['DBPort'];
+			$variables['sip2Host'] = $configArray['CarlX']['SIP2Host'];
+			$variables['sip2Port'] = $configArray['CarlX']['SIP2Port'];
 		}else{
 			$variables['ilsDriver'] = $configArray['ILS']['ilsDriver'];
 		}
@@ -428,6 +439,12 @@ if ($variables['ils'] == 'Koha'){
 	copy("$installDir/install/sierra_connection.sql", "$tmp_dir/sierra_connection_$sitename.sql");
 	replaceVariables("$tmp_dir/sierra_connection_$sitename.sql", $variables);
 	exec("mysql -u{$variables['databaseUser']} -p\"{$variables['databasePassword']}\" {$variables['databaseName']} < $tmp_dir/sierra_connection_$sitename.sql");
+}elseif ($variables['ils'] == 'CarlX'){
+	$tmp_dir = rtrim(sys_get_temp_dir(), "/");
+	echo("Loading CarlX information to database\r\n");
+	copy("$installDir/install/carlx_connection.sql", "$tmp_dir/carlx_connection_$sitename.sql");
+	replaceVariables("$tmp_dir/carlx_connection_$sitename.sql", $variables);
+	exec("mysql -u{$variables['databaseUser']} -p\"{$variables['databasePassword']}\" {$variables['databaseName']} < $tmp_dir/carlx_connection_$sitename.sql");
 }
 
 $aspen_db = null;

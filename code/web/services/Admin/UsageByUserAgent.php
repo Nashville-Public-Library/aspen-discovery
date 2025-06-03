@@ -2,6 +2,7 @@
 require_once ROOT_DIR . '/services/Admin/Dashboard.php';
 require_once ROOT_DIR . '/sys/SystemLogging/UserAgent.php';
 require_once ROOT_DIR . '/sys/SystemLogging/UsageByUserAgent.php';
+require_once ROOT_DIR . '/sys/Pager.php';
 
 class Admin_UsageByUserAgent extends Admin_Dashboard {
 	protected $thisMonth;
@@ -18,8 +19,8 @@ class Admin_UsageByUserAgent extends Admin_Dashboard {
 
 		$this->loadDates();
 
-		$page = isset($_REQUEST['page']) ? $_REQUEST['page'] : 1;
-		$pageSize = isset($_REQUEST['pageSize']) ? $_REQUEST['pageSize'] : 30; // to adjust number of items listed on a page
+		$page = max(1, (int)($_REQUEST['page'] ?? 1));
+		$pageSize = min(100,(int)($_REQUEST['pageSize'] ?? 30));
 		$interface->assign('recordsPerPage', $pageSize);
 		$interface->assign('page', $page);
 
@@ -28,6 +29,7 @@ class Admin_UsageByUserAgent extends Admin_Dashboard {
 		$total = $userAgent->count();
 		$userAgent->limit(($page - 1) * $pageSize, $pageSize);
 		$userAgent->find();
+		$allUserAgents = [];
 		while ($userAgent->fetch()) {
 			$allUserAgents[$userAgent->id] = $userAgent->userAgent;
 		}
@@ -47,6 +49,7 @@ class Admin_UsageByUserAgent extends Admin_Dashboard {
 		$options = [
 			'totalItems' => $total,
 			'perPage' => $pageSize,
+			'canJumpToPage' => true,
 		];
 		$pager = new Pager($options);
 		$interface->assign('pageLinks', $pager->getLinks());
@@ -54,10 +57,9 @@ class Admin_UsageByUserAgent extends Admin_Dashboard {
 		$this->display('usage_by_user_agent.tpl', 'Aspen Usage By User Agent');
 	}
 
-	public function getUsageStats($instanceName, $month, $year, $allUserAgents): array {
+	public function getUsageStats(?String $instanceName, ?int $month, ?int $year, array $allUserAgents): array {
+		$ids = array_keys($allUserAgents);
 		$usageByUserAgent = new UsageByUserAgent();
-		$usageByUserAgent->month = $month;
-		$usageByUserAgent->year = $year;
 
 		if (!empty($instanceName)) {
 			$usageByUserAgent->instance = $instanceName;
@@ -69,6 +71,7 @@ class Admin_UsageByUserAgent extends Admin_Dashboard {
 			$usageByUserAgent->year = $year;
 		}
 
+		$usageByUserAgent->whereAdd('userAgentId IN (' . implode(',', $ids) . ')');
 		$usageByUserAgent->groupBy('userAgentId');
 		$usageByUserAgent->selectAdd();
 		$usageByUserAgent->selectAdd('userAgentId');
@@ -78,14 +81,12 @@ class Admin_UsageByUserAgent extends Admin_Dashboard {
 		$allUserAgentStats = [];
 		$usageByUserAgent->find();
 		while ($usageByUserAgent->fetch()) {
-			if (array_key_exists($usageByUserAgent->userAgentId, $allUserAgents)) {
-				$userAgent = $allUserAgents[$usageByUserAgent->userAgentId];
-				$allUserAgentStats[$usageByUserAgent->userAgentId] = [
-					'userAgent' => $userAgent,
-					'numRequests' => $usageByUserAgent->numRequests,
-					'numBlockedRequests' => $usageByUserAgent->numBlockedRequests,
-				];
-			}
+			$userAgent = $allUserAgents[$usageByUserAgent->userAgentId];
+			$allUserAgentStats[$usageByUserAgent->userAgentId] = [
+				'userAgent' => $userAgent,
+				'numRequests' => $usageByUserAgent->numRequests,
+				'numBlockedRequests' => $usageByUserAgent->numBlockedRequests,
+			];
 		}
 
 		return $allUserAgentStats;

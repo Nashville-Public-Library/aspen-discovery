@@ -507,6 +507,9 @@ public abstract class AbstractGroupedWorkSolr {
 				}
 			}
 
+			//replace apostrophes in contractions
+			shortTitle = shortTitle.replaceAll("(\\w)'(\\w)", "$1$2");
+
 			//Create an alternate title for searching by replacing ampersands with the word and.
 			String tmpTitle = shortTitle.replace("&", " and ").replace("  ", " ");
 			if (!tmpTitle.equals(shortTitle)) {
@@ -743,6 +746,9 @@ public abstract class AbstractGroupedWorkSolr {
 	void addSeriesWithVolume(String seriesName, String volume) {
 		if (seriesName != null && !seriesName.isEmpty()) {
 			String seriesInfo = getNormalizedSeries(seriesName);
+			if (seriesInfo.isEmpty()) {
+				return;
+			}
 			String seriesInfoLower = seriesInfo.toLowerCase();
 			if (groupedWorkIndexer.hideSeries.contains(seriesInfoLower)) {
 				return;
@@ -814,6 +820,9 @@ public abstract class AbstractGroupedWorkSolr {
 	private void addSeriesInfoToField(String seriesInfo, HashMap<String, String> seriesField) {
 		if (seriesInfo != null && !seriesInfo.equalsIgnoreCase("none")) {
 			seriesInfo = getNormalizedSeries(seriesInfo);
+			if (seriesInfo.isEmpty()) {
+				return;
+			}
 			String normalizedSeriesLower = seriesInfo.toLowerCase();
 			if (groupedWorkIndexer.hideSeries.contains(normalizedSeriesLower)) {
 				return;

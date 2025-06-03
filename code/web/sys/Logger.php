@@ -15,6 +15,14 @@ class Logger {
 	public const LOG_ERROR = 2;
 	public const LOG_ALERT = 1;
 
+	private $levelNames = [
+		self::LOG_DEBUG => 'DEBUG',
+		self::LOG_NOTICE => 'NOTICE',
+		self::LOG_WARNING => 'WARNING',
+		self::LOG_ERROR => 'ERROR',
+		self::LOG_ALERT => 'ALERT',
+	];
+
 	public function __construct() {
 		global $configArray;
 		global $serverName;
@@ -54,7 +62,7 @@ class Logger {
 			if (is_array($msg)) {
 				$msg = print_r($msg, true);
 			}
-			fwrite($fhnd, '[' . date('Y M d H:i:s') . '] ' . $msg . "\r\n");
+			fwrite($fhnd, '[' . date('Y M d H:i:s') . "] [{$this->levelNames[$level]}] $msg \r\n");
 			fclose($fhnd);
 		}
 	}

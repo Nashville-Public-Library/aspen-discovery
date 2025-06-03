@@ -7557,6 +7557,31 @@ a.bg-overdue:focus {
 .goog-te-gadget {
   display: inline-block;
 }
+.field-wrapper {
+  position: relative;
+  display: block;
+}
+.field-wrapper.outside {
+  padding-bottom: 1.6em;
+}
+.char-counter {
+  position: absolute;
+  right: 0.5em;
+  font-size: 0.85em;
+  color: #666;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, bottom 0.2s ease;
+}
+.char-counter.visible {
+  opacity: 1;
+}
+.char-counter.inside {
+  bottom: 0.3em;
+}
+.char-counter.outside {
+  bottom: 0;
+}
 .ui-rater > span {
   vertical-align: top;
 }
@@ -8743,6 +8768,24 @@ a.placard-link {
 }
 .stripPopup .cookieContainer abbr {
   color: white;
+}
+#account-menu-label {
+  justify-content: left;
+  text-align: left;
+}
+#sidebar-collapse {
+  display: block;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 100;
+}
+#sidebar-expand {
+  display: block;
+  position: absolute;
+  top: 20px;
+  left: -15px;
+  z-index: 100;
 }
 .swiper {
   width: 100%;

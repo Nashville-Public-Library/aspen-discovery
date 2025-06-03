@@ -4,6 +4,11 @@
 	{if !empty($error)}
 		<div class="alert alert-danger">{$error}</div>
 	{/if}
+	{if !empty($updateMessage)}
+		<div class="alert {if !empty($updateMessageIsError)}alert-danger{else}alert-success{/if}">
+			{$updateMessage}
+		</div>
+	{/if}
 	{if !empty($loggedIn)}
 		<div id="materialsRequestFilters" class="accordion">
 			<div class="panel panel-default">
@@ -228,13 +233,13 @@
 											{/foreach}
 
 										</select>
-										<span class="btn btn-sm btn-primary input-group-addon" onclick="return AspenDiscovery.MaterialsRequest.assignSelectedRequests();">{translate text="Assign Selected Requests" isAdminFacing=true}</span>
 									{else}
 										<span class="text-warning">{translate text="No Valid Assignees Found" isAdminFacing=true}</span>
 									{/if}
 								</div>
 							</div>
 						</div>
+
 						<div class="row form-group">
 							<div class="col-sm-4">
 								<label for="newStatus" class="control-label">{translate text="Change status of selected to" isAdminFacing=true}</label>
@@ -247,10 +252,10 @@
 											<option value="{$status}">{translate text="$statusLabel"  isAdminFacing=true inAttribute=true}</option>
 										{/foreach}
 									</select>
-									<span class="btn btn-sm btn-primary input-group-addon" onclick="return AspenDiscovery.MaterialsRequest.updateSelectedRequests();">{translate text="Update Selected Requests" isAdminFacing=true}</span>
 								</div>
 							</div>
 						</div>
+
 						<div class="row">
 							<div class="col-xs-12">
 								{if !empty($page)}
@@ -258,6 +263,7 @@
 								{/if}
 								<input class="btn btn-default" type="submit" name="exportSelected" value="{translate text="Export Selected To CSV" inAttribute=true isAdminFacing=true}" onclick="return AspenDiscovery.MaterialsRequest.exportSelectedRequests();">
 								<input class="btn btn-default" type="submit" name="exportAll" value="{translate text="Export All To CSV" inAttribute=true isAdminFacing=true}">
+								<span class="btn btn-default" onclick="return AspenDiscovery.MaterialsRequest.updateSelectedRequests();">{translate text="Update Selected Requests" isAdminFacing=true}</span>
 							</div>
 						</div>
 					</div>

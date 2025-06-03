@@ -17,6 +17,7 @@ class User extends DataObject {
 	public $password;
 	public $firstname;
 	public $lastname;
+	public $userPreferredName;
 	public $email;
 	public $phone;
 	public $patronType;
@@ -145,6 +146,11 @@ class User extends DataObject {
 	public $materialsRequestReplyToAddress;
 	public $materialsRequestSendEmailOnAssign;
 
+	//Sort Settings
+	public $holdSortAvailable;
+	public $holdSortUnavailable;
+	public $checkoutSort;
+
 	function getNumericColumnNames(): array {
 		return [
 			'id',
@@ -171,6 +177,7 @@ class User extends DataObject {
 			'overdriveEmail',
 			'alternateLibraryCardPassword',
 			'axis360Email',
+			'userPreferredName',
 		];
 	}
 
@@ -863,7 +870,7 @@ class User extends DataObject {
 					return array_key_exists('Hoopla', $enabledModules) && $userHomeLibrary->hooplaLibraryID > 0;
 				} elseif ($source == 'hoopla_flex') {
 					$libraryHooplaScope = $userHomeLibrary->getHooplaScope();
-					$isFlexAvilable = $libraryHooplaScope->includeFlex;
+					$isFlexAvilable = $libraryHooplaScope ? $libraryHooplaScope->includeFlex : false;
 					return array_key_exists('Hoopla', $enabledModules) && $userHomeLibrary->hooplaLibraryID > 0 && $isFlexAvilable;
 				} elseif ($source == 'cloud_library') {
 					return array_key_exists('Cloud Library', $enabledModules) && ($userHomeLibrary->cloudLibraryScope > 0);
@@ -1229,6 +1236,12 @@ class User extends DataObject {
 				'type' => 'label',
 				'label' => 'Last Name',
 				'description' => 'The last name of the user.',
+			],
+			'userPreferredName' => [
+				'property' => 'userPreferredName',
+				'type' => 'label',
+				'label' => 'User Preferred Name',
+				'description' => 'The preferred name of the user.',
 			],
 			'displayName' => [
 				'property' => 'displayName',
@@ -4605,10 +4618,10 @@ class User extends DataObject {
 			$sections['side_loads'] = new AdminSection('Side Loads');
 			$sideLoadsSettingsAction = new AdminAction('Settings', 'Define connection information between Side Loads and Aspen Discovery.', '/SideLoads/SideLoads');
 			$sideLoadsScopesAction = new AdminAction('Scopes', 'Define which records are loaded for each library and location.', '/SideLoads/Scopes');
-			if ($sections['side_loads']->addAction($sideLoadsSettingsAction, 'Administer Side Loads')) {
-				$sideLoadsSettingsAction->addSubAction($sideLoadsScopesAction, 'Administer Side Loads');
+			if ($sections['side_loads']->addAction($sideLoadsSettingsAction, ['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library'])) {
+				$sideLoadsSettingsAction->addSubAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library']);
 			} else {
-				$sections['side_loads']->addAction($sideLoadsScopesAction, 'Administer Side Loads');
+				$sections['side_loads']->addAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Load Scopes for Home Library']);
 			}
 			$sections['side_loads']->addAction(new AdminAction('Indexing Log', 'View the indexing log for Side Loads.', '/SideLoads/IndexingLog'), [
 				'View System Reports',
@@ -5339,6 +5352,10 @@ class User extends DataObject {
 					for ($i = 1; $i < count($firstNames); $i++) {
 						$displayName .= ' ' . substr($firstNames[$i], 0, 1) . '.';
 					}
+					$displayName .= ' ' . substr($this->lastname, 0, 1) . '.';
+					$this->__set('displayName', trim($displayName));
+				} elseif ($homeLibrary->patronNameDisplayStyle == 'preferredname_lastinitial') {
+					$displayName = !empty($this->userPreferredName) ? $this->userPreferredName : $this->firstname;
 					$displayName .= ' ' . substr($this->lastname, 0, 1) . '.';
 					$this->__set('displayName', trim($displayName));
 				}
@@ -6167,6 +6184,28 @@ class User extends DataObject {
 		}
 
 		return $validationResults;
+	}
+
+	function updateSortPreferences(): void {
+		if (isset($_REQUEST['availableHoldSort'])) {
+			if ($this->holdSortAvailable !== $_REQUEST['availableHoldSort']) {
+				$this->holdSortAvailable = $_REQUEST['availableHoldSort'];
+			}
+		}
+
+		if (isset($_REQUEST['unavailableHoldSort'])) {
+			if ($this->holdSortUnavailable !== $_REQUEST['unavailableHoldSort']) {
+				$this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
+			}
+		}
+
+		if (isset($_REQUEST['sort'])) {
+			if ($this->checkoutSort !== $_REQUEST['sort']) {
+				$this->checkoutSort = $_REQUEST['sort'];
+			}
+		}
+
+		$this->update();
 	}
 }
 
