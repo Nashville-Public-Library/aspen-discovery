@@ -331,7 +331,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				$record = new TalpaRecordDriver($current);
 
 				$groupedWorkIds = $current['groupedworkidA'];
-				var_dump($groupedWorkIds);
 				$foundLibraryResult = false;
 				foreach ($groupedWorkIds  as $groupedWorkId) {
 					if ($inLibraryResults[$groupedWorkId]) {
@@ -1052,6 +1051,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			}
 			SearchObject_TalpaSearcher::$searchOptions = json_decode($input, true);
 			$resultsList = SearchObject_TalpaSearcher::$searchOptions ['response']['resultlist'];
+			$warnings = SearchObject_TalpaSearcher::$searchOptions ['response']['warnings'];
 
 			if (!SearchObject_TalpaSearcher::$searchOptions) {
 				SearchObject_TalpaSearcher::$searchOptions = array(
@@ -1088,6 +1088,21 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						)
 					)
 				);
+			} elseif($warnings)
+			{
+				foreach ($warnings as $warning) {
+					SearchObject_TalpaSearcher::$searchOptions = array(
+						'recordCount' => 0,
+						'documents' => array(),
+						'warnings' => array(
+							array(
+								'code' => 'API Offensive Warning',
+								'message' => $warning['wording'],
+								'stop'	=> $warning['stop']
+							)
+						)
+					);
+				}
 			}
 
 			$talpaSettings = $this -> getSettings();
@@ -1097,10 +1112,31 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			if (isset(SearchObject_TalpaSearcher::$searchOptions['errors']) && is_array(SearchObject_TalpaSearcher::$searchOptions['errors'])) {
 				foreach (SearchObject_TalpaSearcher::$searchOptions['errors'] as $current) {
 					$errors[] = "{$current['code']}: {$current['message']}";
+
+					$msg = $searchSourceString.' encountered an error while processing your request: '. $current['message'];
 				}
-				$msg = $searchSourceString.' encountered an error while processing your request: '. $current['message'];
 //					implode('<br />', $errors); //add this in for debugging, but not for public display.
 				AspenError::raiseError(new AspenError($msg));
+			}
+			elseif (isset(SearchObject_TalpaSearcher::$searchOptions['warnings']) && is_array(SearchObject_TalpaSearcher::$searchOptions['warnings'])) {
+				foreach (SearchObject_TalpaSearcher::$searchOptions['warnings'] as $current) {
+					var_dump($current);
+					global $interface;
+					$interface->assign('msg', $current['message']);
+
+				if($current['stop']) {
+					require_once ROOT_DIR . '/services/Talpa/TalpaWarning.php';
+					$TalpaWarning = new TalpaWarning();
+					$TalpaWarning->launch();
+				} else {
+					require_once ROOT_DIR . '/services/Talpa/TalpaWarning.php';
+					$TalpaWarning = new TalpaWarning();
+					$TalpaWarning->launch();
+				}
+
+				}
+
+
 			}
 			if (SearchObject_TalpaSearcher::$searchOptions) {
 				return SearchObject_TalpaSearcher::$searchOptions;
