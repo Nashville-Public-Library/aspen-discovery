@@ -2240,27 +2240,29 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				$seriesMember->excluded = 0;
 				$seriesInfo = null;
 				$seriesMember->find();
-				if ($seriesMember->fetch()) {
-					$series = $seriesMember->getSeries();
-					if ($series != null) {
-						$seriesInfo = [
-							'seriesTitle' => $series->displayName,
-							'seriesId' => $series->id,
-							'volume' => $seriesMember->volume,
-							'fromNovelist' => false,
-							'fromSeriesIndex' => true
-						];
-					}
-				}
+				$first = true;
 				while ($seriesMember->fetch()) {
 					$series = $seriesMember->getSeries();
-					$seriesInfo['additionalSeries'][] = [
-						'seriesTitle' => $series->displayName,
-						'seriesId' => $series->id,
-						'volume' => $seriesMember->volume,
-						'fromNovelist' => false,
-						'fromSeriesIndex' => true
-					];
+					if ($series != null) {
+						if ($first) {
+							$seriesInfo = [
+								'seriesTitle' => $series->displayName,
+								'seriesId' => $series->id,
+								'volume' => $seriesMember->volume,
+								'fromNovelist' => false,
+								'fromSeriesIndex' => true
+							];
+							$first = false;
+						} else {
+							$seriesInfo['additionalSeries'][] = [
+								'seriesTitle' => $series->displayName,
+								'seriesId' => $series->id,
+								'volume' => $seriesMember->volume,
+								'fromNovelist' => false,
+								'fromSeriesIndex' => true
+							];
+						}
+					}
 				}
 				$this->seriesData = $seriesInfo;
 			}else{

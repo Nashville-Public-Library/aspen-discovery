@@ -190,19 +190,28 @@ class MaterialsRequest_Submit extends Action {
 										'isPublicFacing' => true,
 									]));
 								} else {
+									header('Location: /MaterialsRequest/MyRequests');
 									$materialsRequest->status = $defaultStatus->id;
 									$materialsRequest->dateCreated = time();
 									$materialsRequest->createdBy = UserAccount::getActiveUserId();
 									$materialsRequest->dateUpdated = time();
 
 									if ($materialsRequest->insert()) {
-										header('Location: /MaterialsRequest/Results?success=true&id=' . $materialsRequest->id);
-									} else {
-										$interface->assign('success', false);
-										$interface->assign('error', translate([
-											'text' => 'There was an error submitting your materials request.',
+										$user->updateMessage = translate([
+											'text' => 'Your request for %1% by %2% was submitted successfully.',
 											'isPublicFacing' => true,
-										]));
+											1 => $materialsRequest->title,
+											2 => $materialsRequest->author
+										]);
+										$user->updateMessageIsError = false;
+										$user->update();
+									} else {
+										$user->updateMessage = translate([
+											'text' => 'There was an error submitting your materials request.',
+											'isPublicFacing' => true
+										]);
+										$user->updateMessageIsError = true;
+										$user->update();
 									}
 								}
 							}

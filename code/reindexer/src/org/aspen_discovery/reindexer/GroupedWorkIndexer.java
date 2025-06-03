@@ -1533,6 +1533,8 @@ public class GroupedWorkIndexer {
 								if (numSeriesMembersRS.getInt("numMembers") == 0) {
 									deleteSeriesStmt.setInt(1, seriesId); // Deletes if it only had 1 member (this work)
 									deleteSeriesStmt.executeUpdate();
+									// Also remove from Solr
+									updateServer.deleteByQuery("recordtype:series AND id:" + seriesId);
 								}
 							}
 							numSeriesMembersRS.close();
@@ -1558,8 +1560,17 @@ public class GroupedWorkIndexer {
 					int result = deleteSeriesMemberStmt.executeUpdate();
 					// Also delete the series if it no longer has any members
 					if (result != 0) {
-						deleteSeriesStmt.setLong(1, seriesId); // Deletes if it only had 1 member (this work)
-						deleteSeriesStmt.executeUpdate();
+						getNumberOfSeriesMembersStmt.setLong(1, seriesId);
+						ResultSet numSeriesMembersRS = getNumberOfSeriesMembersStmt.executeQuery();
+						if (numSeriesMembersRS.next()) {
+							if (numSeriesMembersRS.getInt("numMembers") == 0) {
+								deleteSeriesStmt.setLong(1, seriesId); // Deletes if it only had 1 member (this work)
+								deleteSeriesStmt.executeUpdate();
+								// Also remove from Solr
+								updateServer.deleteByQuery("recordtype:series AND id:" + seriesId);
+							}
+						}
+						numSeriesMembersRS.close();
 					}
 				}
 				seriesMemberRS.close();
