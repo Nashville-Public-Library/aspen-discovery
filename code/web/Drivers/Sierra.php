@@ -244,7 +244,7 @@ class Sierra extends Millennium {
 		if ($this->accountProfile->apiVersion > 4) {
 			$sierraUrl .= "?fields=default,priorityQueueLength&limit=1000";
 		} else {
-			$sierraUrl .= "?fields=default,frozen,priority,priorityQueueLength,notWantedBeforeDate,notNeededAfterDate&limit=1000";
+			$sierraUrl .= "?fields=default,frozen,priority,priorityQueueLength,notWantedBeforeDate,notNeededAfterDate,placed&limit=1000";
 		}
 		$holds = $this->_callUrl('sierra.getHolds', $sierraUrl);
 
@@ -2476,6 +2476,10 @@ class Sierra extends Millennium {
 	}
 
 	public function showTimesRenewed(): bool {
+		return true;
+	}
+
+	public function showHoldPlacedDate(): bool {
 		return true;
 	}
 

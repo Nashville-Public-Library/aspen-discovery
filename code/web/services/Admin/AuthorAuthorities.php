@@ -30,7 +30,7 @@ class Admin_AuthorAuthorities extends ObjectEditor {
 	}
 
 	function getDefaultSort(): string {
-		return 'author asc';
+		return 'dateAdded desc';
 	}
 
 	function getObjectStructure($context = ''): array {

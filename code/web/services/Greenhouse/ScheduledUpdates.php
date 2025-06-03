@@ -90,7 +90,7 @@ class Greenhouse_ScheduledUpdates extends ObjectEditor {
 		return false;
 	}
 
-	function canBatchDelete() {
+	function canBatchDelete(): bool {
 		return true;
 	}
 

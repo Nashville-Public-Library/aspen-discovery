@@ -141,6 +141,7 @@
 				{include file="DataObjectUtil/validationRule.tpl"}
 			{/foreach}
 			objectEditorObject.data('serialize',objectEditorObject.serialize()); // On load save form current state
+			AspenDiscovery.FormFields.initializeCharacterCounters(objectEditorObject);
 			{if !empty($initializationJs)}
 				{$initializationJs}
 			{/if}

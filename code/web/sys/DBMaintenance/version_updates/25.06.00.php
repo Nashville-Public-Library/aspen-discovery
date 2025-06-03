@@ -56,17 +56,24 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE aspen_lida_self_check_settings ADD COLUMN barcodeEntryKeyboardType TINYINT(1) NOT NULL DEFAULT 1;",
 			]
 		], //add_lida_barcode_entry_keyboard_type_setting
+		'run_full_series_index_update' => [
+			'title' => 'Run Full Series Index Update',
+			'description' => 'Run full Series Index update to clean up deleted series records that are still in the index',
+			'sql' => [
+				"UPDATE series_indexing_settings SET runFullUpdate = 1;"
+			]
+		], //run_full_series_index
 
 		//kirstien - Grove
-        'last_used_sort_for_user' => [
-            'title' => 'Store the last used sort value a patron used for holds and checkouts',
-            'description' => 'Store the last used sort value a patron used for holds and checkouts',
-            'sql' => [
-                "ALTER TABLE user ADD COLUMN holdSortAvailable VARCHAR(75) DEFAULT 'expire'",
-                "ALTER TABLE user ADD COLUMN holdSortUnavailable VARCHAR(75) DEFAULT 'title'",
-                "ALTER TABLE user ADD COLUMN checkoutSort VARCHAR(75) DEFAULT 'dueDate'"
-            ],
-        ], //last_used_sort_for_user
+		'last_used_sort_for_user' => [
+			'title' => 'Store the last used sort value a patron used for holds and checkouts',
+			'description' => 'Store the last used sort value a patron used for holds and checkouts',
+			'sql' => [
+				"ALTER TABLE user ADD COLUMN holdSortAvailable VARCHAR(75) DEFAULT 'expire'",
+				"ALTER TABLE user ADD COLUMN holdSortUnavailable VARCHAR(75) DEFAULT 'title'",
+				"ALTER TABLE user ADD COLUMN checkoutSort VARCHAR(75) DEFAULT 'dueDate'"
+			],
+		], //last_used_sort_for_user
 
 		//kodi - Grove
 		'side_loads_library_permissions' => [
@@ -100,6 +107,15 @@ function getUpdates25_06_00(): array {
 			],
 		], //side_loads_uniqueness
 
+		// Myranda - Grove
+		'theme_series_image_explore_more' => [
+			 'title' => 'Theme - Add custom image uploads for series results',
+			 'description' => 'Update theme table to have a custom image value for series results in explore more.',
+			 'sql' => [
+				 "ALTER TABLE themes ADD COLUMN seriesImage VARCHAR(100) default ''",
+			 ]
+		], //theme_series_image_explore_more
+
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
@@ -129,6 +145,40 @@ function getUpdates25_06_00(): array {
 		// Laura Escamilla - ByWater Solutions
 
 		//alexander - Open Fifth
+		'update_award_reward_automatically_to_false_by_default' => [
+			'title' => 'Update Award Reward Automaticaly to False By Default',
+			'description' => 'Update default for award automatically to false',
+			'sql' => [
+				"ALTER TABLE ce_reward ALTER awardAutomatically SET DEFAULT 0",
+			]
+		], //update_award_reward_automatically_to_false_by_default
+		'add_preferred_name_to_user' => [
+			'title' => 'Add Preferred Name To User',
+			'description' => 'Add preferred name to user table',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE user ADD COLUMN userPreferredName VARCHAR(256) NOT NULL",
+			]
+		],
+		//add_preferred_name
+		'add_preferred_name_option_to_dropdown' => [
+			'title' => 'Add Preferred Name Option To Dropdown',
+			'description' => 'Add the preferred name option to the name display dropdown in the library.',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE library MODIFY COLUMN patronNameDisplayStyle ENUM('firstinitial_lastname','lastinitial_firstname','firstinitial_middleinitial_lastname','firstname_middleinitial_lastinitial', 'preferredname_lastinitial') DEFAULT 'firstinitial_lastname'",
+			]
+		],
+		//add_preferred_name_option_to_dropdown
+		'allow_replacement_of_all_instances_of_first_name' => [
+			'title' => 'Allow Replacement Of All Instances Of First Name',
+			'description' => 'Allow replacement of all instances of first name with the patron\'s preferred name from the ILS id set',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN replaceAllFirstNameWithPreferredName TINYINT(1) DEFAULT 0",
+			]
+		],
+		//allow_replacement_of_all_instances_of_first_name
 
 		//chloe - Open Fifth
 
