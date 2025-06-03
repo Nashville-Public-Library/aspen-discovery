@@ -201,7 +201,7 @@
 								{/if}
 								{if $dataItem->getAdditionalListActions()}
 									{foreach from=$dataItem->getAdditionalListActions() item=action}
-										<a href='{$action.url}' {if !empty($action.onclick)}onclick="{$action.onclick}"{/if} class="btn btn-default btn-sm" aria-label="{$action.text} for Item {$id}" {if !empty($action.target) && $action.target == "_blank"}target="_blank" {/if}>{if !empty($action.target) && $action.target == "_blank"}<i class="fas fa-external-link-alt" role="presentation"></i> {/if} {translate text=$action.text isAdminFacing=true}</a>
+										<a href='{$action.url}' {if !empty($action.onclick)}onclick="{$action.onclick}"{/if} class="btn btn-default btn-sm{if !empty($action.class)} {$action.class}{/if}" aria-label="{$action.text} for Item {$id}" {if !empty($action.target) && $action.target == "_blank"}target="_blank" {/if}>{if !empty($action.target) && $action.target == "_blank"}<i class="fas fa-external-link-alt" role="presentation"></i> {/if} {translate text=$action.text isAdminFacing=true}</a>
 									{/foreach}
 								{/if}
 								{if $dataItem->getAdditionalListJavascriptActions()}
