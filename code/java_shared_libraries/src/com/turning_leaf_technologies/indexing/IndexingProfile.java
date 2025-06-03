@@ -114,6 +114,9 @@ public class IndexingProfile extends BaseIndexingSettings {
 
 	private SierraExportFieldMapping sierraExportFieldMappings = null;
 
+	// Whether to ignore on-order records when selecting titles for display in grouped works.
+	private boolean prioritizeAvailableRecordsForTitleSelection = false;
+
 	public IndexingProfile(String serverName, BaseIndexingLogEntry logEntry){
 		//This is only intended to be used for unit testing
 		super(serverName, logEntry);
@@ -264,6 +267,8 @@ public class IndexingProfile extends BaseIndexingSettings {
 
 		index856Links = indexingProfileRS.getInt("index856Links");
 		treatUnknownAudienceAs = indexingProfileRS.getString("treatUnknownAudienceAs");
+
+		prioritizeAvailableRecordsForTitleSelection = indexingProfileRS.getBoolean("prioritizeAvailableRecordsForTitleSelection");
 
 		//Custom Facet 1
 		this.customFacet1SourceField = indexingProfileRS.getString("customFacet1SourceField");
@@ -1155,5 +1160,23 @@ public class IndexingProfile extends BaseIndexingSettings {
 
 	public void setOrderRecordStatusToTreatAsUnderConsideration(String orderRecordStatusToTreatAsUnderConsideration) {
 		this.orderRecordStatusToTreatAsUnderConsideration = orderRecordStatusToTreatAsUnderConsideration;
+	}
+
+	/**
+	 * Return the flag indicating whether available records should be prioritized for title selection.
+	 *
+	 * @return {@code true} if available records should be ignored for title selection, {@code false} otherwise.
+	 */
+	public boolean getPrioritizeAvailableRecordsForTitleSelection() {
+		return prioritizeAvailableRecordsForTitleSelection;
+	}
+
+	/**
+	 * Sets the flag indicating whether on-order records should be ignored for title selection.
+	 *
+	 * @param ignoreOnOrderRecordsForTitleSelection {@code true} to ignore on-order records for title selection, {@code false} otherwise.
+	 */
+	public void setPrioritizeAvailableRecordsForTitleSelection(boolean prioritizeAvailableRecordsForTitleSelection) {
+		this.prioritizeAvailableRecordsForTitleSelection = prioritizeAvailableRecordsForTitleSelection;
 	}
 }

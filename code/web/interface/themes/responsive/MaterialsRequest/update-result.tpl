@@ -10,6 +10,6 @@
 			{translate text="The request for %1% by %2% was updated successfully." 1=$materialsRequest->title 2=$materialsRequest->author isAdminFacing=true}
 			</div>
 		{/if}
-		<a role="button" class="btn btn-primary" href='/MaterialsRequest/ManageRequests'>{translate text="Return to Manage Requests" isAdminFacing=true}</a>.
+		<a role="button" class="btn btn-primary" href='/MaterialsRequest/ManageRequests'>{translate text="Return to Manage Requests" isAdminFacing=true}</a>
 	</div>
 </div>
