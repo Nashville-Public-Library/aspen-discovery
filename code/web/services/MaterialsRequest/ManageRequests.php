@@ -220,35 +220,6 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 		} elseif (isset($_SESSION['materialsRequestFormatFilter'])) {
 			$formatsToShow = $_SESSION['materialsRequestFormatFilter'];
 		} else {
-			/*foreach ($formatsToShow as $format) {
-				$stickyFilter = new StickyFilter;
-				$stickyFilter->userId = $user->id;
-				$stickyFilter->filterValue = $format;
-				$stickyFilter->filterFor = "MaterialsRequest_Format";
-				if (!$stickyFilter->find(true)) {
-					$stickyFilter->insert();
-				}
-			}
-			//remove filters that have been unchecked
-			$stickyFilterDeletions = new StickyFilter;
-			$stickyFilterDeletions->userId = $user->id;
-			$stickyFilterDeletions->filterFor = "MaterialsRequest_Format";
-			$stickyFilterDeletions->find();
-			while ($stickyFilterDeletions->fetch()) {
-				if (!in_array($stickyFilterDeletions->filterValue, $formatsToShow)) {
-					$stickyFilterDeletions->delete();
-				}
-			}
-		}
-		//check for sticky filter values saved for admin account
-		$adminStickyFilter = new StickyFilter;
-		$adminStickyFilter->userId = $user->id;
-		$adminStickyFilter->filterFor = "MaterialsRequest_Format";
-		if ($adminStickyFilter->find()) {
-			while ($adminStickyFilter->fetch()) {
-				$formatsToShow[] = $adminStickyFilter->filterValue;
-			}
-		} else { //if there are no set or saved filters use default*/
 			$formatsToShow = $defaultFormatsToShow;
 		}
 		$interface->assign('formatFilter', $formatsToShow);
