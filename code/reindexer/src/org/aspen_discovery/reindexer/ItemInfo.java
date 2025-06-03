@@ -72,7 +72,11 @@ public class ItemInfo{
 	}
 
 	public String getStatusCode() {
-		return itemStatus.getOriginalValue();
+		if (itemStatus == null) {
+			return null;
+		}else {
+			return itemStatus.getOriginalValue();
+		}
 	}
 
 	public void setItemStatus(ItemStatus itemStatus) {

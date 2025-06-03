@@ -97,6 +97,19 @@ class MaterialsRequest_MyRequests extends MyAccount {
 		}
 		$interface->assign('allRequests', $allRequests);
 
+		$user = UserAccount::getActiveUserObj();
+		$updateMessage = '';
+		$updateMessageIsError = false;
+		if (!empty($user->updateMessage)) {
+			$updateMessage = $user->updateMessage;
+			$updateMessageIsError = $user->updateMessageIsError;
+			$user->updateMessage = '';
+			$user->updateMessageIsError = 0;
+			$user->update();
+		}
+		$interface->assign('updateMessage', $updateMessage);
+		$interface->assign('updateMessageIsError', $updateMessageIsError);
+
 		$this->display('myMaterialRequests.tpl', 'My Materials Requests');
 	}
 

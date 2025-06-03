@@ -229,6 +229,14 @@ class MaterialsRequestFormFields extends DataObject {
 		$defaultField = new MaterialsRequestFormFields();
 		$defaultField->libraryId = $libraryId;
 		$defaultField->formCategory = 'Staff Information';
+		$defaultField->fieldLabel = 'Assigned To';
+		$defaultField->fieldType = 'assignedTo';
+		$defaultField->weight = count($defaultFieldsToDisplay) + 1;
+		$defaultFieldsToDisplay[] = $defaultField;
+
+		$defaultField = new MaterialsRequestFormFields();
+		$defaultField->libraryId = $libraryId;
+		$defaultField->formCategory = 'Staff Information';
 		$defaultField->fieldLabel = 'Created By';
 		$defaultField->fieldType = 'createdBy';
 		$defaultField->weight = count($defaultFieldsToDisplay) + 1;
