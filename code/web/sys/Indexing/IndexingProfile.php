@@ -221,6 +221,8 @@ class IndexingProfile extends DataObject {
 		$numMillisecondsToPauseAfterBibLookups;
 	public /** @noinspection PhpUnused */
 		$numExtractionThreads;
+	public /** @noinspection PhpUnused */
+		$prioritizeAvailableRecordsForTitleSelection;
 
 	private $_translationMaps;
 	private $_timeToReshelve;
@@ -249,7 +251,8 @@ class IndexingProfile extends DataObject {
 			'orderRecordsToSuppressByDate',
 			'numRetriesForBibLookups',
 			'numMillisecondsToPauseAfterBibLookups',
-			'numExtractionThreads'
+			'numExtractionThreads',
+			'prioritizeAvailableRecordsForTitleSelection',
 		];
 	}
 
@@ -640,6 +643,14 @@ class IndexingProfile extends DataObject {
 						'default' => true,
 						'description' => 'Check metadata within the record to see if a book is large print',
 						'note'        => 'Only applies when all items have formats of either Book or Large Print',
+						'forcesReindex' => true,
+					],
+					'prioritizeAvailableRecordsForTitleSelection' => [
+						'property' => 'prioritizeAvailableRecordsForTitleSelection',
+						'type' => 'checkbox',
+						'label' => 'Prioritize Available Records for Title Selection',
+						'description' => 'When checked, if there are available records in a grouped work, titles from those available records will be prioritized as the display title for the grouped work.',
+						'default' => 0,
 						'forcesReindex' => true,
 					],
 					'formatMap' => [
@@ -1588,7 +1599,13 @@ class IndexingProfile extends DataObject {
 					unset($formatMapStructure['appliesToItemSublocation']);
 					unset($formatMapStructure['appliesToItemCollection']);
 					unset($formatMapStructure['appliesToItemType']);
+
+					// Hide the prioritizeAvailableRecordsForTitleSelection setting for non-Koha ILS.
+					if (isset($structure['formatSection']['properties']['prioritizeAvailableRecordsForTitleSelection'])) {
+						unset($structure['formatSection']['properties']['prioritizeAvailableRecordsForTitleSelection']);
+					}
 				}
+
 				if ($activeIls != 'sierra') {
 					unset($formatMapStructure['appliesToMatType']);
 					unset($formatMapStructure['displaySierraCheckoutGrid']);

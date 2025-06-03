@@ -1,9 +1,9 @@
 {strip}
 	{if !empty($loggedIn) && !empty($adminActions)}
 		<div id="account-menu-label" class="sidebar-label row">
-			<div class="col-xs-12">
-				{translate text='Administration Options' isAdminFacing=true}
-				<div id="sidebar-collapse"><button class="btn btn-default btn-sm" aria-label="{translate text="Collapse Sidebar" inAttribute=true isAdminFacing=true}"  title="{translate text="Collapse Sidebar" inAttribute=true isAdminFacing=true}" onclick="$('#side-bar').hide();$('#main-content-with-sidebar').addClass('col-sm-12').addClass('col-md-12').addClass('col-lg-12').removeClass('col-sm-8').removeClass('col-md-9').removeClass('col-lg-10').removeClass('col-lg-9');$('#sidebar-expand').show();"><i class="fas fa-angle-double-left"></i></button></div>
+			<div class="col-xs-12 sidebar-toggle-wrapper">
+				<span class="sidebar-title">{translate text='Administration Options' isAdminFacing=true}</span>
+				<div id="sidebar-collapse"><button class="btn btn-default btn-sm" aria-label="{translate text="Toggle Sidebar" inAttribute=true isAdminFacing=true}" title="{translate text="Toggle Sidebar" inAttribute=true isAdminFacing=true}" onclick="$('#side-bar').toggleClass('collapsed');"><i class="fas fa-angle-double-left"></i></button></div>
 			</div>
 			<div class="col-xs-12">
 				<a class='searchSettings searchSettingsColor' onClick="return AspenDiscovery.Admin.showSearch();" id='showSearchButton'><i class="fas fa-search" role="presentation"></i> {translate text="Search" isAdminFacing=true}</a>
