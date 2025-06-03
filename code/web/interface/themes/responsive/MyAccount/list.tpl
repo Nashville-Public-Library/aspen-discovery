@@ -139,7 +139,15 @@
 									{if !empty($showEmailThis)}
 									<button value="emailList" id="FavEmail" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.Lists.emailListAction("{$userList->id}")'>{translate text='Email List' isPublicFacing=true}</button>
 									{/if}
-									<button value="printList" id="FavPrint" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.Lists.printListAction()'>{translate text='Print List' isPublicFacing=true}</button>
+									<div class="btn-group">
+										<button id="PrintOptions" type="button" class="btn btn-sm btn-default dropdown-toggle listViewButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+											{translate text='Print List Options' isPublicFacing=true} <span class="caret"></span>
+										</button>
+										<ul class="dropdown-menu">
+											<li><a href="#" onclick="return AspenDiscovery.Lists.printListWithoutDescriptions()">{translate text='Print Without Descriptions' isPublicFacing=true}</a></li>
+											<li><a href="#" onclick="return AspenDiscovery.Lists.printListWithDescriptions()">{translate text='Print With Descriptions' isPublicFacing=true}</a></li>
+										</ul>
+									</div>
 									<a id="FavExport" class="btn btn-sm btn-default listViewButton" href="/MyAccount/AJAX?method=exportUserList&listId={$userList->id}">{translate text='Export List to CSV' isPublicFacing=true}</a>
 									<a id="FavExportRis" class="btn btn-sm btn-default listViewButton" href="/MyAccount/AJAX?method=exportUserListRIS&listId={$userList->id}">{translate text='Export List to RIS' isPublicFacing=true}</a>
 									<button value="citeList" id="FavCite" class="btn btn-sm btn-default listViewButton" onclick='return AspenDiscovery.Lists.citeListAction("{$userList->id}")'>{translate text='Generate Citations' isPublicFacing=true}</button>

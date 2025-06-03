@@ -17,8 +17,13 @@ class Admin_Themes extends ObjectEditor {
 		return 'Themes';
 	}
 
-	function canDelete() {
+	function canDelete(): bool {
 		return UserAccount::userHasPermission('Administer All Themes');
+	}
+
+	public function canDeleteAll(): bool {
+		// Never allow Delete All for themes because the default theme should never be deleted.
+		return false;
 	}
 
 	function getAllObjects($page, $recordsPerPage): array {
@@ -123,12 +128,10 @@ class Admin_Themes extends ObjectEditor {
 	}
 
 	public function canShareToCommunity() {
-		//TODO: This needs a permission
 		return $this->hasCommunityConnection() && UserAccount::userHasPermission('Share Content with Community');
 	}
 
 	public function canFetchFromCommunity() {
-		//TODO: This needs a permission
 		return $this->hasCommunityConnection() && UserAccount::userHasPermission('Import Content from Community');
 	}
 

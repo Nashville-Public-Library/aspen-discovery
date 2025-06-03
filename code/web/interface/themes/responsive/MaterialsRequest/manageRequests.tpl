@@ -4,6 +4,11 @@
 	{if !empty($error)}
 		<div class="alert alert-danger">{$error}</div>
 	{/if}
+	{if !empty($updateMessage)}
+		<div class="alert {if !empty($updateMessageIsError)}alert-danger{else}alert-success{/if}">
+			{$updateMessage}
+		</div>
+	{/if}
 	{if !empty($loggedIn)}
 		<div id="materialsRequestFilters" class="accordion">
 			<div class="panel panel-default">
@@ -17,7 +22,7 @@
 			<div id="filterPanel" class="panel-collapse collapse">
 				<div class="panel-body">
 
-					<form action="/MaterialsRequest/ManageRequests" method="get">
+					<form action="/MaterialsRequest/ManageRequests" method="get" onsubmit="return AspenDiscovery.MaterialsRequest.validateManageRequestFilters();">
 						<fieldset class="fieldset-collapsible">
 							<legend>{translate text="Statuses to Show" isAdminFacing=true}</legend>
 							<div class="form-group checkbox">

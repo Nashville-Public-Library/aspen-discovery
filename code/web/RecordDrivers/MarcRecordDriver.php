@@ -688,20 +688,29 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		return $this->getAuthor();
 	}
 
+	private $author = null;
 	public function getAuthor() {
-		$author = $this->getFirstFieldValue('100', [
-			'a',
-			'c',
-			'd',
-			'q'
-		]);
-		if (empty($author)) {
-			$author = $this->getFirstFieldValue('110', [
+		if ($this->author == null) {
+			$author = $this->getFirstFieldValue('100', [
 				'a',
-				'b',
+				'c',
+				'd',
+				'q'
 			]);
+			if (empty($author)) {
+				$author = $this->getFirstFieldValue('110', [
+					'a',
+					'b',
+				]);
+			}
+			if (str_ends_with($author, ',')) {
+				$author = substr($author, 0, strlen($author) -1);
+			}
+			$author = preg_replace('/(\d)\.$/', '$1', $author);
+			$this->author = $author;
 		}
-		return $author;
+
+		return $this->author;
 	}
 
 	public function getContributors() {
@@ -1382,7 +1391,12 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	private function getLibKeyUrl($doiUrl) {
 		require_once ROOT_DIR . "/Drivers/LibKeyDriver.php";
 		$libKeyDriver = new LibKeyDriver();
-		return $libKeyDriver->getLibKeyResult($doiUrl)["data"]["bestIntegratorLink"]["bestLink"];
+		$libKeyResult = $libKeyDriver->getLibKeyResult($doiUrl);
+		if (!empty($libKeyResult)) {
+			return $libKeyResult["data"]["bestIntegratorLink"]["bestLink"];
+		}else{
+			return null;
+		}
 	}
 
 	private $catalogDriver = null;
