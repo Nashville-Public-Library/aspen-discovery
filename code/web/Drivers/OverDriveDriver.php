@@ -284,10 +284,12 @@ class OverDriveDriver extends AbstractEContentDriver {
 				], true);
 
 				$patronBarcode = urlencode($patronBarcode);
-				if ($patronPin == null) {
+				if ($patronPin == null && !$user->isLoggedInViaSSO) {
 					$postFields = "grant_type=password&username=$patronBarcode&password=ignore&password_required=false&scope=websiteId:$websiteId%20ilsname:$ilsname";
-				} else {
+				} elseif ($patronPin != null) {
 					$postFields = "grant_type=password&username=$patronBarcode&password=$patronPin&password_required=true&scope=websiteId:$websiteId%20ilsname:$ilsname";
+				} else {
+					return false;
 				}
 
 				$content = $this->apiCurlWrapper->curlPostPage($url, $postFields);

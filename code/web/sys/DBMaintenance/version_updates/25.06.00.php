@@ -93,6 +93,19 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE sideloads ADD COLUMN sharing INT(11) NOT NULL DEFAULT 1",
 			],
 		], //side_loads_owning_and_sharing
+		'admin_sticky_filter_table' => [
+			'title' => 'Sticky Filter Table',
+			'description' => 'Add table for sticky filter options for Admins.',
+			'sql' => [
+				"DROP TABLE IF EXISTS admin_sticky_filters",
+				'CREATE TABLE IF NOT EXISTS admin_sticky_filters (
+					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					userId INT(11),
+					filterFor VARCHAR(100),
+					filterValue VARCHAR(255)
+				) ENGINE INNODB',
+			],
+		], //admin_sticky_filter_table
 
 		//Mark - Grove
 		'side_loads_uniqueness' => [
@@ -141,6 +154,13 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE web_builder_portal_cell ADD COLUMN IF NOT EXISTS staticLocationId int(11) NOT NULL DEFAULT -1",
 			]
 		], //add_static_location_id_to_portal_cell
+		'add_ignore_on_order_records_for_title_selection' => [
+			'title' => 'Add ignoreOnOrderRecordsForTitleSelection to indexing profiles',
+			'description' => 'Adds a setting to skip on-order records when selecting titles for display in grouped works (Koha-specific)',
+			'sql' => [
+				"ALTER TABLE indexing_profiles ADD COLUMN IF NOT EXISTS ignoreOnOrderRecordsForTitleSelection TINYINT(1) DEFAULT 0"
+			],
+		], // add_ignore_on_order_records_for_title_selection
 
 		// Laura Escamilla - ByWater Solutions
 
@@ -159,8 +179,7 @@ function getUpdates25_06_00(): array {
 			'sql' => [
 				"ALTER TABLE user ADD COLUMN userPreferredName VARCHAR(256) NOT NULL",
 			]
-		],
-		//add_preferred_name
+		], //add_preferred_name
 		'add_preferred_name_option_to_dropdown' => [
 			'title' => 'Add Preferred Name Option To Dropdown',
 			'description' => 'Add the preferred name option to the name display dropdown in the library.',
@@ -168,8 +187,7 @@ function getUpdates25_06_00(): array {
 			'sql' => [
 				"ALTER TABLE library MODIFY COLUMN patronNameDisplayStyle ENUM('firstinitial_lastname','lastinitial_firstname','firstinitial_middleinitial_lastname','firstname_middleinitial_lastinitial', 'preferredname_lastinitial') DEFAULT 'firstinitial_lastname'",
 			]
-		],
-		//add_preferred_name_option_to_dropdown
+		], //add_preferred_name_option_to_dropdown
 		'allow_replacement_of_all_instances_of_first_name' => [
 			'title' => 'Allow Replacement Of All Instances Of First Name',
 			'description' => 'Allow replacement of all instances of first name with the patron\'s preferred name from the ILS id set',
@@ -177,8 +195,14 @@ function getUpdates25_06_00(): array {
 			'sql' => [
 				"ALTER TABLE library ADD COLUMN replaceAllFirstNameWithPreferredName TINYINT(1) DEFAULT 0",
 			]
-		],
-		//allow_replacement_of_all_instances_of_first_name
+		], //allow_replacement_of_all_instances_of_first_name
+		'add_admin_control_over_campaign_leaderboard' => [
+			'title' => 'Add Admin Control Over Campaign Leaderboard',
+			'description' => 'Add ability for admin to control whether leaderbaord displays',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN displayCampaignLeaderboard TINYINT(1) DEFAULT 0",
+			]
+		], //add_admin_control_over_campaign_leaderboard
 
 		//chloe - Open Fifth
 
