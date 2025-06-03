@@ -4986,8 +4986,52 @@ class Library extends DataObject {
 		return $this->_themes;
 	}
 
+	/**
+	 * Checks if this library has multiple themes assigned to it.
+	 *
+	 * @return bool True if the library has more than one theme, false otherwise.
+	 */
+	public function hasMultipleThemes(): bool {
+		$themes = $this->getThemes();
+		return count($themes) > 1;
+	}
+
 	public function saveThemes() : void {
 		if (isset ($this->_themes) && is_array($this->_themes)) {
+			// First, check if all themes are being deleted.
+			$themesToDelete = 0;
+			$totalThemes = count($this->getThemes());
+
+			foreach ($this->_themes as $obj) {
+				/** @var LibraryTheme $obj */
+				if ($obj->_deleteOnSave) {
+					$themesToDelete++;
+				}
+			}
+
+			// If all themes would be deleted, prevent it.
+			if ($themesToDelete > 0 && $themesToDelete >= $totalThemes) {
+				$preventionMessage = translate([
+					'text' => 'Cannot delete all themes from a library. Each library must have at least one theme assigned to it.',
+					'isAdminFacing' => true
+				]);
+
+				$user = UserAccount::getActiveUserObj();
+				if ($user) {
+					$user->updateMessage = $preventionMessage;
+					$user->updateMessageIsError = true;
+					$user->update();
+				}
+
+				// Prevent the deletion by unsetting the deleteOnSave flag.
+				foreach ($this->_themes as $obj) {
+					if ($obj->_deleteOnSave) {
+						$obj->_deleteOnSave = false;
+						break; // Only need to preserve at least one theme.
+					}
+				}
+			}
+
 			foreach ($this->_themes as $obj) {
 				/** @var LibraryTheme $obj */
 				if ($obj->_deleteOnSave) {
@@ -5005,7 +5049,7 @@ class Library extends DataObject {
 							}
 						}
 					} else {
-						// set appropriate weight for new theme
+						// Set the appropriate weight for the new theme.
 						$weight = 0;
 						$existingThemesForLibrary = new LibraryTheme();
 						$existingThemesForLibrary->libraryId = $this->libraryId;
