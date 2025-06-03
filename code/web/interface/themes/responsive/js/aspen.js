@@ -14181,6 +14181,20 @@ AspenDiscovery.Lists = (function(){
 			return false;
 		},
 
+		printListWithDescriptions: function (){
+			// Ensure descriptions are shown.
+			$('body').removeClass('no-print-descriptions');
+			window.print();
+			return false;
+		},
+
+		printListWithoutDescriptions: function (){
+			// Hide descriptions during print.
+			$('body').addClass('no-print-descriptions');
+			window.print();
+			return false;
+		},
+
 		importListsFromClassic: function (){
 			if (confirm("This will import any lists you had defined in the old catalog.  This may take several minutes depending on the size of your lists. Are you sure you want to continue?")){
 				window.location = Globals.path + "/MyAccount/ImportListsFromClassic";
@@ -14631,6 +14645,22 @@ AspenDiscovery.MaterialsRequest = (function(){
 					$("#existingTitleInformation" + id).html(data.existingRecordInformation);
 				}
 			});
+		},
+
+		validateManageRequestFilters: function () {
+			if ($('.statusFilter:checked').length === 0) {
+				alert("You must select at least one status to view.");
+				return false;
+			}
+			if ($('.formatFilter:checked').length === 0) {
+				alert("You must select at least one format to view.");
+				return false;
+			}
+			if ($('.assigneesFilter:checked').length === 0 && $('#showUnassigned:checked').length === 0) {
+				alert("You must select at least one assignee to view.");
+				return false;
+			}
+			return true;
 		}
 	};
 }(AspenDiscovery.MaterialsRequest || {}));

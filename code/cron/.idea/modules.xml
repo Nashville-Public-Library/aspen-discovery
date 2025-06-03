@@ -21,6 +21,7 @@
       <module fileurl="file://$PROJECT_DIR$/../palace_project_export/palace_project_export.iml" filepath="$PROJECT_DIR$/../palace_project_export/palace_project_export.iml" />
       <module fileurl="file://$PROJECT_DIR$/../polaris_export/polaris_export.iml" filepath="$PROJECT_DIR$/../polaris_export/polaris_export.iml" />
       <module fileurl="file://$PROJECT_DIR$/../reindexer/reindexer.iml" filepath="$PROJECT_DIR$/../reindexer/reindexer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../series_indexer/series_indexer.iml" filepath="$PROJECT_DIR$/../series_indexer/series_indexer.iml" />
       <module fileurl="file://$PROJECT_DIR$/../sideload_processing/sideload_processing.iml" filepath="$PROJECT_DIR$/../sideload_processing/sideload_processing.iml" />
       <module fileurl="file://$PROJECT_DIR$/../sierra_export_api/sierra_export_api.iml" filepath="$PROJECT_DIR$/../sierra_export_api/sierra_export_api.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../sites/sites.iml" filepath="$PROJECT_DIR$/../../sites/sites.iml" />

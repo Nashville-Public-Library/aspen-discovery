@@ -637,10 +637,10 @@ class UserList extends DataObject {
 		global $configArray;
 
 		//Get all entries for the list
-		$listEntryInfo = $this->getListEntries(null, $forLiDA, $appVersion);
+		$listEntryInfo = $this->getListEntries($this->defaultSort, $forLiDA, $appVersion, $start, $numItems);
 
 		//Trim to the number of records we want to return
-		$filteredListEntries = array_slice($listEntryInfo['listEntries'], $start, $numItems);
+		$filteredListEntries = $listEntryInfo['listEntries'];
 
 		$filteredIdsBySource = [];
 		foreach ($filteredListEntries as $listItemEntry) {
@@ -720,7 +720,19 @@ class UserList extends DataObject {
 				AspenError::raiseError("Unknown List Entry Source $sourceType");
 			} else {
 				$records = $searchObject->getRecords($sourceIds);
-				foreach ($records as $key => $record) {
+				foreach ($records as $record) {
+					//Figure out the key (list position) for the record
+					$key = null;
+					foreach ($filteredListEntries as $listPosition => $currentId) {
+						if ($currentId['source'] == $sourceType && $currentId['sourceId'] == $record->getId()) {
+							$key = $listPosition;
+							break;
+						}
+					}
+					if ($key === null) {
+						//We didn't find the key
+						continue;
+					}
 					if ($record instanceof ListsRecordDriver) {
 						$browseRecords[$key] = $record->getFields();
 					} elseif ($sourceType == 'Events') {
@@ -787,18 +799,17 @@ class UserList extends DataObject {
 							$browseRecords[$key]['inUserEvents'] = $user->inUserEvents($record->getId());
 						}
 					} else {
-						require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
-						$groupedWorkDriver = new GroupedWorkDriver($key);
-						if ($groupedWorkDriver->isValid()) {
-							$browseRecords[$key]['id'] = $groupedWorkDriver->getPermanentId();
-							$browseRecords[$key]['title_display'] = $groupedWorkDriver->getShortTitle();
-							$browseRecords[$key]['author_display'] = $groupedWorkDriver->getPrimaryAuthor();
-							$browseRecords[$key]['format'] = $groupedWorkDriver->getFormatsArray();
-							$browseRecords[$key]['language'] = $groupedWorkDriver->getLanguage();
+						if ($record->isValid()) {
+							$browseRecords[$key]['id'] = $record->getPermanentId();
+							$browseRecords[$key]['title_display'] = $record->getShortTitle();
+							$browseRecords[$key]['author_display'] = $record->getPrimaryAuthor();
+							$browseRecords[$key]['format'] = $record->getFormatsArray();
+							$browseRecords[$key]['language'] = $record->getLanguage();
 							$browseRecords[$key]['type'] = 'grouped_work';
 							// $browseRecords[$key]['placesOfPublication'] = $groupedWorkDriver->getPlacesOfPublication();
 						} else {
-							$browseRecords[$key] = $record;
+							//not a valid record, skip it
+							continue;
 						}
 
 					}
