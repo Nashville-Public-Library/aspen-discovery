@@ -14645,6 +14645,22 @@ AspenDiscovery.MaterialsRequest = (function(){
 					$("#existingTitleInformation" + id).html(data.existingRecordInformation);
 				}
 			});
+		},
+
+		validateManageRequestFilters: function () {
+			if ($('.statusFilter:checked').length === 0) {
+				alert("You must select at least one status to view.");
+				return false;
+			}
+			if ($('.formatFilter:checked').length === 0) {
+				alert("You must select at least one format to view.");
+				return false;
+			}
+			if ($('.assigneesFilter:checked').length === 0 && $('#showUnassigned:checked').length === 0) {
+				alert("You must select at least one assignee to view.");
+				return false;
+			}
+			return true;
 		}
 	};
 }(AspenDiscovery.MaterialsRequest || {}));
