@@ -154,6 +154,13 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE web_builder_portal_cell ADD COLUMN IF NOT EXISTS staticLocationId int(11) NOT NULL DEFAULT -1",
 			]
 		], //add_static_location_id_to_portal_cell
+		'add_ignore_on_order_records_for_title_selection' => [
+			'title' => 'Add ignoreOnOrderRecordsForTitleSelection to indexing profiles',
+			'description' => 'Adds a setting to skip on-order records when selecting titles for display in grouped works (Koha-specific)',
+			'sql' => [
+				"ALTER TABLE indexing_profiles ADD COLUMN IF NOT EXISTS ignoreOnOrderRecordsForTitleSelection TINYINT(1) DEFAULT 0"
+			],
+		], // add_ignore_on_order_records_for_title_selection
 
 		// Laura Escamilla - ByWater Solutions
 
