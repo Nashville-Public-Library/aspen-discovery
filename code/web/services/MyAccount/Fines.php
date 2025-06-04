@@ -248,16 +248,45 @@ class MyAccount_Fines extends MyAccount {
 
 				// SnapPay
 				if($userLibrary->finePaymentType == 15) {
+					// Set SNapPay URL for production vs. sandbox
 					global $library;
 					require_once ROOT_DIR . '/sys/ECommerce/SnapPaySetting.php';
 					$snapPaySetting = new SnapPaySetting();
 					$snapPaySetting->id = $library->snapPaySettingId;
-					if($snapPaySetting->find(true)) {
+					if ($snapPaySetting->find(true)) {
 						$paymentRequestUrl = "https://www.snappayglobal.com/Interop/HostedPaymentPage";
 						if ($snapPaySetting->sandboxMode == 1 || $snapPaySetting->sandboxMode == '1') {
 							$paymentRequestUrl = "https://stage.snappayglobal.com/Interop/HostedPaymentPage";
 						}
 						$interface->assign('paymentRequestUrl', $paymentRequestUrl);
+					}
+					// Catch incoming payment results
+					if (!empty($_REQUEST['s'])) {
+						require_once ROOT_DIR . '/sys/Account/UserPayment.php';
+						require_once ROOT_DIR . '/sys/Utils/EncryptionUtils.php';
+						// Decrypt the token to get the user_payments.id
+						$paymentId = EncryptionUtils::decryptField($_REQUEST['s']);
+						if ($paymentId) {
+							$payment = new UserPayment();
+							$payment->id = $paymentId;
+							$finePaymentResult = new stdClass();
+							if ($payment->find(true)) {
+								if ($payment->completed == 1) {
+									$finePaymentResult->success = true;
+									$finePaymentResult->message = translate([
+										'text' => $payment->message,
+										'isPublicFacing' => true,
+									]);
+								} else { // i.e., $payment->completed == 0
+									$finePaymentResult->success = false;
+									$finePaymentResult->message = translate([
+										'text' => $payment->message,
+										'isPublicFacing' => true,
+									]);
+								}
+								$interface->assign('finePaymentResult', $finePaymentResult);
+							}
+						}
 					}
 				}
 
