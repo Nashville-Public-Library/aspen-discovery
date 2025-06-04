@@ -1,5 +1,6 @@
 <div>
-		<h2>{translate text={$msg} isPublicFacing=true}</h2>
+		<h1>{translate text= {$header} isPublicFacing=true}</h1>
+		<h4>{translate text={$msg} isPublicFacing=true}</h4>
 </div>
 <div id ="debug">
 	{if !empty($debug)}

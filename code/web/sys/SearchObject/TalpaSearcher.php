@@ -1076,7 +1076,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						)
 					)
 				);
-			} elseif(!$resultsList || count($resultsList) == 0)
+			} elseif(empty($resultsList) && !$warnings)
 			{
 				SearchObject_TalpaSearcher::$searchOptions = array(
 					'recordCount' => 0,
@@ -1088,21 +1088,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						)
 					)
 				);
-			} elseif($warnings)
-			{
-				foreach ($warnings as $warning) {
-					SearchObject_TalpaSearcher::$searchOptions = array(
-						'recordCount' => 0,
-						'documents' => array(),
-						'warnings' => array(
-							array(
-								'code' => 'API Offensive Warning',
-								'message' => $warning['wording'],
-								'stop'	=> $warning['stop']
-							)
-						)
-					);
-				}
 			}
 
 			$talpaSettings = $this -> getSettings();
@@ -1118,25 +1103,48 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 //					implode('<br />', $errors); //add this in for debugging, but not for public display.
 				AspenError::raiseError(new AspenError($msg));
 			}
-			elseif (isset(SearchObject_TalpaSearcher::$searchOptions['warnings']) && is_array(SearchObject_TalpaSearcher::$searchOptions['warnings'])) {
-				foreach (SearchObject_TalpaSearcher::$searchOptions['warnings'] as $current) {
-					var_dump($current);
+			elseif (isset($warnings) && is_array($warnings))
+			{
+				foreach ($warnings as $current) {
+					$header = 'Unable to display results.';
+					$msg = $current['wording'];
+
+					if($current['reason'] =='selfharm') {
+						$header = 'Help is available.';
+						$msg = preg_replace('/Help is available\./', '', $msg);
+					}elseif ($header == $msg)
+					{
+						$msg = '';
+					}
+
 					global $interface;
-					$interface->assign('msg', $current['message']);
+					$interface->assign('header', $header);
+					$interface->assign('msg', $msg);
 
-				if($current['stop']) {
+
+				if($current['stop'] || empty($resultsList)) {
+				SearchObject_TalpaSearcher::$searchOptions = array(
+						'recordCount' => 0,
+						'documents' => array(),
+						'warnings' => array(
+							array(
+								'code' => 'API Offensive Warning',
+								'message' => $current['wording'],
+								'stop'	=> $current['stop'],
+								'reason' => $current['reason']
+							)
+						)
+					);
+
+
 					require_once ROOT_DIR . '/services/Talpa/TalpaWarning.php';
 					$TalpaWarning = new TalpaWarning();
 					$TalpaWarning->launch();
+					exit();
 				} else {
-					require_once ROOT_DIR . '/services/Talpa/TalpaWarning.php';
-					$TalpaWarning = new TalpaWarning();
-					$TalpaWarning->launch();
+					$interface->assign('talpa_warning', $current['wording']);
+					}
 				}
-
-				}
-
-
 			}
 			if (SearchObject_TalpaSearcher::$searchOptions) {
 				return SearchObject_TalpaSearcher::$searchOptions;
