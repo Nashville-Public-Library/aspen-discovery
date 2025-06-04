@@ -107,4 +107,19 @@ class Admin_BackgroundProcesses extends ObjectEditor {
 
 		parent::viewIndividualObject($structure);
 	}
+
+	function applyFilter(DataObject $object, string $fieldName, array $filter) {
+		if ($fieldName == 'owningUser') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'background_processes',
+				'sourceField' => 'owningUserId',
+				'targetClass' => 'User',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'getDisplayName',
+				'compareFormat' => 'nameWithBarcode',
+			]);
+		} else {
+			parent::applyFilter($object, $fieldName, $filter);
+		}
+	}
 }
