@@ -956,23 +956,26 @@ class Koha extends AbstractIlsDriver {
 						$authenticationSuccess = true;
 					} else {
 						$error = $response['content']['error'];
-						if (!empty($response['content']) && !empty($error) && $error == 'Password expired') {
+						if (!empty($response['content']) && !empty($error) && ($error == 'Password expired' || $error == 'Validation failed')) {
 							$sql = "SELECT borrowernumber, cardnumber, userId, login_attempts from borrowers where cardnumber = '" . mysqli_escape_string($this->dbConnection, $barcode) . "' OR userId = '" . mysqli_escape_string($this->dbConnection, $barcode) . "'";
 	
 							$lookupUserResult = mysqli_query($this->dbConnection, $sql);
 							if ($lookupUserResult->num_rows > 0) {
-								$lookupUserRow = $lookupUserResult->fetch_assoc();
-	
-								$expiredPasswordResult = $this->processExpiredPassword($lookupUserRow['borrowernumber'], $barcode);
-								if ($expiredPasswordResult != null) {
-									$lookupUserResult->close();
-									return $expiredPasswordResult;
+								$userExistsInDB = true;
+								if ($error == 'Password expired') {
+									$lookupUserRow = $lookupUserResult->fetch_assoc();
+
+									$expiredPasswordResult = $this->processExpiredPassword($lookupUserRow['borrowernumber'], $barcode);
+									if ($expiredPasswordResult != null) {
+										$lookupUserResult->close();
+										return $expiredPasswordResult;
+									}
 								}
 							}
 							$lookupUserResult->close();
 						}
 						$result['messages'][] = translate([
-							'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
+							'text' => $this->getKohaSystemPreference('FailedLoginAttempts') > 0 ? 'Unable to authenticate with the ILS. Please try again later. Note that, after a given amount of failed login attempts, your account will be locked. If the issue persists, please contact the library.' : 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
 							'isPublicFacing' => true,
 						]);
 					}
@@ -1076,7 +1079,7 @@ class Koha extends AbstractIlsDriver {
 			}
 		}
 		if ($userExistsInDB) {
-			return new AspenError('Sorry that login information was not correct, please try again.');
+			return new AspenError($this->getKohaSystemPreference('FailedLoginAttempts') > 0 ? 'Sorry that login information was not correct. Please try again and note that, after a given amount of failed login attempts, your account will be locked. If the issue persists, please contact the library.': 'Sorry that login information was not correct, please try again.');
 		} else {
 			return null;
 		}
@@ -1296,6 +1299,10 @@ class Koha extends AbstractIlsDriver {
 			$user->_zip = $userFromDb['zipcode'];
 			$user->phone = $userFromDb['phone'];
 			$user->_dateOfBirth = $userFromDb['dateofbirth'];
+
+			$date = date("Y-m-d");
+
+			$user->_expired = $userFromDb['dateexpiry'] < $date;
 
 
 			$user->_web_note = $userFromDb['opacnote'];
@@ -5301,6 +5308,8 @@ class Koha extends AbstractIlsDriver {
 				]);
 			}
 		}
+
+		return $result;
 	}
 
 	/**

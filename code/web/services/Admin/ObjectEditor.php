@@ -43,6 +43,7 @@ abstract class ObjectEditor extends Admin_Admin {
 		}
 		$interface->assign('canCompare', $this->canCompare());
 		$interface->assign('canDelete', $this->canDelete());
+		$interface->assign('canDeleteAll', $this->canDeleteAll());
 		$interface->assign('canSort', $this->canSort());
 		$interface->assign('canFilter', $this->canFilter($structure));
 		$interface->assign('canBatchUpdate', $this->canBatchEdit());
@@ -743,8 +744,18 @@ abstract class ObjectEditor extends Admin_Admin {
 		return true;
 	}
 
-	public function canBatchDelete() {
+	public function canBatchDelete(): bool {
 		return $this->getNumObjects() > 1 && UserAccount::userHasPermission('Batch Delete');
+	}
+
+	/**
+	 * Determines if the user can delete all objects of this type at once based upon batch delete.
+	 * Purpose: Override it in the deriving class to prevent the display of the "Delete All" button.
+	 * @return bool True if the user is allowed to delete all objects, false otherwise.
+	 */
+	public function canDeleteAll(): bool
+	{
+		return $this->canBatchDelete();
 	}
 
 	public function canBatchEdit() {

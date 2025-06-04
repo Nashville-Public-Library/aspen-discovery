@@ -1391,7 +1391,12 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	private function getLibKeyUrl($doiUrl) {
 		require_once ROOT_DIR . "/Drivers/LibKeyDriver.php";
 		$libKeyDriver = new LibKeyDriver();
-		return $libKeyDriver->getLibKeyResult($doiUrl)["data"]["bestIntegratorLink"]["bestLink"];
+		$libKeyResult = $libKeyDriver->getLibKeyResult($doiUrl);
+		if (!empty($libKeyResult)) {
+			return $libKeyResult["data"]["bestIntegratorLink"]["bestLink"];
+		}else{
+			return null;
+		}
 	}
 
 	private $catalogDriver = null;
