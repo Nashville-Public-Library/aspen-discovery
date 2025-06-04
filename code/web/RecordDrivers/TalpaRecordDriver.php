@@ -16,7 +16,7 @@ class TalpaRecordDriver extends RecordInterface {
 
 	public function isValid()
 	{
-		return !empty($this->record['isbns']);
+		return (!empty($this->record['isbns']) || !empty($this->record['upcs']));
 	}
 
 	public function getBookcoverUrl($size='medium', $absolutePath = false) {
@@ -182,6 +182,7 @@ class TalpaRecordDriver extends RecordInterface {
 		else{ //Not a library result
 			$interface->assign('summId', $this->record['work_id']);
 			$this->isn = $this->record['isbns'][0];
+			$this->upc = $this->record['upcs'][0];
 			$interface->assign('summTitle', $this->record['title']);
 			$interface->assign('bookCoverUrlMedium',$this->getBookcoverUrl());
 			$interface->assign('summAuthor', $this->record['author']);
