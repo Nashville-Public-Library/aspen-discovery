@@ -1143,6 +1143,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 					exit();
 				} else {
 					$interface->assign('talpa_warning', $current['wording']);
+					$_SESSION['talpa_warning'] = $current['wording'];
 					}
 				}
 			}
