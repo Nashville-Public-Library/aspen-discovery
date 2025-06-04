@@ -66,7 +66,7 @@ class CurbsidePickupSetting extends DataObject {
 				'type' => 'integer',
 				'label' => 'Check-In Instruction Lead Time (Minutes)',
 				'description' => 'The number of minutes before a scheduled pickup when patrons can view check-in instructions.',
-				'note' => 'Set to -1 to display at all times. If the pickup is marked as "Staged & Ready,", the instructions will display regardless of this set time.',
+				'note' => 'Set to -1 to display at all times. If the pickup is marked as "Staged & Ready," the instructions will display regardless of this set time.',
 				'default' => -1,
 			],
 			'useNote' => [
