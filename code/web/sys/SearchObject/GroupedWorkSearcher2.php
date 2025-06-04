@@ -65,7 +65,8 @@ class SearchObject_GroupedWorkSearcher2 extends SearchObject_AbstractGroupedWork
 			'days_since_added asc' => "Date Purchased Desc",
 			'callnumber_sort' => 'sort_callnumber',
 			'popularity desc' => 'sort_popularity',
-			'rating desc' => 'sort_rating',
+			'rating asc' => 'User Rating (Ascending)',
+			'rating desc' => 'User Rating (Descending)',
 			'total_holds desc' => "Number of Holds",
 		];
 

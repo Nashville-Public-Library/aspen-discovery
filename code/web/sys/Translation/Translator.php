@@ -59,21 +59,27 @@ class Translator {
 	private $communityContentCurlWrapper = null;
 
 	/**
-	 * Translate the phrase
+	 * Translate the phrase.
 	 *
-	 * @param string $phrase - The phrase to translate
-	 * @param string $defaultText - The default text for a phrase that is just a key for a longer phrase
-	 * @param string[] $replacementValues - Values to replace within the string
-	 * @param bool $inAttribute - Whether we are in an attribute. If we are, we can't show the span
-	 * @param bool $isPublicFacing - Whether the public will see this
-	 * @param bool $isAdminFacing - Whether this is in the admin interface
-	 * @param bool $isMetadata - Whether this is a translation of metadata in a MARC record, OverDrive, Axis360, etc
-	 * @param bool $isAdminEnteredData - Whether this is data an administrator entered (System message, etc)
-	 * @param bool $translateParameters - Whether parameters should be translated
-	 * @param bool $escape - Whether the translation should be escaped before rendering
-	 * @return  string                      - The translated phrase
+	 * @param string $phrase The phrase to translate.
+	 * @param string $defaultText The default text for a phrase that is just a key for a longer phrase.
+	 * @param string[] $replacementValues Values to replace within the string.
+	 * @param bool $inAttribute Whether we are in an attribute. If we are, we can't show the span.
+	 * @param bool $isPublicFacing Whether the public will see this.
+	 * @param bool $isAdminFacing Whether this is in the admin interface.
+	 * @param bool $isMetadata Whether this is a translation of metadata in a MARC record, OverDrive, Axis360, etc.
+	 * @param bool $isAdminEnteredData Whether this is data an administrator entered (System message, etc).
+	 * @param bool $translateParameters Whether parameters should be translated.
+	 * @param bool $escape Whether the translation should be escaped before rendering.
+	 * @return string The translated phrase.
 	 */
-	function translate($phrase, $defaultText = '', $replacementValues = [], $inAttribute = false, $isPublicFacing = false, $isAdminFacing = false, $isMetadata = false, $isAdminEnteredData = false, $translateParameters = false, $escape = false) : string {
+	function translate(
+		string $phrase, string $defaultText = '', array $replacementValues = [],
+		bool $inAttribute = false, bool $isPublicFacing = false, bool $isAdminFacing = false,
+		bool $isMetadata = false, bool $isAdminEnteredData = false,
+		bool $translateParameters = false, bool $escape = false
+	): string {
+
 		if ($phrase === '' || is_numeric($phrase)) {
 			return $phrase;
 		}
@@ -92,87 +98,93 @@ class Translator {
 					$translationTerm = new TranslationTerm();
 					$translationTerm->term = $phrase;
 					$defaultTextChanged = false;
-					if (!$translationTerm->find(true)) {
-						$translationTerm->defaultText = $defaultText;
-						//Insert the translation term
+					// Only write term records to DB in translation mode; otherwise, just load existing term.
+					if ($translationMode) {
+						if (!$translationTerm->find(true)) {
+							$translationTerm->defaultText = $defaultText;
+							//Insert the translation term
 
-						$translationTerm->samplePageUrl = mb_strimwidth($_SERVER['REQUEST_URI'], 0, 255);
-						$translationTerm->isPublicFacing = $isPublicFacing;
-						$translationTerm->isAdminFacing = $isAdminFacing;
-						$translationTerm->isMetadata = $isMetadata;
-						$translationTerm->isAdminEnteredData = $isAdminEnteredData;
-						$translationTerm->lastUpdate = time();
-						try {
-							if ($translationTerm->insert() !== false) {
-								$termTooLong = false;
-								//Send this to the Community Content Server as well
+							$translationTerm->samplePageUrl = mb_strimwidth($_SERVER['REQUEST_URI'], 0, 255);
+							$translationTerm->isPublicFacing = $isPublicFacing;
+							$translationTerm->isAdminFacing = $isAdminFacing;
+							$translationTerm->isMetadata = $isMetadata;
+							$translationTerm->isAdminEnteredData = $isAdminEnteredData;
+							$translationTerm->lastUpdate = time();
+							try {
+								if ($translationTerm->insert() !== false) {
+									$termTooLong = false;
+									//Send this to the Community Content Server as well
 
-								require_once ROOT_DIR . '/sys/SystemVariables.php';
-								$systemVariables = SystemVariables::getSystemVariables();
-								if ($systemVariables && !empty($systemVariables->communityContentUrl)) {
-									if ($this->communityContentCurlWrapper == null) {
-										require_once ROOT_DIR . '/sys/CurlWrapper.php';
-										$this->communityContentCurlWrapper = new CurlWrapper();
+									require_once ROOT_DIR . '/sys/SystemVariables.php';
+									$systemVariables = SystemVariables::getSystemVariables();
+									if ($systemVariables && !empty($systemVariables->communityContentUrl)) {
+										if ($this->communityContentCurlWrapper == null) {
+											require_once ROOT_DIR . '/sys/CurlWrapper.php';
+											$this->communityContentCurlWrapper = new CurlWrapper();
+										}
+										$body = [
+											'term' => $phrase,
+											'isPublicFacing' => $isPublicFacing,
+											'isAdminFacing' => $isAdminFacing,
+											'isMetadata' => $isMetadata,
+											'isAdminEnteredData' => $isAdminEnteredData,
+										];
+										$this->communityContentCurlWrapper->curlPostPage($systemVariables->communityContentUrl . '/API/CommunityAPI?method=addTranslationTerm', $body);
 									}
-									$body = [
-										'term' => $phrase,
-										'isPublicFacing' => $isPublicFacing,
-										'isAdminFacing' => $isAdminFacing,
-										'isMetadata' => $isMetadata,
-										'isAdminEnteredData' => $isAdminEnteredData,
-									];
-									$this->communityContentCurlWrapper->curlPostPage($systemVariables->communityContentUrl . '/API/CommunityAPI?method=addTranslationTerm', $body);
+								} else {
+									$termTooLong = true;
 								}
-							} else {
+							} catch (Exception $e) {
 								$termTooLong = true;
 							}
-						} catch (Exception $e) {
-							$termTooLong = true;
-						}
-						if ($termTooLong) {
-							if (UserAccount::isLoggedIn() && UserAccount::userHasPermission('Translate Aspen')) {
-								//Just show the phrase for now, maybe show the error in debug mode?
-								if (IPAddress::showDebuggingInformation()) {
-									return "TERM TOO LONG for translation \"$phrase\"";
+							if ($termTooLong) {
+								if (UserAccount::isLoggedIn() && UserAccount::userHasPermission('Translate Aspen')) {
+									//Just show the phrase for now, maybe show the error in debug mode?
+									if (IPAddress::showDebuggingInformation()) {
+										return "TERM TOO LONG for translation \"$phrase\"";
+									} else {
+										return $phrase;
+									}
 								} else {
 									return $phrase;
 								}
-							} else {
-								return $phrase;
 							}
-						}
-					} else {
-						$termChanged = false;
-						if ($defaultText == null) {
-							$defaultText = '';
-						}
-						if ($defaultText != $translationTerm->defaultText) {
-							if (empty($translationTerm->defaultText) && !empty($defaultText)) {
-								$translationTerm->defaultText = $defaultText;
-								$defaultTextChanged = true;
+						} else {
+							$termChanged = false;
+							if ($defaultText == null) {
+								$defaultText = '';
+							}
+							if ($defaultText != $translationTerm->defaultText) {
+								if (empty($translationTerm->defaultText) && !empty($defaultText)) {
+									$translationTerm->defaultText = $defaultText;
+									$defaultTextChanged = true;
+									$termChanged = true;
+								}
+							}
+							if ($isPublicFacing && !$translationTerm->isPublicFacing) {
+								$translationTerm->isPublicFacing = $isPublicFacing;
 								$termChanged = true;
 							}
+							if ($isAdminFacing && !$translationTerm->isAdminFacing) {
+								$translationTerm->isAdminFacing = $isAdminFacing;
+								$termChanged = true;
+							}
+							if ($isMetadata && !$translationTerm->isMetadata) {
+								$translationTerm->isMetadata = $isMetadata;
+								$termChanged = true;
+							}
+							if ($isAdminEnteredData && !$translationTerm->isAdminEnteredData) {
+								$translationTerm->isAdminEnteredData = $isAdminEnteredData;
+								$termChanged = true;
+							}
+							if ($termChanged) {
+								$translationTerm->lastUpdate = time();
+								$translationTerm->update();
+							}
 						}
-						if ($isPublicFacing && !$translationTerm->isPublicFacing) {
-							$translationTerm->isPublicFacing = $isPublicFacing;
-							$termChanged = true;
-						}
-						if ($isAdminFacing && !$translationTerm->isAdminFacing) {
-							$translationTerm->isAdminFacing = $isAdminFacing;
-							$termChanged = true;
-						}
-						if ($isMetadata && !$translationTerm->isMetadata) {
-							$translationTerm->isMetadata = $isMetadata;
-							$termChanged = true;
-						}
-						if ($isAdminEnteredData && !$translationTerm->isAdminEnteredData) {
-							$translationTerm->isAdminEnteredData = $isAdminEnteredData;
-							$termChanged = true;
-						}
-						if ($termChanged) {
-							$translationTerm->lastUpdate = time();
-							$translationTerm->update();
-						}
+					}
+					else {
+						$translationTerm->find(true);
 					}
 
 					if ($activeLanguage->code == 'pig') {
@@ -205,14 +217,18 @@ class Translator {
 							}
 
 							$translation->translation = $defaultTranslation;
-							$ret = $translation->update();
-							if (!$ret) {
-								global $logger;
-								$logger->log("Could not update translation", Logger::LOG_ERROR);
+							if ($translationMode) {
+								$ret = $translation->update();
+								if (!$ret) {
+									global $logger;
+									$logger->log("Could not update translation", Logger::LOG_ERROR);
+								}
 							}
 						} elseif ($defaultTextChanged) {
 							$translation->needsReview = 1;
-							$translation->update();
+							if ($translationMode) {
+								$translation->update();
+							}
 						}
 
 						if ($escape) {
