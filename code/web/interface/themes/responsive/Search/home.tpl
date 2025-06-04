@@ -16,9 +16,12 @@
 						</button>
 					{/if}
 				</div>
-				{if !empty($browseCategory.subcategories)}
-					<div class="tabs">
-						{$browseCategory.subcategories nofilter}
+				{if $browseCategory.hasSubcategories}
+					<div class="tabs" id="tabs-{$browseCategory.textId}">
+						<div class="tabs-loading"
+							 style="height:200px;display:flex;align-items:center;justify-content:center;">
+							<i class="fas fa-lg fa-spinner fa-spin"></i>
+						</div>
 					</div>
 				{else}
 					<div class="swiper swiper-first swiper-browse-category-{$browseCategory.textId}" id="swiper-{$browseCategory.textId}">
@@ -29,9 +32,13 @@
 							<div class="swiper-slide" id="swiper-loading-{$browseCategory.textId}" style="height: 200px">
 								<i class="fas fa-lg fa-spinner fa-spin"></i>
 							</div>
-						   {literal} <script type="text/javascript">
-								setTimeout(() => AspenDiscovery.Browse.initializeBrowseCategorySwiper({/literal}'{$browseCategory.textId}'{literal}), 1000)
-							</script>{/literal}
+						   <script type="text/javascript">
+							   $(function() {
+								   setTimeout(function() {
+									   AspenDiscovery.Browse.initializeBrowseCategorySwiper("{$browseCategory.textId}");
+								   }, 1000);
+							   });
+						   </script>
 						</div>
 						<div class="swiper-navigation-container">
 							<div class="swiper-button-next"></div>
@@ -180,5 +187,9 @@
 		$('#'+AspenDiscovery.Browse.browseMode).addClass('active'); {* show user which one is selected *}
 
 		AspenDiscovery.Browse.toggleBrowseMode();
+
+		{if $accessibleBrowseCategories == '1'}
+			AspenDiscovery.Browse.loadAllBrowseCategoryTabsSequential();
+		{/if}
 	{rdelim});
 </script>
