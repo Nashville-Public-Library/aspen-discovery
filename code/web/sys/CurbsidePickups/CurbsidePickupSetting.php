@@ -109,7 +109,7 @@ class CurbsidePickupSetting extends DataObject {
 				'description' => 'Define libraries that use these settings in Aspen.',
 				'values' => $libraryList,
 				'note' => 'This setting dictates which library catalogs allow patrons to schedule curbside pickups in Aspen. However, whether a library actually allows curbside pickups is configured within the respective ILS.
-						   If you select a library that is already assigned to another setting, it will be automatically removed from that setting and assigned to this one.'
+							If you select a library that is already assigned to another setting, it will be automatically removed from that setting and assigned to this one.'
 			],
 		];
 
