@@ -8780,12 +8780,52 @@ a.placard-link {
   right: 5px;
   z-index: 100;
 }
-#sidebar-expand {
-  display: block;
-  position: absolute;
-  top: 20px;
-  left: -15px;
-  z-index: 100;
+#side-bar.collapsed {
+  position: absolute !important;
+  width: 48px !important;
+  overflow: visible !important;
+  z-index: 3000 !important;
+  margin-left: 20px;
+}
+/* Hide everything except the toggle button. */
+#side-bar.collapsed #account-menu-label > :not(.sidebar-toggle-wrapper),
+#side-bar.collapsed #home-account-links,
+#side-bar.collapsed .sidebar-title {
+  display: none !important;
+}
+/* Style the toggle button's background. */
+#side-bar.collapsed #sidebar-collapse {
+  margin: auto;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  top: 0 !important;
+  right: 0 !important;
+  width: 38px !important;
+  height: 36px !important;
+  background-color: #3174AF !important;
+  border-radius: 10% !important;
+}
+#sidebar-collapse button i {
+  transition: transform 0.2s ease-in-out;
+}
+#side-bar.collapsed #sidebar-collapse button i {
+  transform: rotate(180deg);
+}
+/* Remove sidebar-label background when collapsed. */
+#side-bar.collapsed .sidebar-label {
+  background: none !important;
+  padding: 0 !important;
+}
+#side-bar.collapsed ~ #main-content-with-sidebar {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+/* Breadcrumb indent for collapsed sidebar. */
+@media (min-width: 768px) {
+  #side-bar.collapsed + #main-content-with-sidebar .breadcrumbs {
+    margin-left: 60px !important;
+  }
 }
 .swiper {
   width: 100%;
@@ -10597,7 +10637,7 @@ a.browse-thumbnail.active {
   border-color: #00a4e3;
 }
 #results-sort {
-  width: 160px;
+  width: 180px;
   margin: 0 8px 0 18px;
   height: 30px;
   padding: 2px 5px;
@@ -11538,5 +11578,61 @@ input[type="radio"][name="colorScheme"]:checked + label::after {
 }
 #newCurbsidePickupForm input.form-control[readonly] {
   cursor: pointer !important;
+}
+/* Only apply to /MyAccount/list.tpl. */
+@media print {
+  /* Make sure descriptions and multiple manifestations are visible . */
+  body#MyAccount-MyList .list-entry-hidden-desc.hidden-xs,
+  body#MyAccount-MyList .list-entry-hidden-format.hidden-xs {
+    display: block !important;
+  }
+  /* Make sure list title is prominently displayed. */
+  body#MyAccount-MyList #listTitle {
+    font-size: 24px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    display: block !important;
+  }
+  /* Hide buttons and controls that aren't needed. */
+  body#MyAccount-MyList .btn-toolbar,
+  body#MyAccount-MyList .btn-group,
+  body#MyAccount-MyList .resultActions {
+    display: none !important;
+  }
+  /* Hide mobile-only toggle rows "Description" and "Click to view". */
+  body#MyAccount-MyList .list-entry-desc-toggle {
+    display: none !important;
+  }
+  /* Hide the back-to-top arrow. */
+  body#MyAccount-MyList .top-link {
+    display: none !important;
+  }
+  /* Prevent page breaks inside list items and their descriptions. */
+  body#MyAccount-MyList .result,
+  body#MyAccount-MyList .resultsList.listEntry,
+  body#MyAccount-MyList .list-entry-hidden-desc,
+  body#MyAccount-MyList .result-value,
+  body#MyAccount-MyList .user-list-entry-note {
+    page-break-inside: avoid !important;
+    /* For old browsers */
+    break-inside: avoid !important;
+  }
+  /* Allow page breaks in list items when descriptions are omitted. */
+  body#MyAccount-MyList.no-print-descriptions .result,
+  body#MyAccount-MyList.no-print-descriptions .resultsList.listEntry {
+    page-break-inside: auto !important;
+    /* For old browsers */
+    break-inside: auto !important;
+  }
+  /* Optionally hide descriptions when selected. */
+  body#MyAccount-MyList.no-print-descriptions .list-entry-hidden-desc {
+    display: none !important;
+  }
+  /* Strip out any screen‐only height/overflow rules to allow landscape printing. */
+  body#MyAccount-MyList {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
 }
 /*# sourceMappingURL=main.css.map */

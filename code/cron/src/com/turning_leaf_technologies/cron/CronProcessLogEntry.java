@@ -40,6 +40,7 @@ public class CronProcessLogEntry implements BaseLogEntry {
 			logger.error("Error creating prepared statements to update log", e);
 		}
 	}
+
 	private Date getLastUpdate() {
 		//The last time the log entry was updated, so we can tell if a process is stuck
 		return new Date();
@@ -52,6 +53,7 @@ public class CronProcessLogEntry implements BaseLogEntry {
 		this.saveResults();
 		logger.error(note);
 	}
+
 	public synchronized void incErrors(String note, Exception e){
 		this.addNote("ERROR: " + note + " " + e.toString());
 		this.numErrors++;
@@ -59,13 +61,22 @@ public class CronProcessLogEntry implements BaseLogEntry {
 		this.saveResults();
 		logger.error(note, e);
 	}
-	public void incUpdated() {
+
+	public synchronized void incUpdated() {
 		numUpdates++;
 		if (numUpdates + numSkipped % 100 == 0) {
 			this.saveResults();
 		}
 	}
-	void addUpdates(int updates) {
+
+	public synchronized void incSkipped() {
+		this.numSkipped++;
+		if (numUpdates + numSkipped % 100 == 0) {
+			this.saveResults();
+		}
+	}
+
+	public synchronized void addUpdates(int updates) {
 		numUpdates += updates;
 	}
 
@@ -98,7 +109,7 @@ public class CronProcessLogEntry implements BaseLogEntry {
 	private String getNotesHtml() {
 		return notesText + "</ol>";
 	}
-	
+
 	public synchronized boolean saveResults() {
 		try{
 			if (logProcessId == null){
@@ -132,12 +143,5 @@ public class CronProcessLogEntry implements BaseLogEntry {
 	}
 	public void setFinished() {
 		this.endTime = new Date();
-	}
-
-	public void incSkipped() {
-		this.numSkipped++;
-		if (numUpdates + numSkipped % 100 == 0) {
-			this.saveResults();
-		}
 	}
 }

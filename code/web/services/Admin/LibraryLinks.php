@@ -23,8 +23,6 @@ class Admin_LibraryLinks extends ObjectEditor {
 		$user = UserAccount::getLoggedInUser();
 
 		$object = new LibraryLink();
-		$location = new Location();
-		$location->orderBy('displayName asc');
 		if (!UserAccount::userHasPermission('Administer All Libraries')) {
 			//Scope to just locations for the user based on home library
 			$patronLibrary = Library::getLibraryForLocation($user->homeLocationId);

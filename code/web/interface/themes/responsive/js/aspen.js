@@ -10602,7 +10602,7 @@ AspenDiscovery.Admin = (function () {
 						var numVisibleActions = 0;
 						adminLinksInSection.each(function () {
 							var curMenuLink = $(this);
-							var title = curMenuLink.find(".adminLink").text();
+							var title = curMenuLink.find("a").text();
 							var titleMatches = searchRegex.test(title);
 							if (!titleMatches) {
 								curMenuLink.hide();
@@ -11445,6 +11445,7 @@ AspenDiscovery.Browse = (function(){
 		browseStyle: 'masonry',
 		accessibleMode: false,
 		patronId: null,
+		subCategorySwipers: {},
 
 		addToHomePage: function(searchId){
 			AspenDiscovery.Account.ajaxLightbox(Globals.path + '/Browse/AJAX?method=getAddBrowseCategoryForm&searchId=' + searchId, true);
@@ -11909,7 +11910,7 @@ AspenDiscovery.Browse = (function(){
 						resultsPanel.fadeIn('slow');
 						AspenDiscovery.Ratings.initializeRaters();
 					});
-					
+
 					$('#selected-browse-search-link').attr('href', data.searchUrl); // update the search link
 
 					if (data.lastPage){
@@ -11950,56 +11951,114 @@ AspenDiscovery.Browse = (function(){
 
 		changeBrowseSubCategoryTab: function (subCategoryTextId, categoryId) {
 			AspenDiscovery.Browse.changingDisplay = true;
-			var url = Globals.path + '/Browse/AJAX';
-			var params = {
-				method : 'getBrowseSubCategoryInfo'
-				,textId : categoryId
-				,subCategoryTextId : subCategoryTextId
-				,browseMode : this.browseMode
+			const container = document.querySelector('.swiper-sub-browse-category-' + subCategoryTextId);
+			const self      = this;
+
+			// Accessibility: Make the container focusable so we can catch arrow-key navigation.
+			container.setAttribute('tabindex', '0');
+			container.addEventListener('keydown', function(e) {
+				const swiper = self.subCategorySwipers[subCategoryTextId];
+				if (!swiper) return;
+				if (e.key === 'ArrowLeft')  swiper.slidePrev();
+				if (e.key === 'ArrowRight') swiper.slideNext();
+			});
+
+			// Toggle the tab buttons and wire up aria-controls.
+			const $tabs = $('#tabs-' + categoryId);
+			$tabs.find('[role="tab"]').each(function(){
+				const $btn = $(this);
+				const thisId = $btn.attr('id');
+				const panelId = thisId.replace('tab-', 'panel-');
+				$btn.attr('aria-controls', panelId);
+
+				if (thisId === 'browse-sub-category-tab-' + subCategoryTextId) {
+					$btn.attr({ 'aria-selected': 'true', tabindex: 0 })
+						.addClass('selected');
+				} else {
+					$btn.attr({ 'aria-selected': 'false', tabindex: -1 })
+						.removeClass('selected');
+				}
+			});
+
+			// Hide all panels, then show the one we want, and manage aria-hidden.
+			$tabs.find('[role="tabpanel"]')
+				.addClass('is-hidden')
+				.attr('aria-hidden', 'true');
+
+			const $panel = $('#tabpanel-' + subCategoryTextId)
+				.removeClass('is-hidden')
+				.attr({
+					'aria-hidden': 'false',
+					'aria-live' : 'polite',
+					'aria-busy' : 'true'
+				});
+
+			const url = Globals.path + '/Browse/AJAX';
+			const params = {
+				method           : 'getBrowseSubCategoryInfo',
+				textId           : categoryId,
+				subCategoryTextId: subCategoryTextId,
+				browseMode       : this.browseMode
 			};
 
 			$.getJSON(url, params, function(data){
-				if (data.success === false){
-					AspenDiscovery.showMessage("Error loading browse information", "Sorry, we were not able to find titles for that category");
-				}else{
-					var resultsTabPanel = document.getElementById('swiper-sub-browse-category-' + subCategoryTextId) ;
-					resultsTabPanel.innerHTML = "";
-					var browseSwiper = new Swiper('.swiper-sub-browse-category-' + subCategoryTextId, {
+				if (!data.success) {
+					AspenDiscovery.showMessage(
+						"Error Loading Browse Information",
+						"Sorry, we were not able to find titles for that category."
+					);
+					$panel.attr('aria-busy','false');
+					return;
+				}
+
+				const slides = Object.values(data.records);
+
+				if (!self.subCategorySwipers[subCategoryTextId]) {
+					const wrapper = container.querySelector('.swiper-wrapper');
+					if (wrapper) wrapper.innerHTML = '';
+
+					const browseSwiper = new Swiper(container, {
 						slidesPerView: 5,
-						spaceBetween: 20,
-						direction: 'horizontal',
-
-						// Accessibility
-						a11y: {
-							enabled: true
+						spaceBetween : 20,
+						direction    : 'horizontal',
+						a11y         : { enabled: true },
+						navigation   : {
+							nextEl : container.querySelector('.swiper-button-next'),
+							prevEl : container.querySelector('.swiper-button-prev'),
 						},
-
-						// Navigation arrows
-						navigation: {
-							nextEl: '.swiper-button-next',
-							prevEl: '.swiper-button-prev'
-						},
-
 						virtual: {
 							enabled: true,
-							slides: Object.values(data.records)
+							slides : slides
 						}
 					});
-					// Fix keyboard navigation
-					$("#browse-category-feed .swiper-wrapper > .swiper-slide:not(.swiper-slide-visible) a").prop("tabindex", "-1");
-					$("#browse-category-feed .swiper-wrapper > .swiper-slide-visible a").removeProp("tabindex");
-					browseSwiper.on('slideChangeTransitionEnd', function () {
-						$("#browse-category-feed .swiper-wrapper > .swiper-slide:not(.swiper-slide-visible) a").prop("tabindex", "-1");
-						$("#browse-category-feed .swiper-wrapper > .swiper-slide-visible a").removeProp("tabindex");
+
+					// Keep off‑screen slides out of the tab order.
+					browseSwiper.on('slideChangeTransitionEnd', function(){
+						$("#browse-category-feed .swiper-wrapper > .swiper-slide:not(.swiper-slide-visible) a")
+							.prop("tabindex","-1");
+						$("#browse-category-feed .swiper-wrapper > .swiper-slide-visible a")
+							.removeAttr("tabindex");
 					});
 
+					self.subCategorySwipers[subCategoryTextId] = browseSwiper;
 				}
-			}).fail(function(){
+				else {
+					const swiper = self.subCategorySwipers[subCategoryTextId];
+					swiper.virtual.slides = slides;
+					swiper.virtual.update();
+				}
+
+				$panel.attr('aria-busy','false');
+			})
+			.fail(function(){
 				AspenDiscovery.ajaxFail();
-				AspenDiscovery.Browse.changingDisplay = false;
-			}).done(function(){
+				$('#tabpanel-' + subCategoryTextId).attr('aria-busy','false');
+			})
+			.always(function(){
 				AspenDiscovery.Browse.changingDisplay = false;
 			});
+
+			return false;
 		},
 
 		updateBrowseCategory: function(){
@@ -12088,6 +12147,48 @@ AspenDiscovery.Browse = (function(){
 				}
 			}).fail(AspenDiscovery.ajaxFail);
 			return false;
+		},
+		// Load subcategory tabs and initial content for an accessible browse category.
+		loadBrowseCategoryTabs: function(categoryTextId) {
+			const url = Globals.path + '/Browse/AJAX';
+			const params = {
+				method: 'getBrowseCategoryInfo',
+				textId: categoryTextId,
+				browseMode: this.browseMode
+			};
+			return $.getJSON(url, params)
+			.done(function(data){
+				if (data.success === false) {
+					AspenDiscovery.showMessage('Error Loading Subcategories', 'Sorry, unable to load subcategories for that category.');
+				} else {
+					// Replace placeholder with actual tabs.
+					const $tabs = $('#tabs-' + categoryTextId);
+					$tabs.html(data.subcategories);
+
+					// Load the first subcategory.
+					const firstTabBtn = $tabs.find('[role="tab"]').first();
+					if (firstTabBtn.length) {
+						const subCategoryId = firstTabBtn.attr('id').replace('browse-sub-category-tab-', '');
+						AspenDiscovery.Browse.changeBrowseSubCategoryTab(subCategoryId, categoryTextId);
+					}
+				}
+			}).fail(AspenDiscovery.ajaxFail).always(function() {
+				AspenDiscovery.Browse.changingDisplay = false;
+			});
+		},
+		// Load each browse category in order, from top to bottom.
+		loadAllBrowseCategoryTabsSequential: function() {
+			const self = this;
+			const ids = $('.tabs[id^="tabs-"]').map(function () {
+				return this.id.replace(/^tabs-/, '');
+			}).get();
+
+			function _next(){
+				if (!ids.length) return;
+				const id = ids.shift();
+				self.loadBrowseCategoryTabs(id).done(_next);
+			}
+			_next();
 		}
 
 	}
@@ -14181,6 +14282,20 @@ AspenDiscovery.Lists = (function(){
 			return false;
 		},
 
+		printListWithDescriptions: function (){
+			// Ensure descriptions are shown.
+			$('body').removeClass('no-print-descriptions');
+			window.print();
+			return false;
+		},
+
+		printListWithoutDescriptions: function (){
+			// Hide descriptions during print.
+			$('body').addClass('no-print-descriptions');
+			window.print();
+			return false;
+		},
+
 		importListsFromClassic: function (){
 			if (confirm("This will import any lists you had defined in the old catalog.  This may take several minutes depending on the size of your lists. Are you sure you want to continue?")){
 				window.location = Globals.path + "/MyAccount/ImportListsFromClassic";
@@ -14580,13 +14695,13 @@ AspenDiscovery.MaterialsRequest = (function(){
 			//Don't bother checking if we don't have a format
 			var enoughDataToCheckForExistingRecord = false;
 			if (params.format !== '') {
-				if (params.isbn !== '') {
+				if (params.isbn && /[0-9X]/.test(params.isbn)) {
 					enoughDataToCheckForExistingRecord = true;
 				}
-				if (params.issn !== '') {
+				if (params.issn && /[0-9X]/.test(params.issn)) {
 					enoughDataToCheckForExistingRecord = true;
 				}
-				if (params.upc !== '') {
+				if (params.upc && /\d/.test(params.upc)) {
 					enoughDataToCheckForExistingRecord = true;
 				}
 				if (params.title !== '' && params.author !== undefined) {
@@ -14631,6 +14746,22 @@ AspenDiscovery.MaterialsRequest = (function(){
 					$("#existingTitleInformation" + id).html(data.existingRecordInformation);
 				}
 			});
+		},
+
+		validateManageRequestFilters: function () {
+			if ($('.statusFilter:checked').length === 0) {
+				alert("You must select at least one status to view.");
+				return false;
+			}
+			if ($('.formatFilter:checked').length === 0) {
+				alert("You must select at least one format to view.");
+				return false;
+			}
+			if ($('.assigneesFilter:checked').length === 0 && $('#showUnassigned:checked').length === 0) {
+				alert("You must select at least one assignee to view.");
+				return false;
+			}
+			return true;
 		}
 	};
 }(AspenDiscovery.MaterialsRequest || {}));

@@ -131,7 +131,8 @@
 		body {
 			margin: 0 !important;
 			padding: 0 !important;
-			/*width: 8in !important;*/
+			height: auto !important;
+			overflow: visible !important;
 		}
 		#page-container {
 			/*width: 8in !important;*/

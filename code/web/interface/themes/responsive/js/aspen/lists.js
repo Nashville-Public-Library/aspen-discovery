@@ -108,6 +108,20 @@ AspenDiscovery.Lists = (function(){
 			return false;
 		},
 
+		printListWithDescriptions: function (){
+			// Ensure descriptions are shown.
+			$('body').removeClass('no-print-descriptions');
+			window.print();
+			return false;
+		},
+
+		printListWithoutDescriptions: function (){
+			// Hide descriptions during print.
+			$('body').addClass('no-print-descriptions');
+			window.print();
+			return false;
+		},
+
 		importListsFromClassic: function (){
 			if (confirm("This will import any lists you had defined in the old catalog.  This may take several minutes depending on the size of your lists. Are you sure you want to continue?")){
 				window.location = Globals.path + "/MyAccount/ImportListsFromClassic";

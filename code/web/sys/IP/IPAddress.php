@@ -38,6 +38,9 @@ class IPAddress extends DataObject {
 	static function getObjectStructure($context = ''): array {
 		//Look lookup information for display in the user interface
 		$location = new Location();
+		$location->selectAdd();
+		$location->selectAdd('displayName');
+		$location->selectAdd('locationId');
 		$location->orderBy('displayName');
 		$location->find();
 		$locationLookupList = [];
