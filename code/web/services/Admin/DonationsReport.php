@@ -102,4 +102,36 @@ class Admin_DonationsReport extends ObjectEditor {
         ]);
 	}
 
+	function applyFilter(DataObject $object, string $fieldName, array $filter) {
+		if ($fieldName == 'donationValue') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'donations',
+				'sourceField' => 'paymentId',
+				'targetClass' => 'UserPayment',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'totalPaid',
+				'compareFormat' => 'property',
+			]);
+		} elseif ($fieldName == 'donationComplete') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'donations',
+				'sourceField' => 'paymentId',
+				'targetClass' => 'UserPayment',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'completed',
+				'compareFormat' => 'boolean',
+			]);
+		} elseif ($fieldName == 'dateCompleted') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'donations',
+				'sourceField' => 'paymentId',
+				'targetClass' => 'UserPayment',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'transactionDate',
+				'compareFormat' => 'property',
+			]);
+		} else {
+			parent::applyFilter($object, $fieldName, $filter);
+		}
+	}
 }

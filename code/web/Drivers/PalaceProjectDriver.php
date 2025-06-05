@@ -50,6 +50,7 @@ class PalaceProjectDriver extends AbstractEContentDriver {
 		if ($settings == false) {
 			$this->checkouts[$patron->id] = $checkouts;
 			$this->holds[$patron->id] = $holds;
+			return;
 		}
 
 		$headers = $this->getPalaceProjectHeaders($patron);

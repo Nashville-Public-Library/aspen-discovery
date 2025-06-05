@@ -78,6 +78,9 @@ class Language extends DataObject {
 
 	public static function getLanguageList() {
 		$language = new Language();
+		$language->selectAdd();
+		$language->selectAdd('id');
+		$language->selectAdd('displayName');
 		$language->orderBy('displayName');
 		$language->find();
 		$languageList = [];
@@ -89,6 +92,8 @@ class Language extends DataObject {
 
 	public static function getLanguageIdsByCode(): array {
 		$language = new Language();
+		$language->selectAdd('code');
+		$language->selectAdd('id');
 		$language->orderBy('displayName');
 		$language->find();
 		$languageList = [];

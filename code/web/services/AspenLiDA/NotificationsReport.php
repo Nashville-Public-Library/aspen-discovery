@@ -80,4 +80,36 @@ class AspenLiDA_NotificationsReport extends ObjectEditor {
 	public function canEdit(DataObject $object) {
 		return false;
 	}
+
+	function applyFilter(DataObject $object, string $fieldName, array $filter) {
+		if ($fieldName == 'user') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'user_notifications',
+				'sourceField' => 'userId',
+				'targetClass' => 'User',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'getDisplayName',
+				'compareFormat' => 'nameWithBarcode',
+			]);
+		} elseif ($fieldName == 'library') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'user_notifications',
+				'sourceField' => 'userId',
+				'targetClass' => 'User',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'getHomeLibrarySystemName',
+			]);
+		} elseif ($fieldName == 'device') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'user_notifications',
+				'sourceField' => 'pushToken',
+				'targetClass' => 'UserNotificationToken',
+				'targetField' => 'pushToken',
+				'getCompareValueMethod' => 'deviceModel',
+				'compareFormat' => 'property',
+			]);
+		} else {
+			parent::applyFilter($object, $fieldName, $filter);
+		}
+	}
 }

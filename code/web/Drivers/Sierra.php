@@ -2010,6 +2010,11 @@ class Sierra extends Millennium {
 				'success' => true,
 				'barcode' => $params['barcodes'][0]
 			];
+			$newUser = $this->findNewUser($barcode, null);
+			if ($newUser != null) {
+				$selfRegResult['newUser'] = $newUser;
+				$selfRegResult['sendWelcomeMessage'] = true;
+			}
 		}
 
 		return $selfRegResult;
@@ -2228,7 +2233,7 @@ class Sierra extends Millennium {
 						$user->_state = substr($stateZip, 0, strrpos($stateZip, ' '));
 						$user->_zip = substr($stateZip, strrpos($stateZip, ' '));
 					} else {
-						$user->_state = trim($stateZip); 
+						$user->_state = trim($stateZip);
 					}
 				} else {
 					$parts = preg_split('/\s+/', $line2);
@@ -2430,7 +2435,11 @@ class Sierra extends Millennium {
 		}
 	}
 
-	public function getTitleAndAuthorForInnReachCheckout($checkoutId) {
+	/**
+	 * @param string $checkoutId
+	 * @return array|false
+	 */
+	public function getTitleAndAuthorForInnReachCheckout(string $checkoutId): array|false {
 		/** @noinspection SqlResolve */
 		$checkoutInfoSql = "SELECT 
 			  bib_record_property.best_title as title,
@@ -2445,12 +2454,18 @@ class Sierra extends Millennium {
 			  AND checkout.item_record_id = bib_record_item_record_link.item_record_id
 			  AND bib_record_item_record_link.bib_record_id = bib_record_property.bib_record_id";
 		$innReachConnection = $this->connectToSierraDNA();
+		if (!$innReachConnection) {
+			return false;
+		}
 		$res = pg_query_params($innReachConnection, $checkoutInfoSql, [$checkoutId]);
-		$titleAndAuthor = pg_fetch_array($res, 0);
-		return $titleAndAuthor;
+		return pg_fetch_array($res, 0);
 	}
 
-	public function getTitleAndAuthorForInnReachHold(string $holdId): array {
+	/**
+	 * @param string $holdId
+	 * @return array|false
+	 */
+	public function getTitleAndAuthorForInnReachHold(string $holdId): array|false {
 		/** @noinspection SqlResolve */
 		$holdInfoSql = "SELECT 
 			  bib_record_property.best_title as title,
@@ -2466,9 +2481,11 @@ class Sierra extends Millennium {
 					AND sierra_view.hold.record_id = bib_record_item_record_link.item_record_id
 					AND bib_record_item_record_link.bib_record_id = bib_record_property.bib_record_id";
 		$innReachConnection = $this->connectToSierraDNA();
+		if (!$innReachConnection) {
+			return false;
+		}
 		$res = pg_query_params($innReachConnection, $holdInfoSql, [$holdId]);
-		$titleAndAuthor = pg_fetch_array($res, 0);
-		return $titleAndAuthor;
+		return pg_fetch_array($res, 0);
 	}
 
 	public function showHoldPosition(): bool {

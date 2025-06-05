@@ -90,7 +90,7 @@ class SirsiDynixROA extends HorizonAPI {
 		}
 	}
 
-	function findNewUser($patronBarcode, $patronUsername) {
+	function findNewUser($patronBarcode, $patronUsername): User|bool {
 		// Creates a new user like patronLogin but looks up user by barcode.
 		// Note: The user pin is not supplied in the Account Info Lookup call.
 		$sessionToken = $this->getStaffSessionToken();
@@ -828,6 +828,9 @@ class SirsiDynixROA extends HorizonAPI {
 						'barcode' => $barcode,
 						'requirePinReset' => true,
 					];
+					// Symphony needs time to process the full information of the user when registering,
+					// so add a delay to ensure the results array is populated when finding the user.
+					usleep(500000);
 					$newUser = $this->findNewUser($barcode, null);
 					if ($newUser != null) {
 						$selfRegResult['newUser'] = $newUser;

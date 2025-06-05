@@ -2799,6 +2799,10 @@ class Location extends DataObject {
 	 */
 	static function getLocationList(bool $restrictByHomeLibrary, bool $valueIsCode = false): array {
 		$location = new Location();
+		$location->selectAdd();
+		$location->selectAdd('code');
+		$location->selectAdd('locationId');
+		$location->selectAdd('displayName');
 		$location->orderBy('displayName');
 		if ($restrictByHomeLibrary) {
 			$homeLibrary = Library::getPatronHomeLibrary();
