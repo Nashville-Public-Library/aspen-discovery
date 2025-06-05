@@ -1705,31 +1705,27 @@ class CatalogConnection {
 		return $this->driver->getPluginStatus($pluginName);
 	}
 
-	public function getCurbsidePickupSettings($locationCode) {
+	public function getCurbsidePickupSettings(string $locationCode): array {
 		return $this->driver->getCurbsidePickupSettings($locationCode);
 	}
 
-	public function hasCurbsidePickups($user) {
-		return $this->driver->hasCurbsidePickups($user);
-	}
-
-	public function getPatronCurbsidePickups($user) {
+	public function getPatronCurbsidePickups(User $user): array {
 		return $this->driver->getPatronCurbsidePickups($user);
 	}
 
-	public function newCurbsidePickup($user, $pickupLocation, $pickupTime, $pickupNote) {
+	public function newCurbsidePickup(User $user, string $pickupLocation, string $pickupTime, ?string $pickupNote): array {
 		return $this->driver->newCurbsidePickup($user, $pickupLocation, $pickupTime, $pickupNote);
 	}
 
-	public function cancelCurbsidePickup($user, $pickupId) {
+	public function cancelCurbsidePickup(User $user, string $pickupId): array {
 		return $this->driver->cancelCurbsidePickup($user, $pickupId);
 	}
 
-	public function checkInCurbsidePickup($user, $pickupId) {
+	public function checkInCurbsidePickup(User $user, string $pickupId): array {
 		return $this->driver->checkInCurbsidePickup($user, $pickupId);
 	}
 
-	public function getAllCurbsidePickups() {
+	public function getAllCurbsidePickups(): array {
 		return $this->driver->getAllCurbsidePickups();
 	}
 

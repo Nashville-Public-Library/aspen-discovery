@@ -96,6 +96,8 @@
 						{/if}
 					{elseif $property.type == 'image'}
 	{*									<img src="{$property.displayUrl}{$dataItem->id}" class="img-responsive" alt="{$propName}">*}
+					{elseif $property.type == 'html'}
+						{$value = $propValue|strip_tags}
 					{elseif $property.type == 'textarea'}
 						{$value = {$propValue|truncate:255:'...'}}
 					{else}

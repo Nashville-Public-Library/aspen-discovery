@@ -4423,7 +4423,7 @@ class User extends DataObject {
 			}
 		}
 		if ($hasCurbside) {
-			$sections['ils_integration']->addAction(new AdminAction('Curbside Pickup Settings', 'Define Settings for Curbside Pickup, requires Koha Curbside plugin', '/ILS/CurbsidePickupSettings'), ['Administer Curbside Pickup']);
+			$sections['ils_integration']->addAction(new AdminAction('Curbside Pickup Settings', 'Define settings for curbside pickups (requires the Koha Curbside Pickups plugin).', '/ILS/CurbsidePickupSettings'), ['Administer Curbside Pickup']);
 		}
 		if ($customSelfRegForms) {
 			$sections['ils_integration']->addAction(new AdminAction('Self Registration Forms', 'Create self registration forms.', '/ILS/SelfRegistrationForms'), ['Administer Self Registration Forms']);
@@ -5376,7 +5376,7 @@ class User extends DataObject {
 		}
 	}
 
-	function newCurbsidePickup($pickupLocation, $pickupTime, $pickupNote) {
+	function newCurbsidePickup($pickupLocation, $pickupTime, $pickupNote): array {
 		$result = $this->getCatalogDriver()->newCurbsidePickup($this, $pickupLocation, $pickupTime, $pickupNote);
 		$this->clearCache();
 		return $result;
