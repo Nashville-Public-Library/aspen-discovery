@@ -184,7 +184,9 @@ class Translator {
 						}
 					}
 					else {
-						$translationTerm->find(true);
+						$returnString = !empty($defaultText) ? $defaultText : $phrase;
+						$this->cachedTranslations[$translationKey] = $returnString;
+						return $returnString;
 					}
 
 					if ($activeLanguage->code == 'pig') {
