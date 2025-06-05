@@ -5,13 +5,30 @@ require_once ROOT_DIR . '/RecordDrivers/RecordInterface.php';
 class TalpaRecordDriver extends RecordInterface {
 	private $record;
 	private $isn;
+	private $upc;
 	/**
 	 * Constructor.  We build the object using all the data retrieved
 	 * @param array|File_MARC_Record||string   $recordData     Data to construct the driver from
 	 * @access  public
 	 */
 	public function __construct($record) {
-		$this->record= $record;
+
+		if(is_array($record)) {
+			$this->record= $record;
+		}else{
+
+			$_record = json_decode($record, true);
+
+			$passedRecord = array();
+			$passedRecord['isbns'][] = $_record['isbn']; //formatting the data for later use
+			$passedRecord['upcs'][] = $_record['upc'];
+			$passedRecord['title'] = urldecode($_record['title']);
+			$passedRecord['author'] = urldecode($_record['author']);
+
+			$this->record = $passedRecord;
+		//from bookcover
+		}
+
 	}
 
 	public function isValid()
@@ -35,7 +52,17 @@ class TalpaRecordDriver extends RecordInterface {
 			$bookCoverUrl = '';
 		}
 
-		$bookCoverUrl .= "/bookcover.php?id={$this->getUniqueID()}&size={$size}&type=talpa";
+		$params = array(
+			'id'=> $this->getUniqueID(),
+			'isbn'=> $this->isn,
+			'upc'=> $this->upc,
+			'author' => urlencode($this->author),
+			'title' => urlencode($this->title),
+			'size' => $size,
+			'type' => 'talpa'
+		);
+//		$bookCoverUrl .= "/bookcover.php?id={$this->getUniqueID()}&size={$size}&type=talpa";
+		$bookCoverUrl .= "/bookcover.php?".http_build_query($params);
 		return $bookCoverUrl;
 	}
 
@@ -62,6 +89,8 @@ class TalpaRecordDriver extends RecordInterface {
 			return (string)$this->record['ID'][0];
 		} elseif ($this->isn) {
 			return (string)$this->isn;
+		} elseif ($this->upc) {
+			return (string)$this->upc;
 		}else{
 			return null;
 		}
@@ -183,6 +212,8 @@ class TalpaRecordDriver extends RecordInterface {
 			$interface->assign('summId', $this->record['work_id']);
 			$this->isn = $this->record['isbns'][0];
 			$this->upc = $this->record['upcs'][0];
+			$this->title = $this->record['title'];
+			$this->author = $this->record['author'];
 			$interface->assign('summTitle', $this->record['title']);
 			$interface->assign('bookCoverUrlMedium',$this->getBookcoverUrl());
 			$interface->assign('summAuthor', $this->record['author']);
@@ -222,7 +253,7 @@ class TalpaRecordDriver extends RecordInterface {
 				$title .= ': ' . $this->record['Subtitle'][0];
 			}
 		} else {
-			$title='Unknown Title';
+			$title=$this->record['title'];
 		}
 		return $title;
 	}
@@ -318,10 +349,11 @@ class TalpaRecordDriver extends RecordInterface {
 	}
 
 	public function getAuthor() {
+
 		if(isset($this->record['Author_xml'][0]['fullname'])) {
 			$author=$this->record['Author_xml'][0]['fullname'];
 		} else {
-			$author='Unknown Title';
+			$author=$this->record['author'];
 		}
 		return $author;
 	}
