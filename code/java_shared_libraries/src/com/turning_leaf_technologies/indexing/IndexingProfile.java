@@ -1174,7 +1174,7 @@ public class IndexingProfile extends BaseIndexingSettings {
 	/**
 	 * Sets the flag indicating whether on-order records should be ignored for title selection.
 	 *
-	 * @param ignoreOnOrderRecordsForTitleSelection {@code true} to ignore on-order records for title selection, {@code false} otherwise.
+	 * @param prioritizeAvailableRecordsForTitleSelection {@code true} to ignore on-order records for title selection, {@code false} otherwise.
 	 */
 	public void setPrioritizeAvailableRecordsForTitleSelection(boolean prioritizeAvailableRecordsForTitleSelection) {
 		this.prioritizeAvailableRecordsForTitleSelection = prioritizeAvailableRecordsForTitleSelection;
