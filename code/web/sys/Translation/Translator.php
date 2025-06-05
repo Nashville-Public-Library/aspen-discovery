@@ -93,7 +93,7 @@ class Translator {
 			if (!empty($activeLanguage)) {
 				$translationKey = $activeLanguage->id . '_' . ($translationMode ? 1 : 0) . '_' . $phrase;
 				$existingTranslation = array_key_exists($translationKey, $this->cachedTranslations) ? $this->cachedTranslations[$translationKey] : false;
-				if ($existingTranslation == false || isset($_REQUEST['reload'])) {
+				if (!$existingTranslation || isset($_REQUEST['reload']) || !empty($replacementValues)) {
 					//Search for the term
 					$translationTerm = new TranslationTerm();
 					$translationTerm->term = $phrase;
@@ -185,6 +185,14 @@ class Translator {
 					}
 					else {
 						$returnString = !empty($defaultText) ? $defaultText : $phrase;
+						if (count($replacementValues) > 0) {
+							foreach ($replacementValues as $index => $replacementValue) {
+								if ($translateParameters) {
+									$replacementValue = $this->translate($replacementValue, '', [], true, $isPublicFacing, $isAdminFacing, $isMetadata, $isAdminEnteredData, $translateParameters);
+								}
+								$returnString = str_replace('%' . $index . '%', $replacementValue, $returnString);
+							}
+						}
 						$this->cachedTranslations[$translationKey] = $returnString;
 						return $returnString;
 					}
