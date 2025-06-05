@@ -8,15 +8,12 @@
 						{translate text=$instructionSchedule isPublicFacing=true isAdminEnteredData=true}
 					</div>
 				{/if}
-				{if !empty($hasPickups)}
-					<p class="alert alert-info"><a href="/MyAccount/Holds"><strong><span class="ils-available-holds-placeholder"></span></strong></a> {translate text="hold(s) ready for pickup" isPublicFacing=true}</p>
+				<p class="alert alert-info"> {translate text="Hold(s) Ready for Pickup:" isPublicFacing=true}
+					<a href="/MyAccount/Holds"><strong><span class="ils-available-holds-placeholder"></span></strong></a>
+				</p>
 
-					<h2>{translate text="Scheduled pickups" isPublicFacing=true}</h2>
-					{include file='MyAccount/curbsidePickupsSchedule.tpl' pickups=$currentCurbsidePickups}
-				{else}
-					<h2>{translate text="No pickups scheduled yet" isPublicFacing=true}</h2>
-					<p class="alert alert-info"><a href="/MyAccount/Holds"><strong><span class="ils-available-holds-placeholder"></span></strong></a> {translate text="hold(s) ready for pickup" isPublicFacing=true}</p>
-				{/if}
+				<h2>{translate text="Scheduled Pickups" isPublicFacing=true}</h2>
+				{include file='MyAccount/curbsidePickupsSchedule.tpl' pickups=$currentCurbsidePickups}
 			</div>
 			{if !empty($hasHolds)}
 				<div class="col-xs-12">
@@ -25,39 +22,36 @@
 						{foreach from=$holdsReadyForPickup item=location name="locationGroup"}
 							<table class="table table-striped">
 								<thead>
-									<tr>
-										<th style="vertical-align: middle;">
-											<h4 class="margin: 0">{$location.name} {*<span class="badge">{$location.holds|@count}</span>*}</h4>
-										</th>
-										<th class="text-right">
-											{if !empty($location.pickupScheduled)}
-												<button class="btn btn-primary" disabled>{translate text="Pickup already scheduled at %1%" 1=$location.name|escape isPublicFacing=true inAttribute=true}</button>
-											{else}
-												<button class="btn btn-primary" onclick="return AspenDiscovery.Account.getCurbsidePickupScheduler('{$location.id}')">{translate text="Schedule a pickup at %1%" 1=$location.name|escape isPublicFacing=true inAttribute=true}</button>
-											{/if}
-										</th>
-									</tr>
+								<tr>
+									<th style="vertical-align: middle;">
+										<h4 class="margin: 0">{$location.name} </h4>
+									</th>
+									<th class="text-right">
+										{if !empty($location.pickupScheduled)}
+											<button class="btn btn-primary" disabled>{translate text="Pickup Scheduled at %1%" 1=$location.name|escape isPublicFacing=true inAttribute=true}</button>
+										{else}
+											<button class="btn btn-primary" onclick="return AspenDiscovery.CurbsidePickup.getCurbsidePickupScheduler('{$location.id}')">{translate text="Schedule a Pickup at %1%" 1=$location.name|escape isPublicFacing=true inAttribute=true}</button>
+										{/if}
+									</th>
+								</tr>
 								</thead>
 								<tbody>
-								{foreach from=$location.holds item=record name="recordLoop"}
 								<tr>
 									<td colspan="2">
-										{include file="MyAccount/curbsidePickupsHoldsReady.tpl" record=$record resultIndex=$smarty.foreach.recordLoop.iteration}
+										<div class="striped-content">
+											{foreach from=$location.holds item=record name="recordLoop"}
+												{include file="MyAccount/curbsidePickupsHoldsReady.tpl" record=$record resultIndex=$smarty.foreach.recordLoop.iteration}
+												{if !$smarty.foreach.recordLoop.last}<hr class="margin-top-0 margin-bottom-1">{/if}
+											{/foreach}
+										</div>
 									</td>
 								</tr>
-								{/foreach}
 								</tbody>
 							</table>
 
 						{/foreach}
 					</div>
 				</div>
-			{else}
-				{if !empty($showScheduleButton)}
-					<div class="col-xs-12">
-						<button class="btn btn-primary" onclick="return AspenDiscovery.Account.getCurbsidePickupScheduler('{$userHomePickupLocation->locationId}')">{translate text="Schedule a pickup at %1%" 1=$userHomePickupLocation->displayName|escape isPublicFacing=true inAttribute=true}</button>
-					</div>
-				{/if}
 			{/if}
 		</div>
 	{else}
