@@ -47,6 +47,48 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE status_map_values ADD COLUMN appliesToStatusAltSubfield TINYINT(1) DEFAULT 0",
 			]
 		], //indexing_profile_status_alt
+		'improve_urlAlias_performance' => [
+			'title' => 'Improve URL Alias Performance',
+			'description' => 'Improve URL Alias Performance',
+			'sql' => [
+				'ALTER TABLE web_builder_basic_page ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE web_builder_custom_form ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE web_builder_custom_web_resource_page ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE web_builder_portal_page ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE web_builder_quick_poll ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE grapes_web_builder ADD INDEX urlAlias(urlAlias)',
+			]
+		], //improve_urlAlias_performance
+		'index_optional_update_status' => [
+			'title' => 'Index Optional Update Status',
+			'description' => 'Index Optional Update Status',
+			'sql' => [
+				'ALTER TABLE optional_updates ADD INDEX status(status)'
+			]
+		], //index_optional_update_status
+		'improve_location_lookup_performance' => [
+			'title' => 'Improve Location Lookup Performance',
+			'description' => 'Improve Location Lookup Performance',
+			'sql' => [
+				'ALTER TABLE location ADD INDEX displayNameLookup(displayName, isMainBranch, libraryId, locationId)',
+				'ALTER TABLE location ADD INDEX libraryMainBranch(libraryId, isMainBranch)'
+			]
+		], //improve_location_lookup_performance
+		'improve_translation_term_lookup_performance' => [
+			'title' => 'Improve Translation Term Lookup Performance',
+			'description' => 'Improve Translation Term Lookup Performance by not using prefix',
+			'sql' => [
+				'ALTER TABLE translation_terms DROP INDEX term',
+				'ALTER TABLE translation_terms ADD INDEX term(term)',
+			]
+		], //improve_translation_term_lookup_performance
+		'improve_language_lookup_performance' => [
+			'title' => 'Improve Language Lookup Performance',
+			'description' => 'Improve Language Lookup Performance',
+			'sql' => [
+				'ALTER TABLE languages ADD INDEX languageLookup(weight, displayName)',
+			]
+		], //improve_location_lookup_performance
 
 		//katherine - Grove
 		'add_lida_barcode_entry_keyboard_type_setting' => [
