@@ -18,16 +18,8 @@ class CurbsidePickupSetting extends DataObject {
 	private $_libraries;
 
 	static function getObjectStructure($context = ''): array {
-		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
-		$disabledLibraries = [];
 		$currentId = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
-		foreach (array_keys($libraryList) as $libraryId) {
-			$libraryCheck = new Library();
-			$libraryCheck->libraryId = $libraryId;
-			if ($libraryCheck->find(true) && $libraryCheck->curbsidePickupSettingId > 0 && $libraryCheck->curbsidePickupSettingId != $currentId) {
-				$disabledLibraries[] = $libraryId;
-			}
-		}
+		$libraryList = self::getLibraryListWithAssignments($currentId);
 
 		$structure = [
 			'id' => [
@@ -116,8 +108,8 @@ class CurbsidePickupSetting extends DataObject {
 				'label' => 'Libraries',
 				'description' => 'Define libraries that use these settings in Aspen.',
 				'values' => $libraryList,
-				'disabledValues' => $disabledLibraries,
-				'note' => 'This setting dictates which library catalogs allow patrons to schedule curbside pickups in Aspen. However, whether a library actually allows curbside pickups is configured within the respective ILS.',
+				'note' => 'This setting dictates which library catalogs allow patrons to schedule curbside pickups in Aspen. However, whether a library actually allows curbside pickups is configured within the respective ILS.
+						   If you select a library that is already assigned to another setting, it will be automatically removed from that setting and assigned to this one.'
 			],
 		];
 
@@ -166,43 +158,49 @@ class CurbsidePickupSetting extends DataObject {
 	}
 
 	/**
-	 * Filter out libraries assigned to other Curbside Pickup settings.
+	 * Get the library list with assignment information appended to library names.
 	 *
-	 * @param array $libraries
-	 * @return array
+	 * @param int $currentId The ID of the current curbside pickup setting.
+	 * @return array The library list with assignment information.
 	 */
-	private function filterAssignedLibraries(array $libraries): array {
-		$filtered = [];
-		foreach ($libraries as $libraryId) {
+	private static function getLibraryListWithAssignments(int $currentId): array {
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
+		$libraryAssignments = [];
+
+		foreach (array_keys($libraryList) as $libraryId) {
 			$libraryCheck = new Library();
 			$libraryCheck->libraryId = $libraryId;
-			if ($libraryCheck->find(true)) {
-				if ($libraryCheck->curbsidePickupSettingId <= 0 || $libraryCheck->curbsidePickupSettingId == $this->id) {
-					$filtered[] = $libraryId;
+			if ($libraryCheck->find(true) && $libraryCheck->curbsidePickupSettingId > 0 && $libraryCheck->curbsidePickupSettingId != $currentId) {
+				$settingCheck = new CurbsidePickupSetting();
+				$settingCheck->id = $libraryCheck->curbsidePickupSettingId;
+				if ($settingCheck->find(true)) {
+					$libraryAssignments[$libraryId] = $settingCheck->name;
 				}
 			}
 		}
-		return $filtered;
+
+		foreach ($libraryAssignments as $libraryId => $settingName) {
+			$libraryList[$libraryId] .= ' (Assigned to "' . $settingName . '" Setting)';
+		}
+
+		return $libraryList;
 	}
 
 	public function saveLibraries(): void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
-			// Filter out libraries assigned to other settings.
-			$this->_libraries = $this->filterAssignedLibraries($this->_libraries);
-
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 			foreach ($libraryList as $libraryId => $displayName) {
 				$library = new Library();
 				$library->libraryId = $libraryId;
 				$library->find(true);
 				if (in_array($libraryId, $this->_libraries)) {
-					//We want to apply the scope to this library
+					// Apply the scope to this library.
 					if ($library->curbsidePickupSettingId != $this->id) {
 						$library->curbsidePickupSettingId = $this->id;
 						$library->update();
 					}
 				} else {
-					//It should not be applied to this scope. Only change if it was applied to the scope
+					// Do not apply the scope to this library; only change if it was applied to the scope.
 					if ($library->curbsidePickupSettingId == $this->id) {
 						$library->curbsidePickupSettingId = -1;
 						$library->update();
