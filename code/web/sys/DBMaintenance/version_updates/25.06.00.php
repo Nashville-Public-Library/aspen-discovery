@@ -219,6 +219,7 @@ function getUpdates25_06_00(): array {
 			'title' => 'Add prioritizeAvailableRecordsForTitleSelection to the Indexing Profile',
 			'description' => 'Adds a setting to prioritize available records when selecting titles for display in grouped works (Koha only).',
 			'sql' => [
+				"ALTER TABLE indexing_profiles DROP COLUMN IF EXISTS ignoreOnOrderRecordsForTitleSelection",
 				"ALTER TABLE indexing_profiles ADD COLUMN IF NOT EXISTS prioritizeAvailableRecordsForTitleSelection TINYINT(1) DEFAULT 0"
 			],
 		], // add_prioritize_available_records_for_title_selection
