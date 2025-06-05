@@ -43,21 +43,23 @@
                             <td>{$campaign->startDate}</td>
                             <td>{$campaign->endDate}</td>
                             <td>
-                                {if $campaign->displayName}
-                                    {$campaign->rewardName}<br>
-                                {/if}
-                                {if $campaign->rewardExists}
-                                    <img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
-                                {/if}
-                                 {if $campaign->rewardType == 1}
-                                    {if $campaign->campaignRewardGiven || $campaign->awardAutomatically ==1 && $campaign->isComplete}
-                                        <a href="/Search/ShareCampaigns?rewardName={$campaign->rewardName}&rewardImage={$campaign->badgeImage}&rewardId={$campaign->rewardId}">
-                                            {translate text="Share on Social Media" isPublicFacing=true}
-                                        </a>
+                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                    {if $campaign->displayName}
+                                        {$campaign->rewardName}<br>
                                     {/if}
-                                {/if}
-                                <div style="margin-top:20px;">
-                                    {$campaign->rewardDescription}
+                                    {if $campaign->rewardExists}
+                                        <img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                    {/if}
+                                    {if $campaign->rewardType == 1}
+                                        {if $campaign->campaignRewardGiven || $campaign->awardAutomatically ==1 && $campaign->isComplete}
+                                            <a href="/Search/ShareCampaigns?rewardName={$campaign->rewardName}&rewardImage={$campaign->badgeImage}&rewardId={$campaign->rewardId}">
+                                                {translate text="Share on Social Media" isPublicFacing=true}
+                                            </a>
+                                        {/if}
+                                    {/if}
+                                    <div style="margin-top:20px;">
+                                        {$campaign->rewardDescription}
+                                    </div>
                                 </div>
                             </td>
                             <td>{$campaign->numCompletedMilestones} / {$campaign->numCampaignMilestones}</td>
@@ -117,19 +119,21 @@
                                             <tr>
                                                 <td>{$milestone->name}</td>
                                                 <td>
-                                                    {if $milestone->displayName}
-                                                        {$milestone->rewardName}
-                                                    {/if}
-                                                    {if $milestone->rewardExists}
-                                                        <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
-                                                    {/if}
-                                                     {if $milestone->rewardType == 1 && $milestone->rewardGiven || $milestone->rewardType ==1 && $milestone->milestoneComplete && $milestone->awardAutomatically}
-                                                        <a href="/Search/ShareCampaigns?rewardName={$milestone->rewardName}&rewardImage={$milestone->rewardImage}&rewardId={$milestone->rewardId}">
-                                                            {translate text="Share on Social Media" isPublicFacing=true}
-                                                        </a>
-                                                    {/if}
-                                                    <div style="margin-top:10px;">
-                                                        {$milestone->rewardDescription}
+                                                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                                        {if $milestone->displayName}
+                                                            {$milestone->rewardName}
+                                                        {/if}
+                                                        {if $milestone->rewardExists}
+                                                            <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                                        {/if}
+                                                        {if $milestone->rewardType == 1 && $milestone->rewardGiven || $milestone->rewardType ==1 && $milestone->milestoneComplete && $milestone->awardAutomatically}
+                                                            <a href="/Search/ShareCampaigns?rewardName={$milestone->rewardName}&rewardImage={$milestone->rewardImage}&rewardId={$milestone->rewardId}">
+                                                                {translate text="Share on Social Media" isPublicFacing=true}
+                                                            </a>
+                                                        {/if}
+                                                        <div style="margin-top:10px;">
+                                                            {$milestone->rewardDescription}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -209,15 +213,17 @@
                                     <td>{$campaign.startDate}</td>
                                     <td>{$campaign.endDate}</td>
                                     <td>
-                                    {if $campaign.campaignReward.displayName}
-                                        {$campaign.campaignReward.rewardName}
-                                    {/if}
-                                    {if $campaign.campaignReward.rewardExists}
-                                            <img src="{$campaign.campaignReward.badgeImage}" alt="{$campaign.reward.rewardName}" width="100" height="100" />
-                                    {/if}
-                                    <div style="margin-top:20px;">
-                                        {$campaign.campaignReward.rewardDescription}
-                                    </div>
+                                        <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                            {if $campaign.campaignReward.displayName}
+                                                {$campaign.campaignReward.rewardName}
+                                            {/if}
+                                            {if $campaign.campaignReward.rewardExists}
+                                                    <img src="{$campaign.campaignReward.badgeImage}" alt="{$campaign.reward.rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                            {/if}
+                                            <div style="margin-top:20px;">
+                                                {$campaign.campaignReward.rewardDescription}
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>{$campaign.numCompletedMilestones} / {$campaign.numCampaignMilestones}</td>
                                     <td>
@@ -252,14 +258,16 @@
                                                 <tr>
                                                     <td>{$milestone.milestoneName}</td>
                                                     <td>
-                                                        {if $milestone.displayName}
-                                                            {$milestone.rewardName} 
-                                                        {/if}
-                                                        {if $milestone.rewardExists}
-                                                            <img src="{$milestone.badgeImage}" alt="{$milestone.rewardName}" width="100" height="100" />
-                                                        {/if}
-                                                        <div style="margin-top:10px;">
-                                                            {$milestone.rewardDescription}
+                                                        <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                                            {if $milestone.displayName}
+                                                                {$milestone.rewardName} 
+                                                            {/if}
+                                                            {if $milestone.rewardExists}
+                                                                <img src="{$milestone.badgeImage}" alt="{$milestone.rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                                            {/if}
+                                                            <div style="margin-top:10px;">
+                                                                {$milestone.rewardDescription}
+                                                            </div>
                                                         </div>
                                                     </td>
                                                     <td>
@@ -338,14 +346,16 @@
                                 {/if}
                             </td>
                             <td>
-                                {if $campaign->displayName}
-                                    {$campaign->rewardName}<br>
-                                {/if}
-                                {if $campaign->rewardExists}
-                                    <img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
-                                {/if}
-                                <div style="margin-top:20px;">
-                                    {$campaign->rewardDescription}
+                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                    {if $campaign->displayName}
+                                        {$campaign->rewardName}<br>
+                                    {/if}
+                                    {if $campaign->rewardExists}
+                                        <img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                    {/if}
+                                    <div style="margin-top:20px;">
+                                        {$campaign->rewardDescription}
+                                    </div>
                                 </div>
                             </td>
                             <td>{$campaign->endDate}</td>
@@ -393,14 +403,16 @@
                                             <tr>
                                                 <td>{$milestone->name}</td>
                                                 <td>
-                                                    {if $milestone->displayName}
-                                                        {$milestone->rewardName}
-                                                    {/if}
-                                                    {if $milestone->rewardExists}
-                                                        <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
-                                                    {/if}
-                                                    <div style="margin-top:10px;">
-                                                        {$milestone->rewardDescription}
+                                                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                                        {if $milestone->displayName}
+                                                            {$milestone->rewardName}
+                                                        {/if}
+                                                        {if $milestone->rewardExists}
+                                                            <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                                        {/if}
+                                                        <div style="margin-top:10px;">
+                                                            {$milestone->rewardDescription}
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>                                 
@@ -444,14 +456,16 @@
                                 {/if}
                             </td>
                             <td>
-                                {if $campaign->displayName}
-                                    {$campaign->rewardName}<br>
-                                {/if}
-                                {if $campaign->rewardExists}
-                                    <img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
-                                {/if}
-                                <div style="margin-top:20px;">
-                                    {$campaign->rewardDescription}
+                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                    {if $campaign->displayName}
+                                        {$campaign->rewardName}<br>
+                                    {/if}
+                                    {if $campaign->rewardExists}
+                                        <img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                    {/if}
+                                    <div style="margin-top:20px;">
+                                        {$campaign->rewardDescription}
+                                    </div>
                                 </div>
                             </td>
                             <td>{$campaign->startDate}</td>
@@ -490,12 +504,14 @@
                                             <tr>
                                                 <td>{$milestone->name}</td>
                                                 <td>
-                                                    {if $milestone->displayName}
-                                                        {$milestone->rewardName}
-                                                    {/if}
-                                                    {if $milestone->rewardExists}
-                                                        <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
-                                                    {/if}
+                                                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                                        {if $milestone->displayName}
+                                                            {$milestone->rewardName}
+                                                        {/if}
+                                                        {if $milestone->rewardExists}
+                                                            <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                                        {/if}
+                                                    </div>
                                                 </td>
                                             </tr>                                 
                                         {/foreach}
@@ -532,12 +548,14 @@
                         <td>{$campaign->startDate}</td>
                         <td>{$campaign->endDate}</td>
                         <td>
-                            {if $campaign->displayName}
-                                {$campaign->rewardName}<br>
-                            {/if}
-                            {if $campaign->rewardExists}
-                                <img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
-                            {/if}
+                            <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                {if $campaign->displayName}
+                                    {$campaign->rewardName}<br>
+                                {/if}
+                                {if $campaign->rewardExists}
+                                    <img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                {/if}
+                            </div>
                         </td>
                         <td>
                             <button class="btn btn-primary btn-small" aria-label="{$smarty.capture.pastCampaignInfoLabel|strip_tags|escape:'html'}" onclick="togglePastCampaignInfo({$resultIndex});">{translate text="Campaign Information" isPublicFacing=true}</button>
@@ -559,12 +577,14 @@
                                                 {$milestone->name}
                                             </td>
                                             <td>
-                                                {if $milestone->displayName}
-                                                    {$milestone->rewardName}
-                                                {/if}
-                                                {if $milestone->rewardExists}
-                                                    <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
-                                                {/if}
+                                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                                    {if $milestone->displayName}
+                                                        {$milestone->rewardName}
+                                                    {/if}
+                                                    {if $milestone->rewardExists}
+                                                        <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                                    {/if}
+                                                </div>
                                             </td>
                                         </tr>
                                     {/foreach}
@@ -604,24 +624,26 @@
                                 <td>{$campaign->startDate}</td>
                                 <td>{$campaign->endDate}</td>
                                 <td>
-                                {if $campaign->displayName}
-                                    {$campaign->rewardName}<br>
-                                {/if}
-                                {if $campaign->rewardExists}
-                                    <img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px;" />
-                                {/if}<br>
-                                {if $campaign->rewardType == 0 || $campaign->rewardType == 1 && $campaign->awardAutomatically == 0}
-                                    {if $campaign->campaignRewardGiven }
-                                        <strong>{translate text="Reward Received"}<br></strong>
-                                    {/if}
-                                {/if}
-                                 {if $campaign->rewardType == 1}
-                                    {if $campaign->campaignRewardGiven ||$campaign->awardAutomatically == 1 && $campaign->isComplete}
-                                        <a href="/Search/ShareCampaigns?rewardName={$campaign->rewardName}&rewardImage={$campaign->rewardImage}&rewardId={$campaign->rewardId}">
-                                            {translate text="Share on Social Media" isPublicFacing=true}
-                                        </a>
-                                    {/if}
-                                {/if}
+                                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                        {if $campaign->displayName}
+                                            {$campaign->rewardName}<br>
+                                        {/if}
+                                        {if $campaign->rewardExists}
+                                            <img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                        {/if}<br>
+                                        {if $campaign->rewardType == 0 || $campaign->rewardType == 1 && $campaign->awardAutomatically == 0}
+                                            {if $campaign->campaignRewardGiven }
+                                                <strong>{translate text="Reward Received"}<br></strong>
+                                            {/if}
+                                        {/if}
+                                        {if $campaign->rewardType == 1}
+                                            {if $campaign->campaignRewardGiven ||$campaign->awardAutomatically == 1 && $campaign->isComplete}
+                                                <a href="/Search/ShareCampaigns?rewardName={$campaign->rewardName}&rewardImage={$campaign->rewardImage}&rewardId={$campaign->rewardId}">
+                                                    {translate text="Share on Social Media" isPublicFacing=true}
+                                                </a>
+                                            {/if}
+                                        {/if}
+                                    </div>
                                 </td>
                                 <td>
                                     <button class="btn btn-primary btn-sm" aria-label="{$smarty.capture.pastCampaignInfoLabel|strip_tags|escape:'html'}" onclick="toggleYourPastCampaignInfo({$resultIndex});">{translate text="Campaign Information" isPublicFacing=true}</button>
@@ -659,12 +681,14 @@
                                                 {/if}
                                             </td>
                                             <td>
-                                                {if $milestone->displayName}
-                                                    {$milestone->rewardName}
-                                                {/if}
-                                                {if $milestone->rewardExists}
-                                                    <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px;" />
-                                                {/if}
+                                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                                    {if $milestone->displayName}
+                                                        {$milestone->rewardName}
+                                                    {/if}
+                                                    {if $milestone->rewardExists}
+                                                        <img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+                                                    {/if}
+                                                </div>
                                             </td>
                                             <td>
                                                 {if $milestone->rewardType == 0 || $milestone->rewardType == 1 && $milestone->awardAutomatically == 0}
