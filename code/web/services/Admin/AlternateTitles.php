@@ -30,7 +30,7 @@ class Admin_AlternateTitles extends ObjectEditor {
 	}
 
 	function getDefaultSort(): string {
-		return 'alternateTitle asc';
+		return 'dateAdded desc';
 	}
 
 	function getObjectStructure($context = ''): array {
@@ -67,5 +67,19 @@ class Admin_AlternateTitles extends ObjectEditor {
 
 	function canAddNew() {
 		return false;
+	}
+
+	function applyFilter($object, $fieldName, $filter) {
+		if ($fieldName == 'addedByName') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'grouped_work_alternate_titles',
+				'sourceField' => 'addedBy',
+				'targetClass' => 'User',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'getDisplayName',
+			]);
+		} else {
+			parent::applyFilter($object, $fieldName, $filter);
+		}
 	}
 }

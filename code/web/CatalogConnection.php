@@ -673,7 +673,8 @@ class CatalogConnection {
 		} elseif ($sortOption == "title") {
 			$readingHistoryDB->orderBy('title ASC, MAX(checkOutDate) DESC');
 		} elseif ($sortOption == "author") {
-			$readingHistoryDB->orderBy('author ASC, title ASC, MAX(checkOutDate) DESC');
+			// Push entries with no author to the bottom when sorting by author.
+			$readingHistoryDB->orderBy("CASE WHEN author IS NULL OR author = '' THEN 1 ELSE 0 END ASC, author ASC, title ASC, MAX(checkOutDate) DESC");
 		} elseif ($sortOption == "format") {
 			$readingHistoryDB->orderBy('format ASC, title ASC, MAX(checkOutDate) DESC');
 		}
@@ -1462,6 +1463,13 @@ class CatalogConnection {
 		return $this->driver->getNewMaterialsRequestForm($user);
 	}
 
+	function patronEligibleForILLRequests(User $user){
+		if( empty($this->driver)){
+			return false;
+		}
+		return $this->driver->patronEligibleForILLRequests($user);
+	}
+
 	function processMaterialsRequestForm($user) {
 		return $this->driver->processMaterialsRequestForm($user);
 	}
@@ -1545,6 +1553,13 @@ class CatalogConnection {
 		return $this->driver->patronEligibleForHolds($patron);
 	}
 
+	public function patronEligibleForRenewals($patron){
+		if( empty($this->driver)){
+			return false;
+		}
+		return $this->driver->patronEligibleForHolds($patron);
+	}
+	
 	public function getShowAutoRenewSwitch(User $patron) {
 		if (empty($this->driver)) {
 			return false;

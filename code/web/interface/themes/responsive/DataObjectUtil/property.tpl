@@ -489,14 +489,14 @@
 				<label class="input-group-btn">
 					<span class="btn btn-primary">
 						{if $property.type == 'image'}
-							{translate text="Select an image" isAdminFacing=true}&hellip; <input type="file" style="display: none;" name="{$propName}" id="{$propName}" accept="image/jpeg, image/png, image/svg+xml" {if !empty($property.required)}required="required"{/if} {if !empty($property.readOnly)}readonly disabled{/if}>
+							{translate text="Select an image" isAdminFacing=true}&hellip; <input type="file" style="display: none;" name="{$propName}" id="{$propName}" accept="image/gif, image/jpeg, image/png, image/svg+xml" {if !empty($property.required)}required="required"{/if} {if !empty($property.readOnly)}readonly disabled{/if}>
 							{literal}
 							<script>
 								document.getElementById('{/literal}{$propName}{literal}').addEventListener('change', function(e) {
-									const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.svg)$/i;
+									const allowedExtensions = /(\.gif|\.jpg|\.jpeg|\.png|\.svg)$/i;
 									const file = e.target.files[0];
 									if (file && !allowedExtensions.exec(file.name)) {
-										alert('{/literal}{translate text="Invalid file type. Allowed types: JPG, JPEG, PNG, SVG" isAdminFacing=true}{literal}');
+										alert('{/literal}{translate text="Invalid file type. Allowed types: GIF, JPG, JPEG, PNG, SVG" isAdminFacing=true}{literal}');
 										e.target.value = '';
 									}
 								});
@@ -539,6 +539,9 @@
 				{include file="DataObjectUtil/fieldLockingInfo.tpl"}
 				{if !empty($property.description)}<a style="margin-right: .5em; margin-left: .25em" id="{$propName}Tooltip" class="text-info" role="tooltip" tabindex="0" data-toggle="tooltip" data-placement="right" data-title="{translate text=$property.description isAdminFacing=true inAttribute=true}"><i class="fas fa-question-circle"></i></a>{/if}
 			</div>
+			{if !empty($property.forcesReindex)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> {translate text="Updating this setting causes a nightly reindex" isAdminFacing=true}</small></span>{/if}
+			{if !empty($property.affectsLiDA)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small class="text-info"><i class="fas fa-info-circle"></i> {translate text="Aspen LiDA also uses this setting" isAdminFacing=true}</small></span>{/if}
+			{if !empty($property.note)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small><i class="fas fa-info-circle"></i> {$property.note}</small></span>{/if}
 		{elseif $property.type == 'checkboxFromNestedSection'}
 			{* {$propValue.$propName|@var_dump} *}
 			<div class="checkbox" {if !empty($property.forcesReindex) || !empty($property.affectsLiDA) || !empty($property.note)}style="margin-bottom: 0"{/if}>
@@ -549,9 +552,9 @@
 				{include file="DataObjectUtil/fieldLockingInfo.tpl"}
 				{if !empty($property.description)}<a style="margin-right: .5em; margin-left: .25em" id="{$propName}Tooltip" class="text-info" role="tooltip" tabindex="0" data-toggle="tooltip" data-placement="right" data-title="{translate text=$property.description isAdminFacing=true inAttribute=true}"><i class="fas fa-question-circle"></i></a>{/if}
 			</div>
-		{if !empty($property.forcesReindex)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> {translate text="Updating this setting causes a nightly reindex" isAdminFacing=true}</small></span>{/if}
-		{if !empty($property.affectsLiDA)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small class="text-info"><i class="fas fa-info-circle"></i> {translate text="Aspen LiDA also uses this setting" isAdminFacing=true}</small></span>{/if}
-		{if !empty($property.note)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small><i class="fas fa-info-circle"></i> {$property.note}</small></span>{/if}
+			{if !empty($property.forcesReindex)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> {translate text="Updating this setting causes a nightly reindex" isAdminFacing=true}</small></span>{/if}
+			{if !empty($property.affectsLiDA)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small class="text-info"><i class="fas fa-info-circle"></i> {translate text="Aspen LiDA also uses this setting" isAdminFacing=true}</small></span>{/if}
+			{if !empty($property.note)}<span id="{$propName}HelpBlock" class="help-block" style="margin-top:0"><small><i class="fas fa-info-circle"></i> {$property.note}</small></span>{/if}
 		{elseif $property.type == 'webBuilderColor'}
 			<section style="display: flex; flex-flow: row wrap; margin-top: 2rem;">
 				{foreach from=$property.colorOptions item=colorOption}

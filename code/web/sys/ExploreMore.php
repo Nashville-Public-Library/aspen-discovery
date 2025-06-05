@@ -411,8 +411,8 @@ class ExploreMore {
 					$numCatalogResults = $results['response']['numFound'];
 					if ($numCatalogResults > 1) {
 						//check for custom image
-						if ($appliedTheme != null && !empty($appliedTheme->listsImage)) {
-							$image = '/files/original/' . $appliedTheme->listsImage;
+						if ($appliedTheme != null && !empty($appliedTheme->seriesImage)) {
+							$image = '/files/original/' . $appliedTheme->seriesImage;
 						} else{
 							$image = '/interface/themes/responsive/images/library_symbol.png';
 						}

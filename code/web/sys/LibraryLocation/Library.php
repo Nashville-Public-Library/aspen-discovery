@@ -243,6 +243,7 @@ class Library extends DataObject {
 	public $restrictOwningBranchesAndSystems;
 	public $allowNameUpdates;
 	public $setUsePreferredNameInIlsOnUpdate;
+	public $replaceAllFirstNameWithPreferredName;
 	public $allowDateOfBirthUpdates;
 	public $allowPatronAddressUpdates;
 	public $cityStateField;
@@ -458,6 +459,7 @@ class Library extends DataObject {
 	public $campaignLeaderboardDisplay;
 	public $sendStaffEmailOnCampaignCompletion;
 	public $campaignCompletionNewEmail;
+	public $displayCampaignLeaderboard;
 
 	//SHAREit
 	public $repeatInShareIt;
@@ -1649,11 +1651,13 @@ class Library extends DataObject {
 									'firstinitial_lastname' => 'First Initial. Last Name',
 									'lastinitial_firstname' => 'First Name Last Initial.',
 									'firstinitial_middleinitial_lastname' => 'First Initial. Middle Initial. Last Name',
-									'firstname_middleinitial_lastinitial' => 'First Name Middle Initial. Last Initial.'
+									'firstname_middleinitial_lastinitial' => 'First Name Middle Initial. Last Initial.',
+									'preferredname_lastinitial' => 'Preferred Name Last Initial.'
 								],
 								'label' => 'Patron Display Name Style',
 								'description' => 'How to generate the patron display name',
 								'permissions' => ['Library ILS Options'],
+								'note' => 'Preferred Name Last Initial currently applies to Koha only',
 							],
 							'allowProfileUpdates' => [
 								'property' => 'allowProfileUpdates',
@@ -1704,6 +1708,17 @@ class Library extends DataObject {
 								'note' => 'Applies to Symphony Only',
 								'hideInLists' => true,
 								'default' => 1,
+								'readOnly' => false,
+								'permissions' => ['Library ILS Connection'],
+							],
+							'replaceAllFirstNameWithPreferredName' => [
+								'property' => 'replaceAllFirstNameWithPreferredName',
+								'type' => 'checkbox',
+								'label' => 'Use Preferred Name In Place of First Name',
+								'description' => 'Applies to Koha Only, Verions 24.11 onwards. Use the user\'s preferred name from their ILS in place of their first name in all instances where their first name would be used e.g. email templates',
+								'note' => 'Applies to Koha Only, Verions 24.11 onwards',
+								'hideInLists' => true,
+								'default' => 0,
 								'readOnly' => false,
 								'permissions' => ['Library ILS Connection'],
 							],
@@ -3772,6 +3787,14 @@ class Library extends DataObject {
 				'renderAsHeading' => true,
 				'expandByDefault' => false,
 				'properties' => [
+					'displayCampaignLeaderboard' => [
+						'property' => 'displayCampaignLeaderboard',
+						'type' => 'checkbox',
+						'label' => 'Include Campaign Leaderboard',
+						'description' => 'Whether or not to include a campaign leaderboard. Note: Web Builder must be enabled.',
+						'hideInLists' => true,
+						'default' => 0,
+					],
 					'campaignLeaderboardDisplay' => [
 						'property' => 'campaignLeaderboardDisplay',
 						'type' => 'enum',
@@ -4972,8 +4995,52 @@ class Library extends DataObject {
 		return $this->_themes;
 	}
 
+	/**
+	 * Checks if this library has multiple themes assigned to it.
+	 *
+	 * @return bool True if the library has more than one theme, false otherwise.
+	 */
+	public function hasMultipleThemes(): bool {
+		$themes = $this->getThemes();
+		return count($themes) > 1;
+	}
+
 	public function saveThemes() : void {
 		if (isset ($this->_themes) && is_array($this->_themes)) {
+			// First, check if all themes are being deleted.
+			$themesToDelete = 0;
+			$totalThemes = count($this->getThemes());
+
+			foreach ($this->_themes as $obj) {
+				/** @var LibraryTheme $obj */
+				if ($obj->_deleteOnSave) {
+					$themesToDelete++;
+				}
+			}
+
+			// If all themes would be deleted, prevent it.
+			if ($themesToDelete > 0 && $themesToDelete >= $totalThemes) {
+				$preventionMessage = translate([
+					'text' => 'Cannot delete all themes from a library. Each library must have at least one theme assigned to it.',
+					'isAdminFacing' => true
+				]);
+
+				$user = UserAccount::getActiveUserObj();
+				if ($user) {
+					$user->updateMessage = $preventionMessage;
+					$user->updateMessageIsError = true;
+					$user->update();
+				}
+
+				// Prevent the deletion by unsetting the deleteOnSave flag.
+				foreach ($this->_themes as $obj) {
+					if ($obj->_deleteOnSave) {
+						$obj->_deleteOnSave = false;
+						break; // Only need to preserve at least one theme.
+					}
+				}
+			}
+
 			foreach ($this->_themes as $obj) {
 				/** @var LibraryTheme $obj */
 				if ($obj->_deleteOnSave) {
@@ -4991,7 +5058,7 @@ class Library extends DataObject {
 							}
 						}
 					} else {
-						// set appropriate weight for new theme
+						// Set the appropriate weight for the new theme.
 						$weight = 0;
 						$existingThemesForLibrary = new LibraryTheme();
 						$existingThemesForLibrary->libraryId = $this->libraryId;

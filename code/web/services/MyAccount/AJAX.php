@@ -3715,15 +3715,15 @@ class MyAccount_AJAX extends JSON_Action {
 				$interface->assign('renewableCheckouts', $renewableCheckouts);
 				$selectedSortOption = $this->setSort('sort', 'checkout');
 
-                $user->updateSortPreferences();
+				$user->updateSortPreferences();
 
 				if ($selectedSortOption == null || !array_key_exists($selectedSortOption, $sortOptions)) {
 					$selectedSortOption = 'dueDate';
 				}
 
-                if (array_key_exists($user->checkoutSort, $sortOptions)) {
-                    $selectedSortOption = $user->checkoutSort;
-                }
+				if (array_key_exists($user->checkoutSort, $sortOptions)) {
+					$selectedSortOption = $user->checkoutSort;
+				}
 
 				$interface->assign('defaultSortOption', $selectedSortOption);
 				$allCheckedOut = $this->sortCheckouts($selectedSortOption, $allCheckedOut);
@@ -3965,7 +3965,7 @@ class MyAccount_AJAX extends JSON_Action {
 				]);
 			} else {
 				$selectedUser = $this->setFilterLinkedUser();
-                $user->updateSortPreferences();
+				$user->updateSortPreferences();
 				if ($user->getHomeLibrary() != null) {
 					$allowSelectingHoldsToExport = $user->getHomeLibrary()->allowSelectingHoldsToExport;
 				} else {
@@ -4047,13 +4047,13 @@ class MyAccount_AJAX extends JSON_Action {
 					$selectedUnavailableSortOption = ($showPosition ? 'position' : 'title');
 				}
 
-                if (array_key_exists($user->holdSortAvailable, $availableHoldSortOptions)) {
-                    $selectedAvailableSortOption = $user->holdSortAvailable;
-                }
+				if (array_key_exists($user->holdSortAvailable, $availableHoldSortOptions)) {
+					$selectedAvailableSortOption = $user->holdSortAvailable;
+				}
 
-                if (array_key_exists($user->holdSortUnavailable, $unavailableHoldSortOptions)) {
-                    $selectedUnavailableSortOption = $user->holdSortUnavailable;
-                }
+				if (array_key_exists($user->holdSortUnavailable, $unavailableHoldSortOptions)) {
+					$selectedUnavailableSortOption = $user->holdSortUnavailable;
+				}
 
 				$interface->assign('defaultSortOption', [
 					'available' => $selectedAvailableSortOption,
@@ -6479,6 +6479,14 @@ class MyAccount_AJAX extends JSON_Action {
 		if (array_key_exists('success', $result) && $result['success'] === false) {
 			return $result;
 		} else {
+			// Get the current sessionId to set cookie SameSite=None AND pass to SnapPay as udf8
+			$sessionVariable = $_COOKIE['aspen_session'] ?? '';
+			$sessionValue = '';
+			// Check if the session variable matches the pattern
+			if (preg_match('/^[0-9a-z]{26}$/', $sessionVariable, $matches)) {
+				$sessionValue = $matches[0];
+			}
+
 			global $activeLanguage;
 			$currencyCode = 'USD';
 			$variables = new SystemVariables();
@@ -6557,6 +6565,8 @@ class MyAccount_AJAX extends JSON_Action {
 
 				$postParams = [
 					'udf1' => $payment->id,
+					'udf9' => $payment->id, // Aspen user payment id is duplicated in udf1 and udf9. As of 2025 05 23, Nashville's SnapPay configuration has udf9 associated with the SnapPay 'orderId' field, which is searchable via SnapPay GetTransaction API.
+					'udf8' => $sessionValue,
 					'accountid' => $snapPaySetting->accountId,
 					'customerid' => $patron->id,
 					// TO DO: ensure correct ID
@@ -6570,7 +6580,7 @@ class MyAccount_AJAX extends JSON_Action {
 					// TO DO: allow N too
 					'enableemailreceipt' => 'Y',
 					// TO DO: allow N too
-					'redirectionurl' => $configArray['Site']['url'] . "/SnapPay/Complete",
+					'redirectionurl' => $configArray['Site']['url'] . "/SnapPay/Complete?u=" . $payment->id,
 					// TO DO: documentation: FISERV pdf has 'redirectionurl'; error has 'redirecturl'; 'redirectionurl ' is correct
 					'signature' => $HmacValue,
 					// TO DO: documentation: FISERV pdf has 'signature'; error has 'Signature'; 'signature' is correct
@@ -6583,6 +6593,7 @@ class MyAccount_AJAX extends JSON_Action {
 					'email' => $patron->email,
 					'phone' => $patron->phone,
 				];
+
 				return [
 					'success' => true,
 					'message' => 'Redirecting to payment processor',

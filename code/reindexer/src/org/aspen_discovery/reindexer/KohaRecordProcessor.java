@@ -45,11 +45,11 @@ class KohaRecordProcessor extends IlsRecordProcessor {
 					String timezone = accountProfileRS.getString("databaseTimezone");
 
 					String kohaConnectionJDBC = "jdbc:mysql://" +
-							host + ":" + port +
-							"/" + databaseName +
-							"?user=" + user +
-							"&password=" + password +
-							"&useUnicode=yes&characterEncoding=UTF-8";
+						host + ":" + port +
+						"/" + databaseName +
+						"?user=" + user +
+						"&password=" + password +
+						"&useUnicode=yes&characterEncoding=UTF-8";
 					if (timezone != null && !timezone.isEmpty()){
 						kohaConnectionJDBC += "&serverTimezone=" + URLEncoder.encode(timezone, StandardCharsets.UTF_8);
 
@@ -545,5 +545,53 @@ class KohaRecordProcessor extends IlsRecordProcessor {
 			}
 		}
 		return super.isItemHoldableUnscoped(itemInfo);
+	}
+
+	/**
+	 * Overrided method that updates the Grouped Work Solr data based on the given MARC record.
+	 *
+	 * @param groupedWork The {@link AbstractGroupedWorkSolr} instance representing the grouped work to be updated.
+	 * @param record      The MARC record containing bibliographic information.
+	 * @param identifier  The unique identifier for the record within the grouped work.
+	 */
+	@Override
+	protected void updateGroupedWorkSolrDataBasedOnMarc(AbstractGroupedWorkSolr groupedWork, Record record, String identifier) {
+		// Add the record to the grouped work first to ensure it exists in the relatedRecords map.
+		RecordInfo recordInfo = groupedWork.addRelatedRecord(profileType, identifier);
+
+		// Check if the setting is enabled to set the flag accordingly and if this is a not-for-loan (e.g., "On Order") record.
+		boolean isNotForLoan = settings.getPrioritizeAvailableRecordsForTitleSelection() && isRecordExcludedFromTitleSelection(record);
+		recordInfo.setNotForLoan(isNotForLoan);
+
+		super.updateGroupedWorkSolrDataBasedOnMarc(groupedWork, record, identifier);
+	}
+
+	/**
+	 * Determines whether a record should be excluded from title selection based on its item statuses.
+	 * If at least one item is available (e.g., "On Shelf" or "Checked Out"),
+	 * the record is not excluded from title selection.
+	 *
+	 * @param record The MARC record to evaluate.
+	 * @return {@code true} if all items in the record are on-order and should be excluded from title selection;
+	 *         {@code false} if at least one item is available.
+	 */
+	private boolean isRecordExcludedFromTitleSelection(Record record) {
+		List<DataField> itemRecords = MarcUtil.getDataFields(record, settings.getItemTagInt());
+		if (itemRecords.isEmpty()) {
+			return false;
+		}
+
+		boolean allItemsExcluded = true;
+		for (DataField itemField : itemRecords) {
+			ItemStatus itemStatus = getItemStatus(itemField, "");
+			String status = itemStatus.getStatus();
+			if ("On Shelf".equals(status) || "Checked Out".equals(status)) {
+				// Found an available item, so the record should not be excluded.
+				allItemsExcluded = false;
+				break;
+			}
+		}
+
+		return allItemsExcluded;
 	}
 }

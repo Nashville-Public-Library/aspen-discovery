@@ -17,6 +17,7 @@ class User extends DataObject {
 	public $password;
 	public $firstname;
 	public $lastname;
+	public $userPreferredName;
 	public $email;
 	public $phone;
 	public $patronType;
@@ -147,10 +148,10 @@ class User extends DataObject {
 	public $materialsRequestReplyToAddress;
 	public $materialsRequestSendEmailOnAssign;
 
-    //Sort Settings
-    public $holdSortAvailable;
-    public $holdSortUnavailable;
-    public $checkoutSort;
+	//Sort Settings
+	public $holdSortAvailable;
+	public $holdSortUnavailable;
+	public $checkoutSort;
 
 	function getNumericColumnNames(): array {
 		return [
@@ -179,6 +180,7 @@ class User extends DataObject {
 			'overdriveEmail',
 			'alternateLibraryCardPassword',
 			'axis360Email',
+			'userPreferredName',
 		];
 	}
 
@@ -871,7 +873,7 @@ class User extends DataObject {
 					return array_key_exists('Hoopla', $enabledModules) && $userHomeLibrary->hooplaLibraryID > 0;
 				} elseif ($source == 'hoopla_flex') {
 					$libraryHooplaScope = $userHomeLibrary->getHooplaScope();
-					$isFlexAvilable = $libraryHooplaScope->includeFlex;
+					$isFlexAvilable = $libraryHooplaScope ? $libraryHooplaScope->includeFlex : false;
 					return array_key_exists('Hoopla', $enabledModules) && $userHomeLibrary->hooplaLibraryID > 0 && $isFlexAvilable;
 				} elseif ($source == 'cloud_library') {
 					return array_key_exists('Cloud Library', $enabledModules) && ($userHomeLibrary->cloudLibraryScope > 0);
@@ -1237,6 +1239,12 @@ class User extends DataObject {
 				'type' => 'label',
 				'label' => 'Last Name',
 				'description' => 'The last name of the user.',
+			],
+			'userPreferredName' => [
+				'property' => 'userPreferredName',
+				'type' => 'label',
+				'label' => 'User Preferred Name',
+				'description' => 'The preferred name of the user.',
 			],
 			'displayName' => [
 				'property' => 'displayName',
@@ -5349,6 +5357,10 @@ class User extends DataObject {
 					}
 					$displayName .= ' ' . substr($this->lastname, 0, 1) . '.';
 					$this->__set('displayName', trim($displayName));
+				} elseif ($homeLibrary->patronNameDisplayStyle == 'preferredname_lastinitial') {
+					$displayName = !empty($this->userPreferredName) ? $this->userPreferredName : $this->firstname;
+					$displayName .= ' ' . substr($this->lastname, 0, 1) . '.';
+					$this->__set('displayName', trim($displayName));
 				}
 			}
 			$this->update();
@@ -6177,28 +6189,27 @@ class User extends DataObject {
 		return $validationResults;
 	}
 
-    function updateSortPreferences(): void
-    {
-        if (isset($_REQUEST['availableHoldSort'])) {
-            if ($this->holdSortAvailable !== $_REQUEST['availableHoldSort']) {
-                $this->holdSortAvailable = $_REQUEST['availableHoldSort'];
-            }
-        }
+	function updateSortPreferences(): void {
+		if (isset($_REQUEST['availableHoldSort'])) {
+			if ($this->holdSortAvailable !== $_REQUEST['availableHoldSort']) {
+				$this->holdSortAvailable = $_REQUEST['availableHoldSort'];
+			}
+		}
 
-        if (isset($_REQUEST['unavailableHoldSort'])) {
-            if ($this->holdSortUnavailable !== $_REQUEST['unavailableHoldSort']) {
-                $this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
-            }
-        }
+		if (isset($_REQUEST['unavailableHoldSort'])) {
+			if ($this->holdSortUnavailable !== $_REQUEST['unavailableHoldSort']) {
+				$this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
+			}
+		}
 
-        if (isset($_REQUEST['sort'])) {
-            if ($this->checkoutSort !== $_REQUEST['sort']) {
-                $this->checkoutSort = $_REQUEST['sort'];
-            }
-        }
+		if (isset($_REQUEST['sort'])) {
+			if ($this->checkoutSort !== $_REQUEST['sort']) {
+				$this->checkoutSort = $_REQUEST['sort'];
+			}
+		}
 
-        $this->update();
-    }
+		$this->update();
+	}
 }
 
 function modifiedEmpty($var): bool {

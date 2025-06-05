@@ -15,7 +15,7 @@ function smarty_function_translate($params, Smarty_Internal_Template &$smarty) :
 		$translator = new Translator('lang', $code);
 	}
 	if (is_array($params)) {
-		$defaultText = $params['defaultText'] ?? null;
+		$defaultText = $params['defaultText'] ?? '';
 		$inAttribute = $params['inAttribute'] ?? false;
 		$isPublicFacing = $params['isPublicFacing'] ?? false;
 		$isAdminFacing = $params['isAdminFacing'] ?? false;
@@ -31,6 +31,6 @@ function smarty_function_translate($params, Smarty_Internal_Template &$smarty) :
 		}
 		return $translator->translate($params['text'], $defaultText, $replacementValues, $inAttribute, $isPublicFacing, $isAdminFacing, $isMetadata, $isAdminEnteredData, $translateParameters, $escape);
 	} else {
-		return $translator->translate($params, null, [], false);
+		return $translator->translate($params);
 	}
 }

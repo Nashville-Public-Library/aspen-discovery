@@ -1155,13 +1155,13 @@ function translate($params) {
 		$translator = new Translator('lang', $code);
 	}
 	if (is_array($params)) {
-		$defaultText = isset($params['defaultText']) ? $params['defaultText'] : null;
-		$inAttribute = isset($params['inAttribute']) ? $params['inAttribute'] : false;
-		$isPublicFacing = isset($params['isPublicFacing']) ? $params['isPublicFacing'] : false;
-		$isAdminFacing = isset($params['isAdminFacing']) ? $params['isAdminFacing'] : false;
-		$isMetadata = isset($params['isMetadata']) ? $params['isMetadata'] : false;
-		$isAdminEnteredData = isset($params['isAdminEnteredData']) ? $params['isAdminEnteredData'] : false;
-		$translateParameters = isset($params['translateParameters']) ? $params['translateParameters'] : false;
+		$defaultText = $params['defaultText'] ?? '';
+		$inAttribute = $params['inAttribute'] ?? false;
+		$isPublicFacing = $params['isPublicFacing'] ?? false;
+		$isAdminFacing = $params['isAdminFacing'] ?? false;
+		$isMetadata = $params['isMetadata'] ?? false;
+		$isAdminEnteredData = $params['isAdminEnteredData'] ?? false;
+		$translateParameters = $params['translateParameters'] ?? false;
 		$replacementValues = [];
 		foreach ($params as $index => $param) {
 			if (is_numeric($index)) {
@@ -1170,6 +1170,6 @@ function translate($params) {
 		}
 		return $translator->translate($params['text'], $defaultText, $replacementValues, $inAttribute, $isPublicFacing, $isAdminFacing, $isMetadata, $isAdminEnteredData, $translateParameters);
 	} else {
-		return $translator->translate($params, null, [], false);
+		return $translator->translate($params);
 	}
 }
