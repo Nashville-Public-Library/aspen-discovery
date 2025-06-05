@@ -23,8 +23,6 @@ class Admin_Sublocations extends ObjectEditor {
 		$user = UserAccount::getLoggedInUser();
 
 		$object = new Sublocation();
-		$location = new Location();
-		$location->orderBy('displayName asc');
 		if (!UserAccount::userHasPermission('Administer All Libraries')) {
 			//Scope to just branches for the user based on home branch
 			$object->locationId = $user->homeLocationId;

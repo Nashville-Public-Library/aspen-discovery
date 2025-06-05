@@ -1034,7 +1034,6 @@ class Admin_AJAX extends JSON_Action {
 		$toolName = $_REQUEST['toolName'];
 		$batchDeleteScope = $_REQUEST['batchDeleteScope'];
 
-		/** @noinspection PhpIncludeInspection */
 		require_once ROOT_DIR . '/services/' . $moduleName . '/' . $toolName . '.php';
 		$fullToolName = $moduleName . '_' . $toolName;
 		/** @var ObjectEditor $tool */
@@ -1055,7 +1054,7 @@ class Admin_AJAX extends JSON_Action {
 						if (!$deletionBlockInfo['preventDeletion']) {
 							$ret = $dataObject->delete();
 							if ($ret == 0) {
-								$allErrors[] = "Unable to delete {$tool->getObjectType()} with id of {$dataObject->getPrimaryKeyValue()}";
+								$allErrors[] = "Unable to delete {$tool->getObjectType()} with id of {$dataObject->getPrimaryKeyValue()}.";
 							}
 						}else{
 							$allErrors[] = $deletionBlockInfo['message'];
@@ -1064,7 +1063,7 @@ class Admin_AJAX extends JSON_Action {
 				}
 				if (!empty($allErrors)) {
 					$user = UserAccount::getActiveUserObj();
-					$user->updateMessage = implode(',', $allErrors);
+					$user->updateMessage = implode('<br/>', $allErrors);
 					$user->updateMessageIsError = true;
 					$user->update();
 					$errorOccurred = true;
@@ -1073,13 +1072,13 @@ class Admin_AJAX extends JSON_Action {
 					return [
 						'success' => true,
 						'title' => 'Error',
-						'message' => "One or more {$tool->getPageTitle()} objects could not be deleted",
+						'message' => "One or more {$tool->getPageTitle()} objects could not be deleted.",
 					];
 				}else{
 					return [
 						'success' => true,
 						'title' => 'Success',
-						'message' => "Deleted all {$tool->getPageTitle()} objects",
+						'message' => "Deleted all {$tool->getPageTitle()} objects.",
 					];
 				}
 
@@ -1094,7 +1093,7 @@ class Admin_AJAX extends JSON_Action {
 						if (!$deletionBlockInfo['preventDeletion']) {
 							$ret = $dataObject->delete();
 							if ($ret == 0) {
-								$allErrors[] = "Unable to delete {$tool->getObjectType()} with id of {$dataObject->getPrimaryKeyValue()}";
+								$allErrors[] = "Unable to delete {$tool->getObjectType()} with id of {$dataObject->getPrimaryKeyValue()}.";
 							}
 						}else{
 							$allErrors[] = $deletionBlockInfo['message'];
@@ -1103,7 +1102,7 @@ class Admin_AJAX extends JSON_Action {
 				}
 				if (!empty($allErrors)) {
 					$user = UserAccount::getActiveUserObj();
-					$user->updateMessage = implode(',', $allErrors);
+					$user->updateMessage = implode('<br/>', $allErrors);
 					$user->updateMessageIsError = true;
 					$user->update();
 					$errorOccurred = true;
@@ -1112,13 +1111,13 @@ class Admin_AJAX extends JSON_Action {
 					return [
 						'success' => true,
 						'title' => 'Error',
-						'message' => "One or more {$tool->getPageTitle()} objects could not be deleted",
+						'message' => "One or more {$tool->getPageTitle()} objects could not be deleted.",
 					];
 				}else{
 					return [
 						'success' => true,
 						'title' => 'Success',
-						'message' => "Deleted selected {$tool->getPageTitle()} objects",
+						'message' => "Deleted selected {$tool->getPageTitle()} objects.",
 					];
 				}
 			}
@@ -1127,7 +1126,7 @@ class Admin_AJAX extends JSON_Action {
 			return [
 				'success' => false,
 				'title' => 'Error Processing Update',
-				'message' => "Sorry, you don't have permission to batch delete",
+				'message' => "Sorry, you don't have permission to batch delete.",
 			];
 		}
 	}

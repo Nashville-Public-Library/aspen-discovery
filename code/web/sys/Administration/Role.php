@@ -85,14 +85,10 @@ class Role extends DataObject {
 				require_once ROOT_DIR . '/sys/Administration/RolePermissions.php';
 				$rolePermissions = new RolePermissions();
 				$rolePermissions->roleId = $this->roleId;
-				$rolePermissions->find();
-				while ($rolePermissions->fetch()) {
-					$permission = new Permission();
-					$permission->id = $rolePermissions->permissionId;
-					if ($permission->find(true)) {
-						$this->_permissions[] = $permission->name;
-					}
-				}
+				$rolePermissionIds = $rolePermissions->fetchAll('permissionId');
+				$permission = new Permission();
+				$permission->whereAddIn('id', $rolePermissionIds, false);
+				$this->_permissions = $permission->fetchAll('name');
 			} catch (Exception $e) {
 				$loadDefaultPermissions = true;
 			}
