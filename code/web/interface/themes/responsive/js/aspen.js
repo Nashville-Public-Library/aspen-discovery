@@ -5693,7 +5693,7 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
-		
+
 		exportOnlySelectedHolds: function (source, availableHoldsSort, unavailableHoldsSort) {
 			var url = Globals.path + "/MyAccount/AJAX?method=exportHolds&source=" + source;
 			var selectedTitles = AspenDiscovery.getSelectedTitles();
@@ -5995,7 +5995,7 @@ AspenDiscovery.Account = (function () {
 						var summary = data.summary;
 						$(".ils-checkouts-placeholder").html(summary.numCheckedOut);
 						totalCheckouts += parseInt(summary.numCheckedOut);
-						$(".checkouts-placeholder").html(totalCheckouts);						
+						$(".checkouts-placeholder").html(totalCheckouts);
 						if (summary.numOverdue > 0) {
 							$(".ils-overdue-placeholder").html(summary.numOverdue);
 							$(".ils-overdue").show();
@@ -6947,7 +6947,7 @@ AspenDiscovery.Account = (function () {
 				AspenDiscovery.Account.loadCheckouts(AspenDiscovery.Account.currentCheckoutsSource, sort, showCovers, selectedUser);
 			}
 		},
-		
+
 
 		saveSearch: function (searchId) {
 			if (!Globals.loggedIn) {
@@ -7996,135 +7996,6 @@ AspenDiscovery.Account = (function () {
 			} else {
 				$('#thisDonation').hide();
 			}
-		},
-		getCurbsidePickupScheduler: function (locationId) {
-			if (Globals.loggedIn) {
-				AspenDiscovery.loadingMessage();
-				$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupScheduler&pickupLocation=" + locationId, function (data) {
-					if (data.success) {
-						AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons)
-					} else {
-						AspenDiscovery.showMessage(data.title, data.message);
-					}
-				});
-			} else {
-				AspenDiscovery.Account.ajaxLogin(null, function () {
-					return AspenDiscovery.Account.getCurbsidePickupScheduler(locationId);
-				}, false);
-			}
-			return false;
-		},
-		createCurbsidePickup: function () {
-			if (Globals.loggedIn) {
-
-				var patronId = $("#newCurbsidePickupForm input[name=patronId]").val();
-				var locationId = $("#newCurbsidePickupForm  input[name=pickupLibrary]").val();
-				var date = $("#newCurbsidePickupForm  input[name=pickupDate]").val();
-				var time = $("#newCurbsidePickupForm  input[name=pickupTime]:checked").val();
-				var note = $("#newCurbsidePickupForm  input[name=pickupNote]").text();
-
-				AspenDiscovery.loadingMessage();
-				$.getJSON(Globals.path + "/MyAccount/AJAX?method=createCurbsidePickup&patronId=" + patronId + "&location=" + locationId + "&date=" + date + "&time=" + time + "&note=" + note, function (data) {
-					if (data.success) {
-						AspenDiscovery.showMessage(data.title, data.body, true, 2000)
-					} else {
-						AspenDiscovery.showMessage(data.title, data.message);
-					}
-				});
-			} else {
-				AspenDiscovery.Account.ajaxLogin(null, function () {
-					return AspenDiscovery.Account.createCurbsidePickup(patronId, locationId, dateTime, note);
-				}, false);
-			}
-			return false;
-		},
-		getCancelCurbsidePickup: function (patronId, pickupId) {
-			AspenDiscovery.loadingMessage();
-			// noinspection JSUnresolvedFunction
-			$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCancelCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
-				AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons); // automatically close when successful
-			}).fail(AspenDiscovery.ajaxFail);
-			return false
-		},
-		cancelCurbsidePickup: function (patronId, pickupId) {
-			AspenDiscovery.loadingMessage();
-			// noinspection JSUnresolvedFunction
-			$.getJSON(Globals.path + "/MyAccount/AJAX?method=cancelCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
-				AspenDiscovery.showMessage(data.title, data.body, true, 2000); // automatically close when successful
-			}).fail(AspenDiscovery.ajaxFail);
-			return false
-		},
-		checkInCurbsidePickup: function (patronId, pickupId) {
-			AspenDiscovery.loadingMessage();
-			// noinspection JSUnresolvedFunction
-			$.getJSON(Globals.path + "/MyAccount/AJAX?method=checkInCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
-				AspenDiscovery.showMessage(data.title, data.body, false);
-			}).fail(AspenDiscovery.ajaxFail);
-			return false
-		},
-		curbsidePickupScheduler: function (locationCode) {
-			$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupUnavailableDays&locationCode=" + locationCode, function (data) {
-				$("#pickupDate").flatpickr(
-					{
-						minDate: "today",
-						maxDate: new Date().fp_incr(14),
-						altInput: true,
-						altFormat: "M j, Y",
-						"disable": [
-							function (date) {
-								if (data.includes(date.getDay())) {
-									return data.includes(date.getDay())
-								}
-							}
-						],
-						"locale": {
-							"firstDayOfWeek": 0
-						},
-						onChange: function (selectedDates, dateStr, instance) {
-							//... send dateStr to check what times are available
-							$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupAvailableTimes&date=" + dateStr + "&locationCode=" + locationCode, function (data) {
-								// return available timeslots to dom
-								var numOfSlots = data.length;
-								var morningSlots = 0;
-								var afternoonSlots = 0;
-								var eveningSlots = 0;
-								var morningTimeSlotContainer = document.getElementById("morningTimeSlots");
-								morningTimeSlotContainer.innerHTML = "";
-								var afternoonTimeSlotContainer = document.getElementById("afternoonTimeSlots");
-								afternoonTimeSlotContainer.innerHTML = "";
-								var eveningTimeSlotContainer = document.getElementById("eveningTimeSlots");
-								eveningTimeSlotContainer.innerHTML = "";
-								for (var i = 0; i < numOfSlots; i++) {
-									var slot = moment(data[i], "HH:mm").format("h:mm a");
-									if (data[i] < "12:00") {
-										morningSlots++;
-										morningTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									} else if (data[i] < "17:00") {
-										afternoonSlots++;
-										afternoonTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									} else {
-										eveningSlots++;
-										eveningTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									}
-								}
-
-								if (morningSlots === 0) {
-									$("#morningTimeSlotsAccordion").hide();
-								}
-								if (afternoonSlots === 0) {
-									$("#afternoonTimeSlotsAccordion").hide();
-								}
-								if (eveningSlots === 0) {
-									$("#eveningTimeSlotsAccordion").hide();
-								}
-								$('#availableTimeSlots').find('div.panel:visible:first').addClass('active');
-								$("#availableTimeSlots").show();
-							});
-						}
-					}
-				);
-			}).fail(AspenDiscovery.ajaxFail);
-			return false
 		},
 		show2FAEnrollment: function (mandatoryEnroll) {
 			if (Globals.loggedIn || mandatoryEnroll) {
@@ -10427,6 +10298,17 @@ AspenDiscovery.Admin = (function () {
 					}
 				}
 			});
+			var oneToManyCells = $(".oneToManyCell");
+			oneToManyCells.each(function () {
+				if ($(this).attr("data-related-ils") !== undefined){
+					var relatedIls = $(this).data("related-ils");
+					if (relatedIls.includes("~" + activeIls + "~")) {
+						$(this).show();
+					}else{
+						$(this).hide();
+					}
+				}
+			});
 		},
 
 		setAccountProfileDefaultsByIls: function () {
@@ -10591,7 +10473,7 @@ AspenDiscovery.Admin = (function () {
 						var numVisibleActions = 0;
 						adminLinksInSection.each(function () {
 							var curMenuLink = $(this);
-							var title = curMenuLink.find(".adminLink").text();
+							var title = curMenuLink.find("a").text();
 							var titleMatches = searchRegex.test(title);
 							if (!titleMatches) {
 								curMenuLink.hide();
@@ -11434,6 +11316,7 @@ AspenDiscovery.Browse = (function(){
 		browseStyle: 'masonry',
 		accessibleMode: false,
 		patronId: null,
+		subCategorySwipers: {},
 
 		addToHomePage: function(searchId){
 			AspenDiscovery.Account.ajaxLightbox(Globals.path + '/Browse/AJAX?method=getAddBrowseCategoryForm&searchId=' + searchId, true);
@@ -11898,7 +11781,7 @@ AspenDiscovery.Browse = (function(){
 						resultsPanel.fadeIn('slow');
 						AspenDiscovery.Ratings.initializeRaters();
 					});
-					
+
 					$('#selected-browse-search-link').attr('href', data.searchUrl); // update the search link
 
 					if (data.lastPage){
@@ -11939,56 +11822,114 @@ AspenDiscovery.Browse = (function(){
 
 		changeBrowseSubCategoryTab: function (subCategoryTextId, categoryId) {
 			AspenDiscovery.Browse.changingDisplay = true;
-			var url = Globals.path + '/Browse/AJAX';
-			var params = {
-				method : 'getBrowseSubCategoryInfo'
-				,textId : categoryId
-				,subCategoryTextId : subCategoryTextId
-				,browseMode : this.browseMode
+			const container = document.querySelector('.swiper-sub-browse-category-' + subCategoryTextId);
+			const self      = this;
+
+			// Accessibility: Make the container focusable so we can catch arrow-key navigation.
+			container.setAttribute('tabindex', '0');
+			container.addEventListener('keydown', function(e) {
+				const swiper = self.subCategorySwipers[subCategoryTextId];
+				if (!swiper) return;
+				if (e.key === 'ArrowLeft')  swiper.slidePrev();
+				if (e.key === 'ArrowRight') swiper.slideNext();
+			});
+
+			// Toggle the tab buttons and wire up aria-controls.
+			const $tabs = $('#tabs-' + categoryId);
+			$tabs.find('[role="tab"]').each(function(){
+				const $btn = $(this);
+				const thisId = $btn.attr('id');
+				const panelId = thisId.replace('tab-', 'panel-');
+				$btn.attr('aria-controls', panelId);
+
+				if (thisId === 'browse-sub-category-tab-' + subCategoryTextId) {
+					$btn.attr({ 'aria-selected': 'true', tabindex: 0 })
+						.addClass('selected');
+				} else {
+					$btn.attr({ 'aria-selected': 'false', tabindex: -1 })
+						.removeClass('selected');
+				}
+			});
+
+			// Hide all panels, then show the one we want, and manage aria-hidden.
+			$tabs.find('[role="tabpanel"]')
+				.addClass('is-hidden')
+				.attr('aria-hidden', 'true');
+
+			const $panel = $('#tabpanel-' + subCategoryTextId)
+				.removeClass('is-hidden')
+				.attr({
+					'aria-hidden': 'false',
+					'aria-live' : 'polite',
+					'aria-busy' : 'true'
+				});
+
+			const url = Globals.path + '/Browse/AJAX';
+			const params = {
+				method           : 'getBrowseSubCategoryInfo',
+				textId           : categoryId,
+				subCategoryTextId: subCategoryTextId,
+				browseMode       : this.browseMode
 			};
 
 			$.getJSON(url, params, function(data){
-				if (data.success === false){
-					AspenDiscovery.showMessage("Error loading browse information", "Sorry, we were not able to find titles for that category");
-				}else{
-					var resultsTabPanel = document.getElementById('swiper-sub-browse-category-' + subCategoryTextId) ;
-					resultsTabPanel.innerHTML = "";
-					var browseSwiper = new Swiper('.swiper-sub-browse-category-' + subCategoryTextId, {
+				if (!data.success) {
+					AspenDiscovery.showMessage(
+						"Error Loading Browse Information",
+						"Sorry, we were not able to find titles for that category."
+					);
+					$panel.attr('aria-busy','false');
+					return;
+				}
+
+				const slides = Object.values(data.records);
+
+				if (!self.subCategorySwipers[subCategoryTextId]) {
+					const wrapper = container.querySelector('.swiper-wrapper');
+					if (wrapper) wrapper.innerHTML = '';
+
+					const browseSwiper = new Swiper(container, {
 						slidesPerView: 5,
-						spaceBetween: 20,
-						direction: 'horizontal',
-
-						// Accessibility
-						a11y: {
-							enabled: true
+						spaceBetween : 20,
+						direction    : 'horizontal',
+						a11y         : { enabled: true },
+						navigation   : {
+							nextEl : container.querySelector('.swiper-button-next'),
+							prevEl : container.querySelector('.swiper-button-prev'),
 						},
-
-						// Navigation arrows
-						navigation: {
-							nextEl: '.swiper-button-next',
-							prevEl: '.swiper-button-prev'
-						},
-
 						virtual: {
 							enabled: true,
-							slides: Object.values(data.records)
+							slides : slides
 						}
 					});
-					// Fix keyboard navigation
-					$("#browse-category-feed .swiper-wrapper > .swiper-slide:not(.swiper-slide-visible) a").prop("tabindex", "-1");
-					$("#browse-category-feed .swiper-wrapper > .swiper-slide-visible a").removeProp("tabindex");
-					browseSwiper.on('slideChangeTransitionEnd', function () {
-						$("#browse-category-feed .swiper-wrapper > .swiper-slide:not(.swiper-slide-visible) a").prop("tabindex", "-1");
-						$("#browse-category-feed .swiper-wrapper > .swiper-slide-visible a").removeProp("tabindex");
+
+					// Keep off‑screen slides out of the tab order.
+					browseSwiper.on('slideChangeTransitionEnd', function(){
+						$("#browse-category-feed .swiper-wrapper > .swiper-slide:not(.swiper-slide-visible) a")
+							.prop("tabindex","-1");
+						$("#browse-category-feed .swiper-wrapper > .swiper-slide-visible a")
+							.removeAttr("tabindex");
 					});
 
+					self.subCategorySwipers[subCategoryTextId] = browseSwiper;
 				}
-			}).fail(function(){
+				else {
+					const swiper = self.subCategorySwipers[subCategoryTextId];
+					swiper.virtual.slides = slides;
+					swiper.virtual.update();
+				}
+
+				$panel.attr('aria-busy','false');
+			})
+			.fail(function(){
 				AspenDiscovery.ajaxFail();
-				AspenDiscovery.Browse.changingDisplay = false;
-			}).done(function(){
+				$('#tabpanel-' + subCategoryTextId).attr('aria-busy','false');
+			})
+			.always(function(){
 				AspenDiscovery.Browse.changingDisplay = false;
 			});
+
+			return false;
 		},
 
 		updateBrowseCategory: function(){
@@ -12077,6 +12018,48 @@ AspenDiscovery.Browse = (function(){
 				}
 			}).fail(AspenDiscovery.ajaxFail);
 			return false;
+		},
+		// Load subcategory tabs and initial content for an accessible browse category.
+		loadBrowseCategoryTabs: function(categoryTextId) {
+			const url = Globals.path + '/Browse/AJAX';
+			const params = {
+				method: 'getBrowseCategoryInfo',
+				textId: categoryTextId,
+				browseMode: this.browseMode
+			};
+			return $.getJSON(url, params)
+			.done(function(data){
+				if (data.success === false) {
+					AspenDiscovery.showMessage('Error Loading Subcategories', 'Sorry, unable to load subcategories for that category.');
+				} else {
+					// Replace placeholder with actual tabs.
+					const $tabs = $('#tabs-' + categoryTextId);
+					$tabs.html(data.subcategories);
+
+					// Load the first subcategory.
+					const firstTabBtn = $tabs.find('[role="tab"]').first();
+					if (firstTabBtn.length) {
+						const subCategoryId = firstTabBtn.attr('id').replace('browse-sub-category-tab-', '');
+						AspenDiscovery.Browse.changeBrowseSubCategoryTab(subCategoryId, categoryTextId);
+					}
+				}
+			}).fail(AspenDiscovery.ajaxFail).always(function() {
+				AspenDiscovery.Browse.changingDisplay = false;
+			});
+		},
+		// Load each browse category in order, from top to bottom.
+		loadAllBrowseCategoryTabsSequential: function() {
+			const self = this;
+			const ids = $('.tabs[id^="tabs-"]').map(function () {
+				return this.id.replace(/^tabs-/, '');
+			}).get();
+
+			function _next(){
+				if (!ids.length) return;
+				const id = ids.shift();
+				self.loadBrowseCategoryTabs(id).done(_next);
+			}
+			_next();
 		}
 
 	}
@@ -14170,6 +14153,20 @@ AspenDiscovery.Lists = (function(){
 			return false;
 		},
 
+		printListWithDescriptions: function (){
+			// Ensure descriptions are shown.
+			$('body').removeClass('no-print-descriptions');
+			window.print();
+			return false;
+		},
+
+		printListWithoutDescriptions: function (){
+			// Hide descriptions during print.
+			$('body').addClass('no-print-descriptions');
+			window.print();
+			return false;
+		},
+
 		importListsFromClassic: function (){
 			if (confirm("This will import any lists you had defined in the old catalog.  This may take several minutes depending on the size of your lists. Are you sure you want to continue?")){
 				window.location = Globals.path + "/MyAccount/ImportListsFromClassic";
@@ -14403,21 +14400,9 @@ AspenDiscovery.MaterialsRequest = (function(){
 
 		updateSelectedRequests: function(){
 			var newStatus = $("#newStatus").val();
-			if (newStatus === "unselected"){
-				alert("Please select a status to update the requests to.");
-				return false;
-			}
-			var selectedRequests = this.getSelectedRequests(false);
-			if (selectedRequests.length !== 0){
-				$("#updateRequests").submit();
-			}
-			return false;
-		},
-
-		assignSelectedRequests: function(){
 			var newAssignee = $("#newAssignee").val();
-			if (newAssignee === "unselected"){
-				alert("Please select a user to assign the requests to.");
+			if (newAssignee === "unselected" && newStatus === "unselected"){
+				alert("Please select a new assignee and/or status to update.");
 				return false;
 			}
 			var selectedRequests = this.getSelectedRequests(false);
@@ -14581,13 +14566,13 @@ AspenDiscovery.MaterialsRequest = (function(){
 			//Don't bother checking if we don't have a format
 			var enoughDataToCheckForExistingRecord = false;
 			if (params.format !== '') {
-				if (params.isbn !== '') {
+				if (params.isbn && /[0-9X]/.test(params.isbn)) {
 					enoughDataToCheckForExistingRecord = true;
 				}
-				if (params.issn !== '') {
+				if (params.issn && /[0-9X]/.test(params.issn)) {
 					enoughDataToCheckForExistingRecord = true;
 				}
-				if (params.upc !== '') {
+				if (params.upc && /\d/.test(params.upc)) {
 					enoughDataToCheckForExistingRecord = true;
 				}
 				if (params.title !== '' && params.author !== undefined) {
@@ -14632,6 +14617,22 @@ AspenDiscovery.MaterialsRequest = (function(){
 					$("#existingTitleInformation" + id).html(data.existingRecordInformation);
 				}
 			});
+		},
+
+		validateManageRequestFilters: function () {
+			if ($('.statusFilter:checked').length === 0) {
+				alert("You must select at least one status to view.");
+				return false;
+			}
+			if ($('.formatFilter:checked').length === 0) {
+				alert("You must select at least one format to view.");
+				return false;
+			}
+			if ($('.assigneesFilter:checked').length === 0 && $('#showUnassigned:checked').length === 0) {
+				alert("You must select at least one assignee to view.");
+				return false;
+			}
+			return true;
 		}
 	};
 }(AspenDiscovery.MaterialsRequest || {}));
@@ -17172,6 +17173,8 @@ AspenDiscovery.WebBuilder = function () {
 		getPortalCellValuesForSource: function () {
 			var portalCellId = $("#id").val();
 			var sourceType = $("#sourceTypeSelect").val();
+			const $staticLocationSelector = $('#propertyRowstaticLocationId');
+			$($staticLocationSelector).hide();
 			if (sourceType === 'markdown') {
 				$('#propertyRowmarkdown').show();
 				$('#propertyRowsourceInfo').hide();
@@ -17206,6 +17209,7 @@ AspenDiscovery.WebBuilder = function () {
 				$('#propertyRowcustomImage').hide();
 				$('#propertyRowhideDescription').hide();
 			}else if (sourceType === 'hours_locations') {
+				$($staticLocationSelector).show();
 				$('#propertyRowmarkdown').hide();
 				$('#propertyRowsourceInfo').hide();
 				$("#propertyRowsourceId").hide();
@@ -17217,6 +17221,7 @@ AspenDiscovery.WebBuilder = function () {
 				$('#propertyRowcustomImage').hide();
 				$('#propertyRowhideDescription').hide();
 			}else {
+				$($staticLocationSelector).hide();
 				$('#propertyRowmarkdown').hide();
 				$('#propertyRowsourceInfo').hide();
 				$("#propertyRowsourceId").show();
@@ -18610,3 +18615,353 @@ AspenDiscovery.CommunityEngagement = function() {
 	}
 	
 }(AspenDiscovery.CommunityEngagement || {});
+AspenDiscovery.CurbsidePickup = {
+	getCurbsidePickupScheduler(locationId) {
+		if (Globals.loggedIn) {
+			AspenDiscovery.loadingMessage();
+			$.getJSON(Globals.path + "/CurbsidePickups/AJAX?method=getCurbsidePickupScheduler&pickupLocation=" + locationId, function (data) {
+				if (data.success) {
+					AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons)
+				} else {
+					AspenDiscovery.showMessage(data.title, data.message);
+				}
+			});
+		} else {
+			this.ajaxLogin(null, this.getCurbsidePickupScheduler, false);
+		}
+		return false;
+	},
+	createCurbsidePickup() {
+		if (Globals.loggedIn) {
+
+			const patronId = $("#newCurbsidePickupForm input[name=patronId]").val();
+			const locationId = $("#newCurbsidePickupForm  input[name=pickupLibrary]").val();
+			const date = $("#newCurbsidePickupForm  input[name=pickupDate]").val();
+			const time = $("#newCurbsidePickupForm  input[name=pickupTime]:checked").val();
+			const note = ($("#newCurbsidePickupForm  textarea[name=pickupNote]").val() || '').substring(0, 255);
+
+			AspenDiscovery.loadingMessage();
+			$.getJSON(Globals.path + "/CurbsidePickups/AJAX?method=createCurbsidePickup&patronId=" + patronId + "&location=" + locationId + "&date=" + date + "&time=" + time + "&note=" + encodeURIComponent(note), function (data) {
+				// Clean up any existing date-picker UI.
+				$("div.flatpickr-calendar").remove();
+				if (data.success) {
+					AspenDiscovery.showMessage(data.title, data.body, true, 2000)
+				} else {
+					AspenDiscovery.showMessage(data.title, data.message, false);
+				}
+			}).fail(function () {
+				$("div.flatpickr-calendar").remove();
+				AspenDiscovery.ajaxFail();
+			});
+		} else {
+			this.ajaxLogin(null, this.createCurbsidePickup, false);
+		}
+		return false;
+	},
+	getCancelCurbsidePickup(patronId, pickupId) {
+		AspenDiscovery.loadingMessage();
+		$.getJSON(Globals.path + "/CurbsidePickups/AJAX?method=getCancelCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
+			AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons);
+		}).fail(AspenDiscovery.ajaxFail);
+		return false;
+	},
+	cancelCurbsidePickup(patronId, pickupId) {
+		AspenDiscovery.loadingMessage();
+		$.getJSON(Globals.path + "/CurbsidePickups/AJAX?method=cancelCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
+			if (data.success) {
+				AspenDiscovery.showMessage(data.title, data.body, true, 2000);
+			}
+			else {
+				AspenDiscovery.showMessage(data.title, data.body, false);
+			}
+		}).fail(AspenDiscovery.ajaxFail);
+		return false;
+	},
+	checkInCurbsidePickup(patronId, pickupId) {
+		AspenDiscovery.loadingMessage();
+		$.getJSON(Globals.path + "/CurbsidePickups/AJAX?method=checkInCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
+			if (data.success) {
+				AspenDiscovery.showMessage(data.title, data.body, true, 2000);
+			}
+			else {
+				AspenDiscovery.showMessage(data.title, data.body, false);
+			}
+		}).fail(AspenDiscovery.ajaxFail);
+		return false;
+	},
+	curbsidePickupScheduler(locationCode) {
+		$.getJSON(Globals.path + "/CurbsidePickups/AJAX?method=getCurbsidePickupUnavailableDays&locationCode=" + locationCode)
+			.done(function (unavailableDaysData) {
+				if (!unavailableDaysData.success) {
+					AspenDiscovery.showMessage("Error", "Failed to load calendar. Please try again later.", false);
+					return;
+				}
+
+				console.log("1.", unavailableDaysData);
+				const todayISO = moment().format("YYYY-MM-DD");
+				$.getJSON(Globals.path + "/CurbsidePickups/AJAX?method=getCurbsidePickupAvailableTimes&date=" + todayISO + "&locationCode=" + locationCode)
+					.done(function (availableTimesData) {
+						// If today has no time slots because the current time is past them all, then disable today.
+						// This will return a false success flag if no time slots have been set in the respective ILS.
+						console.log("2.", availableTimesData);
+						if (!availableTimesData.success || (availableTimesData.times && availableTimesData.times.length === 0)) {
+							unavailableDaysData.days = unavailableDaysData.days || [];
+							unavailableDaysData.days.push(todayISO);
+						}
+
+						$("#pickupDate").flatpickr({
+							minDate: "today",
+							maxDate: new Date().fp_incr(14),
+							altInput: true,
+							altFormat: "M j, Y",
+							"disable": [
+								function(date) {
+									const weekday = date.getDay();
+									const dateISO = moment(date).format("YYYY-MM-DD");
+									return (
+										(unavailableDaysData.days && unavailableDaysData.days.includes(weekday)) ||
+										(unavailableDaysData.days && unavailableDaysData.days.includes(dateISO))
+									);
+								}
+							],
+							"locale": {
+								"firstDayOfWeek": 0
+							},
+
+							onChange: function (selectedDates, dateStr) {
+								console.log("3.", unavailableDaysData.days);
+								// Reset time slot sections before loading new ones.
+								$("#morningTimeSlotsAccordion, #afternoonTimeSlotsAccordion, #eveningTimeSlotsAccordion").hide();
+								$("#morningTimeSlots, #afternoonTimeSlots, #eveningTimeSlots").empty();
+								$("#availableTimeSlots").hide();
+
+								// Get available times for selected date
+								$.getJSON(Globals.path + "/CurbsidePickups/AJAX?method=getCurbsidePickupAvailableTimes&date=" + dateStr + "&locationCode=" + locationCode)
+									.done(function (data) {
+										if (!data.success) {
+											AspenDiscovery.showMessage("Error", "Could not load time slots. Please try again.", false);
+											return;
+										}
+
+										if (!data.times || data.times.length === 0) {
+											AspenDiscovery.showMessage("No Times Available", "Sorry, there are no available pickup times for the selected date. Please select a different date.", false);
+											return;
+										}
+
+										let morningSlots = 0;
+										let afternoonSlots = 0;
+										let eveningSlots = 0;
+										const morningContainer = document.getElementById("morningTimeSlots");
+										const afternoonContainer = document.getElementById("afternoonTimeSlots");
+										const eveningContainer = document.getElementById("eveningTimeSlots");
+
+										data.times.forEach(time => {
+											const slot = moment(time, "HH:mm").format("h:mm a");
+											const slotHTML = `
+										<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'>
+											<input type='radio' name='pickupTime' id='slot_${time}' value='${slot}'> ${slot}
+										</label>
+									`;
+											if (time < "12:00") {
+												morningSlots++;
+												morningContainer.insertAdjacentHTML("beforeend", slotHTML);
+											} else if (time < "17:00") {
+												afternoonSlots++;
+												afternoonContainer.insertAdjacentHTML("beforeend", slotHTML);
+											} else {
+												eveningSlots++;
+												eveningContainer.insertAdjacentHTML("beforeend", slotHTML);
+											}
+										});
+
+										if (morningSlots > 0) $("#morningTimeSlotsAccordion").show();
+										if (afternoonSlots > 0) $("#afternoonTimeSlotsAccordion").show();
+										if (eveningSlots > 0) $("#eveningTimeSlotsAccordion").show();
+										const panels = $('#availableTimeSlots');
+
+										panels.find('.panel-collapse').removeClass('in');
+										panels.find('.panel:visible:first .panel-collapse').addClass('in');
+										$("#availableTimeSlots").show();
+									})
+									.fail(function(jqXHR, textStatus, errorThrown) {
+										AspenDiscovery.closeLightbox();
+										AspenDiscovery.showMessage("Error", "Failed to load available times. Please try again later.", false);
+										console.error("Error loading time slots:", textStatus, errorThrown);
+									});
+							}
+						});
+
+						// With the calendar initialized, show the form and button.
+						$("#curbsidePickupLoading").hide();
+						$("#curbsidePickupContent").show();
+						$("#createCurbsidePickupSubmit").show();
+					})
+					.fail(function(jqXHR, textStatus, errorThrown) {
+						AspenDiscovery.showMessage("Error", "Failed to load available times. Please try again later.", false);
+						console.error("Error loading available times:", textStatus, errorThrown);
+					});
+			})
+			.fail(function(jqXHR, textStatus, errorThrown) {
+				AspenDiscovery.showMessage("Error", "Failed to load calendar. Please try again later.", false);
+				console.error("Error loading calendar:", textStatus, errorThrown);
+			});
+		return false;
+	},
+	updateCurbsidePickupSettingsFields() {
+		const allowCheckIn = $('#allowCheckIn').is(':checked');
+		const instructionsField = $('#curbsidePickupInstructions');
+		const instructionsHelp = $('#curbsidePickupInstructionsHelpBlock');
+		const leadTimeField = $('#timeAllowedBeforeCheckIn');
+		const leadTimeHelp = $('#timeAllowedBeforeCheckInHelpBlock');
+
+		if (allowCheckIn) {
+			instructionsField.prop('readonly', true);
+			instructionsHelp.html('<small><i class="fas fa-info-circle"></i> This field is disabled because "Mark Arrived" is enabled. When patrons can check in, these instructions are not used.</small>');
+			leadTimeField.prop('readonly', true);
+			leadTimeHelp.html('<small><i class="fas fa-info-circle"></i> This field is disabled because "Mark Arrived" is enabled. It is not used when patrons can mark arrival.</small>');
+		} else {
+			instructionsField.prop('readonly', false);
+			instructionsHelp.html('<small><i class="fas fa-info-circle"></i> For custom instructions per location/branch, edit this mirrored field under the ILS/Account Integration section of the <a href="/Admin/Locations">Location settings</a>.</small>');
+			leadTimeField.prop('readonly', false);
+			leadTimeHelp.html('<small><i class="fas fa-info-circle"></i> Set to -1 to display at all times. If the pickup is marked as "Staged & Ready,", the instructions will display regardless of this set time.</small>');
+		}
+		return false;
+	},
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+	const allowCheckIn = document.getElementById('allowCheckIn');
+	const curbsidePickupInstructions = document.getElementById('curbsidePickupInstructions');
+
+	if (allowCheckIn && curbsidePickupInstructions) {
+		AspenDiscovery.CurbsidePickup.updateCurbsidePickupSettingsFields();
+	}
+});
+/**
+ * Javascript for enhancing form fields:
+ * - Character counter for maxlength attributes.
+ * - Others could be added later....
+**/
+
+AspenDiscovery.FormFields = (function() {
+	/**
+	 * Initialize character counters on elements with maxLength in the specified container.
+	 *
+	 * @param {jQuery|HTMLElement|string} container
+	 */
+	function initializeCharacterCounters(container) {
+		const $container = $(container);
+		if (!$container.length) return;
+
+		// Canvas for text-width measuring (reuse for all fields).
+		const ccCanvas = document.createElement('canvas');
+		const ccCtx = ccCanvas.getContext('2d');
+		const buffer = 8;
+
+		// Helper to wrap and inject the counter.
+		function initCharCounterField($f) {
+			if (!$f.parent().hasClass('field-wrapper')) {
+				$f.wrap('<div class="field-wrapper"></div>');
+			}
+			if (!$f.next('.char-counter').length) {
+				$f.after('<span class="char-counter"></span>');
+			}
+		}
+
+		// Initialize on page-load for all existing fields.
+		$container.find('input[maxlength], textarea[maxlength]').each(function() {
+			initCharCounterField($(this));
+		});
+
+		// Observe DOM for any new fields added under container.
+		// Needed otherwise the dynamic injection of the counter will
+		// cause the user to lose focus on the field.
+		const observer = new MutationObserver(function (mutations) {
+			mutations.forEach(function (mutation) {
+				Array.prototype.forEach.call(mutation.addedNodes, function (node) {
+					let $n = $(node);
+					if ($n.is('input[maxlength], textarea[maxlength]')) {
+						initCharCounterField($n);
+					}
+					$n.find('input[maxlength], textarea[maxlength]').each(function () {
+						initCharCounterField($(this));
+					});
+				});
+			});
+		});
+		observer.observe($container[0], { childList: true, subtree: true });
+
+		// Handle input events on fields with maxlength.
+		$container.on('input', 'input[maxlength], textarea[maxlength]', function() {
+			const $f = $(this);
+			const fld = $f[0];
+			const $ctr = $f.next('.char-counter');
+			const max = parseInt($f.attr('maxlength'), 10);
+			if (isNaN(max) || max <= 0) return;
+			const val = $f.val();
+
+			$ctr.text(val.length + '/' + max).addClass('visible');
+			$f.toggleClass('field-error', val.length >= max);
+
+			// Measure rendered text width.
+			const style = window.getComputedStyle(fld);
+			ccCtx.font = style.font;
+			const rawW = ccCtx.measureText(val).width;
+			const ls = style.letterSpacing === 'normal' ? 0 : parseFloat(style.letterSpacing);
+			const textW = rawW + ls * Math.max(0, val.length - 1);
+
+			// Compute truly available width inside the field.
+			const paddingLeft = parseFloat(style.paddingLeft);
+			const paddingRight = parseFloat(style.paddingRight);
+			const avail = fld.clientWidth - paddingLeft - paddingRight - $ctr[0].offsetWidth - buffer;
+
+			// Switch between "inside" vs "outside" modes.
+			const $wrap = $f.parent();
+			if (textW < avail) {
+				$wrap.removeClass('outside');
+				$ctr.removeClass('outside').addClass('inside');
+			} else {
+				$wrap.addClass('outside');
+				$ctr.removeClass('inside').addClass('outside');
+			}
+
+			// Setup timer to hide counter after delay.
+			clearTimeout($f.data('ccTimer'));
+			const tid = setTimeout(function () {
+				if (val.length < max) {
+					$ctr.removeClass('visible');
+				}
+			}, 2000);
+			$f.data('ccTimer', tid);
+		});
+
+		// On focus: if already at max, show the counter; otherwise, hide it immediately.
+		$container.on('focus', 'input[maxlength], textarea[maxlength]', function() {
+			const $f   = $(this);
+			const max  = parseInt($f.attr('maxlength'), 10);
+			const len  = $f.val().length;
+			const $ctr = $f.next('.char-counter');
+
+			if (len >= max) {
+				$ctr.text(len + '/' + max).addClass('visible');
+			} else {
+				$ctr.removeClass('visible');
+			}
+		});
+
+		// On blur: always hide the counter after a short interval.
+		$container.on('blur', 'input[maxlength], textarea[maxlength]', function() {
+			const $f   = $(this);
+			const $ctr = $f.next('.char-counter');
+			clearTimeout($f.data('ccTimer'));
+			const tid = setTimeout(function() {
+				$ctr.removeClass('visible');
+			}, 2000);
+			$f.data('ccTimer', tid);
+		});
+	}
+
+	return {
+		initializeCharacterCounters: initializeCharacterCounters
+	};
+}());

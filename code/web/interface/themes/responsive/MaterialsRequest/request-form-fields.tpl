@@ -166,6 +166,7 @@
 							<input name="{$materialRequestTableColumnName}" id="{$materialRequestTableColumnName}"
 								size="90" maxlength="255" class="form-control"
 								value="{$materialsRequest->$materialRequestTableColumnName}"
+									{if $formField->fieldType == 'upc'} oninput="this.value=this.value.replace(/[^0-9]/g,'')"{elseif $formField->fieldType == 'isbn' || $formField->fieldType == 'issn'} oninput="this.value=this.value.toUpperCase().replace(/[^0-9X]/g,'')"{/if}
 								{if $formField->fieldType == 'isbn'|| $formField->fieldType == 'upc' || $formField->fieldType == 'issn'} onblur="AspenDiscovery.MaterialsRequest.checkForExistingRecord();"{/if}
 							>
 						</div>
@@ -181,6 +182,25 @@
 								<textarea name="{$materialRequestTableColumnName}" id="{$materialRequestTableColumnName}" rows="3" cols="80" class="form-control">
 									{$materialsRequest->$materialRequestTableColumnName}
 								</textarea>
+						</div>
+					</div>
+
+				{elseif $formField->fieldType == 'assignedTo'}
+					{assign var="materialRequestTableColumnName" value=$formField->fieldType}
+					<div class="request_detail_field row">
+						<label for="{$materialRequestTableColumnName}" class="control-label col-sm-3">{translate text=$formField->fieldLabel isPublicFacing=true isAdminEnteredData=true} </label>
+						<div class=" request_detail_field_value col-sm-9">
+							{if !empty($assignees)}
+								<select name="{$materialRequestTableColumnName}" id="{$materialRequestTableColumnName}" class="form-control">
+									<option value="unselected">{translate text="Select One" inAttribute=true isAdminFacing=true}</option>
+									<option value="unassign">{translate text="Un-assign (remove assignee)" inAttribute=true isAdminFacing=true}</option>
+										{foreach from=$assignees item=displayName key=assigneeId}
+											<option value="{$assigneeId}"{if $assigneeId == $materialsRequest->assignedTo} selected="selected"{/if}>{$displayName|escape}</option>
+										{/foreach}
+								</select>
+							{else}
+								<span class="text-warning">{translate text="No Valid Assignees Found" isAdminFacing=true}</span>
+							{/if}
 						</div>
 					</div>
 

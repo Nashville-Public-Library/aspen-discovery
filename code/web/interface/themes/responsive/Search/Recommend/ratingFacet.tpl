@@ -5,7 +5,7 @@
 			{if $curLabel == 'Unrated'}
 				<div class="facetValue">{$thisFacet.value|escape} <img src="/images/silk/tick.png" alt="{translate text=Selected inAttribute=true isPublicFacing=true}"/> <a href="{$thisFacet.removalUrl|escape}" class="removeFacetLink">({translate text=remove})</a></div>
 			{else}
-				<div class="facetValue"><img src="/images/{$curLabel}.png" alt="{translate text=$curLabel inAttribute=true isPublicFacing=true} &amp; Up" title="{translate text=$curLabel isPublicFacing=true inAttribute=true} &amp; up"/> <img src="/images/silk/tick.png" alt="{translate text=Selected inAttribute=true isPublicFacing=true}" /> <a href="{$thisFacet.removalUrl|escape}" class="removeFacetLink">({translate text=remove isPublicFacing=true})</a></div>
+				<div class="facetValue"><img src="/images/{$curLabel}.png" alt="{translate text=$curLabel inAttribute=true isPublicFacing=true} &amp; Up" title="{translate text=$curLabel isPublicFacing=true inAttribute=true} &amp; Up"/> <img src="/images/silk/tick.png" alt="{translate text=Selected inAttribute=true isPublicFacing=true}" /> <a href="{$thisFacet.removalUrl|escape}" class="removeFacetLink">({translate text=remove isPublicFacing=true})</a></div>
 			{/if}
 		{else}
 			{if $curLabel == 'Unrated'}

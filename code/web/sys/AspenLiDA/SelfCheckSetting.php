@@ -8,6 +8,7 @@ class AspenLiDASelfCheckSetting extends DataObject {
 	public $name;
 	public $isEnabled;
 	public $checkoutLocation;
+	public $barcodeEntryKeyboardType;
 
 	private $_locations;
 	private $_barcodeStyles;
@@ -15,6 +16,9 @@ class AspenLiDASelfCheckSetting extends DataObject {
 	static function getObjectStructure($context = ''): array {
 		$locationsList = [];
 		$location = new Location();
+		$location->selectAdd();
+		$location->selectAdd('locationId');
+		$location->selectAdd('displayName');
 		$location->orderBy('displayName');
 		if (!UserAccount::userHasPermission('Administer All Locations')) {
 			$homeLibrary = Library::getPatronHomeLibrary();
@@ -31,6 +35,11 @@ class AspenLiDASelfCheckSetting extends DataObject {
 			'0' => 'Current Location User is Logged Into',
 			'1' => 'User Home Location',
 			'2' => 'Item Location (Koha 23.11+, Sierra, Symphony Only)'
+		];
+		$keyboardOptions = [
+			'0' => 'Do not allow keyboard barcode entry',
+			'1' => 'Use numeric keyboard',
+			'2' => 'Use alphanumeric keyboard'
 		];
 
 		$structure = [
@@ -61,6 +70,14 @@ class AspenLiDASelfCheckSetting extends DataObject {
 				'values' => $checkout_location_options,
 				'label' => 'Assign Checkouts To',
 				'description' => 'Location where a checkout should be assigned',
+				'required' => false,
+			],
+			'barcodeEntryKeyboardType' => [
+				'property' => 'barcodeEntryKeyboardType',
+				'type' => 'enum',
+				'values' => $keyboardOptions,
+				'label' => 'Type of keyboard to use for barcode entry',
+				'description' => 'Choose numeric if barcodes only include numbers; alphanumeric if they may include letters',
 				'required' => false,
 			],
 			'barcodeStyles' => [
@@ -102,6 +119,9 @@ class AspenLiDASelfCheckSetting extends DataObject {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationsList = [];
 			$location = new Location();
+			$location->selectAdd();
+			$location->selectAdd('locationId');
+			$location->selectAdd('displayName');
 			$location->orderBy('displayName');
 			if (!UserAccount::userHasPermission('Administer All Locations')) {
 				$homeLibrary = Library::getPatronHomeLibrary();

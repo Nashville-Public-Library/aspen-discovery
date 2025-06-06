@@ -1389,12 +1389,10 @@ class GroupedWorkDriver extends IndexRecordDriver {
 	 * user's favorites list.
 	 *
 	 * @access  public
-	 * @param int $listId ID of list containing desired tags/notes (or
-	 *                              null to show tags/notes from all user's lists).
+	 * @param int $seriesId ID of the series that this work is contained on
 	 * @return  string              Name of Smarty template file to display.
 	 */
-	public function getSeriesEntry($listId = null) {
-		global $configArray;
+	public function getSeriesEntry(?int $seriesId = null) {
 		global $interface;
 		global $timer;
 
@@ -1444,7 +1442,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$timer->logTime('Finished Loading Description');
 		if ($this->hasCachedSeries()) {
 			$interface->assign('ajaxSeries', false);
-			$interface->assign('summSeries', $this->getSeries(false));
+			$interface->assign('summSeries', $this->getSeries(false, $seriesId));
 		} else {
 			$interface->assign('ajaxSeries', true);
 			$interface->assign('summSeries', '');
@@ -2224,7 +2222,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 
 	private $seriesData;
 
-	public function getSeries($allowReload = true) : ?array {
+	public function getSeries($allowReload = true, ?int $seriesId = null) : ?array {
 		require_once ROOT_DIR . '/sys/Grouping/GroupedWorkDisplayInfo.php';
 
 		if (empty($this->seriesData)) {
@@ -2237,30 +2235,35 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 				$seriesMember = new SeriesMember();
 				$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
+				if (!empty($seriesId)) {
+					$seriesMember->seriesId = $seriesId;
+				}
 				$seriesMember->excluded = 0;
 				$seriesInfo = null;
 				$seriesMember->find();
-				if ($seriesMember->fetch()) {
-					$series = $seriesMember->getSeries();
-					if ($series != null) {
-						$seriesInfo = [
-							'seriesTitle' => $series->displayName,
-							'seriesId' => $series->id,
-							'volume' => $seriesMember->volume,
-							'fromNovelist' => false,
-							'fromSeriesIndex' => true
-						];
-					}
-				}
+				$first = true;
 				while ($seriesMember->fetch()) {
 					$series = $seriesMember->getSeries();
-					$seriesInfo['additionalSeries'][] = [
-						'seriesTitle' => $series->displayName,
-						'seriesId' => $series->id,
-						'volume' => $seriesMember->volume,
-						'fromNovelist' => false,
-						'fromSeriesIndex' => true
-					];
+					if ($series != null) {
+						if ($first) {
+							$seriesInfo = [
+								'seriesTitle' => $series->displayName,
+								'seriesId' => $series->id,
+								'volume' => $seriesMember->volume,
+								'fromNovelist' => false,
+								'fromSeriesIndex' => true
+							];
+							$first = false;
+						} else {
+							$seriesInfo['additionalSeries'][] = [
+								'seriesTitle' => $series->displayName,
+								'seriesId' => $series->id,
+								'volume' => $seriesMember->volume,
+								'fromNovelist' => false,
+								'fromSeriesIndex' => true
+							];
+						}
+					}
 				}
 				$this->seriesData = $seriesInfo;
 			}else{
@@ -3646,7 +3649,19 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		//$volumeDataDB->whereAdd('length(relatedItems) > 0');
 		if ($volumeDataDB->find()) {
 			while ($volumeDataDB->fetch()) {
-				$volumeData[] = clone($volumeDataDB);
+				// Manually copy only the data fields into a fresh object to avoid
+				// DataObject cloning and its consequent memory issues.
+				$info = new IlsVolumeInfo();
+				$info->id = $volumeDataDB->id;
+				$info->recordId = $volumeDataDB->recordId;
+				$info->displayLabel = $volumeDataDB->displayLabel;
+				$info->relatedItems = $volumeDataDB->relatedItems;
+				$info->volumeId = $volumeDataDB->volumeId;
+				$info->displayOrder = $volumeDataDB->displayOrder;
+				$info->setHasLocalItems($volumeDataDB->hasLocalItems());
+				$info->setNeedsIllRequest($volumeDataDB->needsIllRequest());
+				$info->_allItems = $volumeDataDB->getItems();
+				$volumeData[] = $info;
 			}
 		}
 		$volumeDataDB->__destruct();

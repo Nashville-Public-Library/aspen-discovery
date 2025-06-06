@@ -424,42 +424,45 @@ public abstract class AbstractGroupedWorkSolr {
 	private final static Pattern punctuationPattern = Pattern.compile("[.\\\\/()\\[\\]:;]");
 
 	void setTitle(String shortTitle, String subTitle, String displayTitle, String sortableTitle, String recordFormat, String formatCategory) {
-		this.setTitle(shortTitle, subTitle, displayTitle, sortableTitle, formatCategory, false);
+		this.setTitle(shortTitle, subTitle, displayTitle, sortableTitle, recordFormat, formatCategory, false, null);
 	}
 
-	void setTitle(String shortTitle, String subTitle, String displayTitle, String sortableTitle, String formatCategory, boolean isDisplayInfo) {
+	void setTitle(String shortTitle, String subTitle, String displayTitle, String sortableTitle, String recordFormat, String formatCategory, boolean isDisplayInfo, RecordInfo recordInfo) {
 		if (shortTitle != null) {
 			shortTitle = AspenStringUtils.trimTrailingPunctuation(shortTitle);
 
-			//Figure out if we want to use this title or if the one we have is better.
+			// Figure out if we want to use this title or if the one we have is better.
 			boolean updateTitle = false;
 			if (this.title == null) {
 				updateTitle = true;
 			} else {
-				//Only overwrite if we get a better format
-				if (formatCategory.equals("Books")) {
-					//We have a book, update if we didn't have a book before
-					if (!formatCategory.equals(titleFormat)) {
-						updateTitle = true;
-						//Or update if we had a book before and this title is longer
-					} else if (shortTitle.length() > this.title.length()) {
-						updateTitle = true;
-					}
-				} else if (formatCategory.equals("eBook")) {
-					//Update if the format we had before is not a book
-					if (!titleFormat.equals("Books")) {
-						//And the new format was not an eBook or the new title is longer than what we had before
+				// Skip unavailable records for title selection if we have any other title.
+				if (recordInfo == null || !recordInfo.hasNotForLoanStatus()) {
+					// Only overwrite if we get a better format.
+					if (formatCategory.equals("Books")) {
+						// We have a book, update if we didn't have a book before.
 						if (!formatCategory.equals(titleFormat)) {
 							updateTitle = true;
-							//or update if we had a book before and this title is longer
+							// Or update if we had a book before and this title is longer.
 						} else if (shortTitle.length() > this.title.length()) {
 							updateTitle = true;
 						}
-					}
-				} else if (!titleFormat.equals("Books") && !titleFormat.equals("eBook")) {
-					//If we don't have a Book or an eBook then we can update the title if we get a longer title
-					if (shortTitle.length() > this.title.length()) {
-						updateTitle = true;
+					} else if (formatCategory.equals("eBook")) {
+						// Update if the format we had before is not a book.
+						if (!titleFormat.equals("Books")) {
+							// And the new format was not an eBook or the new title is longer than what we had before.
+							if (!formatCategory.equals(titleFormat)) {
+								updateTitle = true;
+								// Or, update if we had a book before and this title is longer.
+							} else if (shortTitle.length() > this.title.length()) {
+								updateTitle = true;
+							}
+						}
+					} else if (!titleFormat.equals("Books") && !titleFormat.equals("eBook")) {
+						// If we don't have a Book or an eBook, then we can update the title if we get a longer title.
+						if (shortTitle.length() > this.title.length()) {
+							updateTitle = true;
+						}
 					}
 				}
 			}
@@ -506,6 +509,9 @@ public abstract class AbstractGroupedWorkSolr {
 					this.displayTitle = shortTitle.concat(": ").concat(subTitle);
 				}
 			}
+
+			//replace apostrophes in contractions
+			shortTitle = shortTitle.replaceAll("(\\w)'(\\w)", "$1$2");
 
 			//Create an alternate title for searching by replacing ampersands with the word and.
 			String tmpTitle = shortTitle.replace("&", " and ").replace("  ", " ");
@@ -743,6 +749,9 @@ public abstract class AbstractGroupedWorkSolr {
 	void addSeriesWithVolume(String seriesName, String volume) {
 		if (seriesName != null && !seriesName.isEmpty()) {
 			String seriesInfo = getNormalizedSeries(seriesName);
+			if (seriesInfo.isEmpty()) {
+				return;
+			}
 			String seriesInfoLower = seriesInfo.toLowerCase();
 			if (groupedWorkIndexer.hideSeries.contains(seriesInfoLower)) {
 				return;
@@ -814,6 +823,9 @@ public abstract class AbstractGroupedWorkSolr {
 	private void addSeriesInfoToField(String seriesInfo, HashMap<String, String> seriesField) {
 		if (seriesInfo != null && !seriesInfo.equalsIgnoreCase("none")) {
 			seriesInfo = getNormalizedSeries(seriesInfo);
+			if (seriesInfo.isEmpty()) {
+				return;
+			}
 			String normalizedSeriesLower = seriesInfo.toLowerCase();
 			if (groupedWorkIndexer.hideSeries.contains(normalizedSeriesLower)) {
 				return;
@@ -1145,18 +1157,25 @@ public abstract class AbstractGroupedWorkSolr {
 
 	protected Set<String> getRatingFacet(Float rating) {
 		Set<String> ratingFacet = new HashSet<>();
-		if (rating >= 4.9) {
-			ratingFacet.add("fiveStar");
-		} else if (rating >= 4) {
-			ratingFacet.add("fourStar");
-		} else if (rating >= 3) {
-			ratingFacet.add("threeStar");
-		} else if (rating >= 2) {
-			ratingFacet.add("twoStar");
-		} else if (rating >= 0.0001) {
-			ratingFacet.add("oneStar");
-		} else {
+		// Default or near-zero ratings (e.g., -1f) are treated as unrated; use 0.0001 as epsilon for float precision.
+		if (rating < 0.0001) {
 			ratingFacet.add("Unrated");
+		} else {
+			// Always include oneStar for any positive rating.
+			ratingFacet.add("oneStar");
+			if (rating >= 2) {
+				ratingFacet.add("twoStar");
+			}
+			if (rating >= 3) {
+				ratingFacet.add("threeStar");
+			}
+			if (rating >= 4) {
+				ratingFacet.add("fourStar");
+			}
+			// Include fiveStar for ratings >= 4.9 to capture values approaching the top of the 5-star scale.
+			if (rating >= 4.9) {
+				ratingFacet.add("fiveStar");
+			}
 		}
 		return ratingFacet;
 	}
@@ -1345,6 +1364,18 @@ public abstract class AbstractGroupedWorkSolr {
 			relatedRecords.put(recordIdentifierWithType, newRecord);
 			return newRecord;
 		}
+	}
+
+	/**
+	 * Get the RecordInfo for a specific source and identifier.
+	 *
+	 * @param source The source of the record (e.g. "koha").
+	 * @param recordIdentifier The identifier of the record.
+	 * @return The {@code RecordInfo} object if found, null otherwise.
+	 */
+	RecordInfo getRecordInfo(String source, String recordIdentifier) {
+		String recordIdentifierWithType = source + ":" + recordIdentifier;
+		return relatedRecords.get(recordIdentifierWithType);
 	}
 
 	void addLCSubject(String lcSubject) {

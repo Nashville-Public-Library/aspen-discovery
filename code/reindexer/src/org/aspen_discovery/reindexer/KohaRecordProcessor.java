@@ -45,11 +45,11 @@ class KohaRecordProcessor extends IlsRecordProcessor {
 					String timezone = accountProfileRS.getString("databaseTimezone");
 
 					String kohaConnectionJDBC = "jdbc:mysql://" +
-							host + ":" + port +
-							"/" + databaseName +
-							"?user=" + user +
-							"&password=" + password +
-							"&useUnicode=yes&characterEncoding=UTF-8";
+						host + ":" + port +
+						"/" + databaseName +
+						"?user=" + user +
+						"&password=" + password +
+						"&useUnicode=yes&characterEncoding=UTF-8";
 					if (timezone != null && !timezone.isEmpty()){
 						kohaConnectionJDBC += "&serverTimezone=" + URLEncoder.encode(timezone, StandardCharsets.UTF_8);
 
@@ -172,40 +172,40 @@ class KohaRecordProcessor extends IlsRecordProcessor {
 	}
 
 	private final HashSet<String> additionalStatuses = new HashSet<>();
-	protected String getItemStatus(DataField itemField, String recordIdentifier){
+	protected ItemStatus getItemStatus(DataField itemField, String recordIdentifier){
 		String itemIdentifier = MarcUtil.getItemSubfieldData(settings.getItemRecordNumberSubfield(), itemField, indexer.getLogEntry(), logger);
 		if (inTransitItems.contains(itemIdentifier)){
-			return "In Transit";
+			return new ItemStatus("In Transit", ItemStatus.FROM_OTHER, this, recordIdentifier);
 		}
 		if (onHoldShelfItems.contains(itemIdentifier)){
-			return "On Hold Shelf";
+			return new ItemStatus("On Hold Shelf", ItemStatus.FROM_OTHER, this, recordIdentifier);
 		}
 
 		String subLocationData = MarcUtil.getItemSubfieldData(settings.getSubLocationSubfield(), itemField, indexer.getLogEntry(), logger);
 		if (subLocationData != null && subLocationData.equalsIgnoreCase("ON-ORDER")){
-			return "On Order";
+			return new ItemStatus("On Order", ItemStatus.FROM_OTHER, this, recordIdentifier);
 		}
 
 		//Determining status for Koha relies on a number of different fields
 		String status = getStatusFromSubfield(itemField, '0', "Withdrawn");
-		if (status != null) return status;
+		if (status != null) return new ItemStatus(status, ItemStatus.FROM_STATUS_FIELD, this, recordIdentifier);
 
 		status = getStatusFromSubfield(itemField, '1', "Lost");
-		if (status != null) return status;
+		if (status != null) return new ItemStatus(status, ItemStatus.FROM_STATUS_FIELD, this, recordIdentifier);
 
 		status = getStatusFromSubfield(itemField, '4', "Damaged");
-		if (status != null) return status;
+		if (status != null) return new ItemStatus(status, ItemStatus.FROM_STATUS_FIELD, this, recordIdentifier);
 
 		status = getStatusFromSubfield(itemField, 'q', "Checked Out");
-		if (status != null) return status;
+		if (status != null) return new ItemStatus(status, ItemStatus.FROM_STATUS_FIELD, this, recordIdentifier);
 
 		status = getStatusFromSubfield(itemField, '7', "Library Use Only"); //not for loan
-		if (status != null) return status;
+		if (status != null) return new ItemStatus(status, ItemStatus.FROM_STATUS_FIELD, this, recordIdentifier);
 
 		status = getStatusFromSubfield(itemField, 'k', null);
-		if (status != null) return status;
+		if (status != null) return new ItemStatus(status, ItemStatus.FROM_STATUS_FIELD, this, recordIdentifier);
 
-		return "On Shelf";
+		return new ItemStatus("On Shelf", ItemStatus.FROM_OTHER, this, recordIdentifier);
 	}
 
 	private String getStatusFromSubfield(DataField itemField, char subfield, String defaultStatus) {
@@ -545,5 +545,53 @@ class KohaRecordProcessor extends IlsRecordProcessor {
 			}
 		}
 		return super.isItemHoldableUnscoped(itemInfo);
+	}
+
+	/**
+	 * Overrided method that updates the Grouped Work Solr data based on the given MARC record.
+	 *
+	 * @param groupedWork The {@link AbstractGroupedWorkSolr} instance representing the grouped work to be updated.
+	 * @param record      The MARC record containing bibliographic information.
+	 * @param identifier  The unique identifier for the record within the grouped work.
+	 */
+	@Override
+	protected void updateGroupedWorkSolrDataBasedOnMarc(AbstractGroupedWorkSolr groupedWork, Record record, String identifier) {
+		// Add the record to the grouped work first to ensure it exists in the relatedRecords map.
+		RecordInfo recordInfo = groupedWork.addRelatedRecord(profileType, identifier);
+
+		// Check if the setting is enabled to set the flag accordingly and if this is a not-for-loan (e.g., "On Order") record.
+		boolean isNotForLoan = settings.getPrioritizeAvailableRecordsForTitleSelection() && isRecordExcludedFromTitleSelection(record);
+		recordInfo.setNotForLoan(isNotForLoan);
+
+		super.updateGroupedWorkSolrDataBasedOnMarc(groupedWork, record, identifier);
+	}
+
+	/**
+	 * Determines whether a record should be excluded from title selection based on its item statuses.
+	 * If at least one item is available (e.g., "On Shelf" or "Checked Out"),
+	 * the record is not excluded from title selection.
+	 *
+	 * @param record The MARC record to evaluate.
+	 * @return {@code true} if all items in the record are on-order and should be excluded from title selection;
+	 *         {@code false} if at least one item is available.
+	 */
+	private boolean isRecordExcludedFromTitleSelection(Record record) {
+		List<DataField> itemRecords = MarcUtil.getDataFields(record, settings.getItemTagInt());
+		if (itemRecords.isEmpty()) {
+			return false;
+		}
+
+		boolean allItemsExcluded = true;
+		for (DataField itemField : itemRecords) {
+			ItemStatus itemStatus = getItemStatus(itemField, "");
+			String status = itemStatus.getStatus();
+			if ("On Shelf".equals(status) || "Checked Out".equals(status)) {
+				// Found an available item, so the record should not be excluded.
+				allItemsExcluded = false;
+				break;
+			}
+		}
+
+		return allItemsExcluded;
 	}
 }

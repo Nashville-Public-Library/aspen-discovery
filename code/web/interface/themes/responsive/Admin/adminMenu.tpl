@@ -1,34 +1,42 @@
 {strip}
 	{if !empty($loggedIn) && !empty($adminActions)}
 		<div id="account-menu-label" class="sidebar-label row">
-			<div class="col-xs-12">{translate text='Administration Options' isAdminFacing=true}</div>
-			<a class='searchSettings searchSettingsColor' onClick="return AspenDiscovery.Admin.showSearch();" id='showSearchButton'><i class="fas fa-search" role="presentation"></i> {translate text="Search" isAdminFacing=true}</a>
-		</div>
-		<form id='adminSearchBox' role="form" class="form-horizontal" style='display:none'>
-			<div class="form-group">
-				<label class='searchSettings' for="searchAdminBar">{translate text="Search for a Setting" isAdminFacing=true}</label>
-				<div class="input-group input-group-sm">
-					<input type="text" name="searchAdminBar" id="searchAdminBar"
-						   onkeyup="return AspenDiscovery.Admin.searchAdminBar();" class="form-control"/>
-					<span class="input-group-btn"><button class="btn btn-default" type="button"
-														  onclick="$('#searchAdminBar').val('');return AspenDiscovery.Admin.searchAdminBar();"
-														  title="{translate text="Clear" inAttribute=true isAdminFacing=true}"><i
-									class="fas fa-times-circle" role="presentation"></i></button></span>
-					<script type="text/javascript">
-						{literal}
-						$(document).ready(function () {
-							$("#searchAdminBar").keydown("keydown", function (e) {
-								if (e.which === 13) {
-									e.preventDefault();
-								}
-							});
-
-						});
-						{/literal}
-					</script>
-				</div>
+			<div class="col-xs-12 sidebar-toggle-wrapper">
+				<span class="sidebar-title">{translate text='Administration Options' isAdminFacing=true}</span>
+				<div id="sidebar-collapse"><button class="btn btn-default btn-sm" aria-label="{translate text="Toggle Sidebar" inAttribute=true isAdminFacing=true}" title="{translate text="Toggle Sidebar" inAttribute=true isAdminFacing=true}" onclick="$('#side-bar').toggleClass('collapsed');"><i class="fas fa-angle-double-left"></i></button></div>
 			</div>
-		</form>
+			<div class="col-xs-12">
+				<a class='searchSettings searchSettingsColor' onClick="return AspenDiscovery.Admin.showSearch();" id='showSearchButton'><i class="fas fa-search" role="presentation"></i> {translate text="Search" isAdminFacing=true}</a>
+			</div>
+			<div class="col-xs-12">
+				<form id='adminSearchBox' role="form" class="form-inline" style='display:none'>
+					<div class="form-group">
+						<label class='searchSettings' for="searchAdminBar">{translate text="Search for a Setting" isAdminFacing=true}</label>
+						<div class="input-group input-group-sm">
+							<input type="text" name="searchAdminBar" id="searchAdminBar"
+							       onkeyup="return AspenDiscovery.Admin.searchAdminBar();" class="form-control"/>
+							<span class="input-group-btn"><button class="btn btn-default" type="button"
+							                                      onclick="$('#searchAdminBar').val('');return AspenDiscovery.Admin.searchAdminBar();"
+							                                      title="{translate text="Clear" inAttribute=true isAdminFacing=true}"><i
+										class="fas fa-times-circle" role="presentation"></i></button></span>
+							<script type="text/javascript">
+								{literal}
+								$(document).ready(function () {
+									$("#searchAdminBar").keydown("keydown", function (e) {
+										if (e.which === 13) {
+											e.preventDefault();
+										}
+									});
+
+								});
+								{/literal}
+							</script>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+
 		<div id="home-account-links" class="sidebar-links row">
 			<div class="panel-group accordion" id="account-link-accordion">
 				{foreach from=$adminActions item=adminSection key=adminSectionKey}

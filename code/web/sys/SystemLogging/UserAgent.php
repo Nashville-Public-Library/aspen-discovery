@@ -10,16 +10,7 @@ class UserAgent extends DataObject {
 	public $blockAccess;
 
 	static function getObjectStructure($context = ''): array {
-		//Look lookup information for display in the user interface
-		$location = new Location();
-		$location->orderBy('displayName');
-		$location->find();
-		$locationLookupList = [];
-		$locationLookupList[-1] = '<No Nearby Location>';
-		while ($location->fetch()) {
-			$locationLookupList[$location->locationId] = $location->displayName;
-		}
-		$structure = [
+		return [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -47,7 +38,6 @@ class UserAgent extends DataObject {
 				'default' => false,
 			],
 		];
-		return $structure;
 	}
 
 	public function objectHistoryEnabled(): bool {

@@ -294,13 +294,17 @@ class WebsiteIndexSetting extends DataObject {
 		global $library;
 		$searchLocation = Location::getSearchLocation();
 		if ($searchLocation != null) {
-			$locations = $this->getLocations();
-			if (array_key_exists($searchLocation->locationId, $locations)) {
+			$locationWebsiteIndexing = new LocationWebsiteIndexing();
+			$locationWebsiteIndexing->settingId = $this->id;
+			$locationWebsiteIndexing->locationId = $searchLocation->locationId;
+			if ($locationWebsiteIndexing->count() > 0) {
 				return true;
 			}
 		} else {
-			$libraries = $this->getLibraries();
-			if (array_key_exists($library->libraryId, $libraries)) {
+			$libraryWebsiteIndexing = new LibraryWebsiteIndexing();
+			$libraryWebsiteIndexing->settingId = $this->id;
+			$libraryWebsiteIndexing->libraryId = $library->libraryId;
+			if ($libraryWebsiteIndexing->count() > 0) {
 				return true;
 			}
 		}

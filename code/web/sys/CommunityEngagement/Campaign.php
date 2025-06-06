@@ -136,7 +136,7 @@ class Campaign extends DataObject {
 				'type' => 'text',
 				'label' => 'User Age Range ',
 				'note' => 'Applies to Koha Only',
-				'description' => 'Define the age range for this campaign e.g. &quot;14-18&quot;, &quot;14+&quot;, &quot;Over14&quot;, &quot;Under14&quot;, &quot;All Ages&quot;',
+				'description' => 'Define the age range for this campaign e.g. &quot;14-18&quot;, &quot;14+&quot;, &quot;Over 14&quot;, &quot;Under 14&quot;, &quot;All Ages&quot;',
 				'default' => 'All Ages',
 				'maxLength' => 255,
 				'hideInLists' => false,
@@ -296,6 +296,8 @@ class Campaign extends DataObject {
 	}
 
 	public function getRewardDetails() {
+		global $activeLanguageCode;
+
 		$reward = new Reward();
 		$reward->id = $this->campaignReward;
 		if ($reward->find(true)) {
@@ -307,6 +309,7 @@ class Campaign extends DataObject {
 				'rewardExists' => !empty($reward->badgeImage),
 				'displayName' => $reward->displayName,
 				'awardAutomatically' =>$reward->awardAutomatically,
+				'rewardDescription' => $reward->getTextBlockTranslation('description', $activeLanguageCode),
 			];
 		}
 		return null;
@@ -742,22 +745,24 @@ class Campaign extends DataObject {
        if (!$campaignId) {
         return [];
        }
+
        $userCampaign->whereAdd("campaignId = '$campaignId'");
        $userCampaign->find();
        while ($userCampaign->fetch()) {
         $userCampaignRecords[] = clone $userCampaign;
        }
+
        foreach ($userCampaignRecords as $userCampaignRecord) {
-		if ($userCampaignRecord->optInToCampaignLeaderboard != 1) {
+        $user = new User();
+    	$user->id = $userCampaignRecord->userId;
+		if (!$user->find(true)) {
+			continue;
+		}
+
+		if ($userCampaignRecord->optInToCampaignLeaderboard === 0 ||($userCampaignRecord->optInToCampaignLeaderboard === null && $user->optInToAllCampaignLeaderboards === 0)) {
 			continue;
 		}
             $milestoneCompletionStatus = $userCampaignRecord->checkMilestoneCompletionStatus();
-            $userId = $userCampaignRecord->userId;
-            $user = new User();
-            $user->id = $userId;
-            if (!$user->find(true)) {
-                continue;
-            }
             $completedMilestones = count(array_filter($milestoneCompletionStatus, function($status) {
                 return $status === true;
             }));
@@ -788,6 +793,7 @@ class Campaign extends DataObject {
        }
        return $leaderboard;
     }
+	
     private function getRankDisplayed($completedMilestones) {
         $suffix = 'th';
         if ($completedMilestones % 10 == 1 && $completedMilestones % 100 != 11) {
@@ -967,6 +973,7 @@ class Campaign extends DataObject {
 				$campaign->rewardExists = $rewardDetails['rewardExists'];
                 $campaign->displayName = $rewardDetails['displayName'];
                 $campaign->awardAutomatically = $rewardDetails['awardAutomatically'];
+				$campaign->rewardDescription = $rewardDetails['rewardDescription'];
 			}
 
 				//Fetch milestones for this campaign
@@ -1083,6 +1090,7 @@ class Campaign extends DataObject {
                             'badgeImage' => $rewardDetails['badgeImage'],
                             'rewardExists' => $rewardDetails['rewardExists'],
                             'displayName' => $rewardDetails['displayName'],
+							'rewardDescription' => $rewardDetails['rewardDescription'],
                         ];
                     }
 
@@ -1121,6 +1129,7 @@ class Campaign extends DataObject {
                             'displayName' => $milestone->displayName,
                             'badgeImage' => $milestone->rewardImage,
                             'rewardExists' => $milestone->rewardExists,
+							'rewardDescription' => $milestone->rewardDescription,
                             'progress' => $milestoneProgress['progress'],
                             'extraProgress' => $milestoneProgress['extraProgress'],
                             'completedGoals' => $completedGoals,

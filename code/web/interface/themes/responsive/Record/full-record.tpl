@@ -60,7 +60,7 @@
 							</div>
 						{else}
 							<div id="multiple-variations-column" class="col-xs-12 col-sm-12 col-md-9">
-								{include file="Record/multipleVariationDisplay.tpl" workId=$recordDriver->getPermanentId()}
+								{include file="Record/multipleVariationDisplay.tpl" workId=$recordDriver->getPermanentId() summTitle=$recordDriver->getTitle()}
 							</div>
 						{/if}
 					</div>
