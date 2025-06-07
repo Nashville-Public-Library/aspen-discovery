@@ -1527,6 +1527,142 @@ class MyAccount_AJAX extends JSON_Action {
 	}
 
 	/** @noinspection PhpUnused */
+	function confirmChangePickupLocationAll(): array {
+		global $interface;
+		/** @var $interface UInterface
+		 * @var $user User
+		 */
+		if (UserAccount::isLoggedIn()) {
+			$user = UserAccount::getLoggedInUser();
+			$patronId = $_REQUEST['patronId'];
+			$interface->assign('patronId', $patronId);
+			$patronOwningHold = $user->getUserReferredTo($patronId);
+
+			$location = new Location();
+			$pickupBranches = $location->getPickupBranches($patronOwningHold);
+			$pickupSublocations = [];
+
+			foreach ($pickupBranches as $locationKey => $location) {
+				if (is_object($location)) {
+					$pickupSublocations[$locationKey] = $user->getValidSublocations($location->locationId);
+				}
+			}
+
+			$interface->assign('pickupLocations', $pickupBranches);
+			$interface->assign('pickupSublocations', $pickupSublocations);
+
+			$changeButtonLabel = translate([
+				'text' => 'Change Pickup Location',
+				'isPublicFacing' => true,
+			]);
+
+			$results = [
+				'title' => translate([
+					'text' => 'Change Pickup Location for All Holds',
+					'isPublicFacing' => true,
+				]),
+				'body' => $interface->fetch("MyAccount/changeMultipleHoldsPickupLocation.tpl"),
+				'buttons' => "<button type='button' class='tool btn btn-primary' onclick='AspenDiscovery.Account.changeAllPickupLocations(\"$patronId\")'>$changeButtonLabel</button>",
+			];
+		} else {
+			$results = [
+				'title' => 'Please login',
+				'body' => translate([
+					'text' => "You must be logged in. Please close this dialog and login before changing your holds' pick-up location.",
+					'isPublicFacing' => true,
+				]),
+				'buttons' => "",
+			];
+		}
+
+		return $results;
+	}
+
+	/** @noinspection PhpUnused */
+	function changeAllPickupLocations() {
+		try {
+			$newPickupLocation = $_REQUEST['newLocation'];
+			$newPickupSublocation = $_REQUEST['newSublocation'] ?? null;
+			$pickupSublocation = null;
+			if (!empty($newPickupSublocation)) {
+				//In the form this is set as the id of the sublocation in Aspen, but we want to pass the ILS ID
+				require_once ROOT_DIR . '/sys/LibraryLocation/Sublocation.php';
+				$pickupSublocationObject = new Sublocation();
+				$pickupSublocationObject->id = $newPickupSublocation;
+				if ($pickupSublocationObject->find(true)) {
+					$pickupSublocation = $pickupSublocationObject->ilsId;
+				}
+			}
+
+			if (UserAccount::isLoggedIn()) {
+				$user = UserAccount::getLoggedInUser();
+				$patronId = $_REQUEST['patronId'];
+				$patronOwningHold = $user->getUserReferredTo($patronId);
+				if ($patronOwningHold != false) {
+					if ($patronOwningHold->validatePickupBranch($newPickupLocation)) {
+						return $patronOwningHold->changeAllPickupLocations($newPickupLocation, $pickupSublocation);
+					} else {
+						return [
+							'success' => false,
+							'title' => translate([
+								'text' => 'Error',
+								'isPublicFacing' => true,
+							]),
+							'message' => translate([
+								'text' => 'The selected pickup location is not valid.',
+								'isPublicFacing' => true,
+							]),
+						];
+					}
+				} else {
+					return [
+						'success' => false,
+						'title' => translate([
+							'text' => 'Error',
+							'isPublicFacing' => true,
+						]),
+						'message' => translate([
+							'text' => 'The logged in user does not have permission to change hold locations for the specified user, please login as that user.',
+							'isPublicFacing' => true,
+						]),
+					];
+				}
+			} else {
+				return [
+					'success' => false,
+					'title' => translate([
+						'text' => 'Please login',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => "You must be logged in. Please close this dialog and login to change your holds' pick up location.",
+						'isPublicFacing' => true,
+					]),
+				];
+			}
+
+		} catch (PDOException $e) {
+			// What should we do with this error?
+			if (IPAddress::showDebuggingInformation()) {
+				echo '<pre>';
+				echo 'DEBUG: ' . $e->getMessage();
+				echo '</pre>';
+			}
+		}
+		return [
+			'success' => false,
+			'title' => translate([
+				'text' => 'Error',
+				'isPublicFacing' => true,
+			]),
+			'message' => translate([
+				'text' => 'We could not connect to the circulation system, please try again later.',
+				'isPublicFacing' => true,
+			]),
+		];
+	}
+
+	/** @noinspection PhpUnused */
 	function addList() {
 		$return = [];
 		if (UserAccount::isLoggedIn()) {

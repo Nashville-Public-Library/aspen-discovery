@@ -1964,4 +1964,54 @@ class CatalogConnection {
 	public function hasIlsConsentSupport(): bool {
 		return $this->driver->hasIlsConsentSupport();
 	}
+
+	public function changeAllHoldsPickupLocation(User $patron, $newPickupLocation, $newPickupSublocation = null): array {
+		if ($this->driver->hasFastChangeAllHoldsPickupLocation()) {
+			return $this->driver->changeAllHoldsPickupLocationFast($patron, $newPickupLocation, $newPickupSublocation);
+		} else {
+			// Default implementation that processes each hold individually
+			// Get all pending holds -- assume that holds ready for pickup cannot be changed
+			$holds = $patron->getHolds();
+			$pendingHolds = $holds['unavailable'];
+
+			$result = [
+				'success' => true,
+				'message' => [],
+				'Changed' => 0,
+				'NotChanged' => 0,
+			];
+
+			$result['total'] = count($pendingHolds);
+			$numChanged = 0;
+			$failure_messages = [];
+
+			foreach ($pendingHolds as $hold) {
+				if ($hold->source == 'ils' && $hold->locationUpdateable) {
+					$curResult = $this->changeHoldPickupLocation($patron, $hold->recordId, $hold->cancelId, $newPickupLocation, $newPickupSublocation);
+					if ($curResult['success']) {
+						$numChanged++;
+					} else {
+						if (isset($curResult['message'])) {
+							$failure_messages[] = $hold->title . ': ' . $curResult['message'];
+						} else {
+							$failure_messages[] = $hold->title . ' pickup location could not be changed';
+						}
+					}
+				}
+			}
+
+			$result['changed'] = $numChanged;
+			$result['notChanged'] = $result['total'] - $result['changed'];
+
+			if ($result['notChanged'] > 0) {
+				$result['success'] = false;
+				$result['message'] = $failure_messages;
+			} else {
+				$result['message'][] = "All hold pickup locations were changed successfully.";
+			}
+
+			return $result;
+		}
+
+	}
 }

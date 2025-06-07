@@ -6210,6 +6210,46 @@ class User extends DataObject {
 
 		$this->update();
 	}
+
+	function changeAllPickupLocations($newPickupLocation, $newPickupSublocation = null, $changeLinkedUsers = false): array {
+		$changeAllResults = $this->getCatalogDriver()->changeAllHoldsPickupLocation($this, $newPickupLocation, $newPickupSublocation);
+
+		// Also change pickup locations for linked Users if needed
+		if ($changeLinkedUsers) {
+			if ($this->getLinkedUsers() != null) {
+				foreach ($this->getLinkedUsers() as $user) {
+					$linkedResults = $user->changeAllPickupLocations($newPickupLocation, $newPickupSublocation);
+					// Merge results
+					$changeAllResults['changed'] += $linkedResults['changed'];
+					$changeAllResults['notChanged'] += $linkedResults['notChanged'];
+					$changeAllResults['total'] += $linkedResults['total'];
+					if ($changeAllResults['success'] && !$linkedResults['success']) {
+						$changeAllResults['success'] = false;
+						$changeAllResults['message'] = $linkedResults['message'];
+					} elseif (!$changeAllResults['success'] && !$linkedResults['success']) {
+						// Append the new message
+						$changeAllResults['message'] = array_merge($changeAllResults['message'], $linkedResults['message']);
+					}
+				}
+			}
+		}
+
+		$this->clearCache();
+
+		$changeAllResults['title'] = translate([
+			'text' => 'Changing all hold pickup locations',
+			'isPublicFacing' => true,
+		]);
+
+		if ($changeAllResults['changed'] == 0) {
+			$changeAllResults['title'] = translate([
+				'text' => 'Unable to change some hold pickup locations',
+				'isPublicFacing' => true,
+			]);
+		}
+
+		return $changeAllResults;
+	}
 }
 
 function modifiedEmpty($var): bool {

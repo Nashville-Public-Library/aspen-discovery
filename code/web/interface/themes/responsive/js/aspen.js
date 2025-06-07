@@ -6906,6 +6906,39 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
+		confirmChangePickupLocationAll: function (userId) {
+			if (Globals.loggedIn) {
+				AspenDiscovery.loadingMessage();
+				// noinspection JSUnresolvedFunction
+				$.getJSON(Globals.path + "/MyAccount/AJAX?method=confirmChangePickupLocationAll&patronId=" + userId, function (data) {
+					AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons); // automatically close when successful
+				}).fail(AspenDiscovery.ajaxFail);
+			} else {
+				this.ajaxLogin(null, this.confirmChangePickupLocationAll, true);
+			}
+			return false
+		},
+
+		changeAllPickupLocations: function (userId) {
+			if (Globals.loggedIn) {
+				var newLocation = $("#newPickupLocation").val();
+				var newSublocation = $("#pickupSublocation").val();
+				AspenDiscovery.loadingMessage();
+				// noinspection JSUnresolvedFunction
+				$.getJSON(Globals.path + "/MyAccount/AJAX?method=changeAllPickupLocations&patronId=" + userId + "&newLocation=" + newLocation + "&newSublocation=" + newSublocation, function (data) {
+					if (data.success) {
+						AspenDiscovery.Account.reloadHolds();
+						AspenDiscovery.showMessage(data.title, data.message, true, false);
+					} else {
+						AspenDiscovery.showMessage(data.title, data.message);
+					}
+				}).fail(AspenDiscovery.ajaxFail);
+			} else {
+				this.ajaxLogin(null, this.changeAllPickupLocations, true);
+			}
+			return false;
+		},
+		
 		getSelectedTitles: function (promptForSelectAll) {
 			if (promptForSelectAll === undefined) {
 				promptForSelectAll = true;
