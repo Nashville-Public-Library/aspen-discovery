@@ -86,6 +86,7 @@ class Talpa_Results extends ResultsAction {
 		}
 		else //performing a new search
 		{
+			unset($_SESSION['talpa_warning']);
 			$result = $searchObject->sendRequest();
 		}
 
