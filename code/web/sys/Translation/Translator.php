@@ -74,7 +74,7 @@ class Translator {
 	 * @return string The translated phrase.
 	 */
 	function translate(
-		string $phrase, string $defaultText = '', array $replacementValues = [],
+		?string $phrase, string $defaultText = '', array $replacementValues = [],
 		bool $inAttribute = false, bool $isPublicFacing = false, bool $isAdminFacing = false,
 		bool $isMetadata = false, bool $isAdminEnteredData = false,
 		bool $translateParameters = false, bool $escape = false
