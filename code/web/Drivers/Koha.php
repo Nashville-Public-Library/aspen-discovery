@@ -4515,6 +4515,7 @@ class Koha extends AbstractIlsDriver {
 						'description' => $passwordNotes,
 						'minLength' => $pinValidationRules['minLength'],
 						'maxLength' => $pinValidationRules['maxLength'],
+						'onlyDigitsAllowed' => $pinValidationRules['onlyDigitsAllowed'],
 						'showConfirm' => false,
 						'required' => true,
 						'showDescription' => true,
@@ -4527,6 +4528,7 @@ class Koha extends AbstractIlsDriver {
 						'description' => 'Reenter your PIN',
 						'minLength' => $pinValidationRules['minLength'],
 						'maxLength' => $pinValidationRules['maxLength'],
+						'onlyDigitsAllowed' => $pinValidationRules['onlyDigitsAllowed'],
 						'showConfirm' => false,
 						'required' => true,
 						'showDescription' => false,
@@ -4692,6 +4694,47 @@ class Koha extends AbstractIlsDriver {
 	function selfRegister(): array {
 		global $library;
 		$result = ['success' => false,];
+
+		if (isset($_REQUEST['borrower_password'])) {
+			$password = $_REQUEST['borrower_password'];
+			$pinValidationRules = $this->getPasswordPinValidationRules();
+
+			if (strlen($password) < $pinValidationRules['minLength']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must be at least {$pinValidationRules['minLength']} characters long.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if (strlen($password) > $pinValidationRules['maxLength']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must be longer than {$pinValidationRules['maxLength']} characters.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if ($pinValidationRules['onlyDigitsAllowed'] && !ctype_digit($password)) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must only contain numbers.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if (isset($_REQUEST['borrower_password2']) && $_REQUEST['borrower_password'] !== $_REQUEST['borrower_password2']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Passwords do not match.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+		}
 
 		if ($this->getKohaVersion() < 20.05) {
 			$catalogUrl = $this->accountProfile->vendorOpacUrl;
