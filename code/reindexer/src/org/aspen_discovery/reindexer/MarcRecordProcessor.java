@@ -437,7 +437,7 @@ abstract class MarcRecordProcessor {
 		if (foundSeriesIn800or830) {
 			groupedWork.addSeries(MarcUtil.getFieldList(record, "830ap:800pqt"));
 		}
-		
+
 		groupedWork.addDateSpan(MarcUtil.getFieldList(record, "362a"));
 		groupedWork.addContents(MarcUtil.getFieldList(record, "505a:505t"));
 		//Check to see if we have any child records and if so add them as well
