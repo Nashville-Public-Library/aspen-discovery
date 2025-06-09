@@ -303,7 +303,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		require_once ROOT_DIR.'/sys/SolrConnector/GroupedWorksSolrConnector2.php';
 		$GroupedWorksSolrConnector2 = new GroupedWorksSolrConnector2($configArray['Index']['url']);
 
-		$recordData = $this->process($recordData, $textQuery); //TODO LAUREN add api limit error into process()
+		$recordData = $this->process($recordData, $textQuery);
 
 		if (is_array($recordData)) {
 			$this->lastSearchResults = $recordData;
@@ -483,7 +483,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			}
 
 			$_resultList = $this->lastSearchResults['response']['resultlist'];
-//			var_dump($_resultList); //TODO LAUREN why is Money management still showing up
+
 			//used in getSearchResult() to generate item url to return to talpa search results page
 			$interface->assign('searchSource', 'talpa');
 
