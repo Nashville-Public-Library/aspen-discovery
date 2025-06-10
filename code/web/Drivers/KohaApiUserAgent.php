@@ -200,22 +200,29 @@ class KohaApiUserAgent {
 	}
 
 	/**
-	 * Makes an API call via PATCH method
-	 *
-	 * Makes an API call to Koha using PATCH method and get a response body and a response code on success
-	 * Recover specific data of it as properties.
-	 *
-	 * @param string $endpoint e.g "/api/v1/auth/password/validation"
-	 * @param array $requestParameters e.g ['identifier' => $username,'password' => $password,]
-	 * @param string $caller e.g "koha.PatronLogin"
-	 * @param array $dataToSanitize e.g ['password' => $password]
-	 * @param array|null $extraHeaders e.g ['x-koha-embed: +strings,extended_attributes']
-	 *
-	 * @return  array|bool     An array containing the response body and response code retrieved by the request or false if authorization fails.
-	 * @access  public
-	 */
-	public function patch(string $endpoint, array $requestParameters, string $caller, array $dataToSanitize = [], array $extraHeaders = null): array|bool {
-		// Preparing request
+	* Performs an API call using the PATCH method.
+	*
+	* Sends a PATCH request to the specified endpoint of Koha,
+	* and returns an array with :
+	* - content
+	* - status code
+	* - url
+	* - headers
+	*
+	* on success.
+	* @param string			$endpoint				The API endpoint to call (e.g. "/api/v1/password/validation").
+	* @param array|object	$requestParameters		The requested parameters by the API endpoint.
+	* @param string			$caller					Identifier of the calling service (e.g. "koha.patronlogin").
+	* @param array			$dataToSanitize			Associative array of data to sanitize (e.g. ['password' => $password]).
+	* @param ?array			$extraHeaders			Optional headers to include in the request (e.g. ['Example: Example']).
+	*
+	* @return array{content: mixed, code: int, url: string, headers: array[string]}|false Returns an associative array with the response body and status code, or false on authorization failure.
+	*
+	* @access public
+	*/
+	public function patch(string $endpoint, array $requestParameters, string $caller, array $dataToSanitize = [], ?array $extraHeaders = null): array|bool {
+		
+		// Prepare the request
 		$apiURL = $this->baseURL . $endpoint;
 		$jsonEncodedParams = json_encode($requestParameters);
 
@@ -227,14 +234,20 @@ class KohaApiUserAgent {
 			return false;
 		}
 
+		// Add default headers
 		$this->apiCurlWrapper->addCustomHeaders($this->defaultHeaders, false);
+
+		// Add custom headers
 		if (isset($extraHeaders)) {
 			$this->apiCurlWrapper->addCustomHeaders($extraHeaders, false);
 		}
-		//Getting response body
+
+		// Get the response body
 		$response = $this->apiCurlWrapper->curlSendPage($apiURL, 'PATCH', $jsonEncodedParams);
 		$responseCode = $this->apiCurlWrapper->getResponseCode();
 		$jsonResponse = $this->jsonValidate($response);
+
+		// Catch and save information about the API request
 		ExternalRequestLogEntry::logRequest($caller, 'PATCH', $apiURL, $this->apiCurlWrapper->getHeaders(), $jsonEncodedParams, $responseCode, $response, $dataToSanitize);
 		return [
 			'content' => $jsonResponse,
