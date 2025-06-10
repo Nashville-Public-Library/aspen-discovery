@@ -8,8 +8,13 @@ class SnapPaySetting extends DataObject {
 	public $accountId;
 	public $merchantId;
 	public $apiAuthenticationCode;
+	public $apiBasicAuthPassword;
 	public $emailNotifications;
 	public $emailNotificationsAddresses;
+	public $enableAutomatedReconciliation;
+	public $automatedReconciliationFrequency;
+	public $automatedReconciliationFilters;
+	public $lastReconciliationTime;
 
 	private $_libraries;
 
@@ -65,6 +70,15 @@ class SnapPaySetting extends DataObject {
 				'default' => '',
 				'size' => 255,
 			],
+			'apiBasicAuthPassword' => [
+				'property' => 'apiBasicAuthPassword',
+				'type' => 'storedPassword',
+				'label' => 'API Basic Auth Password',
+				'description' => 'The password to use for basic authentication when connecting to the SnapPay API.',
+				'hideInLists' => true,
+				'default' => '',
+				'size' => 255,
+			],
 			'emailNotifications' => [
 				'property' => 'emailNotifications',
 				'type' => 'enum',
@@ -86,6 +100,41 @@ class SnapPaySetting extends DataObject {
 				'hideInLists' => false,
 				'default' => '',
 				'size' => 255,
+			],
+			'enableAutomatedReconciliation' => [
+				'property' => 'enableAutomatedReconciliation',
+				'type' => 'checkbox',
+				'label' => 'Enable Automated Reconciliation',
+				'description' => 'Whether to automatically check SnapPay Transaction History API and reconcile payments',
+				'hideInLists' => false,
+				'default' => 0,
+			],
+			'automatedReconciliationFrequency' => [
+				'property' => 'automatedReconciliationFrequency',
+				'type' => 'integer',
+				'label' => 'Reconciliation Frequency (minutes)',
+				'description' => 'How often to check the SnapPay Transaction History API (in minutes)',
+				'hideInLists' => false,
+				'default' => 60,
+				'min' => 5,
+				'max' => 1440, // 24 hours
+			],
+			'automatedReconciliationFilters' => [
+				'property' => 'automatedReconciliationFilters',
+				'type' => 'text',
+				'label' => 'Transaction History Filters',
+				'description' => 'JSON-formatted filters to apply when querying the SnapPay Transaction History API',
+				'hideInLists' => true,
+				'default' => '{"status":"success"}',
+				'size' => 255,
+			],
+			'lastReconciliationTime' => [
+				'property' => 'lastReconciliationTime',
+				'type' => 'timestamp',
+				'label' => 'Last Reconciliation Time',
+				'description' => 'When the automated reconciliation was last run',
+				'hideInLists' => false,
+				'default' => 0,
 			],
 			'libraries' => [
 				'property' => 'libraries',
