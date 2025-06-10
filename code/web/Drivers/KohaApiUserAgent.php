@@ -28,21 +28,28 @@ class KohaApiUserAgent {
 	}
 
 	/**
-	 * Makes an API call via GET method
-	 *
-	 * Makes an API call to Koha using GET method and get a response body and a response code on success
-	 * Recover specific data of it as properties.
-	 *
-	 * @param string $endpoint e.g "/api/v1/auth/password/validation"
-	 * @param string $caller e.g "koha.PatronLogin"
-	 * @param array $dataToSanitize e.g ['password' => $password]
-	 * @param array|null $extraHeaders e.g ['x-koha-embed: +strings,extended_attributes']
-	 *
-	 * @return  array|bool     An array containing the response body and response code retrieved by the request or false if authorization fails.
-	 * @access  public
-	 */
-	public function get(string $endpoint, string $caller, array $dataToSanitize = [], array $extraHeaders = null): array|bool {
-		//Preparing request
+	* Performs an API call using the GET method.
+	*
+	* Sends a GET request to the specified endpoint of Koha,
+	* and returns an array with :
+	* - content
+	* - status code
+	* - url
+	* - headers
+	*
+	* on success.
+	* @param string			$endpoint			The API endpoint to call (e.g. "/api/v1/password/validation").
+	* @param string			$caller				Identifier of the calling service (e.g. "koha.patronlogin").
+	* @param array			$dataToSanitize		Associative array of data to sanitize (e.g. ['password' => $password]).
+	* @param ?array			$extraHeaders		Optional headers to include in the request (e.g. ['Example: Example']).
+	*
+	* @return array{content: mixed, code: int, url: string, headers: array[string]}|false Returns an associative array with the response body and status code, or false on authorization failure.
+	*
+	* @access public
+	*/
+	public function get(string $endpoint, string $caller, array $dataToSanitize = [], ?array $extraHeaders = null): array|bool {
+
+		// Prepare the request
 		$apiURL = $this->baseURL . $endpoint;
 
 		if ($this->getAuthorizationHeader($caller)) {
@@ -52,16 +59,22 @@ class KohaApiUserAgent {
 		} else {
 			return false;
 		}
-
+		// Add default headers
 		$this->apiCurlWrapper->addCustomHeaders($this->defaultHeaders, false);
+
+		// Add custom headers
 		if (isset($extraHeaders)) {
 			$this->apiCurlWrapper->addCustomHeaders($extraHeaders, false);
 		}
-		//Getting response body
+
+		// Get the response body
 		$response = $this->apiCurlWrapper->curlSendPage($apiURL, 'GET');
 		$responseCode = $this->apiCurlWrapper->getResponseCode();
 		$jsonResponse = $this->jsonValidate($response);
+
+		// Catch and save information about the API request
 		ExternalRequestLogEntry::logRequest($caller, 'GET', $apiURL, $this->apiCurlWrapper->getHeaders(), '', $responseCode, $response, $dataToSanitize);
+
 		return [
 			'content' => $jsonResponse,
 			'code' => $responseCode,
