@@ -962,7 +962,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 
 		$queryString = $this->searchTerms[0]['lookfor']?:'The man with the yellow hat';
-		$queryString = urlencode($queryString);
 
 		if(!$settings->talpaApiToken) {
 			$msg = $settings->talpaSearchSourceString.' settings are not configured by your library: missing API token.';
