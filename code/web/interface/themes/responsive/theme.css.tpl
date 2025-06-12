@@ -846,7 +846,7 @@ label{ldelim}
 {rdelim}
 
 #side-bar.collapsed #sidebar-collapse{ldelim}
-    background-color: {$primaryBackgroundColor} !important;
+    background-color: {$primaryBackgroundColor};
 {rdelim}
 
 pre{ldelim}
