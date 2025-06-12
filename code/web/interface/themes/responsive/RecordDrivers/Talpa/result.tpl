@@ -336,7 +336,8 @@
 
 	<div id="talpa_stats" style="display:none">
 		<datalist>
-		<data value="{$querySpeed}">api</data>
+			<data value="{$preliminarySearchSpeed}">initial search</data>
+			<data value="{$querySpeed}">api</data>
 			<data value="{$recordFetchSpeed}">record fetch</data>
 		</datalist>
 	</div>

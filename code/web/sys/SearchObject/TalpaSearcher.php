@@ -39,11 +39,17 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	protected $recordFetchEndTime = null;
 	protected $recordFetchTime = null;
 
+	/**Track preliminary search time info */
+	protected $preliminarySearchStartTime = null;
+	protected $preliminarySearchEndTime = null;
+	protected $preliminarySearchTime = null;
+
 	// STATS
 	protected $resultsTotal = 0;
 
 	protected $searchTerms;
 
+	protected $preliminarySearchResults = null;
 	protected $lastSearchResults;
 
 	// Module and Action for building search results
@@ -958,19 +964,21 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	public function sendRequest($queryId=null) {
 		$baseUrl = $this->talpaBaseApi;
 		$settings = $this->getSettings();
-		$this->startQueryTimer();
-
 
 		$queryString = $this->searchTerms[0]['lookfor']?:'The man with the yellow hat';
 
+		// Perform preliminary search of the library catalog
+		$preliminaryResults = $this->performPreliminarySearch($queryString);
+		$this->preliminarySearchResults = $preliminaryResults;
+
+
 		if(!$settings->talpaApiToken) {
 			$msg = $settings->talpaSearchSourceString.' settings are not configured by your library: missing API token.';
-//					implode('<br />', $errors); //add this in for debugging, but not for public display.
 			AspenError::raiseError(new AspenError($msg));
 		}
 
 		$headers = $this->authenticate($settings);
-
+		$this->startQueryTimer();
 		$recordData = $this->httpRequest($baseUrl, $queryString, $headers, $settings, $queryId);
 		$json_response = json_decode($recordData, true);
 		if( $json_response['error'])
@@ -987,21 +995,17 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			$this->stopQueryTimer();
 		}
 		$this->processSearch(); //Add in facets for recommendations to use
-		if (1) {
-			$this->initRecommendations();
-			if ( is_array($this->recommend)) {
-//				print_r($this->recommend);
-				foreach ($this->recommend as $currentSet) {
-					/** @var RecommendationInterface $current */
-					foreach ($currentSet as $current) {
-//						print_r($current);
-						$current->process();
-					}
+
+		$this->initRecommendations();
+		if ( is_array($this->recommend)) {
+			foreach ($this->recommend as $currentSet) {
+				/** @var RecommendationInterface $current */
+				foreach ($currentSet as $current) {
+					$current->process();
 				}
 			}
 		}
 
-//		if ($this->selectedAvailabilityToggleValue == null) {
 
 		$_SESSION['last_query_id'] = $this->lastSearchResults['response']['query_id'];
 
@@ -1178,6 +1182,22 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 		$requestUrl = $baseUrl.'?'.http_build_query($params);
 
+// Add preliminary search results to the API call if available //TODO LAUREN cleanup
+		if ($this->preliminarySearchResults) {
+			$isbns = $this->preliminarySearchResults['isbns'];
+			$groupedWorkIds = $this->preliminarySearchResults['groupedWorkIds'];
+
+			if (!empty($isbns)) {
+				$isbnParam = '&isbns=' . urlencode(implode(',', $isbns));
+				$requestUrl .= $isbnParam;
+			}
+
+//			if (!empty($groupedWorkIds)) {
+//				$groupedWorkParam = '&grouped_work_ids=' . urlencode(implode(',', $groupedWorkIds));
+//				$requestUrl .= $groupedWorkParam;
+//			}
+//			print_r($requestUrl);
+		}
 		$curlConnection = $this->getCurlConnection();
 		$curlOptions = array(
 			CURLOPT_RETURNTRANSFER => 1,
@@ -1246,6 +1266,30 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	}
 
 	/**
+	 * Start the timer to work out how long it takes to do a preliminary search of the catalog for results that Talpa can review.
+	 *
+	 * @access protected
+	 */
+	protected function startPreliminarySearchTimer() {
+		$time = explode(" ", microtime());
+		$this->preliminarySearchStartTime = $time[1] + $time[0];
+	}
+
+	/**
+	 * End the timer to work out how long a preliminary query takes.  Complements
+	 * startPreliminarySearchTimer().
+	 *
+	 * @access protected
+	 */
+	protected function stopPreliminarySearchTimer() {
+		$time = explode(" ", microtime());
+		$this->preliminarySearchEndTime = $time[1] + $time[0];
+		$this->preliminarySearchTime = $this->preliminarySearchEndTime - $this->preliminarySearchStartTime;
+
+	}
+
+
+	/**
 	 * Work out how long the query took
 	 */
 	public function getQuerySpeed() {
@@ -1257,6 +1301,13 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	 */
 	public function getRecordFetchSpeed() {
 		return $this->recordFetchTime;
+	}
+
+	/**
+	 * Work out how long the record fetch
+	 */
+	public function getPreliminarySearchSpeed() {
+		return $this->preliminarySearchTime;
 	}
 
 	 /**
@@ -1338,6 +1389,72 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 	public function getresultsTotal(){
 		return $this->resultsTotal;
+	}
+
+	/**
+	 * Perform a preliminary keyword search of the library catalog
+	 * @param string $queryString The search query
+	 * @return array Array containing ISBNs and groupedWorkIDs found
+	 */
+	protected function performPreliminarySearch($queryString) {
+		global $configArray;
+
+		$this->startPreliminarySearchTimer();
+
+		require_once ROOT_DIR.'/sys/SolrConnector/GroupedWorksSolrConnector2.php';
+		$solrConnector = new GroupedWorksSolrConnector2($configArray['Index']['url']);
+
+
+		// Perform a basic keyword search
+		$searchResults = $solrConnector->search($queryString, 'Keyword', [], 0, 50, [], '', '', null, 'id,isbn,primary_isbn', 'POST', false);
+		$this->stopPreliminarySearchTimer();
+
+		$isbns = [];
+		$groupedWorkIds = [];
+
+		if ($searchResults && isset($searchResults['response']['docs'])) {
+			foreach ($searchResults['response']['docs'] as $doc) {
+
+				if (isset($doc['id'])) {
+					$groupedWorkIds[] = $doc['id'];
+				}
+
+				if (isset($doc['isbn'])) {
+					if (is_array($doc['isbn'])) {
+						$isbns = array_merge($isbns, $doc['isbn']);
+					} else {
+						$isbns[] = $doc['isbn'];
+					}
+				}
+
+				if (isset($doc['primary_isbn'])) {
+					if (is_array($doc['primary_isbn'])) {
+						$isbns = array_merge($isbns, $doc['primary_isbn']);
+					} else {
+						$isbns[] = $doc['primary_isbn'];
+					}
+				}
+			}
+		}
+
+		// Remove duplicates
+		$isbns = array_unique($isbns);
+		$groupedWorkIds = array_unique($groupedWorkIds);
+
+		return [
+			'isbns' => $isbns,
+			'groupedWorkIds' => $groupedWorkIds,
+			'searchTime' => $this->preliminarySearchTime
+		];
+	}
+
+
+	/**
+	 * Get the preliminary search results
+	 * @return array|null
+	 */
+	public function getPreliminarySearchResults() {
+		return $this->preliminarySearchResults;
 	}
 
 	public function processSearch(bool $returnIndexErrors = false, bool $recommendations = true, bool $preventQueryModification = false): SimpleXMLElement|array|AspenError|stdClass|null
