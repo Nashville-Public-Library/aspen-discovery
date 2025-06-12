@@ -845,6 +845,10 @@ label{ldelim}
 	color: {$primaryForegroundColor};
 {rdelim}
 
+#side-bar.collapsed #sidebar-collapse{ldelim}
+    background-color: {$primaryBackgroundColor} !important;
+{rdelim}
+
 pre{ldelim}
 	background-color: {$primaryBackgroundColor}70;
 	border-color: {$primaryBackgroundColor};
