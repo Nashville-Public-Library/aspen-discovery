@@ -56,7 +56,7 @@ Aspen Discovery's development is sponsored by many public, academic, and school 
 
 Aspen Discovery also incorporates and builds upon a number of open-source libraries, which are credited within the source code.
 
-Aspen Discovery was originally derived from [VuFind](https://vufind.org/vufind/) by Villanova University and [Pika](https://marmot.org/pika-discovery) by Marmot Library Network. While significant changes have been made and the codebase is now largely distinct, we gratefully acknowledge these projects for their inspiration.
+Aspen Discovery was originally derived from [VuFind](https://vufind.org/vufind/) by Villanova University and [Pika](https://marmot.org/pika-discovery/about-pika) by Marmot Library Network. While significant changes have been made and the codebase is now largely distinct, we gratefully acknowledge these projects for their inspiration.
 
 ## License 📜
 
