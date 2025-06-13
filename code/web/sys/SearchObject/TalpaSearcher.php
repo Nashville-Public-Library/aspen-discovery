@@ -966,7 +966,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		$settings = $this->getSettings();
 
 		$queryString = $this->searchTerms[0]['lookfor']?:'The man with the yellow hat';
-
+		$this->query = $queryString;
 		// Perform preliminary search of the library catalog
 		$preliminaryResults = $this->performPreliminarySearch($queryString);
 		$this->preliminarySearchResults = $preliminaryResults;
@@ -1067,7 +1067,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						)
 					)
 				);
-			} elseif(!is_array(SearchObject_TalpaSearcher::$searchOptions))
+			} elseif( !is_array(SearchObject_TalpaSearcher::$searchOptions))
 			{
 				SearchObject_TalpaSearcher::$searchOptions = array(
 					'recordCount' => 0,
@@ -1079,7 +1079,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						)
 					)
 				);
-			} elseif(empty($resultsList) && !$warnings)
+			} elseif( empty($resultsList) && !$warnings)
 			{
 				SearchObject_TalpaSearcher::$searchOptions = array(
 					'recordCount' => 0,
@@ -1095,6 +1095,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 			$talpaSettings = $this -> getSettings();
 			$searchSourceString = $talpaSettings->talpaSearchSourceString?:'Talpa Search';
+			require_once ROOT_DIR . '/services/Talpa/TalpaWarning.php';
 
 			// Detect errors
 			if (isset(SearchObject_TalpaSearcher::$searchOptions['errors']) && is_array(SearchObject_TalpaSearcher::$searchOptions['errors'])) {
@@ -1103,8 +1104,19 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 					$msg = $searchSourceString.' encountered an error while processing your request: '. $current['message'];
 				}
-//					implode('<br />', $errors); //add this in for debugging, but not for public display.
-				AspenError::raiseError(new AspenError($msg));
+
+
+				$retryLink = '';
+				if (!empty($this->searchTerms[0]['lookfor'])) {
+					$retryLink = $this->renderSearchUrl();
+					$retryLink = str_replace('/Search/Results','/Union/Search', $retryLink);
+				}
+
+
+
+				$TalpaWarning = new TalpaWarning();
+				$TalpaWarning->launchError($msg, $retryLink);
+				exit();
 			}
 			elseif (isset($warnings) && is_array($warnings))
 			{
@@ -1139,8 +1151,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						)
 					);
 
-
-					require_once ROOT_DIR . '/services/Talpa/TalpaWarning.php';
 					$TalpaWarning = new TalpaWarning();
 					$TalpaWarning->launch();
 					exit();
@@ -1187,15 +1197,16 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			$isbns = $this->preliminarySearchResults['isbns'];
 			$groupedWorkIds = $this->preliminarySearchResults['groupedWorkIds'];
 
-			if (!empty($isbns)) {
-				$isbnParam = '&isbns=' . urlencode(implode(',', $isbns));
-				$requestUrl .= $isbnParam;
+//			if (!empty($isbns)) {
+//				$isbnParam = '&isbns=' . urlencode(implode(',', $isbns));
+//				$requestUrl .= $isbnParam;
+//			}
+
+			if (!empty($groupedWorkIds)) {
+				$groupedWorkParam = '&grouped_work_ids=' . urlencode(implode(',', $groupedWorkIds));
+				$requestUrl .= $groupedWorkParam;
 			}
 
-//			if (!empty($groupedWorkIds)) {
-//				$groupedWorkParam = '&grouped_work_ids=' . urlencode(implode(',', $groupedWorkIds));
-//				$requestUrl .= $groupedWorkParam;
-//			}
 //			print_r($requestUrl);
 		}
 		$curlConnection = $this->getCurlConnection();
@@ -1406,7 +1417,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 
 		// Perform a basic keyword search
-		$searchResults = $solrConnector->search($queryString, 'Keyword', [], 0, 50, [], '', '', null, 'id,isbn,primary_isbn', 'POST', false);
+		$searchResults = $solrConnector->search($queryString, 'Keyword', [], 0, 25, [], '', '', null, 'id,isbn,primary_isbn', 'POST', false);
 		$this->stopPreliminarySearchTimer();
 
 		$isbns = [];
