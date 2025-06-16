@@ -4134,7 +4134,7 @@ class Library extends DataObject {
 						'property' => 'enableTalpaSearch',
 						'type' => 'checkbox',
 						'label' => 'Enable Talpa as a search mode. ',
-						'description' => 'Talpa is a magical, natural-language search tool. Patrons can use this to find materials, but also to ask open-ended questions, like "Mystery book with a red cover?".',
+						'description' => 'Talpa is a magical, natural-language search tool. Patrons can use this to find materials, but also to ask open-ended questions, like &quot;Mystery book with a red cover?&quot;.',
 						'hideInLists' => true,
 						'default' => 0,
 					],

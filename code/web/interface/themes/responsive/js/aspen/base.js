@@ -58,6 +58,7 @@ var AspenDiscovery = (function(){
 		});
 		// Set initial visibility.
 		$lookfor.trigger("input");
+		AspenDiscovery.FormFields.initializeCharacterCounters();
 	});
 
 	return {
