@@ -9,8 +9,7 @@ require_once ROOT_DIR . '/sys/Talpa/TalpaData.php';
 require_once ROOT_DIR . '/sys/ISBN.php';
 
 $startTime = time();
-//$talpaWorkAPI ='https://www.librarything.com/api_aspen_works.php';
-$talpaWorkAPI ='lp-ltfl.dev.librarything.com/api_aspen_works.php';
+$talpaWorkAPI ='https://www.librarything.com/api_aspen_works.php';
 
 //Set up Globals
 global $configArray;
