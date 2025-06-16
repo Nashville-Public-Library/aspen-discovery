@@ -19,6 +19,7 @@ class Author_Wikipedia {
 	 * @return array|null Info array ['name', 'description', 'image', 'altimage'] or null if not found.
 	 */
 	public function getWikipedia(string $author, string $lang = 'en'): ?array {
+		$lang = in_array($lang, ['ub', 'pi'], true) ? 'en' : $lang;
 		$parser = new WikipediaParser($lang);
 		$candidates = [$author];
 
