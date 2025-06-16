@@ -3457,25 +3457,6 @@ class Theme extends DataObject {
 	}
 
 	/**
-	 * Return appropriate warning messages about why a theme can't be deleted.
-	 *
-	 * @return array
-	 */
-	public function getAdditionalListActions(): array {
-		$actions = [];
-		$deletionInfo = $this->checkDeletionDependencies();
-		if ($deletionInfo['preventDeletion']) {
-			$actions[] = [
-				'text' => 'Warning',
-				'url' => '#',
-				'onclick' => "alert('" . str_replace("'", "\\'", strip_tags($deletionInfo['message'])) . "'); return false;",
-				'class' => 'btn-danger'
-			];
-		}
-		return $actions;
-	}
-
-	/**
 	 * Check to see if this object should not be deleted because it will cause inconsistencies in other objects.
 	 * Prevent deletion of the default theme (ID: 1) and handle relationships with dependent objects.
 	 *
