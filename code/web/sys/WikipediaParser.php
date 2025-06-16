@@ -43,6 +43,10 @@ class WikipediaParser {
 			return null;
 		}
 
+		foreach ($xpath->query('.//*[contains(@class,"nowraplinks") or contains(@class,"ext-phonos")]', $leadSection) as $n) {
+			$n->parentNode->removeChild($n);
+		}
+
 		$this->rewriteInternalLinks($leadSection, $xpath);
 
 		$leadParas = [];

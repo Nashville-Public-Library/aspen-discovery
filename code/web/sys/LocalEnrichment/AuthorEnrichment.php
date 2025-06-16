@@ -1,7 +1,7 @@
 <?php
 
 class AuthorEnrichment extends DataObject {
-	public $__table = 'author_enrichment';    // table name
+	public $__table = 'author_enrichment';
 	public $id;
 	public $authorName;
 	public $hideWikipedia;
