@@ -1206,8 +1206,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				$groupedWorkParam = '&grouped_work_ids=' . urlencode(implode(',', $groupedWorkIds));
 				$requestUrl .= $groupedWorkParam;
 			}
-
-//			print_r($requestUrl);
 		}
 		$curlConnection = $this->getCurlConnection();
 		$curlOptions = array(
@@ -1417,7 +1415,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 
 		// Perform a basic keyword search
-		$searchResults = $solrConnector->search($queryString, 'Keyword', [], 0, 25, [], '', '', null, 'id,isbn,primary_isbn', 'POST', false);
+		$searchResults = $solrConnector->search($queryString, 'Keyword', [], 0, 50, [], '', '', null, 'id,isbn,primary_isbn', 'POST', false);
 		$this->stopPreliminarySearchTimer();
 
 		$isbns = [];
