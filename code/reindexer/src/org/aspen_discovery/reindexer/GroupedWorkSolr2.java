@@ -98,8 +98,13 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			doc.addField("series", series.values());
 			//series2.values().removeAll(GroupedWorkIndexer.hideSeries);
 			doc.addField("series2", series2.values());
+			List<String> sortedSeriesWithVolume = seriesWithVolumePriority.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).map(Map.Entry::getKey).toList();
 			//seriesWithVolume.values().removeAll(GroupedWorkIndexer.hideSeries);
-			doc.addField("series_with_volume", seriesWithVolume.values());
+			for (String seriesName : sortedSeriesWithVolume) {
+				if (seriesWithVolume.containsKey(seriesName)) {
+					doc.addField("series_with_volume", seriesWithVolume.get(seriesName));
+				}
+			}
 
 			doc.addField("topic", topics);
 			topicFacets.removeAll(groupedWorkIndexer.hideSubjects);

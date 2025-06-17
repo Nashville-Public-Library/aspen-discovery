@@ -83,6 +83,7 @@ public abstract class AbstractGroupedWorkSolr {
 	protected HashMap<String, String> series = new HashMap<>();
 	protected HashMap<String, String> series2 = new HashMap<>();
 	protected HashMap<String, String> seriesWithVolume = new HashMap<>();
+	protected Map<String, Integer> seriesWithVolumePriority = new HashMap<>();
 	protected String subTitle;
 	protected HashSet<String> targetAudienceFull = new HashSet<>();
 	protected TreeSet<String> targetAudience = new TreeSet<>();
@@ -746,7 +747,7 @@ public abstract class AbstractGroupedWorkSolr {
 		this.series.clear();
 	}
 
-	void addSeriesWithVolume(String seriesName, String volume) {
+	void addSeriesWithVolume(String seriesName, String volume, int priority) {
 		if (seriesName != null && !seriesName.isEmpty()) {
 			String seriesInfo = getNormalizedSeries(seriesName);
 			if (seriesInfo.isEmpty()) {
@@ -762,7 +763,11 @@ public abstract class AbstractGroupedWorkSolr {
 			String volumeLower = volume.toLowerCase();
 			String seriesInfoWithVolume = seriesInfo + "|" + (!volume.isEmpty() ? volume : "");
 			String normalizedSeriesInfoWithVolume = seriesInfoWithVolume.toLowerCase();
-
+			if (seriesWithVolumePriority.containsKey(normalizedSeriesInfoWithVolume)) {
+				seriesWithVolumePriority.put(normalizedSeriesInfoWithVolume, seriesWithVolumePriority.get(normalizedSeriesInfoWithVolume) + priority);
+			} else {
+				seriesWithVolumePriority.put(normalizedSeriesInfoWithVolume, priority);
+			}
 			if (!this.seriesWithVolume.containsKey(normalizedSeriesInfoWithVolume)) {
 				boolean okToAdd = true;
 				for (String existingSeries2 : this.seriesWithVolume.keySet()) {
