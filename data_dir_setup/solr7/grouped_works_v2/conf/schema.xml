@@ -236,7 +236,6 @@
 
 		<!-- SERIES Fields -->
 		<field name="series" type="searchable_text" indexed="true" stored="true" multiValued="true"/>
-		<field name="series2" type="searchable_text" indexed="true" stored="true" multiValued="true"/>
 		<field name="series_facet" type="unchanged_string" indexed="true" stored="true" multiValued="true" docValues="true"/>
 		<field name="series_proper" type="textProper" indexed="true" stored="false" multiValued="true"/>
 		<field name="series_with_volume" type="textProper" indexed="false" stored="true" multiValued="true"/>

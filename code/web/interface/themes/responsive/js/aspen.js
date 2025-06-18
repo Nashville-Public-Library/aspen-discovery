@@ -4725,6 +4725,7 @@ var AspenDiscovery = (function(){
 		});
 		// Set initial visibility.
 		$lookfor.trigger("input");
+		AspenDiscovery.FormFields.initializeCharacterCounters();
 	});
 
 	return {
@@ -18849,7 +18850,7 @@ AspenDiscovery.FormFields = (function() {
 	 *
 	 * @param {jQuery|HTMLElement|string} container
 	 */
-	function initializeCharacterCounters(container) {
+	function initializeCharacterCounters(container = 'body') {
 		const $container = $(container);
 		if (!$container.length) return;
 
@@ -18857,6 +18858,23 @@ AspenDiscovery.FormFields = (function() {
 		const ccCanvas = document.createElement('canvas');
 		const ccCtx = ccCanvas.getContext('2d');
 		const buffer = 8;
+		const maxlenFieldsSelector = 'textarea[maxlength], input[maxlength][type=text], input[maxlength][type=search], ' +
+											'input[maxlength][type=tel], input[maxlength][type=url], input[maxlength][type=email], ' +
+											'input[maxlength][type=email2], input[maxlength][type=password], input[maxlength][type=storedPassword],' +
+											'input[maxlength]:not([type])';
+
+		if ($.validator) {
+			$.validator.setDefaults({
+				errorPlacement: function(error, element) {
+					if (element.is(maxlenFieldsSelector)) {
+						// Place jQuery's validation error after the wrapper, so it doesn't grow the wrapper height.
+						element.closest('.field-wrapper').after(error);
+					} else {
+						error.insertAfter(element);
+					}
+				}
+			});
+		}
 
 		// Helper to wrap and inject the counter.
 		function initCharCounterField($f) {
@@ -18869,7 +18887,7 @@ AspenDiscovery.FormFields = (function() {
 		}
 
 		// Initialize on page-load for all existing fields.
-		$container.find('input[maxlength], textarea[maxlength]').each(function() {
+		$container.find(maxlenFieldsSelector).each(function() {
 			initCharCounterField($(this));
 		});
 
@@ -18880,10 +18898,10 @@ AspenDiscovery.FormFields = (function() {
 			mutations.forEach(function (mutation) {
 				Array.prototype.forEach.call(mutation.addedNodes, function (node) {
 					let $n = $(node);
-					if ($n.is('input[maxlength], textarea[maxlength]')) {
+					if ($n.is(maxlenFieldsSelector)) {
 						initCharCounterField($n);
 					}
-					$n.find('input[maxlength], textarea[maxlength]').each(function () {
+					$n.find(maxlenFieldsSelector).each(function () {
 						initCharCounterField($(this));
 					});
 				});
@@ -18892,10 +18910,10 @@ AspenDiscovery.FormFields = (function() {
 		observer.observe($container[0], { childList: true, subtree: true });
 
 		// Handle input events on fields with maxlength.
-		$container.on('input', 'input[maxlength], textarea[maxlength]', function() {
+		$container.on('input', maxlenFieldsSelector, function() {
 			const $f = $(this);
 			const fld = $f[0];
-			const $ctr = $f.next('.char-counter');
+			const $ctr = $f.closest('.field-wrapper').find('.char-counter');
 			const max = parseInt($f.attr('maxlength'), 10);
 			if (isNaN(max) || max <= 0) return;
 			const val = $f.val();
@@ -18936,11 +18954,11 @@ AspenDiscovery.FormFields = (function() {
 		});
 
 		// On focus: if already at max, show the counter; otherwise, hide it immediately.
-		$container.on('focus', 'input[maxlength], textarea[maxlength]', function() {
-			const $f   = $(this);
-			const max  = parseInt($f.attr('maxlength'), 10);
-			const len  = $f.val().length;
-			const $ctr = $f.next('.char-counter');
+		$container.on('focus', maxlenFieldsSelector, function() {
+			const $f = $(this);
+			const max = parseInt($f.attr('maxlength'), 10);
+			const len = $f.val().length;
+			const $ctr = $f.closest('.field-wrapper').find('.char-counter');
 
 			if (len >= max) {
 				$ctr.text(len + '/' + max).addClass('visible');
@@ -18950,9 +18968,9 @@ AspenDiscovery.FormFields = (function() {
 		});
 
 		// On blur: always hide the counter after a short interval.
-		$container.on('blur', 'input[maxlength], textarea[maxlength]', function() {
-			const $f   = $(this);
-			const $ctr = $f.next('.char-counter');
+		$container.on('blur', maxlenFieldsSelector, function() {
+			const $f = $(this);
+			const $ctr = $f.closest('.field-wrapper').find('.char-counter');
 			clearTimeout($f.data('ccTimer'));
 			const tid = setTimeout(function() {
 				$ctr.removeClass('visible');
