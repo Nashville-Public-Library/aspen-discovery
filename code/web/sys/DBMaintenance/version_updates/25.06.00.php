@@ -47,6 +47,56 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE status_map_values ADD COLUMN appliesToStatusAltSubfield TINYINT(1) DEFAULT 0",
 			]
 		], //indexing_profile_status_alt
+		'improve_urlAlias_performance' => [
+			'title' => 'Improve URL Alias Performance',
+			'description' => 'Improve URL Alias Performance',
+			'sql' => [
+				'ALTER TABLE web_builder_basic_page ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE web_builder_custom_form ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE web_builder_custom_web_resource_page ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE web_builder_portal_page ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE web_builder_quick_poll ADD INDEX urlAlias(urlAlias)',
+				'ALTER TABLE grapes_web_builder ADD INDEX urlAlias(urlAlias)',
+			]
+		], //improve_urlAlias_performance
+		'index_optional_update_status' => [
+			'title' => 'Index Optional Update Status',
+			'description' => 'Index Optional Update Status',
+			'sql' => [
+				'ALTER TABLE optional_updates ADD INDEX status(status)'
+			]
+		], //index_optional_update_status
+		'improve_location_lookup_performance' => [
+			'title' => 'Improve Location Lookup Performance',
+			'description' => 'Improve Location Lookup Performance',
+			'sql' => [
+				'ALTER TABLE location ADD INDEX displayNameLookup(displayName, isMainBranch, libraryId, locationId)',
+				'ALTER TABLE location ADD INDEX libraryMainBranch(libraryId, isMainBranch)'
+			]
+		], //improve_location_lookup_performance
+		'improve_translation_term_lookup_performance' => [
+			'title' => 'Improve Translation Term Lookup Performance',
+			'description' => 'Improve Translation Term Lookup Performance by not using prefix',
+			'sql' => [
+				'ALTER TABLE translation_terms DROP INDEX term',
+				'ALTER TABLE translation_terms ADD INDEX term(term)',
+			]
+		], //improve_translation_term_lookup_performance
+		'improve_language_lookup_performance' => [
+			'title' => 'Improve Language Lookup Performance',
+			'description' => 'Improve Language Lookup Performance',
+			'sql' => [
+				'ALTER TABLE languages ADD INDEX languageLookup(weight, displayName)',
+			]
+		], //improve_location_lookup_performance
+		'expand_sideload_column_lengths' => [
+			'title' => 'Expand Sideload Column Lengths',
+			'description' => 'Expand Sideload Column Lengths to accommodate automatic fill',
+			'sql' => [
+				"ALTER TABLE sideloads CHANGE column recordUrlComponent recordUrlComponent VARCHAR(76) NOT NULL DEFAULT 'DefineThis'",
+				"ALTER TABLE sideloads CHANGE column marcPath marcPath VARCHAR(200) NOT NULL"
+			]
+		], //expand_sideload_column_lengths
 
 		//katherine - Grove
 		'add_lida_barcode_entry_keyboard_type_setting' => [
@@ -132,6 +182,17 @@ function getUpdates25_06_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'reading_history_columns_and_index' => [
+			'title' => 'Add Force Reading History Load Flag, Reading History Import Start Datetime, & Index',
+			'description' => 'Add a flag to force immediate loading of reading history for users, a reading history import start datetime, and an index of initial reading history loaded and the previous two new columns.',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE user ADD COLUMN IF NOT EXISTS forceReadingHistoryLoad TINYINT(1) DEFAULT 0",
+				"ALTER TABLE user ADD COLUMN IF NOT EXISTS readingHistoryImportStartedAt DATETIME DEFAULT NULL",
+				"DROP INDEX IF EXISTS idx_reading_history_import_status ON user",
+				"CREATE INDEX idx_reading_history_import_status ON user (initialReadingHistoryLoaded, forceReadingHistoryLoad, readingHistoryImportStartedAt)"
+			]
+		], //reading_history_columns_and_index
 		'add_num_regrouped_to_cloudlibrary_extract_logs' => [
 			'title' => 'Add numRegrouped Column to CloudLibrary Extract Logs',
 			'description' => 'Adds a numRegrouped column to the cloud_library_export_log table to track the number of works regrouped during an extract.',
@@ -154,6 +215,22 @@ function getUpdates25_06_00(): array {
 				"ALTER TABLE web_builder_portal_cell ADD COLUMN IF NOT EXISTS staticLocationId int(11) NOT NULL DEFAULT -1",
 			]
 		], //add_static_location_id_to_portal_cell
+		'curbside_pickups_overhaul_05_2025' => [
+			'title' => 'Modifications to the Curbside Pickup Settings Table',
+			'description' => 'Drops the unused alwaysAllowPickups column and change the default of timeAllowedBeforeCheckIn to -1.',
+			'sql' => [
+				'ALTER TABLE curbside_pickup_settings DROP COLUMN IF EXISTS alwaysAllowPickups',
+				'ALTER TABLE curbside_pickup_settings MODIFY COLUMN timeAllowedBeforeCheckIn int(11) DEFAULT -1'
+			]
+		], //curbside_pickups_overhaul_05_2025
+		'add_prioritize_available_records_for_title_selection' => [
+			'title' => 'Add prioritizeAvailableRecordsForTitleSelection to the Indexing Profile',
+			'description' => 'Adds a setting to prioritize available records when selecting titles for display in grouped works (Koha only).',
+			'sql' => [
+				"ALTER TABLE indexing_profiles DROP COLUMN IF EXISTS ignoreOnOrderRecordsForTitleSelection",
+				"ALTER TABLE indexing_profiles ADD COLUMN IF NOT EXISTS prioritizeAvailableRecordsForTitleSelection TINYINT(1) DEFAULT 0"
+			],
+		], // add_prioritize_available_records_for_title_selection
 
 		// Laura Escamilla - ByWater Solutions
 
@@ -172,8 +249,7 @@ function getUpdates25_06_00(): array {
 			'sql' => [
 				"ALTER TABLE user ADD COLUMN userPreferredName VARCHAR(256) NOT NULL",
 			]
-		],
-		//add_preferred_name
+		], //add_preferred_name
 		'add_preferred_name_option_to_dropdown' => [
 			'title' => 'Add Preferred Name Option To Dropdown',
 			'description' => 'Add the preferred name option to the name display dropdown in the library.',
@@ -181,8 +257,7 @@ function getUpdates25_06_00(): array {
 			'sql' => [
 				"ALTER TABLE library MODIFY COLUMN patronNameDisplayStyle ENUM('firstinitial_lastname','lastinitial_firstname','firstinitial_middleinitial_lastname','firstname_middleinitial_lastinitial', 'preferredname_lastinitial') DEFAULT 'firstinitial_lastname'",
 			]
-		],
-		//add_preferred_name_option_to_dropdown
+		], //add_preferred_name_option_to_dropdown
 		'allow_replacement_of_all_instances_of_first_name' => [
 			'title' => 'Allow Replacement Of All Instances Of First Name',
 			'description' => 'Allow replacement of all instances of first name with the patron\'s preferred name from the ILS id set',
@@ -190,8 +265,14 @@ function getUpdates25_06_00(): array {
 			'sql' => [
 				"ALTER TABLE library ADD COLUMN replaceAllFirstNameWithPreferredName TINYINT(1) DEFAULT 0",
 			]
-		],
-		//allow_replacement_of_all_instances_of_first_name
+		], //allow_replacement_of_all_instances_of_first_name
+		'add_admin_control_over_campaign_leaderboard' => [
+			'title' => 'Add Admin Control Over Campaign Leaderboard',
+			'description' => 'Add ability for admin to control whether leaderbaord displays',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN displayCampaignLeaderboard TINYINT(1) DEFAULT 0",
+			]
+		], //add_admin_control_over_campaign_leaderboard
 
 		//chloe - Open Fifth
 

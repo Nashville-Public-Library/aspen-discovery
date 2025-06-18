@@ -86,4 +86,27 @@ class Admin_eCommerceReport extends ObjectEditor {
             'View eCommerce Reports for Home Library'
         ]);
 	}
+
+	function applyFilter(DataObject $object, string $fieldName, array $filter) {
+		if ($fieldName == 'user') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'user_payments',
+				'sourceField' => 'userId',
+				'targetClass' => 'User',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'getDisplayName',
+				'compareFormat' => 'nameWithBarcode',
+			]);
+		} elseif ($fieldName == 'library') {
+			$this->applySpecialFilter($object, $fieldName, $filter, [
+				'sourceTable' => 'user_payments',
+				'sourceField' => 'userId',
+				'targetClass' => 'User',
+				'targetField' => 'id',
+				'getCompareValueMethod' => 'getHomeLibrarySystemName',
+			]);
+		} else {
+			parent::applyFilter($object, $fieldName, $filter);
+		}
+	}
 }

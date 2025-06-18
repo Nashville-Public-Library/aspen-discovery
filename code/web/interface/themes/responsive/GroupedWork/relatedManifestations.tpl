@@ -11,7 +11,7 @@
 				{if $relatedManifestation->getNumVariations() == 1}
 					{include file="GroupedWork/singleVariationManifestion.tpl" workId=$workId}
 				{else}
-					{include file="GroupedWork/multipleVariationManifestion.tpl" workId=$workId}
+					{include file="GroupedWork/multipleVariationManifestion.tpl" workId=$workId summTitle=$recordDriver->getTitle()}
 				{/if}
 			</div>
 		{foreachelse}

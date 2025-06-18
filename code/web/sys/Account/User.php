@@ -27,6 +27,8 @@ class User extends DataObject {
 	public $myLocation2Id; // int(11)
 	public $trackReadingHistory; // tinyint
 	public $initialReadingHistoryLoaded;
+	public $forceReadingHistoryLoad;
+	public $readingHistoryImportStartedAt;
 	public $lastReadingHistoryUpdate;
 	public $bypassAutoLogout; //tinyint
 	public $disableRecommendations; //tinyint
@@ -151,12 +153,44 @@ class User extends DataObject {
 	public $holdSortUnavailable;
 	public $checkoutSort;
 
+	public static $lidaToAspenCheckoutSortMapping = [
+		'sortTitle' => 'title',
+		'author' => 'author',
+		'dueAsc' => 'dueDate',
+		'dueDesc' => 'dueDateDesc',
+		'format' => 'format',
+		'libraryAccount' => 'libraryAccount',
+		'timesRenewed' => 'renewed'
+	];
+
+	public static $lidaToAspenAvailableHoldSortMapping = [
+		'sortTitle' => 'title',
+		'author' => 'author',
+		'format' => 'format',
+		'libraryAccount' => 'libraryAccount',
+		'placed' => 'placed',
+		'location' => 'location',
+		'expire' => 'expire'
+	];
+
+	public static $lidaToAspenUnavailableHoldSortMapping = [
+		'sortTitle' => 'title',
+		'author' => 'author',
+		'format' => 'format',
+		'status' => 'status',
+		'libraryAccount' => 'libraryAccount',
+		'location' => 'location',
+		'position' => 'position',
+		'placed' => 'placed',
+	];
+
 	function getNumericColumnNames(): array {
 		return [
 			'id',
 			'trackReadingHistory',
 			'hooplaCheckOutConfirmation',
 			'initialReadingHistoryLoaded',
+			'forceReadingHistoryLoad',
 			'updateMessageIsError',
 			'rememberHoldPickupLocation',
 			'materialsRequestSendEmailOnAssign',
@@ -3260,6 +3294,7 @@ class User extends DataObject {
 		if ($result['success']) {
 			if ($this->hasIlsConnection()) {
 				$this->__set('cat_password', $newPin);
+				$this->__set('ils_password', $newPin);
 			}
 			$this->__set('password', $newPin);
 			$this->update();
@@ -4420,7 +4455,7 @@ class User extends DataObject {
 			}
 		}
 		if ($hasCurbside) {
-			$sections['ils_integration']->addAction(new AdminAction('Curbside Pickup Settings', 'Define Settings for Curbside Pickup, requires Koha Curbside plugin', '/ILS/CurbsidePickupSettings'), ['Administer Curbside Pickup']);
+			$sections['ils_integration']->addAction(new AdminAction('Curbside Pickup Settings', 'Define settings for curbside pickups (requires the Koha Curbside Pickups plugin).', '/ILS/CurbsidePickupSettings'), ['Administer Curbside Pickup']);
 		}
 		if ($customSelfRegForms) {
 			$sections['ils_integration']->addAction(new AdminAction('Self Registration Forms', 'Create self registration forms.', '/ILS/SelfRegistrationForms'), ['Administer Self Registration Forms']);
@@ -5373,7 +5408,7 @@ class User extends DataObject {
 		}
 	}
 
-	function newCurbsidePickup($pickupLocation, $pickupTime, $pickupNote) {
+	function newCurbsidePickup($pickupLocation, $pickupTime, $pickupNote): array {
 		$result = $this->getCatalogDriver()->newCurbsidePickup($this, $pickupLocation, $pickupTime, $pickupNote);
 		$this->clearCache();
 		return $result;
@@ -6190,18 +6225,37 @@ class User extends DataObject {
 		if (isset($_REQUEST['availableHoldSort'])) {
 			if ($this->holdSortAvailable !== $_REQUEST['availableHoldSort']) {
 				$this->holdSortAvailable = $_REQUEST['availableHoldSort'];
+				//We will always store this using the Aspen terminology
+				if (array_key_exists($_REQUEST['availableHoldSort'], User::$lidaToAspenAvailableHoldSortMapping)) {
+					$this->holdSortAvailable = User::$lidaToAspenAvailableHoldSortMapping[$_REQUEST['availableHoldSort']];
+					//Validate that the sort is valid
+				}elseif (in_array($_REQUEST['availableHoldSort'], User::$lidaToAspenAvailableHoldSortMapping)) {
+					$this->holdSortAvailable = $_REQUEST['availableHoldSort'];
+				}
 			}
 		}
 
 		if (isset($_REQUEST['unavailableHoldSort'])) {
 			if ($this->holdSortUnavailable !== $_REQUEST['unavailableHoldSort']) {
-				$this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
+				//We will always store this using the Aspen terminology
+				if (array_key_exists($_REQUEST['unavailableHoldSort'], User::$lidaToAspenUnavailableHoldSortMapping)) {
+					$this->holdSortUnavailable = User::$lidaToAspenUnavailableHoldSortMapping[$_REQUEST['unavailableHoldSort']];
+					//Validate that the sort is valid
+				}elseif (in_array($_REQUEST['unavailableHoldSort'], User::$lidaToAspenUnavailableHoldSortMapping)) {
+					$this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
+				}
 			}
 		}
 
 		if (isset($_REQUEST['sort'])) {
 			if ($this->checkoutSort !== $_REQUEST['sort']) {
-				$this->checkoutSort = $_REQUEST['sort'];
+				//We will always store this using the Aspen terminology
+				if (array_key_exists($_REQUEST['sort'], User::$lidaToAspenCheckoutSortMapping)) {
+					$this->checkoutSort = User::$lidaToAspenCheckoutSortMapping[$_REQUEST['sort']];
+				//Validate that the sort is valid
+				}elseif (in_array($_REQUEST['sort'], User::$lidaToAspenCheckoutSortMapping)) {
+					$this->checkoutSort = $_REQUEST['sort'];
+				}
 			}
 		}
 

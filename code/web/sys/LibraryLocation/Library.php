@@ -459,6 +459,7 @@ class Library extends DataObject {
 	public $campaignLeaderboardDisplay;
 	public $sendStaffEmailOnCampaignCompletion;
 	public $campaignCompletionNewEmail;
+	public $displayCampaignLeaderboard;
 
 	//SHAREit
 	public $repeatInShareIt;
@@ -3786,6 +3787,14 @@ class Library extends DataObject {
 				'renderAsHeading' => true,
 				'expandByDefault' => false,
 				'properties' => [
+					'displayCampaignLeaderboard' => [
+						'property' => 'displayCampaignLeaderboard',
+						'type' => 'checkbox',
+						'label' => 'Include Campaign Leaderboard',
+						'description' => 'Whether or not to include a campaign leaderboard. Note: Web Builder must be enabled.',
+						'hideInLists' => true,
+						'default' => 0,
+					],
 					'campaignLeaderboardDisplay' => [
 						'property' => 'campaignLeaderboardDisplay',
 						'type' => 'enum',
@@ -4125,7 +4134,7 @@ class Library extends DataObject {
 						'property' => 'enableTalpaSearch',
 						'type' => 'checkbox',
 						'label' => 'Enable Talpa as a search mode. ',
-						'description' => 'Talpa is a magical, natural-language search tool. Patrons can use this to find materials, but also to ask open-ended questions, like "Mystery book with a red cover?".',
+						'description' => 'Talpa is a magical, natural-language search tool. Patrons can use this to find materials, but also to ask open-ended questions, like &quot;Mystery book with a red cover?&quot;.',
 						'hideInLists' => true,
 						'default' => 0,
 					],

@@ -23,22 +23,9 @@
 						<div class="swiper-button-prev"></div>
 					</div>
 					<div class="swiper-wrapper" id="swiper-sub-browse-category-{$subCategory.textId}">
-						{if $subCategory@iteration == 1 && !empty($subCategory.initialResults)}
-							<div class="swiper-slide" id="swiper-loading-{$subCategory.textId}" style="height: 200px">
-								<i class="fas fa-lg fa-spinner fa-spin"></i>
-							</div>
-							<script type="text/javascript">
-								{literal}
-								$(document).ready(function() {
-									AspenDiscovery.Browse.changeBrowseSubCategoryTab({/literal}'{$subCategory.textId}','{$parentTextId}'{literal});
-								});
-								{/literal}
-							</script>
-						{else}
-							<div class="swiper-slide" id="swiper-loading-{$subCategory.textId}" style="height: 200px">
-								<i class="fas fa-lg fa-spinner fa-spin"></i>
-							</div>
-						{/if}
+						<div class="swiper-slide" id="swiper-loading-{$subCategory.textId}" style="height: 200px">
+							<i class="fas fa-lg fa-spinner fa-spin"></i>
+						</div>
 					</div>
 					<div class="swiper-navigation-container">
 						<div class="swiper-button-next"></div>

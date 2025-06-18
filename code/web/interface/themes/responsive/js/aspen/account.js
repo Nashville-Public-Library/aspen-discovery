@@ -142,7 +142,7 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
-		
+
 		exportOnlySelectedHolds: function (source, availableHoldsSort, unavailableHoldsSort) {
 			var url = Globals.path + "/MyAccount/AJAX?method=exportHolds&source=" + source;
 			var selectedTitles = AspenDiscovery.getSelectedTitles();
@@ -444,7 +444,7 @@ AspenDiscovery.Account = (function () {
 						var summary = data.summary;
 						$(".ils-checkouts-placeholder").html(summary.numCheckedOut);
 						totalCheckouts += parseInt(summary.numCheckedOut);
-						$(".checkouts-placeholder").html(totalCheckouts);						
+						$(".checkouts-placeholder").html(totalCheckouts);
 						if (summary.numOverdue > 0) {
 							$(".ils-overdue-placeholder").html(summary.numOverdue);
 							$(".ils-overdue").show();
@@ -1396,7 +1396,7 @@ AspenDiscovery.Account = (function () {
 				AspenDiscovery.Account.loadCheckouts(AspenDiscovery.Account.currentCheckoutsSource, sort, showCovers, selectedUser);
 			}
 		},
-		
+
 
 		saveSearch: function (searchId) {
 			if (!Globals.loggedIn) {
@@ -2445,135 +2445,6 @@ AspenDiscovery.Account = (function () {
 			} else {
 				$('#thisDonation').hide();
 			}
-		},
-		getCurbsidePickupScheduler: function (locationId) {
-			if (Globals.loggedIn) {
-				AspenDiscovery.loadingMessage();
-				$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupScheduler&pickupLocation=" + locationId, function (data) {
-					if (data.success) {
-						AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons)
-					} else {
-						AspenDiscovery.showMessage(data.title, data.message);
-					}
-				});
-			} else {
-				AspenDiscovery.Account.ajaxLogin(null, function () {
-					return AspenDiscovery.Account.getCurbsidePickupScheduler(locationId);
-				}, false);
-			}
-			return false;
-		},
-		createCurbsidePickup: function () {
-			if (Globals.loggedIn) {
-
-				var patronId = $("#newCurbsidePickupForm input[name=patronId]").val();
-				var locationId = $("#newCurbsidePickupForm  input[name=pickupLibrary]").val();
-				var date = $("#newCurbsidePickupForm  input[name=pickupDate]").val();
-				var time = $("#newCurbsidePickupForm  input[name=pickupTime]:checked").val();
-				var note = $("#newCurbsidePickupForm  input[name=pickupNote]").text();
-
-				AspenDiscovery.loadingMessage();
-				$.getJSON(Globals.path + "/MyAccount/AJAX?method=createCurbsidePickup&patronId=" + patronId + "&location=" + locationId + "&date=" + date + "&time=" + time + "&note=" + note, function (data) {
-					if (data.success) {
-						AspenDiscovery.showMessage(data.title, data.body, true, 2000)
-					} else {
-						AspenDiscovery.showMessage(data.title, data.message);
-					}
-				});
-			} else {
-				AspenDiscovery.Account.ajaxLogin(null, function () {
-					return AspenDiscovery.Account.createCurbsidePickup(patronId, locationId, dateTime, note);
-				}, false);
-			}
-			return false;
-		},
-		getCancelCurbsidePickup: function (patronId, pickupId) {
-			AspenDiscovery.loadingMessage();
-			// noinspection JSUnresolvedFunction
-			$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCancelCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
-				AspenDiscovery.showMessageWithButtons(data.title, data.body, data.buttons); // automatically close when successful
-			}).fail(AspenDiscovery.ajaxFail);
-			return false
-		},
-		cancelCurbsidePickup: function (patronId, pickupId) {
-			AspenDiscovery.loadingMessage();
-			// noinspection JSUnresolvedFunction
-			$.getJSON(Globals.path + "/MyAccount/AJAX?method=cancelCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
-				AspenDiscovery.showMessage(data.title, data.body, true, 2000); // automatically close when successful
-			}).fail(AspenDiscovery.ajaxFail);
-			return false
-		},
-		checkInCurbsidePickup: function (patronId, pickupId) {
-			AspenDiscovery.loadingMessage();
-			// noinspection JSUnresolvedFunction
-			$.getJSON(Globals.path + "/MyAccount/AJAX?method=checkInCurbsidePickup&patronId=" + patronId + "&pickupId=" + pickupId, function (data) {
-				AspenDiscovery.showMessage(data.title, data.body, false);
-			}).fail(AspenDiscovery.ajaxFail);
-			return false
-		},
-		curbsidePickupScheduler: function (locationCode) {
-			$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupUnavailableDays&locationCode=" + locationCode, function (data) {
-				$("#pickupDate").flatpickr(
-					{
-						minDate: "today",
-						maxDate: new Date().fp_incr(14),
-						altInput: true,
-						altFormat: "M j, Y",
-						"disable": [
-							function (date) {
-								if (data.includes(date.getDay())) {
-									return data.includes(date.getDay())
-								}
-							}
-						],
-						"locale": {
-							"firstDayOfWeek": 0
-						},
-						onChange: function (selectedDates, dateStr, instance) {
-							//... send dateStr to check what times are available
-							$.getJSON(Globals.path + "/MyAccount/AJAX?method=getCurbsidePickupAvailableTimes&date=" + dateStr + "&locationCode=" + locationCode, function (data) {
-								// return available timeslots to dom
-								var numOfSlots = data.length;
-								var morningSlots = 0;
-								var afternoonSlots = 0;
-								var eveningSlots = 0;
-								var morningTimeSlotContainer = document.getElementById("morningTimeSlots");
-								morningTimeSlotContainer.innerHTML = "";
-								var afternoonTimeSlotContainer = document.getElementById("afternoonTimeSlots");
-								afternoonTimeSlotContainer.innerHTML = "";
-								var eveningTimeSlotContainer = document.getElementById("eveningTimeSlots");
-								eveningTimeSlotContainer.innerHTML = "";
-								for (var i = 0; i < numOfSlots; i++) {
-									var slot = moment(data[i], "HH:mm").format("h:mm a");
-									if (data[i] < "12:00") {
-										morningSlots++;
-										morningTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									} else if (data[i] < "17:00") {
-										afternoonSlots++;
-										afternoonTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									} else {
-										eveningSlots++;
-										eveningTimeSlotContainer.innerHTML += "<label class='btn btn-primary' style='margin-right: 1em; margin-bottom: 1em'><input type='radio' name='pickupTime' id='slot_" + data[i] + "' value='" + slot + "'> " + slot + "</label>";
-									}
-								}
-
-								if (morningSlots === 0) {
-									$("#morningTimeSlotsAccordion").hide();
-								}
-								if (afternoonSlots === 0) {
-									$("#afternoonTimeSlotsAccordion").hide();
-								}
-								if (eveningSlots === 0) {
-									$("#eveningTimeSlotsAccordion").hide();
-								}
-								$('#availableTimeSlots').find('div.panel:visible:first').addClass('active');
-								$("#availableTimeSlots").show();
-							});
-						}
-					}
-				);
-			}).fail(AspenDiscovery.ajaxFail);
-			return false
 		},
 		show2FAEnrollment: function (mandatoryEnroll) {
 			if (Globals.loggedIn || mandatoryEnroll) {
