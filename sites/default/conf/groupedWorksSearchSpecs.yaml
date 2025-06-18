@@ -23,13 +23,13 @@
 #    #     dynamic query generated using the QueryFields; see JournalTitle below
 #    #     for an example.
 #    FilterQuery: (optional Lucene filter query)
-# 
+#
 # ...etc.
 #
 #-----------------------------------------------------------------------------------
 #
-# Within the QueryFields area, fields are OR'd together, unless they're in an 
-# anonymous array, in which case the first element is a two-value array that tells 
+# Within the QueryFields area, fields are OR'd together, unless they're in an
+# anonymous array, in which case the first element is a two-value array that tells
 # us what the type (AND or OR) and weight of the whole group should be.
 #
 # So, given:
@@ -40,30 +40,30 @@
 #       - [onephrase, 500]
 #       - [and, 200]
 #     - B:
-#       - [and, 100]   
-#       - [or, 50]  
-#     # Start an anonymous array to group; first element indicates AND grouping 
+#       - [and, 100]
+#       - [or, 50]
+#     # Start an anonymous array to group; first element indicates AND grouping
 #     #     and a weight of 50
 #     -
-#       - [AND, 50]                 
+#       - [AND, 50]
 #       - C:
 #         - [onephrase, 200]
 #       - D:
 #         - [onephrase, 300]
-#       # Note the "not" attached to the field name as a minus, and the use of ~ 
+#       # Note the "not" attached to the field name as a minus, and the use of ~
 #       #     to mean null ("no special weight")
 #       - -E:
 #         - [or, ~]
 #     - D:
 #       - [or, 100]
-# 
-#  ...and the search string 
+#
+#  ...and the search string
 #
 #      test "one two"
 #
 #  ...we'd get
-#   
-#   (A:"test one two"^500 OR 
+#
+#   (A:"test one two"^500 OR
 #    A:(test AND "one two")^ 200 OR
 #    B:(test AND "one two")^100 OR
 #    B:(test OR "one two")^50
@@ -79,7 +79,7 @@
 #
 # Munge types are based on the original Solr.php code, and consist of:
 #
-# onephrase: eliminate all quotes and do it as a single phrase. 
+# onephrase: eliminate all quotes and do it as a single phrase.
 #   testing "one two"
 #    ...becomes ("testing one two")
 #
@@ -217,8 +217,6 @@ Title:
       - [exact, 600]
       - [onephrase, 200]
       - [and, 50]
-    - series2:
-      - [and, 30]
 
 TitleProper:
   QueryFields:
@@ -244,18 +242,12 @@ Series:
       - [text_left, 1000]
       - [onephrase, 500]
       - [and, 100]
-    - series2:
-      - [onephrase, 50]
-      - [and, 50]
 
 SeriesProper:
   QueryFields:
     - series_proper:
       - [localized_callnumber, 2400]
       - [onephrase, 500]
-    - series2:
-      - [onephrase, 750]
-      - [exact, 250]
     - series:
       - [onephrase, 1000]
       - [exact, 400]
@@ -334,8 +326,6 @@ Keyword:
         - [exact_quoted, 1500]
         - [onephrase, 600]
         - [and, 50]
-      - series2:
-        - [and, 30]
 # Check everything else
     - table_of_contents:
       - [and, 50]
@@ -395,7 +385,7 @@ KeywordProper:
       - [or, ~]
     - upc:
       - [and, 100]
-      - [or, ~]      
+      - [or, ~]
     - oclc:
       - [and, 100]
       - [or, ~]
