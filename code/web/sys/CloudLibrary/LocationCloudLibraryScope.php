@@ -29,6 +29,9 @@ class LocationCloudLibraryScope extends DataObject {
 		}
 		$locationsList = [];
 		$location = new Location();
+		$location->selectAdd();
+		$location->selectAdd('locationId');
+		$location->selectAdd('displayName');
 		$location->orderBy('displayName');
 		if (!UserAccount::userHasPermission('Administer All Locations')) {
 			$homeLibrary = Library::getPatronHomeLibrary();

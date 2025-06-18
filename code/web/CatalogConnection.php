@@ -631,47 +631,14 @@ class CatalogConnection {
 			return $result;
 		}
 		if (!$offlineMode) {
-			if (!$patron->initialReadingHistoryLoaded) {
+			if (!$patron->initialReadingHistoryLoaded && !$patron->forceReadingHistoryLoad) {
 				$okToLoadFromIls = true;
 				$masqueradeMode = UserAccount::isUserMasquerading();
 				if ($masqueradeMode) {
 					$okToLoadFromIls = $this->driver->canLoadReadingHistoryInMasqueradeMode();
 				}
 				if ($okToLoadFromIls) {
-					if ($this->driver->hasNativeReadingHistory()) {
-						//Load existing reading history from the ILS
-						$result = $this->driver->getReadingHistory($patron, -1, -1, $sortOption);
-						if ($result['numTitles'] > 0) {
-							foreach ($result['titles'] as $title) {
-								//if ($title['permanentId'] != null) {
-								$userReadingHistoryEntry = new ReadingHistoryEntry();
-								$userReadingHistoryEntry->userId = $patron->id;
-								$userReadingHistoryEntry->groupedWorkPermanentId = $title['permanentId'];
-								$userReadingHistoryEntry->source = $this->accountProfile->recordSource;
-								$userReadingHistoryEntry->sourceId = $title['recordId'];
-								$userReadingHistoryEntry->title = substr($title['title'], 0, 150);
-								$userReadingHistoryEntry->author = substr($title['author'], 0, 75);
-								$userReadingHistoryEntry->format = $title['format'];
-								$userReadingHistoryEntry->checkOutDate = $title['checkout'];
-								if (!empty($title['checkin'])) {
-									$userReadingHistoryEntry->checkInDate = $title['checkin'];
-								} else {
-									$userReadingHistoryEntry->checkInDate = null;
-								}
-								if (empty($title['isIll'])) {
-									$userReadingHistoryEntry->isIll = 0;
-								} else {
-									$userReadingHistoryEntry->isIll = 1;
-								}
-								$userReadingHistoryEntry->deleted = 0;
-								$userReadingHistoryEntry->insert();
-								$userReadingHistoryEntry = null;
-								//}
-							}
-						}
-						$timer->logTime("Finished loading native reading history");
-					}
-					$patron->initialReadingHistoryLoaded = true;
+					$patron->forceReadingHistoryLoad = true;
 					$patron->update();
 				}
 			}
@@ -1738,31 +1705,27 @@ class CatalogConnection {
 		return $this->driver->getPluginStatus($pluginName);
 	}
 
-	public function getCurbsidePickupSettings($locationCode) {
+	public function getCurbsidePickupSettings(string $locationCode): array {
 		return $this->driver->getCurbsidePickupSettings($locationCode);
 	}
 
-	public function hasCurbsidePickups($user) {
-		return $this->driver->hasCurbsidePickups($user);
-	}
-
-	public function getPatronCurbsidePickups($user) {
+	public function getPatronCurbsidePickups(User $user): array {
 		return $this->driver->getPatronCurbsidePickups($user);
 	}
 
-	public function newCurbsidePickup($user, $pickupLocation, $pickupTime, $pickupNote) {
+	public function newCurbsidePickup(User $user, string $pickupLocation, string $pickupTime, ?string $pickupNote): array {
 		return $this->driver->newCurbsidePickup($user, $pickupLocation, $pickupTime, $pickupNote);
 	}
 
-	public function cancelCurbsidePickup($user, $pickupId) {
+	public function cancelCurbsidePickup(User $user, string $pickupId): array {
 		return $this->driver->cancelCurbsidePickup($user, $pickupId);
 	}
 
-	public function checkInCurbsidePickup($user, $pickupId) {
+	public function checkInCurbsidePickup(User $user, string $pickupId): array {
 		return $this->driver->checkInCurbsidePickup($user, $pickupId);
 	}
 
-	public function getAllCurbsidePickups() {
+	public function getAllCurbsidePickups(): array {
 		return $this->driver->getAllCurbsidePickups();
 	}
 

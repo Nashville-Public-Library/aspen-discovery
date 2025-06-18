@@ -43,6 +43,7 @@ abstract class ObjectEditor extends Admin_Admin {
 		}
 		$interface->assign('canCompare', $this->canCompare());
 		$interface->assign('canDelete', $this->canDelete());
+		$interface->assign('canDeleteAll', $this->canDeleteAll());
 		$interface->assign('canSort', $this->canSort());
 		$interface->assign('canFilter', $this->canFilter($structure));
 		$interface->assign('canBatchUpdate', $this->canBatchEdit());
@@ -743,8 +744,18 @@ abstract class ObjectEditor extends Admin_Admin {
 		return true;
 	}
 
-	public function canBatchDelete() {
+	public function canBatchDelete(): bool {
 		return $this->getNumObjects() > 1 && UserAccount::userHasPermission('Batch Delete');
+	}
+
+	/**
+	 * Determines if the user can delete all objects of this type at once based upon batch delete.
+	 * Purpose: Override it in the deriving class to prevent the display of the "Delete All" button.
+	 * @return bool True if the user is allowed to delete all objects, false otherwise.
+	 */
+	public function canDeleteAll(): bool
+	{
+		return $this->canBatchDelete();
 	}
 
 	public function canBatchEdit() {
@@ -1157,6 +1168,84 @@ abstract class ObjectEditor extends Admin_Admin {
 			if ($fieldValue2 !== false) {
 				$object->whereAdd($fieldName . ' < ' . $fieldValue2);
 			}
+		}
+	}
+
+	protected function applySpecialFilter($object, $fieldName, $filter, $filterOptions = []) {
+		$defaults = [
+			'sourceTable' => '',
+			'sourceField' => '',
+			'targetClass' => '',
+			'targetField' => '',
+			'getCompareValueMethod' => '',
+			'compareFormat' => 'default',
+		];
+		$options = array_merge($defaults, $filterOptions);
+
+		$matchings = [];
+
+		if (($filter['filterType'] == 'matches' && $filter['filterValue'] == '')) {
+			$object->whereAdd("{$options['sourceField']} IS NULL");
+			return;
+		}
+
+		if (($filter['filterType'] === 'beforeTime' || $filter['filterType'] === 'afterTime' || $filter['filterType'] === 'betweenTimes') && empty($filter['filterValue']) && empty($filter['filterValue2'])) {
+			return;
+		}
+
+		$targetObject = new $options['targetClass']();
+		$targetObject->whereAdd("{$options['targetField']} IN (SELECT DISTINCT {$options['sourceField']} FROM {$options['sourceTable']} WHERE {$options['sourceField']} IS NOT NULL)");
+		$targetObject->find();
+
+		while ($targetObject->fetch()) {
+			if ($options['compareFormat'] == 'nameWithBarcode') {
+				$compareValue = $targetObject->{$options['getCompareValueMethod']}() . ' (' . $targetObject->getBarcode() . ')';
+			} elseif ($options['compareFormat'] == 'property') {
+				$compareValue = $targetObject->{$options['getCompareValueMethod']};
+			} elseif ($options['compareFormat'] == 'boolean') {
+				$compareValue = $targetObject->{$options['getCompareValueMethod']} ? 'true' : 'false';
+			} else {
+				$compareValue = $targetObject->{$options['getCompareValueMethod']}();
+			}
+
+			if ($filter['filterType'] == 'matches') {
+				if (strcasecmp($compareValue, $filter['filterValue']) == 0) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'contains') {
+				if (stripos($compareValue, $filter['filterValue']) !== false) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'startsWith') {
+				if (stripos($compareValue, $filter['filterValue']) === 0) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'beforeTime') {
+				$filterTime = strtotime($filter['filterValue2']);
+				if ($filterTime !== false && $compareValue < $filterTime) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'afterTime') {
+				$filterTime = strtotime($filter['filterValue']);
+				if ($filterTime !== false && $compareValue > $filterTime) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			} elseif ($filter['filterType'] == 'betweenTimes') {
+				$startTime = strtotime($filter['filterValue']);
+				$endTime = strtotime($filter['filterValue2']);
+				if ($startTime !== false && $endTime !== false && $compareValue >= $startTime && $compareValue <= $endTime) {
+					$matchings[] = $targetObject->{$options['targetField']};
+				}
+			}
+		}
+
+		if (empty($matchings)) {
+				$object->whereAdd("{$options['sourceField']} = ''");
+		} else {
+			$escapedValues = array_map(function($value) {
+				return "'" . addslashes($value) . "'";
+			}, $matchings);
+			$object->whereAdd("{$options['sourceField']} IN (" . implode(',', $escapedValues) . ")");
 		}
 	}
 

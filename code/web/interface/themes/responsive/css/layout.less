@@ -946,10 +946,55 @@ a.placard-link{
   z-index: 100;
 }
 
-#sidebar-expand{
-  display: block;
-  position: absolute;
-  top: 20px;
-  left: -15px;
-  z-index: 100;
+#side-bar.collapsed {
+  position: absolute !important;
+  width: 48px !important;
+  overflow: visible !important;
+  z-index: 3000 !important;
+  margin-left: 20px;
+}
+
+/* Hide everything except the toggle button. */
+#side-bar.collapsed #account-menu-label > :not(.sidebar-toggle-wrapper),
+#side-bar.collapsed #home-account-links,
+#side-bar.collapsed .sidebar-title  {
+  display: none !important;
+}
+
+/* Style the toggle button's background. */
+#side-bar.collapsed #sidebar-collapse {
+  margin: auto;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  top: 0 !important;
+  right: 0 !important;
+  width: 38px !important;
+  height: 36px !important;
+  border-radius: 10% !important;
+}
+
+#sidebar-collapse button i {
+  transition: transform 0.2s ease-in-out;
+}
+#side-bar.collapsed #sidebar-collapse button i {
+  transform: rotate(180deg);
+}
+
+/* Remove sidebar-label background when collapsed. */
+#side-bar.collapsed .sidebar-label {
+  background: none !important;
+  padding: 0 !important;
+}
+
+#side-bar.collapsed ~ #main-content-with-sidebar {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+
+/* Breadcrumb indent for collapsed sidebar. */
+@media (min-width: @screen-sm-min) {
+  #side-bar.collapsed + #main-content-with-sidebar .breadcrumbs {
+    margin-left: 60px !important;
+  }
 }

@@ -4,12 +4,11 @@ require_once ROOT_DIR . '/services/MyAccount/MyAccount.php';
 require_once ROOT_DIR . '/sys/CurbsidePickups/CurbsidePickupSetting.php';
 
 class MyAccount_CurbsidePickups extends MyAccount {
-	function launch() {
+	function launch(): void {
 		global $interface;
 		global $library;
 		$user = UserAccount::getActiveUserObj();
 		$interface->assign('patronId', $user->id);
-		$interface->assign('patron', $user->unique_ils_id);
 
 		$curbsidePickupSetting = new CurbsidePickupSetting();
 		$curbsidePickupSetting->id = $library->curbsidePickupSettingId;
@@ -19,73 +18,87 @@ class MyAccount_CurbsidePickups extends MyAccount {
 			$interface->assign('noteLabel', $curbsidePickupSetting->noteLabel);
 
 			$catalog = CatalogFactory::getCatalogConnectionInstance();
-			$hasPickups = $catalog->hasCurbsidePickups($user);
-			$interface->assign('hasPickups', false);
-			if (isset($hasPickups['hasPickups'])) {
-				if ($hasPickups['hasPickups'] == true) {
-					$interface->assign('hasPickups', true);
-					$currentPickups = $catalog->getPatronCurbsidePickups($user);
-					$interface->assign('currentCurbsidePickups', $currentPickups);
-					$pickupsByLocation = [];
-					foreach ($currentPickups['pickups'] as $pickup) {
-						if (!isset($pickupsByLocation)) {
-							$pickupsByLocation[$pickup->branchcode]['code'] = $pickup->branchcode;
-							$pickupsByLocation[$pickup->branchcode]['count'] += 1;
-						} elseif (!in_array($pickup->branchcode, array_column($pickupsByLocation, 'code'))) {
-							$pickupsByLocation[$pickup->branchcode]['code'] = $pickup->branchcode;
-							$pickupsByLocation[$pickup->branchcode]['count'] = 1;
+			$currentPickups = $catalog->getPatronCurbsidePickups($user);
+			$hasPickups = false;
+			// Check if the patron has any curbside pickups.
+			if (!empty($currentPickups['pickups']) && is_array($currentPickups['pickups'])) {
+				// Remove any pickups that have already been delivered.
+				$allowedTime = $curbsidePickupSetting->timeAllowedBeforeCheckIn;
+				$now = date_create();
 
-							$location = new Location();
-							$location->code = $pickup->branchcode;
-							if ($location->find(true)) {
-								if ($location->curbsidePickupInstructions) {
-									$interface->assign('pickupInstructions', $location->curbsidePickupInstructions);
-								} else {
-									$interface->assign('pickupInstructions', $curbsidePickupSetting->curbsidePickupInstructions);
-								}
-							}
+				foreach ($currentPickups['pickups'] as $key => &$pickup) {
+					if (!empty($pickup['delivered_datetime'])) {
+						unset($currentPickups['pickups'][$key]);
+						continue;
+					}
 
-							$interface->assign('withinTime', false);
-							$allowedTime = $curbsidePickupSetting->timeAllowedBeforeCheckIn;
-							$pickupTime = $pickup->scheduled_pickup_datetime;
-							$scheduledTime = date_create($pickupTime);
-							$now = date_create();
-							$difference = date_diff($now, $scheduledTime);
-							$minutes = $difference->days * 24 * 60;
-							$minutes += $difference->h * 60;
-							$minutes += $difference->i;
-							$timeUntil = $minutes;
-							if ($timeUntil <= $allowedTime) {
-								$interface->assign('withinTime', true);
+					// Calculate withinTime based solely on the scheduled time and allowed window.
+					$pickupTime = $pickup['scheduled_pickup_datetime'];
+					$scheduledTime = date_create($pickupTime);
+					$difference = date_diff($now, $scheduledTime);
+					$minutes = $difference->days * 24 * 60;
+					$minutes += $difference->h * 60;
+					$minutes += $difference->i;
+
+					// If now is before scheduled time and within the allowed window,
+					// OR if now is after scheduled time.
+					if (($scheduledTime > $now && $minutes <= $allowedTime) || ($scheduledTime < $now)) {
+						$pickup['withinTime'] = true;
+					} else {
+						$pickup['withinTime'] = false;
+					}
+
+					// Add an explicit isReady flag based on staging status.
+					$pickup['isReady'] = !empty($pickup['staged_datetime']);
+				}
+				unset($pickup); // Break the reference.
+
+				// Reindex array after removals.
+				$currentPickups['pickups'] = array_values($currentPickups['pickups']);
+				$hasPickups = true;
+			}
+
+			$interface->assign('hasPickups', $hasPickups);
+			$interface->assign('currentCurbsidePickups', $currentPickups);
+
+			if ($hasPickups) {
+				$pickupsByLocation = [];
+				foreach ($currentPickups['pickups'] as $pickup) {
+					if (!isset($pickupsByLocation)) {
+						$pickupsByLocation[$pickup['branchcode']]['code'] = $pickup['branchcode'];
+						$pickupsByLocation[$pickup['branchcode']]['count'] += 1;
+					} elseif (!in_array($pickup['branchcode'], array_column($pickupsByLocation, 'code'))) {
+						$pickupsByLocation[$pickup['branchcode']]['code'] = $pickup['branchcode'];
+						$pickupsByLocation[$pickup['branchcode']]['count'] = 1;
+
+						$location = new Location();
+						$location->code = $pickup['branchcode'];
+						if ($location->find(true)) {
+							if ($location->curbsidePickupInstructions) {
+								$interface->assign('pickupInstructions', $location->curbsidePickupInstructions);
+							} else {
+								$interface->assign('pickupInstructions', $curbsidePickupSetting->curbsidePickupInstructions);
 							}
 						}
 					}
 				}
 			}
 
-			$interface->assign('allowCheckIn', $curbsidePickupSetting->allowCheckIn);
-			$interface->assign('showScheduleButton', true);
-
-			$ilsSummary = $user->getCatalogDriver()->getAccountSummary($user);
-			$availableHolds = $ilsSummary->numAvailableHolds;
-			$interface->assign('availableHolds', $availableHolds);
-			$interface->assign('hasHolds', false);
-			$alwaysAllowPickups = $curbsidePickupSetting->alwaysAllowPickups;
-			if ($alwaysAllowPickups == 0 && $availableHolds == 0) {
-				$interface->assign('showScheduleButton', false);
-			}
-
+			$allHolds = $user->getHolds(false, '', '', 'ils');
 			$userHomePickupLocation = $user->getHomeLocation();
+			$hasAvailableHolds = !empty($allHolds['available']);
+			$interface->assign('allowCheckIn', $curbsidePickupSetting->allowCheckIn);
+			$interface->assign('hasHolds', $hasAvailableHolds);
+			$interface->assign('availableHolds', count($allHolds['available']));
 			$interface->assign('userHomePickupLocation', $userHomePickupLocation);
+			$interface->assign('timeAllowedBeforeCheckIn', $curbsidePickupSetting->timeAllowedBeforeCheckIn);
 
-			if ($availableHolds > 0) {
+			if ($hasAvailableHolds > 0) {
 				$interface->assign('hasHolds', true);
-				$allHolds = $user->getHolds(false, '', '', 'ils');
 				$holdsByLocation = [];
 				foreach ($allHolds['available'] as $hold) {
 					$locationCode = null;
 					require_once ROOT_DIR . '/sys/LibraryLocation/Location.php';
-					$pickupLocation = [];
 					$location = new Location();
 					$location->locationId = $hold->pickupLocationId;
 					if ($location->find(true)) {
@@ -112,12 +125,9 @@ class MyAccount_CurbsidePickups extends MyAccount {
 				$interface->assign('holdsReadyForPickup', $holdsByLocation);
 			}
 
-		} else {
-			// setting not found
 		}
 
 		$this->display('curbsidePickups.tpl', 'Curbside Pickups');
-
 	}
 
 	function getBreadcrumbs(): array {

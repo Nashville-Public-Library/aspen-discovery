@@ -185,6 +185,8 @@
 									{if ($propValue == 1)}{translate text="Yes" isAdminFacing=true}{elseif ($propValue == 0)}{translate text="No" isAdminFacing=true}{else}{$propValue}{/if}
 								{elseif $property.type == 'image'}
 									<img src="{$property.displayUrl}{$dataItem->id}" class="img-responsive" alt="{$propName}">
+								{elseif $property.type == 'html'}
+									{$propValue|strip_tags|truncate:255:'...'}
 								{elseif $property.type == 'textarea'}
 									{$propValue|truncate:255:'...'}
 								{else}
@@ -201,7 +203,7 @@
 								{/if}
 								{if $dataItem->getAdditionalListActions()}
 									{foreach from=$dataItem->getAdditionalListActions() item=action}
-										<a href='{$action.url}' {if !empty($action.onclick)}onclick="{$action.onclick}"{/if} class="btn btn-default btn-sm" aria-label="{$action.text} for Item {$id}" {if !empty($action.target) && $action.target == "_blank"}target="_blank" {/if}>{if !empty($action.target) && $action.target == "_blank"}<i class="fas fa-external-link-alt" role="presentation"></i> {/if} {translate text=$action.text isAdminFacing=true}</a>
+										<a href='{$action.url}' {if !empty($action.onclick)}onclick="{$action.onclick}"{/if} class="btn btn-default btn-sm{if !empty($action.class)} {$action.class}{/if}" aria-label="{$action.text} for Item {$id}" {if !empty($action.target) && $action.target == "_blank"}target="_blank" {/if}>{if !empty($action.target) && $action.target == "_blank"}<i class="fas fa-external-link-alt" role="presentation"></i> {/if} {translate text=$action.text isAdminFacing=true}</a>
 									{/foreach}
 								{/if}
 								{if $dataItem->getAdditionalListJavascriptActions()}
@@ -277,7 +279,9 @@
 	<div class="row" style="padding-top: 1em">
 		<div class="btn-group btn-group-sm col-sm-12">
 			<button type='submit' value='batchDelete' class="btn btn-danger" onclick="return AspenDiscovery.Admin.showBatchDeleteForm('{$module}', '{$toolName}', 'selected')"><i class="fas fa-trash"></i> {translate text='Batch Delete Selected' isAdminFacing=true}</button>
+			{if $canDeleteAll}
 			<button type='submit' value='batchDelete' class="btn btn-danger" onclick="return AspenDiscovery.Admin.showBatchDeleteForm('{$module}', '{$toolName}', 'all')"><i class="fas fa-trash"></i> {translate text='Delete All' isAdminFacing=true}</button>
+			{/if}
 		</div>
 	</div>
 	{/if}

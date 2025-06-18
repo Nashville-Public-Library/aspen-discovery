@@ -16,6 +16,9 @@ class AspenLiDASelfCheckSetting extends DataObject {
 	static function getObjectStructure($context = ''): array {
 		$locationsList = [];
 		$location = new Location();
+		$location->selectAdd();
+		$location->selectAdd('locationId');
+		$location->selectAdd('displayName');
 		$location->orderBy('displayName');
 		if (!UserAccount::userHasPermission('Administer All Locations')) {
 			$homeLibrary = Library::getPatronHomeLibrary();
@@ -116,6 +119,9 @@ class AspenLiDASelfCheckSetting extends DataObject {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationsList = [];
 			$location = new Location();
+			$location->selectAdd();
+			$location->selectAdd('locationId');
+			$location->selectAdd('displayName');
 			$location->orderBy('displayName');
 			if (!UserAccount::userHasPermission('Administer All Locations')) {
 				$homeLibrary = Library::getPatronHomeLibrary();

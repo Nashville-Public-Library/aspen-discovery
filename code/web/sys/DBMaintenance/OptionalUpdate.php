@@ -8,6 +8,10 @@ class OptionalUpdate extends DataObject {
 	public $versionIntroduced;
 	public $status;
 
+	public function getNumericColumnNames(): array {
+		return ['status'];
+	}
+
 	static function getObjectStructure($context = ''): array {
 		return [
 			'id' => [
@@ -35,7 +39,7 @@ class OptionalUpdate extends DataObject {
 				'property' => 'versionIntroduced',
 				'type' => 'label',
 				'label' => 'Version Introduced',
-				'description' => 'The versioni the update was introduced',
+				'description' => 'The version the update was introduced',
 			],
 			'status' => [
 				'property' => 'status',
