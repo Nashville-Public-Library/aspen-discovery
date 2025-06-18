@@ -4,13 +4,15 @@ require_once ROOT_DIR . '/sys/SystemLogging/ExternalRequestLogEntry.php';
 
 class KohaApiUserAgent {
 	private AccountProfile $accountProfile;
-	private $oAuthToken;
 	private $basicAuthToken;
+	private $oAuthToken;
 	private CurlWrapper $apiCurlWrapper;
 	private $baseURL;
 	private $defaultHeaders;
 	private $authenticationMethod;
-	private $expiresAt;
+
+	const memCacheKey = 'koha_api_access_token';
+
 
 	public function __construct($accountProfile) {
 		$this->accountProfile = $accountProfile;
@@ -268,11 +270,12 @@ class KohaApiUserAgent {
 	}
 
 	/**
-	 * Get authorization header
+	 * Get the current authorization header.
 	 *
-	 * Checks the authentication method used and returns a string with the corresponding header
+	 * Checks the authentication method that will be use to make the call to the API
+	 * and returns a string with the appropiate header.
 	 *
-	 * @return  string|bool           Authorization header if successful, otherwise returns false.
+	 * @return  string|bool	An authorization header, otherwise returns false.
 	 * @access  private
 	 */
 	private function getAuthorizationHeader($caller): string|bool {
@@ -280,31 +283,26 @@ class KohaApiUserAgent {
 			$basicToken = $this->getBasicAuthToken();
 			$header = 'Authorization: Basic ' . $basicToken;
 		} else {
-			if ($this->isExpiredToken()) {
-				$oAuthToken = $this->getOAuthToken();
-				if ($oAuthToken) {
-					$this->oAuthToken = $oAuthToken;
-					$header = 'Authorization: Bearer ' . $this->oAuthToken;
-				} else {
-					global $logger;
-					//Special message case for patronLogin
-					if (stripos($caller, "koha.patronLogin") !== false) {
-						$logger->log("Unable to authenticate with the ILS from koha.patronLogin", Logger::LOG_ERROR);
-					} else {
-						$logger->log("Unable to retrieve OAuth2 token from " . $caller, Logger::LOG_ERROR);
-					}
-					$result['messages'][] = translate([
-						'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
-						'isPublicFacing' => true,
-					]);
-					$result['api']['messages'] = translate([
-						'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
-						'isPublicFacing' => true,
-					]);
-					return $oAuthToken;
-				}
+			$oAuthToken = $this->getOAuthToken();
+			if ($oAuthToken) {
+				$header = 'Authorization: Bearer ' . $oAuthToken;
 			} else {
-				$header = 'Authorization: Bearer ' . $this->oAuthToken;
+				global $logger;
+				//Special message case for patronLogin
+				if (stripos($caller, "koha.patronLogin") !== false) {
+					$logger->log("Unable to authenticate with the ILS from koha.patronLogin", Logger::LOG_ERROR);
+				} else {
+					$logger->log("Unable to retrieve OAuth2 token from " . $caller, Logger::LOG_ERROR);
+				}
+				$result['messages'][] = translate([
+					'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
+					'isPublicFacing' => true,
+				]);
+				$result['api']['messages'] = translate([
+					'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
+					'isPublicFacing' => true,
+				]);
+				return $oAuthToken;
 			}
 		}
 		return $header;
@@ -313,14 +311,68 @@ class KohaApiUserAgent {
 	/**
 	 * Get open authorization token
 	 *
-	 * Makes an API call and returns a new OAuth token if successful or
-	 * false if not
+	 * Check if there is a cached valid token and return it.
+	 * Otherwise, get a new one from the API.
 	 *
-	 * @return  mixed           Authorization token if successful, otherwise returns false.
+	 * @return  mixed	A valid token, otherwise false.
 	 * @access  private
 	 */
 	private function getOAuthToken(): mixed {
-		// Preparing request
+
+		if (empty($this->oAuthToken)){
+
+			/** @var Memcache $memCache */ global $memCache;
+
+			// Get the value from DB
+			$oAuthToken = $memCache->get(self::memCacheKey);
+
+			if(!empty($oAuthToken)){
+				$this->oAuthToken = $oAuthToken;
+				return $this->oAuthToken;
+			}
+
+			// Get a new value from the API
+			$tokenData = $this->getNewOAuthToken();
+
+			// If the API call fails then return false
+			if (!$tokenData){
+				return false;
+			}
+
+			$accessToken = $tokenData['access_token'];
+			$expiration = $tokenData['expiration'];
+
+			// Store the new value
+			if($memCache->set(self::memCacheKey,$accessToken,$expiration)){
+				$this->oAuthToken = $accessToken;
+			} else {
+				return false;
+			}
+
+		}
+		return $this->oAuthToken;
+	}
+
+	/**
+	 * Get a **new** open authorization token.
+	 *
+	 * Makes an API call and returns an associate array that contains:
+	 *
+	 * - 'access_token' => The value of a new Open Authorization token
+	 * - 'expiration' => The token lifetime segment
+	 *
+	 * If the request to get the new token fails, then return false.
+	 *
+	 *
+	 * @return  mixed	An associative array with the token and the expiration date, otherwise false.
+	 *
+	 * @access  private
+	 */
+	private function getNewOAuthToken(): mixed {
+
+		$content = [];
+
+		// Prepare request
 		$apiUrl = $this->baseURL . "/api/v1/oauth/token";
 		$params = [
 			'grant_type' => 'client_credentials',
@@ -331,30 +383,20 @@ class KohaApiUserAgent {
 			'Accept: application/json',
 			'Content-Type: application/x-www-form-urlencoded',
 		], false);
-		//Getting response body
+
+		// Get response body
 		$response = $this->apiCurlWrapper->curlPostPage($apiUrl, $params);
 		$jsonResponse = json_decode($response);
 		$responseCode = $this->apiCurlWrapper->getResponseCode();
 		ExternalRequestLogEntry::logRequest('koharestapiclient.getOAuthToken', 'POST', $apiUrl, $this->apiCurlWrapper->getHeaders(), json_encode($params), $responseCode, $response, ['client_secret' => $this->accountProfile->oAuthClientSecret]);
 
 		if (!empty($jsonResponse->access_token)) {
-			$oAuthToken = $jsonResponse->access_token;
+			$content['access_token'] = $jsonResponse->access_token;
+			$content['expiration'] = $jsonResponse->expires_in;
+			return $content;
 		} else {
-			$oAuthToken = false;
+			return false;
 		}
-
-		if (!empty($jsonResponse->expires_in)) {
-			$this->expiresAt = time() + $jsonResponse->expires_in;
-		}
-
-		return $oAuthToken;
-	}
-
-	private function isExpiredToken(): bool {
-		if ( time() > $this->expiresAt) {
-			return true;
-		}
-		return false;
 	}
 
 	/**

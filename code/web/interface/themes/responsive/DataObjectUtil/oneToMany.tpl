@@ -245,7 +245,7 @@
 						newRow += "</td>";
 					{elseif $subProperty.type == 'multiSelect'}
 						{if $subProperty.listStyle == 'checkboxList'}
-							newRow += '<td class='oneToManyCell' {if !empty($subProperty.relatedIls)}data-related-ils='~{implode subject=$subProperty.relatedIls glue='~'}~'{/if}>';
+							newRow += "<td class='oneToManyCell' {if !empty($subProperty.relatedIls)}data-related-ils='~{implode subject=$subProperty.relatedIls glue='~'}~'{/if}>";
 							newRow += '<div class="checkbox">';
 							{*this assumes a simple array, eg list *}
 							{assign var=subPropName value=$subProperty.property}
