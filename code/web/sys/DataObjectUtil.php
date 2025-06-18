@@ -195,7 +195,7 @@ class DataObjectUtil {
 			'pin',
 			'pinConfirmation'
 		])) {
-			if (empty($property['readOnly'])) {
+			if (empty($property['readOnly']) || empty($object->getPrimaryKeyValue())) {
 				if (isset($_REQUEST[$propertyName])) {
 					if ($object instanceof UnsavedDataObject && $property['type'] == 'enum') {
 						$object->setProperty($propertyName, $property['values'][$_REQUEST[$propertyName]], $property);

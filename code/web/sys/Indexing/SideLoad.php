@@ -168,7 +168,7 @@ class SideLoad extends DataObject {
 					'property' => 'recordUrlComponent',
 					'type' => 'text',
 					'label' => 'Record URL Component',
-					'maxLength' => 50,
+					'maxLength' => 76,
 					'description' => 'The Module to use within the URL',
 					'required' => true,
 					'default' => '{Change based on name}',
@@ -185,7 +185,7 @@ class SideLoad extends DataObject {
 					'property' => 'marcPath',
 					'type' => 'text',
 					'label' => 'MARC Path',
-					'maxLength' => 100,
+					'maxLength' => 200,
 					'description' => 'The path on the server where MARC records can be found',
 					'required' => true,
 					'default' => "/data/aspen-discovery/$serverName/{sideload_name}/marc",
@@ -581,7 +581,8 @@ class SideLoad extends DataObject {
 			//Add the library code for the owning library
 			$library = new Library();
 			if ($library->get($this->owningLibrary)){
-				$defaultUrlComponent .= '_' . $library->displayName;
+				$libraryUrlComponent = !empty($library->subdomain) ? $library->subdomain : $library->id;
+				$defaultUrlComponent .= '_' . $libraryUrlComponent;
 			}
 		}
 		$this->recordUrlComponent = preg_replace('/[^a-zA-Z0-9_]/', '', $defaultUrlComponent);
