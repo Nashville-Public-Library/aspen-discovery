@@ -81,8 +81,6 @@
 										{else}
 											<button class="btn btn-primary btn-sm" aria-label="{$smarty.capture.emailOptIn|strip_tags|escape:'html'}" onclick="AspenDiscovery.CommunityEngagement.optInToCampaignEmailNotifications({$campaign->id}, {$userId});">{translate text="Email Notifications Opt In" isPublicFacing=true}</button>
 										{/if}
-									
-								   
 								</div>
 							</td>
 							<td>
@@ -159,7 +157,7 @@
 													</div>
 													{if $milestone->progressBeyondOneHundredPercent && $milestone->extraProgress > 0}
 														<div class="extra-progress" aria-valuenow="{$milestone->extraProgress}" style="margin-top: 10px; font-weight: bold; display: flex; justify-content: center; align-items: center;">
-															<span style="background-color: #3174AF;  color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; display: flex; align-items: center; justify-content: center;">
+															<span style="background-color: #3174AF; color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; display: flex; align-items: center; justify-content: center;">
 																{$milestone->extraProgress}%
 															</span>
 														</div>
@@ -167,10 +165,10 @@
 												</td>
 												 {if $milestone->allowPatronProgressInput}
 													<td>
-												 <button class="btn btn-primary btn-sm" onclick="AspenDiscovery.CommunityEngagement.manuallyProgressMilestone({$milestone->id}, {$userId}, {$campaign->id});" {if $milestone->milestoneComplete && !$milestone->progressBeyondOneHundredPercent}disabled{/if}>{translate text="Add Progress" isPublicFacing=true}</button>     
+												 <button class="btn btn-primary btn-sm" onclick="AspenDiscovery.CommunityEngagement.manuallyProgressMilestone({$milestone->id}, {$userId}, {$campaign->id});" {if $milestone->milestoneComplete && !$milestone->progressBeyondOneHundredPercent}disabled{/if}>{translate text="Add Progress" isPublicFacing=true}</button>
 													</td>
 												{/if}
-											</tr>                                 
+											</tr>
 										{/foreach}
 										</tbody>
 									</table>
@@ -291,7 +289,7 @@
 
 														{if $milestone.progressBeyondOneHundredPercent && $milestone.extraProgress > 0}
 															<div class="extra-progress" aria-valuenow="{$milestone.extraProgress}" style="margin-top: 10px; font-weight: bold; display: flex; justify-content: center; align-items: center;">
-																<span style="background-color: #3174AF;  color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; display: flex; align-items: center; justify-content: center;">
+																<span style="background-color: #3174AF; color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; display: flex; align-items: center; justify-content: center;">
 																	{$milestone.extraProgress}%
 																</span>
 															</div>
@@ -415,7 +413,7 @@
 														</div>
 													</div>
 												</td>
-											</tr>                                 
+											</tr>
 										{/foreach}
 										</tbody>
 									</table>
@@ -513,7 +511,7 @@
 														{/if}
 													</div>
 												</td>
-											</tr>                                 
+											</tr>
 										{/foreach}
 										</tbody>
 									</table>
@@ -674,7 +672,7 @@
 
 												{if $milestone->progressBeyondOneHundredPercent && $milestone->extraProgress > 0}
 													<div class="extra-progress" aria-valuenow="{$milestone->extraProgress}" style="margin-top: 10px; font-weight: bold; display: flex; justify-content: center; align-items: center;">
-														<span style="background-color: #3174AF;  color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; display: flex; align-items: center; justify-content: center;">
+														<span style="background-color: #3174AF; color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; display: flex; align-items: center; justify-content: center;">
 															{$milestone->extraProgress}%
 														</span>
 													</div>
@@ -730,7 +728,7 @@
 			} else {
 				campaignInfoDiv.style.display = 'none';
 			}
-		}       
+		}
 
 		function toggleActiveCampaignInfo(index) {
 			var campaignInfoDiv = document.getElementById('activeCampaigns_' + index);
@@ -739,7 +737,7 @@
 			} else {
 				campaignInfoDiv.style.display = 'none';
 			}
-		}    
+		}
 
 		function toggleUpcomingCampaignInfo(index) {
 			var campaignInfoDiv = document.getElementById('upcomingCampaigns_' + index);
@@ -748,7 +746,7 @@
 			} else {
 				campaignInfoDiv.style.display = 'none';
 			}
-		}    
+		}
 
 		function togglePastCampaignInfo(index) {
 			var campaignInfoDiv = document.getElementById('pastCampaigns_' + index);
@@ -757,7 +755,7 @@
 			} else {
 				campaignInfoDiv.style.display = 'none';
 			}
-		}    
+		}
 
 		function toggleYourPastCampaignInfo(index) {
 			var campaignInfoDiv = document.getElementById('yourPastCampaigns_' + index);

@@ -221,7 +221,7 @@ class Campaign extends DataObject {
 			if ($this->id) {
 				$escapedId = $this->escape($this->id);
 				$user = new User();
-				$user->query("SELECT user.* FROM user INNER JOIN ce_user_campaign ON  user.id = ce_user_campaign.userId WHERE ce_user_campaign.campaignId = $escapedId ORDER BY user.username");
+				$user->query("SELECT user.* FROM user INNER JOIN ce_user_campaign ON user.id = ce_user_campaign.userId WHERE ce_user_campaign.campaignId = $escapedId ORDER BY user.username");
 
 				while($user->fetch()) {
 					$this->_users[$user->id] = clone $user;
@@ -432,7 +432,7 @@ class Campaign extends DataObject {
 	 * An active campaign is one that has started and not yet ended.
 	 *
 	 * @return array An associative array of active campaigns, where the keys
-	 *               are the campaign IDs and the values are the campaign names.
+	 * are the campaign IDs and the values are the campaign names.
 	 */
 	public static function getActiveCampaignsList(): array
 	{
@@ -623,7 +623,6 @@ class Campaign extends DataObject {
 	
 
 
-   
 	
 
 	public static function getUserEnrolledCampaigns($userId): array {
@@ -736,7 +735,7 @@ class Campaign extends DataObject {
 	 * 
 	 * @param int $campaignId The ID of the campaign for which to fetch the leaderboard.
 	 * @return array An array of users ranked by the number of completed milestones.
-	 *  
+	 *
 	 */
 	public function getLeaderboardByCampaign($campaignId) {
 		$userCampaign = new UserCampaign();
@@ -863,7 +862,7 @@ class Campaign extends DataObject {
 	 * 
 	 * @param int $campaignId The ID of the campaign for which to fetch the leaderboard.
 	 * @return array An array of users branches ranked by the number of completed milestones.
-	 *  
+	 *
 	 */
 	public function getLeaderboardByBranchForCampaign($campaignId) {
 		if (!$campaignId) {
