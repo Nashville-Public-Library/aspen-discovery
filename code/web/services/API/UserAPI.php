@@ -1033,9 +1033,14 @@ class UserAPI extends AbstractAPI {
 				$userData->yearInReviewName = translate(['text' => $yearInReviewName, 'isPublicFacing' => true]);
 			}
 
-            $userData->holdSortAvailable = $user->holdSortAvailable;
-            $userData->holdSortUnavailable = $user->holdSortUnavailable;
-            $userData->checkoutSort = $user->checkoutSort;
+			$aspenToLiDAAvailableHoldSortMapping = array_flip(User::$lidaToAspenAvailableHoldSortMapping);
+			$userData->holdSortAvailable = array_key_exists($user->holdSortAvailable, $aspenToLiDAAvailableHoldSortMapping) ? $aspenToLiDAAvailableHoldSortMapping[$user->holdSortAvailable] : $user->holdSortAvailable;
+
+			$aspenToLiDAUnavailableHoldSortMapping = array_flip(User::$lidaToAspenUnavailableHoldSortMapping);
+			$userData->holdSortUnavailable = array_key_exists($user->holdSortUnavailable, $aspenToLiDAUnavailableHoldSortMapping) ? $aspenToLiDAUnavailableHoldSortMapping[$user->holdSortUnavailable] : $user->holdSortUnavailable;
+
+			$aspenToLiDACheckoutSortMapping = array_flip(User::$lidaToAspenCheckoutSortMapping);
+			$userData->checkoutSort = array_key_exists($user->checkoutSort, $aspenToLiDACheckoutSortMapping) ? $aspenToLiDACheckoutSortMapping[$user->checkoutSort] : $user->checkoutSort;
 
 			return [
 				'success' => true,
@@ -6671,10 +6676,19 @@ class UserAPI extends AbstractAPI {
 		];
 	}
 
-	function updateSortPreferences() {
+	/**
+	 * Updates the active account sort method for a user for account related functionality.
+	 *
+	 * @return array
+	 * @noinspection PhpUnused
+	 */
+	function updateSortPreferences() : array {
 		$user = $this->getUserForApiCall();
 		if ($user && !($user instanceof AspenError)) {
 			$user->updateSortPreferences();
+			return [
+				'success' => true,
+			];
 		} else {
 			return [
 				'success' => false,
