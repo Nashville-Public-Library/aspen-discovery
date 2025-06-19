@@ -4200,6 +4200,23 @@ class Koha extends AbstractIlsDriver {
 			'hideInLists' => true,
 			'expandByDefault' => true,
 			'properties' => [
+				'borrower_primary_contact_method' => [
+					'property' => 'borrower_primary_contact_method',
+					'type' => 'enum',
+					'label' => 'Primary Contact Method',
+					'values' => [
+						'' => '',
+						'Primary Phone' => 'Primary Phone',
+						'Secondary Phone' => 'Secondary Phone',
+						'Other Phone' => 'Other Phone',
+						'Primary Email' => 'Primary Email',
+						'Secondary Email' => 'Secondary Email',
+						'Fax' => 'Fax',
+					],
+					'description' => 'The main method of contact',
+					'required' => false,
+					'autocomplete' => false,
+				],
 				'borrower_phone' => [
 					'property' => 'borrower_phone',
 					'type' => 'text',
