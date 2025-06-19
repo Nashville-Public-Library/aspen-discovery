@@ -1183,8 +1183,8 @@ class Library extends DataObject {
 					'twitterLink' => [
 						'property' => 'twitterLink',
 						'type' => 'text',
-						'label' => 'Twitter Link URL',
-						'description' => 'The URL to Twitter (leave blank if the library does not have a Twitter account)',
+						'label' => 'X (Twitter) Link URL',
+						'description' => 'The URL to X (leave blank if the library does not have an X account)',
 						'size' => '40',
 						'maxLength' => 255,
 						'hideInLists' => true,
