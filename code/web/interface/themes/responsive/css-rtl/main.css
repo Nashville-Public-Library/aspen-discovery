@@ -1,5 +1,7 @@
 @import "lib/swiper-bundle.css";
-@import "lib/fontawesome-all.min.css";
+@import "lib/fa6/fontawesome.min.css";
+@import "lib/fa6/brands.min.css";
+@import "lib/fontawesome-solid.min.css";
 @import "lib/rome.min.css";
 @import "simplemde.min.css";
 @import "lib/Chart.min.css";

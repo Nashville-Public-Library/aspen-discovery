@@ -10245,6 +10245,19 @@ AspenDiscovery.Admin = (function () {
 				}
 			});
 		},
+		toggleLibrarySharingOptions: function () {
+			if ($('#owningLibrarySelect').val() !== '-1'){
+				$('#propertyRowsharing').show();
+				if ($('#sharingSelect').val() === '1'){
+					$('#propertyRowsharedWithLibrary').show();
+				} else {
+					$('#propertyRowsharedWithLibrary').hide();
+				}
+			} else {
+				$('#propertyRowsharing').hide();
+				$('#propertyRowsharedWithLibrary').hide();
+			}
+		},
 		linkingSettingOptionChange: function () {
 			var url = Globals.path + "/Admin/AJAX";
 			var pType = $("#pType").val();
@@ -18612,6 +18625,19 @@ AspenDiscovery.CommunityEngagement = function() {
 				automaticRewardControl.style.display = '';
 			}
 		},
+		updateConditionalOperator: function () {
+			let conditionalField = document.querySelector('[name="conditionalField"]');
+			let conditionalOperator = document.querySelector('[name="conditionalOperator"]');
+
+			if (!conditionalField || !conditionalOperator) return;
+
+			let isLikeOption = conditionalOperator.querySelector('option[value="like"]');
+
+			if(isLikeOption) {
+				isLikeOption.style.display = (conditionalField.value === 'user_list') ? 'none' : '';
+			}
+			
+		}
 
 	}
 	

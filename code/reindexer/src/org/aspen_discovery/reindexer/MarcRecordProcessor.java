@@ -413,30 +413,31 @@ abstract class MarcRecordProcessor {
 			groupedWork.addSeriesWithVolume(series, volume, 5);
 			foundSeriesIn800or830 = true;
 		}
-		if (!foundSeriesIn800or830){
-			seriesFields = MarcUtil.getDataFields(record, 490);
-			for (DataField seriesField : seriesFields){
-				String series = AspenStringUtils.trimTrailingPunctuation(MarcUtil.getSpecifiedSubfieldsAsString(seriesField, "a","")).toString();
+
+		seriesFields = MarcUtil.getDataFields(record, 490);
+		for (DataField seriesField : seriesFields){
+			// Include only uncontrolled series from 490, since controlled will also be in 800/830
+			if (seriesField.getIndicator1() == '0') {
+				String series = AspenStringUtils.trimTrailingPunctuation(MarcUtil.getSpecifiedSubfieldsAsString(seriesField, "a", "")).toString();
 				//Remove anything in parentheses since it's normally just the format
 				//series = series.replaceAll("\\s+\\(.*?\\)", "");
 				//Remove the word series at the end since this gets cataloged inconsistently
 				series = series.replaceAll("(?i)\\s+series$", "");
 
 				String volume = "";
-				if (seriesField.getSubfield('v') != null){
+				if (seriesField.getSubfield('v') != null) {
 					//Separate out the volume so we can link specially
 					volume = seriesField.getSubfield('v').getData();
 				}
 				groupedWork.addSeriesWithVolume(series, volume, 1);
+				groupedWork.addSeries(series);
 			}
 		}
 
 		if (foundSeriesIn800or830) {
 			groupedWork.addSeries(MarcUtil.getFieldList(record, "830ap:800pqt"));
-			groupedWork.addSeries2(MarcUtil.getFieldList(record, "490a"));
-		}else{
-			groupedWork.addSeries(MarcUtil.getFieldList(record, "490a"));
 		}
+
 		groupedWork.addDateSpan(MarcUtil.getFieldList(record, "362a"));
 		groupedWork.addContents(MarcUtil.getFieldList(record, "505a:505t"));
 		//Check to see if we have any child records and if so add them as well
