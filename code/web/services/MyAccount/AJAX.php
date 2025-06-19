@@ -6737,10 +6737,10 @@ class MyAccount_AJAX extends JSON_Action {
 			$params = implode('&', $paramList);
 
 			$tokenResults = $payflowTokenRequest->curlSendPage($tokenRequestUrl, 'POST', $params);
+			ExternalRequestLogEntry::logRequest('fine_payment.getPayflowToken', 'POST', $tokenRequestUrl, $payflowTokenRequest->getHeaders(), $params, $payflowTokenRequest->getResponseCode(), $tokenResults, []);
 			$tokenResults = PayPalPayflowSetting::parsePayflowString($tokenResults);
 
 			if ($tokenResults['RESULT'] != 0) {
-				ExternalRequestLogEntry::logRequest('fine_payment.getPayflowToken', 'POST', $tokenRequestUrl, $payflowTokenRequest->getHeaders(), $params, $payflowTokenRequest->getResponseCode(), $tokenResults, []);
 				return [
 					'success' => false,
 					'message' => 'Unable to authenticate with Payflow, please try again in a few minutes.',
@@ -7007,7 +7007,7 @@ class MyAccount_AJAX extends JSON_Action {
 				$paymentResponse = $paymentRequest->curlPostBodyData($url, $postParams);
 				$decodedPaymentResponse = json_decode($paymentResponse);
 
-				ExternalRequestLogEntry::logRequest('fine_payment.createInvoiceCloudOrder','POST', $url, $paymentRequest->getHeaders(),json_encode($postParams), $paymentRequest->getResponseCode(), $paymentRegitsponse, []);
+				ExternalRequestLogEntry::logRequest('fine_payment.createInvoiceCloudOrder','POST', $url, $paymentRequest->getHeaders(),json_encode($postParams), $paymentRequest->getResponseCode(), $paymentResponse, []);
 
 				if ($decodedPaymentResponse->Message != 'SUCCESS') {
 					return [
