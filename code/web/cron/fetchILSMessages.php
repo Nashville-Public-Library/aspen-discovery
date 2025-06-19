@@ -8,17 +8,17 @@ global $library;
 $accountProfile = $library->getAccountProfile();
 
 // Temporary disabling to re-evaluate how to handle large server queries
-/*if ($accountProfile) {
+if ($accountProfile) {
 	$catalogDriver = trim($accountProfile->driver);
 	if (!empty($catalogDriver)) {
 		$catalog = CatalogFactory::getCatalogConnectionInstance($catalogDriver, $accountProfile);
 		try {
-			$catalog->updateMessageQueue();
+			$catalog->updateAccountNotifications();
 		} catch (PDOException $e) {
 			echo("Could not update message queue for library $library->libraryId.");
 		}
 	}
-}*/
+}
 
 global $aspen_db;
 $aspen_db = null;

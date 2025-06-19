@@ -931,7 +931,7 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return false;
 	}
 
-	public function hasIlsInbox() : bool {
+	public function supportAccountNotifications() : bool {
 		return false;
 	}
 
@@ -942,7 +942,14 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		];
 	}
 
-	public function updateMessageQueue(): array {
+	/**
+	 * Update account notifications for the user. At this point, the system has verified that the user can receive push notifications
+	 * and that they are opted in to getting account notifications.
+	 *
+	 * @param User $user
+	 * @return array
+	 */
+	public function updateAccountNotifications(User $user): array {
 		return [
 			'success' => false,
 			'message' => 'This functionality has not been implemented for this ILS',

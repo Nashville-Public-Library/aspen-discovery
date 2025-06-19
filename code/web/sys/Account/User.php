@@ -944,34 +944,38 @@ class User extends DataObject {
 		return $overDriveSettings;
 	}
 
+	private $_hasInterlibraryLoan = null;
 	function hasInterlibraryLoan(): bool {
-		try {
-			$homeLocation = Location::getDefaultLocationForUser();
-			if ($homeLocation != null) {
-				//Check to see if local ILL is available
-				$parentLibrary = $homeLocation->getParentLibrary();
-				if ($parentLibrary != null) {
-					if ($parentLibrary->localIllRequestType != 0) {
-						if ($homeLocation->localIllFormId > 0) {
-							return true;
+		if ($this->_hasInterlibraryLoan == null) {
+			$this->_hasInterlibraryLoan = false;
+			try {
+				$homeLocation = Location::getDefaultLocationForUser();
+				if ($homeLocation != null) {
+					//Check to see if local ILL is available
+					$parentLibrary = $homeLocation->getParentLibrary();
+					if ($parentLibrary != null) {
+						if ($parentLibrary->localIllRequestType != 0) {
+							if ($homeLocation->localIllFormId > 0) {
+								return true;
+							}
+						}
+					}
+					//Local ILL is not available, check to see if VDX is available.
+					require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
+					require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
+					$vdxSettings = new VdxSetting();
+					if ($vdxSettings->find(true)) {
+						//Get configuration for the form.
+						if ($homeLocation->vdxFormId != -1) {
+							$this->_hasInterlibraryLoan = true;
 						}
 					}
 				}
-				//Local ILL is not available, check to see if VDX is available.
-				require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
-				require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
-				$vdxSettings = new VdxSetting();
-				if ($vdxSettings->find(true)) {
-					//Get configuration for the form.
-					if ($homeLocation->vdxFormId != -1) {
-						return true;
-					}
-				}
+			} catch (Exception $e) {
+				//This happens if the tables aren't setup, ignore
 			}
-		} catch (Exception $e) {
-			//This happens if the tables aren't setup, ignore
 		}
-		return false;
+		return $this->_hasInterlibraryLoan;
 	}
 
 	function getInterlibraryLoanType(): string {
@@ -3189,13 +3193,13 @@ class User extends DataObject {
 
 	/**
 	 * Get the user's age based on their date of birth.
-	 * 
+	 *
 	 * @return int|null The user's age or null if date of birth is not set.
-	*/
+	 */
 	public function getAge(): ?int {
-		
+
 		$this->loadContactInformation();
-		
+
 		$dob = new DateTime($this->_dateOfBirth);
 		$today = new DateTime();
 
@@ -4689,9 +4693,9 @@ class User extends DataObject {
 			$sections['events'] = new AdminSection('Events');
 			$aspenEventsAction = new AdminAction('Aspen Events - Manage Events', 'Add and manage Aspen Events.', '/Events/Events');
 			if ($sections['events']->addAction($aspenEventsAction, [
-				'Administer Events for All Locations',
-				'Administer Events for Home Library Locations',
-				'Administer Events for Home Location']
+					'Administer Events for All Locations',
+					'Administer Events for Home Library Locations',
+					'Administer Events for Home Location']
 			)) {
 				$aspenEventsAction->addSubAction(new AdminAction('Configure Event Fields', 'Define event fields for Aspen Events.', '/Events/EventFields'), 'Administer Field Sets');
 				$aspenEventsAction->addSubAction(new AdminAction('Configure Event Field Sets', 'Define sets of event fields to use for Aspen Events.', '/Events/EventFieldSets'), 'Administer Field Sets');
@@ -4700,7 +4704,7 @@ class User extends DataObject {
 				$aspenEventsAction->addSubAction(new AdminAction('Event Reports', 'Aspen Events Reporting.', '/Events/EventGraphs'), [
 					'View Event Reports for All Libraries',
 					'View Event Reports for Home Library'
-					]);
+				]);
 			}
 			$sections['events']->addAction(new AdminAction('Assabet - Interactive Settings', 'Define collections to be loaded into Aspen Discovery.', '/Events/AssabetSettings'), 'Administer Assabet Settings');
 			$sections['events']->addAction(new AdminAction('Communico - Attend Settings', 'Define collections to be loaded into Aspen Discovery.', '/Events/CommunicoSettings'), 'Administer Communico Settings');
@@ -4766,7 +4770,7 @@ class User extends DataObject {
 			} else {
 				$sections['aspen_lida']->addAction($notificationReportAction, 'View Notifications Reports');
 			}
-			if (false /* $allowILSMessaging*/) {
+			if ($allowILSMessaging) {
 				/** @noinspection PhpUnreachableStatementInspection */
 				$sections['aspen_lida']->addAction(new AdminAction('ILS Notification Settings', 'Define settings for ILS notifications in Aspen LiDA.', '/AspenLiDA/ILSNotificationSettings'), 'Administer Aspen LiDA Settings');
 			}
@@ -5501,24 +5505,19 @@ class User extends DataObject {
 
 	public function canReceiveILSNotification($code): bool {
 		if ($this->isNotificationHistoryEnabled()) { // check if ils notifications are enabled for the ils
-			$userHomeLocation = $this->homeLocationId;
-			$userLocation = new Location();
-			$userLocation->locationId = $this->homeLocationId;
-			if ($userLocation->find(true)) {
-				$userLibrary = $userLocation->getParentLibrary();
-				if ($userLibrary) {
-					require_once ROOT_DIR . '/sys/AspenLiDA/NotificationSetting.php';
-					$settings = new NotificationSetting();
-					$settings->id = $userLibrary->lidaNotificationSettingId;
-					if ($settings->find(true)) {
-						require_once ROOT_DIR . '/sys/AspenLiDA/ILSMessageType.php';
-						$ilsMessageTypes = new ILSMessageType();
-						$ilsMessageTypes->ilsNotificationSettingId = $settings->ilsNotificationSettingId;
-						$ilsMessageTypes->code = $code;
-						$ilsMessageTypes->isEnabled = 1;
-						if ($ilsMessageTypes->find(true)) {
-							return true;
-						}
+			$userLibrary = $this->getHomeLibrary();
+			if ($userLibrary) {
+				require_once ROOT_DIR . '/sys/AspenLiDA/NotificationSetting.php';
+				$settings = new NotificationSetting();
+				$settings->id = $userLibrary->lidaNotificationSettingId;
+				if ($settings->find(true)) {
+					require_once ROOT_DIR . '/sys/AspenLiDA/ILSMessageType.php';
+					$ilsMessageTypes = new ILSMessageType();
+					$ilsMessageTypes->ilsNotificationSettingId = $settings->ilsNotificationSettingId;
+					$ilsMessageTypes->code = $code;
+					$ilsMessageTypes->isEnabled = 1;
+					if ($ilsMessageTypes->find(true)) {
+						return true;
 					}
 				}
 			}
@@ -5568,7 +5567,7 @@ class User extends DataObject {
 		return $preferences;
 	}
 
-	public function getNotificationPreferencesByUser() {
+	public function getNotificationPreferencesByUser() : array {
 		$preferences = [];
 		require_once ROOT_DIR . '/sys/Account/UserNotificationToken.php';
 		$obj = new UserNotificationToken();
@@ -5886,10 +5885,10 @@ class User extends DataObject {
 		return $showRenewalLink;
 	}
 
-	public function isNotificationHistoryEnabled() {
+	public function isNotificationHistoryEnabled() : bool {
 		$catalogDriver = $this->getCatalogDriver();
 		if ($catalogDriver) {
-			return $catalogDriver->hasIlsInbox();
+			return $catalogDriver->supportAccountNotifications();
 		}
 		return false;
 	}

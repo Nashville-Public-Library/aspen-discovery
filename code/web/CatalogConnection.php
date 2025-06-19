@@ -1898,16 +1898,53 @@ class CatalogConnection {
 		return $this->driver->allowUpdatesOfPreferredName($patron);
 	}
 
-	public function hasIlsInbox(): bool {
-		return false;
+	public function supportAccountNotifications(): bool {
+		return $this->driver->supportAccountNotifications();
 	}
 
 	public function getMessageTypes(): array {
 		return $this->driver->getMessageTypes();
 	}
 
-	public function updateMessageQueue(): array {
-		return $this->driver->updateMessageQueue();
+	public function updateAccountNotifications(): array {
+		if ($this->supportAccountNotifications()) {
+			//Get a list of all users that have account notifications turned on
+			require_once ROOT_DIR . '/sys/Account/UserNotificationToken.php';
+			$userNotificationToken = new UserNotificationToken();
+			$userNotificationToken->notifyAccount = 1;
+			$userNotificationToken->selectAdd();
+			$userNotificationToken->selectAdd('DISTINCT(userId)');
+			$userNotificationToken->find();
+			$result = [
+				'success' => true,
+				'message' => '',
+				'numUsersUpdates' => 0,
+				'numFailedUserUpdates' => 0,
+				'numMessagesAdded' => 0,
+			];
+			while ($userNotificationToken->fetch()) {
+				$user = new User();
+				$user->id = $userNotificationToken->userId;
+				if ($user->find(true)) {
+					if ($user->canReceiveNotifications('notifyAccount')) {
+						$userResult = $this->driver->updateAccountNotifications($user);
+						if ($userResult['success']) {
+							$result['numUpdates']++;
+							$result['numMessagesAdded'] +=  $userResult['numMessagesAdded'];
+						} else {
+							$result['numFailedUpdates']++;
+							$result['success'] = false;
+						}
+					}
+				}
+			}
+			return $result;
+		}else{
+			return [
+				'success' => false,
+				'message' => 'This functionality has not been implemented for this ILS',
+			];
+		}
 	}
 
 	public function updateUserMessageQueue(User $patron): array {

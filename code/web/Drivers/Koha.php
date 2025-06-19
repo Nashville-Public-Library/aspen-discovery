@@ -7,7 +7,7 @@ require_once ROOT_DIR . '/sys/CurlWrapper.php';
 require_once ROOT_DIR . '/Drivers/AbstractIlsDriver.php';
 
 class Koha extends AbstractIlsDriver {
-	private $dbConnection = null;
+	private mysqli|null $dbConnection = null;
 	private KohaApiUserAgent $kohaApiUserAgent;
 
 	/** @var CurlWrapper */
@@ -8752,7 +8752,7 @@ class Koha extends AbstractIlsDriver {
 		];
 	}
 
-	public function hasIlsInbox(): bool {
+	public function supportAccountNotifications(): bool {
 		return true;
 	}
 
@@ -8778,56 +8778,58 @@ class Koha extends AbstractIlsDriver {
 		return $transports;
 	}
 
-	public function updateMessageQueue(): array {
+	/**
+	 * Update account notifications for the user. At this point, the system has verified that the user can receive push notifications
+	 * and that they are opted in to getting account notifications.
+	 *
+	 * @param User $user
+	 * @return array
+	 */
+	public function updateAccountNotifications(User $user): array {
 		$this->initDatabaseConnection();
 
+		//Since the number of users logged who are opted in to Push Notifications will be significantly smaller than
+		// the number of users in Koha, first get all users that are opted in to push notifications, and then get
+		// the notifications for them.
+		//Get a list of all messages that have been queued in the last 24 hours
 		/** @noinspection SqlResolve */
-		$sql = "SELECT * FROM message_queue where message_transport_type like 'email' and time_queue < DATE_SUB(NOW(), INTERVAL 24 HOUR)";
+		$sql = "SELECT * FROM message_queue where message_transport_type = 'email' and time_queued > DATE_SUB(NOW(), INTERVAL 1 DAY) AND borrowernumber = '" . mysqli_escape_string($this->dbConnection, $user->unique_ils_id) . "'";
 		$results = mysqli_query($this->dbConnection, $sql);
 		if($results) {
 			$numAdded = 0;
 			while ($curRow = $results->fetch_assoc()) {
 				$timeQueued = strtotime($curRow['time_queued']);
 				$now = time();
-				$diff = ($now - $timeQueued);
-				if($diff <= 86400) {
-					// skip messages older than 24 hours
-					$user = new User();
-					$user->unique_ils_id = $curRow['borrowernumber'];
-					if($user->find(true)) {
-						// make sure the user is eligible to receive notifications and the message type is enabled
-						if($user->canReceiveNotifications('notifyAccount') && $user->canReceiveILSNotification($curRow['letter_code'])) {
-							require_once ROOT_DIR . '/sys/Account/UserILSMessage.php';
-							$existingMessage = new UserILSMessage();
-							$existingMessage->userId = $user->id;
-							$existingMessage->type = $curRow['letter_code'];
-							$existingMessage->dateQueued = $timeQueued;
-							if (!$existingMessage->find(true)) {
-								$translation = $this->getUserMessageTranslation($curRow['letter_code'], $user);
-								$content = $translation['content'];
-								$title = $translation['title'];
-								if (empty($translation['content'])) {
-									$content = trim(strip_tags($curRow['content']));
-								}
-								if (empty($translation['title'])) {
-									$title = trim(strip_tags($curRow['subject']));
-								}
 
-								$userMessage = new UserILSMessage();
-								$userMessage->messageId = $curRow['message_id'];
-								$userMessage->userId = $user->id;
-								$userMessage->status = 'pending';
-								$userMessage->type = $curRow['letter_code'];
-								$userMessage->dateQueued = $timeQueued;
-								$userMessage->content = $content;
-								$userMessage->defaultContent = $curRow['content'];
-								$userMessage->title = $title;
-								$userMessage->insert();
-								$numAdded++;
-							}
+				// make sure the user is eligible to receive notifications and the message type is enabled
+				if($user->canReceiveILSNotification($curRow['letter_code'])) {
+					require_once ROOT_DIR . '/sys/Account/UserILSMessage.php';
+					$existingMessage = new UserILSMessage();
+					$existingMessage->userId = $user->id;
+					$existingMessage->type = $curRow['letter_code'];
+					$existingMessage->dateQueued = $timeQueued;
+					if (!$existingMessage->find(true)) {
+						$translation = $this->getUserMessageTranslation($curRow['letter_code'], $user);
+						$content = $translation['content'];
+						$title = $translation['title'];
+						if (empty($translation['content'])) {
+							$content = trim(strip_tags($curRow['content']));
 						}
-					} else {
-						// borrower not found in aspen
+						if (empty($translation['title'])) {
+							$title = trim(strip_tags($curRow['subject']));
+						}
+
+						$userMessage = new UserILSMessage();
+						$userMessage->messageId = $curRow['message_id'];
+						$userMessage->userId = $user->id;
+						$userMessage->status = 'pending';
+						$userMessage->type = $curRow['letter_code'];
+						$userMessage->dateQueued = $timeQueued;
+						$userMessage->content = $content;
+						$userMessage->defaultContent = $curRow['content'];
+						$userMessage->title = $title;
+						$userMessage->insert();
+						$numAdded++;
 					}
 				}
 			}
@@ -8836,7 +8838,8 @@ class Koha extends AbstractIlsDriver {
 
 			return [
 				'success' => true,
-				'message' => 'Added ' . $numAdded . ' to message queue'
+				'message' => 'Added ' . $numAdded . ' to message queue',
+				'numMessagesAdded' => $numAdded
 			];
 		}
 
@@ -8850,7 +8853,7 @@ class Koha extends AbstractIlsDriver {
 		$this->initDatabaseConnection();
 
 		/** @noinspection SqlResolve */
-		$sql = "SELECT * FROM message_queue where message_transport_type like 'email' and time_queued < DATE_SUB(NOW(), INTERVAL 24 HOUR) and borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
+		$sql = "SELECT * FROM message_queue where message_transport_type = 'email' and time_queued > DATE_SUB(NOW(), INTERVAL 24 HOUR) and borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
 		$results = mysqli_query($this->dbConnection, $sql);
 		if($results) {
 			require_once ROOT_DIR . '/sys/Account/UserILSMessage.php';
