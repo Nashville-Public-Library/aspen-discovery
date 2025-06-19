@@ -19,8 +19,26 @@ function getUpdates25_07_00(): array {
 		//kirstien - Grove
 
 		//kodi - Grove
-
-		//Mark - Grove
+		'image_pdf_owning_sharing' => [
+			'title' => 'Owning and Sharing for Images and PDFs',
+			'description' => 'Add owning and sharing columns to file_uploads and image_uploads.',
+			'sql' => [
+				"ALTER TABLE file_uploads ADD COLUMN owningLibrary INT(11) NOT NULL DEFAULT -1",
+				"ALTER TABLE file_uploads ADD COLUMN sharing INT(11) NOT NULL DEFAULT 2",
+				"ALTER TABLE file_uploads ADD COLUMN sharedWithLibrary INT(11) NOT NULL DEFAULT -1",
+				"ALTER TABLE image_uploads ADD COLUMN owningLibrary INT(11) NOT NULL DEFAULT -1",
+				"ALTER TABLE image_uploads ADD COLUMN sharing INT(11) NOT NULL DEFAULT 2",
+				"ALTER TABLE image_uploads ADD COLUMN sharedWithLibrary INT(11) NOT NULL DEFAULT -1",
+			],
+		], //image_pdf_owning_sharing
+		'web_content_permissions' => [
+			'title' => 'Web Content Permissions',
+			'description' => 'Add restricted (home library only) permissions for web content.',
+			'sql' => [
+				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES
+					('Web Builder', 'Administer Web Content for Home Library', 'Web Builder', 61, 'Allows the user to manage images and pdfs for their home library only.')",
+			],
+		], //custom_web_resource_pages_roles
 
 		// Myranda - Grove
 

@@ -7,12 +7,37 @@ class FileUpload extends DataObject {
 	public $fullPath;
 	public $thumbFullPath;
 	public $type;
+	public $owningLibrary;
+	public $sharing;
+	public $sharedWithLibrary;
 
 	public function getUniquenessFields(): array {
 		return ['id'];
 	}
 
 	static function getObjectStructure($context = ''): array {
+		$allSharingOptions = [
+			0 => 'Not Shared',
+			1 => 'Selected Library',
+			2 => 'All Libraries',
+			3 => 'All Libraries - Read Only'
+		];
+		$allowableSharingOptions = $allSharingOptions;
+		$libraryListForSharing[-1] = '';
+		//need to get restricted list first
+		$libraryList = Library::getLibraryList(true);
+
+		$allLibraryList[-1] = 'All Libraries';
+		$allLibraryList = $allLibraryList + Library::getLibraryList(false);
+
+		if (!UserAccount::userHasPermission('Administer All Web Content') && (UserAccount::userHasPermission('Administer Web Content for Home Library'))) {
+			unset($allowableSharingOptions[1]);
+		}else{
+			$libraryList = $allLibraryList;
+		}
+
+		$libraryListForSharing = $libraryListForSharing + $libraryList;
+
 		return [
 			'id' => [
 				'property' => 'id',
@@ -34,6 +59,32 @@ class FileUpload extends DataObject {
 				'label' => 'Type',
 				'description' => 'The type of file being uploaded',
 				'maxLength' => 50,
+			],
+			'owningLibrary' => [
+				'property' => 'owningLibrary',
+				'type' => 'enum',
+				'values' => $libraryList,
+				'allValues' => $allLibraryList,
+				'label' => 'Owning Library (PDFs Only)',
+				'description' => 'Which library owns this side load',
+				'onchange' => "return AspenDiscovery.Admin.toggleLibrarySharingOptions();",
+			],
+			'sharing' => [
+				'property' => 'sharing',
+				'type' => 'enum',
+				'values' => $allowableSharingOptions,
+				'allValues' => $allSharingOptions,
+				'label' => 'Share With (PDFs Only)',
+				'description' => 'Who the category should be shared with',
+				'onchange' => "return AspenDiscovery.Admin.toggleLibrarySharingOptions();",
+			],
+			'sharedWithLibrary' => [
+				'property' => 'sharedWithLibrary',
+				'type' => 'enum',
+				'values' => $libraryListForSharing,
+				'allValues' => $allLibraryList,
+				'label' => 'Library to Share With',
+				'description' => 'Which library this content is shared with.',
 			],
 			'fullPath' => [
 				'property' => 'fullPath',
@@ -92,6 +143,50 @@ class FileUpload extends DataObject {
 				}
 			}
 		}
+	}
+
+	public function updateStructureForEditingObject($structure) : array {
+		if ($this->isReadOnly()) {
+			$structure['title']['readOnly'] = true;
+			$structure['owningLibrary']['readOnly'] = true;
+			$structure['sharing']['readOnly'] = true;
+			$structure['sharedWithLibrary']['readOnly'] = true;
+			$structure['fullPath']['readOnly'] = true;
+
+		}
+		return $structure;
+	}
+
+	private ?bool $_isReadOnly = null;
+	/**
+	 * Determine whether the Image can be changed by the active user.
+	 * This is slightly different from canActiveUserEdit because we want the user to be able to view
+	 * but not change the image and access the image(s) they have access to
+	 *
+	 * @return bool
+	 */
+	public function isReadOnly() : bool {
+		if ($this->_isReadOnly === null) {
+			//Active user can edit if they have permission to edit everything or this is for their home location or sharing allows editing
+			if (UserAccount::userHasPermission('Administer All Web Content')) {
+				$this->_isReadOnly = false;
+			}elseif (UserAccount::userHasPermission( 'Administer Web Content for Home Library')){
+				$allowableLibraries = Library::getLibraryList(true);
+				if (array_key_exists($this->owningLibrary, $allowableLibraries)) {
+					$this->_isReadOnly = false;
+				}else{
+					//Ok if shared by everyone
+					if ($this->sharing == 2) {
+						$this->_isReadOnly = false;
+					}else{
+						$this->_isReadOnly = true;
+					}
+				}
+			}else{ //Manage images for Home Library Only
+				$this->_isReadOnly = true;
+			}
+		}
+		return $this->_isReadOnly;
 	}
 
 	public function okToExport(array $selectedFilters): bool {

@@ -1824,6 +1824,19 @@ AspenDiscovery.Admin = (function () {
 				}
 			});
 		},
+		toggleLibrarySharingOptions: function () {
+			if ($('#owningLibrarySelect').val() !== '-1'){
+				$('#propertyRowsharing').show();
+				if ($('#sharingSelect').val() === '1'){
+					$('#propertyRowsharedWithLibrary').show();
+				} else {
+					$('#propertyRowsharedWithLibrary').hide();
+				}
+			} else {
+				$('#propertyRowsharing').hide();
+				$('#propertyRowsharedWithLibrary').hide();
+			}
+		},
 		linkingSettingOptionChange: function () {
 			var url = Globals.path + "/Admin/AJAX";
 			var pType = $("#pType").val();
