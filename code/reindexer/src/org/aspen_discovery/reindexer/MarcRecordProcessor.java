@@ -389,7 +389,7 @@ abstract class MarcRecordProcessor {
 				//Separate out the volume so we can link specially
 				volume = seriesField.getSubfield('v').getData();
 			}
-			groupedWork.addSeriesWithVolume(series, volume);
+			groupedWork.addSeriesWithVolume(series, volume, 3);
 			foundSeriesIn800or830 = true;
 		}
 		seriesFields = MarcUtil.getDataFields(record, 800);
@@ -410,7 +410,7 @@ abstract class MarcRecordProcessor {
 				//Separate out the volume so we can link specially
 				volume = seriesField.getSubfield('v').getData();
 			}
-			groupedWork.addSeriesWithVolume(series, volume);
+			groupedWork.addSeriesWithVolume(series, volume, 5);
 			foundSeriesIn800or830 = true;
 		}
 
@@ -429,7 +429,7 @@ abstract class MarcRecordProcessor {
 					//Separate out the volume so we can link specially
 					volume = seriesField.getSubfield('v').getData();
 				}
-				groupedWork.addSeriesWithVolume(series, volume);
+				groupedWork.addSeriesWithVolume(series, volume, 1);
 				groupedWork.addSeries(series);
 			}
 		}
