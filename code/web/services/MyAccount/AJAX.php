@@ -4328,8 +4328,11 @@ class MyAccount_AJAX extends JSON_Action {
 		return $result;
 	}
 
-	function renderReadingHistoryPaginationLink($page, $options) {
-		return "<a class='page-link btn btn-default btn-sm' onclick='AspenDiscovery.Account.loadReadingHistory(\"{$options['patronId']}\", \"{$options['sort']}\", \"{$page}\", undefined, \"{$options['filter']}\");AspenDiscovery.goToAnchor(\"topOfList\")'>";
+	/** @noinspection PhpUnused */
+	function renderReadingHistoryPaginationLink(int $page, array $options): string {
+		$currentPage = isset($_REQUEST['page']) && is_numeric($_REQUEST['page']) ? $_REQUEST['page'] : 1;
+		$activeClass = ($currentPage == $page) ? ' active' : '';
+		return "<a class='page-link btn btn-default btn-sm{$activeClass}' onclick='AspenDiscovery.Account.loadReadingHistory(\"{$options['patronId']}\", \"{$options['sort']}\", \"{$page}\", undefined, \"{$options['filter']}\");AspenDiscovery.goToAnchor(\"topOfList\")'>";
 	}
 
 	private function isValidTimeStamp($timestamp) {
@@ -6737,10 +6740,10 @@ class MyAccount_AJAX extends JSON_Action {
 			$params = implode('&', $paramList);
 
 			$tokenResults = $payflowTokenRequest->curlSendPage($tokenRequestUrl, 'POST', $params);
+			ExternalRequestLogEntry::logRequest('fine_payment.getPayflowToken', 'POST', $tokenRequestUrl, $payflowTokenRequest->getHeaders(), $params, $payflowTokenRequest->getResponseCode(), $tokenResults, []);
 			$tokenResults = PayPalPayflowSetting::parsePayflowString($tokenResults);
 
 			if ($tokenResults['RESULT'] != 0) {
-				ExternalRequestLogEntry::logRequest('fine_payment.getPayflowToken', 'POST', $tokenRequestUrl, $payflowTokenRequest->getHeaders(), $params, $payflowTokenRequest->getResponseCode(), $tokenResults, []);
 				return [
 					'success' => false,
 					'message' => 'Unable to authenticate with Payflow, please try again in a few minutes.',
