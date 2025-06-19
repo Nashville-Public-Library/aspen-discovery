@@ -40,6 +40,8 @@ function getSpecificVolumeHoldAction($module, $source, $id, $volumeInfo) : array
 		'onclick' => "return AspenDiscovery.Record.showPlaceHold('$module', '$source', '$id', '{$volumeInfo['volumeId']}');",
 		'requireLogin' => false,
 		'type' => 'ils_hold',
+		'volumeId' => $volumeInfo['volumeId'],
+		'volumeName' => $volumeInfo['volumeName'],
 	];
 }
 
