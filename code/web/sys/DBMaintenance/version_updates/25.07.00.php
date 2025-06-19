@@ -55,6 +55,15 @@ function getUpdates25_07_00(): array {
 		],
 		//sso_do_not_create_user_in_ils
 
+		//Jacob - Open Fifth
+		'disable_user_agent_logging' => [
+			'title' => 'Disable User Agent Logging',
+			'description' => 'Add system variable to control user agent logging',
+			'sql' => [
+				"ALTER TABLE system_variables ADD COLUMN disable_user_agent_logging tinyint(1) DEFAULT 0",
+			]
+		], //disable_user_agent_logging
+
 		//James Staub - Nashville Public Library
 
 		//Lucas Montoya - Theke Solutions
