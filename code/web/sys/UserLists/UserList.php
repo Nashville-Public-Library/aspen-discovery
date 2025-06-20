@@ -381,8 +381,10 @@ class UserList extends DataObject {
 	 * @param float|int $appVersion If LiDA, include the version to ensure proper filtering when needed.
 	 * @return array Array of HTML to display to the user.
 	 */
-	public function getListRecords(int $start, int $numItems, bool $allowEdit, string $format, string $citationFormat = null,
-								   string $sortName = null, bool $forLiDA = false, float|int $appVersion = 0): array {
+	public function getListRecords(
+		int $start, int $numItems, bool $allowEdit, string $format, string $citationFormat = null,
+		string $sortName = null, bool $forLiDA = false, float|int $appVersion = 0
+	): array {
 		if ($sortName == null) {
 			$sortName = $this->defaultSort;
 		}
