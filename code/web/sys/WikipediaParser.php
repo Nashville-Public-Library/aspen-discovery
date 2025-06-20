@@ -66,6 +66,11 @@ class WikipediaParser {
 				$sup->parentNode->removeChild($sup);
 			}
 			$leadParas[] = $dom->saveHTML($p);
+
+			// Break after two paragraphs because the leads could be several paragraphs and clutter the display.
+			if (count($leadParas) === 2) {
+				break;
+			}
 		}
 
 		if (!$leadParas) {
