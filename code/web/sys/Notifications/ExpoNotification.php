@@ -17,9 +17,11 @@ class ExpoNotification extends DataObject {
 			'Host: exp.host',
 			'Accept: application/json',
 			'Accept-Encoding: gzip, deflate',
-			'Content-Type: application/json',
-			'Authorization: Bearer ' . $bearerAuthToken,
+			'Content-Type: application/json'
 		];
+		if (!empty($bearerAuthToken)) {
+			$headers[] = 'Authorization: Bearer ' . $bearerAuthToken;
+		}
 		$this->expoCurlWrapper->addCustomHeaders($headers, true);
 		$logger->log("Sending notification to Expo servers", Logger::LOG_ERROR);
 		$response = $this->expoCurlWrapper->curlPostPage($url, json_encode($body));
