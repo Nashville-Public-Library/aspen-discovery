@@ -169,6 +169,7 @@ public class GroupedWorkIndexer {
 	private PreparedStatement addSeriesStmt;
 	private PreparedStatement setSeriesDateUpdated;
 	private PreparedStatement updateSeriesAuthor;
+	private PreparedStatement updateSeriesScore;
 
 	private final CRC32 checksumCalculator = new CRC32();
 
@@ -340,14 +341,15 @@ public class GroupedWorkIndexer {
 			removeVariationsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_variation where groupedWorkId = ?");
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
 
-			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, sm.seriesId FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, sm.seriesId, sm.priorityScore FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
-			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesId, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?)");
+			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesId, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight, priorityScore) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?)");
 			deleteSeriesMemberStmt = dbConn.prepareStatement("DELETE FROM series_member WHERE seriesId = ? AND groupedWorkPermanentId = ? AND userAdded = 0;");
 			deleteSeriesStmt = dbConn.prepareStatement("DELETE FROM series WHERE id = ?;");
 			getNumberOfSeriesMembersStmt = dbConn.prepareStatement("SELECT COUNT(*) as numMembers FROM series_member WHERE seriesId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			updateSeriesAuthor = dbConn.prepareStatement("UPDATE series SET author = ? WHERE id = ?;");
+			updateSeriesScore = dbConn.prepareStatement("UPDATE series_member SET priorityScore = ? WHERE seriesId = ? AND groupedWorkPermanentId = ?");
 			setSeriesDateUpdated = dbConn.prepareStatement("UPDATE series SET dateUpdated = ? WHERE id = ?;");
 		} catch (Exception e){
 			logEntry.incErrors("Could not load statements to get identifiers ", e);
@@ -1408,7 +1410,7 @@ public class GroupedWorkIndexer {
 						if (novelistRS.wasNull()) {
 							volume = "";
 						}
-						groupedWork.addSeriesWithVolume(series, volume);
+						groupedWork.addSeriesWithVolume(series, volume, 2);
 					}
 				}
 				novelistRS.close();
@@ -1425,6 +1427,7 @@ public class GroupedWorkIndexer {
 				ResultSet seriesMemberRS = getSeriesMemberStmt.executeQuery();
 				HashMap<String, Integer> seriesInDb = new HashMap<>();
 				HashMap<String, Integer> seriesInProcess = new HashMap<>();
+				HashMap<String, Integer> seriesScore = new HashMap<>();
 				while (seriesMemberRS.next()) {
 					// Strip diacritics and switch to lowercase for comparing series names to minimize duplicates
 					String seriesTitle = seriesMemberRS.getString("groupedWorkSeriesTitle");
@@ -1435,6 +1438,7 @@ public class GroupedWorkIndexer {
 					String normalizedSeriesName = Normalizer.normalize(seriesTitle.toLowerCase(), Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
 					seriesInDb.put(normalizedSeriesName, seriesMemberRS.getInt("seriesId"));
 					seriesInProcess.put(normalizedSeriesName, seriesMemberRS.getInt("seriesId"));
+					seriesScore.put(normalizedSeriesName, seriesMemberRS.getInt("priorityScore"));
 				}
 				seriesMemberRS.close();
 				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.keySet()) {
@@ -1507,6 +1511,7 @@ public class GroupedWorkIndexer {
 						addSeriesMemberStmt.setString(5, AspenStringUtils.trimTo(500, groupedWork.displayTitle));
 						addSeriesMemberStmt.setString(6, AspenStringUtils.trimTo(200, groupedWork.getPrimaryAuthor()));
 						addSeriesMemberStmt.setString(7, groupedWork.displayDescription);
+						addSeriesMemberStmt.setInt(9, groupedWork.seriesWithVolumePriority.get(seriesNameWithVolume));
 						addSeriesMemberStmt.executeUpdate();
 						if (seriesId >= 0) {
 							setSeriesDateUpdated.setLong(1, timeNow);
@@ -1516,6 +1521,16 @@ public class GroupedWorkIndexer {
 						seriesRS.close();
 
 					} else {
+						if (!Objects.equals(seriesScore.get(normalizedSeriesName), groupedWork.seriesWithVolumePriority.get(seriesNameWithVolume))) {
+							long timeNow = new Date().getTime() / 1000;
+							updateSeriesScore.setInt(1, groupedWork.seriesWithVolumePriority.get(seriesNameWithVolume));
+							updateSeriesScore.setInt(2, seriesInDb.get(normalizedSeriesName));
+							updateSeriesScore.setString(3, groupedWork.getId());
+							updateSeriesScore.executeUpdate();
+							setSeriesDateUpdated.setLong(1, timeNow);
+							setSeriesDateUpdated.setLong(2, seriesInDb.get(normalizedSeriesName));
+							setSeriesDateUpdated.executeUpdate();
+						}
 						seriesInProcess.remove(normalizedSeriesName); // Remove since we have accounted for it
 					}
 				}
@@ -1601,7 +1616,7 @@ public class GroupedWorkIndexer {
 					groupedWork.clearSeries();
 					groupedWork.addSeries(seriesName);
 					if (!seriesDisplayOrder.isEmpty()) {
-						groupedWork.addSeriesWithVolume(seriesName, seriesDisplayOrder);
+						groupedWork.addSeriesWithVolume(seriesName, seriesDisplayOrder, 2);
 					}
 				}
 			}
