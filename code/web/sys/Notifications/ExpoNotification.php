@@ -110,6 +110,7 @@ class ExpoNotification extends DataObject {
 			//Note, this is only setup to have a single branded app setting per instance which will be the normal case.
 			//But if we ever wanted to support multiple Aspen LiDA instances within a single Aspen installation, we would need to make the
 			//notification tokens stored include the slug name
+			require_once ROOT_DIR . '/sys/AspenLiDA/BrandedAppSetting.php';
 			$brandedSettings = new BrandedAppSetting();
 			if ($brandedSettings->find(true)) {
 				if (!empty($brandedSettings->notificationAccessToken)) {

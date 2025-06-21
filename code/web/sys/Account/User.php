@@ -5885,9 +5885,12 @@ class User extends DataObject {
 	}
 
 	public function isNotificationHistoryEnabled() : bool {
-		$catalogDriver = $this->getCatalogDriver();
-		if ($catalogDriver) {
-			return $catalogDriver->supportAccountNotifications();
+		$accountProfile = $this->getAccountProfile();
+		if (!empty($accountProfile) && $accountProfile->enableFetchingIlsMessages) {
+			$catalogDriver = $this->getCatalogDriver();
+			if ($catalogDriver) {
+				return $catalogDriver->supportAccountNotifications();
+			}
 		}
 		return false;
 	}
