@@ -4771,7 +4771,6 @@ class User extends DataObject {
 				$sections['aspen_lida']->addAction($notificationReportAction, 'View Notifications Reports');
 			}
 			if ($allowILSMessaging) {
-				/** @noinspection PhpUnreachableStatementInspection */
 				$sections['aspen_lida']->addAction(new AdminAction('ILS Notification Settings', 'Define settings for ILS notifications in Aspen LiDA.', '/AspenLiDA/ILSNotificationSettings'), 'Administer Aspen LiDA Settings');
 			}
 			$sections['aspen_lida']->addAction(new AdminAction('LiDA Notifications', 'LiDA Notifications allow you to send custom alerts to your patrons via the app.', '/Admin/LiDANotifications'), [

@@ -13,6 +13,31 @@ function getUpdates25_07_00(): array {
 		 ], //name*/
 
 		//mark - Grove
+		'account_profile_enable_fetching_ils_messages' => [
+			'title' => 'Add Enable Fetching ILS Messages to Account Profile',
+			'description' => 'Add Enable Fetching ILS Messages to Account Profile',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE account_profiles ADD COLUMN enableFetchingIlsMessages TINYINT(1) DEFAULT 0'
+			]
+		], //account_profile_enable_fetching_ils_messages
+		'branded_app_notification_access_token' => [
+			'title' => 'Add Notification Access Token To Branded App Settings',
+			'description' => 'Add Notification Access Token To Branded App Settings',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE aspen_lida_branded_settings ADD COLUMN notificationAccessToken varchar(256) DEFAULT NULL',
+			]
+		], //branded_app_notification_access_token
+		'ils_notification_setting_account_profile' => [
+			'title' => 'Link ILS Notification Setting to Account Profile',
+			'description' => 'Link ILS Notification Setting to Account Profile',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE ils_notification_setting ADD COLUMN accountProfileId INT(11) DEFAULT -1',
+				"UPDATE ils_notification_setting SET accountProfileId = (SELECT id from account_profiles where name <> 'admin' and name <> 'admin_sso' LIMIT 1)",
+			]
+		], //ils_notification_setting_account_profile
 
 		//katherine - Grove
 		'add_series_member_priority_score' => [

@@ -1,13 +1,12 @@
-<?php /** @noinspection PhpUnused */
+<?php
 require_once ROOT_DIR . '/sys/Account/UserNotification.php';
 require_once ROOT_DIR . '/sys/Account/UserNotificationToken.php';
 require_once ROOT_DIR . '/sys/CurlWrapper.php';
 
 class ExpoNotification extends DataObject {
-	/** @var CurlWrapper */
-	private $expoCurlWrapper;
+	private CurlWrapper|null $expoCurlWrapper;
 
-	public function sendExpoPushNotification($body, $pushToken, $userId, $notificationType) {
+	public function sendExpoPushNotification($body, $pushToken, $userId, $notificationType) : void {
 		global $logger;
 		//https://docs.expo.dev/push-notifications/sending-notifications
 		$bearerAuthToken = $this->getNotificationAccessToken();
@@ -17,11 +16,9 @@ class ExpoNotification extends DataObject {
 			'Host: exp.host',
 			'Accept: application/json',
 			'Accept-Encoding: gzip, deflate',
-			'Content-Type: application/json'
+			'Content-Type: application/json',
+			'Authorization: Bearer ' . $bearerAuthToken
 		];
-		if (!empty($bearerAuthToken)) {
-			$headers[] = 'Authorization: Bearer ' . $bearerAuthToken;
-		}
 		$this->expoCurlWrapper->addCustomHeaders($headers, true);
 		$logger->log("Sending notification to Expo servers", Logger::LOG_ERROR);
 		$response = $this->expoCurlWrapper->curlPostPage($url, json_encode($body));
@@ -58,7 +55,7 @@ class ExpoNotification extends DataObject {
 		$notification->insert();
 	}
 
-	public function getExpoNotificationReceipt($receiptId) {
+	public function getExpoNotificationReceipt($receiptId) : void {
 		//https://docs.expo.dev/push-notifications/sending-notifications/#push-receipt-errors
 		$bearerAuthToken = $this->getNotificationAccessToken();
 		$url = "https://exp.host/--/api/v2/push/getReceipts";
@@ -105,26 +102,43 @@ class ExpoNotification extends DataObject {
 		}
 	}
 
-	public function getNotificationAccessToken() {
-		$token = null;
-		require_once ROOT_DIR . '/sys/SystemVariables.php';
-		$systemVariables = SystemVariables::getSystemVariables();
-		if ($systemVariables && !empty($systemVariables->greenhouseUrl)) {
-			if ($result = file_get_contents($systemVariables->greenhouseUrl . '/API/GreenhouseAPI?method=getNotificationAccessToken')) {
-				$data = json_decode($result, true);
-				$token = $data['token'];
+	private static string|null|false $_notificationAccessToken = false;
+	public function getNotificationAccessToken() : ?string {
+		if (self::$_notificationAccessToken === false) {
+			self::$_notificationAccessToken = null;
+			//First check to see if we have branded app settings.
+			//Note, this is only setup to have a single branded app setting per instance which will be the normal case.
+			//But if we ever wanted to support multiple Aspen LiDA instances within a single Aspen installation, we would need to make the
+			//notification tokens stored include the slug name
+			$brandedSettings = new BrandedAppSetting();
+			if ($brandedSettings->find(true)) {
+				if (!empty($brandedSettings->notificationAccessToken)) {
+					self::$_notificationAccessToken =  $brandedSettings->notificationAccessToken;
+				}
 			}
-		} else {
-			global $configArray;
-			if ($result = file_get_contents($configArray['Site']['url'] . '/API/GreenhouseAPI?method=getNotificationAccessToken')) {
-				$data = json_decode($result, true);
-				$token = $data['token'];
+
+			if (self::$_notificationAccessToken == null) {
+				require_once ROOT_DIR . '/sys/SystemVariables.php';
+				$systemVariables = SystemVariables::getSystemVariables();
+				if ($systemVariables && !empty($systemVariables->greenhouseUrl)) {
+					if ($result = file_get_contents($systemVariables->greenhouseUrl . '/API/GreenhouseAPI?method=getNotificationAccessToken')) {
+						$data = json_decode($result, true);
+						self::$_notificationAccessToken = $data['token'];
+					}
+				} else {
+					global $configArray;
+					if ($result = file_get_contents($configArray['Site']['url'] . '/API/GreenhouseAPI?method=getNotificationAccessToken')) {
+						$data = json_decode($result, true);
+						self::$_notificationAccessToken = $data['token'];
+					}
+				}
 			}
 		}
-		return $token;
+
+		return self::$_notificationAccessToken;
 	}
 
-	public function sendExpoTestPushNotification($title, $body, $pushToken) {
+	public function sendExpoTestPushNotification($title, $body, $pushToken) : array {
 		$notificationBody = [
 			'to' => $pushToken,
 			'title' => $title,
@@ -151,7 +165,7 @@ class ExpoNotification extends DataObject {
 		return json_decode($response, true);
 	}
 
-	public function getExpoTestPushNotificationReceipt($receiptId) {
+	public function getExpoTestPushNotificationReceipt($receiptId) : array {
 		$bearerAuthToken = $this->getNotificationAccessToken();
 		$url = 'https://exp.host/--/api/v2/push/getReceipts';
 		$this->expoCurlWrapper = new CurlWrapper();
