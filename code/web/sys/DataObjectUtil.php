@@ -521,7 +521,7 @@ class DataObjectUtil {
 				}
 				$object->setProperty($propertyName, $newValue, $property);
 			}
-		} elseif ($property['type'] == 'translatableTextBlock') {
+		} elseif ($property['type'] == 'translatableTextBlock' || $property['type'] == 'translatablePlainTextBlock') {
 			//Set all the translations for
 			$allTranslations = [];
 			foreach ($_REQUEST as $requestName => $propertyValue) {
