@@ -7007,7 +7007,7 @@ class MyAccount_AJAX extends JSON_Action {
 				$paymentResponse = $paymentRequest->curlPostBodyData($url, $postParams);
 				$decodedPaymentResponse = json_decode($paymentResponse);
 
-				ExternalRequestLogEntry::logRequest('fine_payment.createInvoiceCloudOrder','POST', $url, $paymentRequest->getHeaders(),json_encode($postParams), $paymentRequest->getResponseCode(), $paymentRegitsponse, []);
+				ExternalRequestLogEntry::logRequest('fine_payment.createInvoiceCloudOrder','POST', $url, $paymentRequest->getHeaders(),json_encode($postParams), $paymentRequest->getResponseCode(), $paymentResponse, []);
 
 				if ($decodedPaymentResponse->Message != 'SUCCESS') {
 					return [
