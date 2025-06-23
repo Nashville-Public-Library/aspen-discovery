@@ -310,7 +310,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		$GroupedWorksSolrConnector2 = new GroupedWorksSolrConnector2($configArray['Index']['url']);
 
 		$recordData = $this->process($recordData, $textQuery);
-
+//var_dump(is_array($recordData));
 		if (is_array($recordData)) {
 			$this->lastSearchResults = $recordData;
 			$this->lastSearchResults['response']['talpa_result_count'] = 0;
