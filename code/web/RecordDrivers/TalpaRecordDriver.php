@@ -56,8 +56,8 @@ class TalpaRecordDriver extends RecordInterface {
 			'id'=> $this->getUniqueID(),
 			'isbn'=> $this->isn,
 			'upc'=> $this->upc,
-			'author' => urlencode($this->author),
-			'title' => urlencode($this->title),
+			'author' => urlencode($this->record['author'] ),
+			'title' => urlencode($this->record['title']),
 			'size' => $size,
 			'type' => 'talpa'
 		);
@@ -210,8 +210,9 @@ class TalpaRecordDriver extends RecordInterface {
 		}
 		else{ //Not a library result
 			$interface->assign('summId', $this->record['work_id']);
+			$interface->assign('summUrl','');
 			$this->isn = $this->record['isbns'][0];
-			$this->upc = $this->record['upcs'][0];
+			$this->upc = !empty($this->record['upcs']) ? $this->record['upcs'][0] : null;
 			$this->title = $this->record['title'];
 			$this->author = $this->record['author'];
 			$interface->assign('summTitle', $this->record['title']);

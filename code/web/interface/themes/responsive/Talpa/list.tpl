@@ -6,7 +6,7 @@
 			{include file=$recommendations}
 		{/foreach}
 	{/if}
-	{if $talpa_warning}
+	{if !empty($talpa_warning)}
 {*		<h4 class="talpa-warning">{$talpa_warning}</h4>*}
 		<p class="alert alert-warning">{$talpa_warning}</p>
 	{/if}
