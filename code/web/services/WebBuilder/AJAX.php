@@ -361,7 +361,7 @@ class WebBuilder_AJAX extends JSON_Action {
 			'message' => 'Unknown error uploading image',
 		];
 		if (UserAccount::isLoggedIn()) {
-			if (UserAccount::userHasPermission('Administer All Web Content')) {
+			if (UserAccount::userHasPermission(['Administer All Web Content', 'Administer Web Content for Home Library'])) {
 				if (!empty($_FILES)) {
 					require_once ROOT_DIR . '/sys/File/ImageUpload.php';
 					$structure = ImageUpload::getObjectStructure('');
@@ -417,7 +417,7 @@ class WebBuilder_AJAX extends JSON_Action {
 	/** @noinspection PhpUnused */
 	function uploadImageTinyMCE() {
 		if (UserAccount::isLoggedIn()) {
-			if (UserAccount::userHasPermission('Administer All Web Content')) {
+			if (UserAccount::userHasPermission(['Administer All Web Content', 'Administer Web Content for Home Library'])) {
 				if (!empty($_FILES)) {
 					require_once ROOT_DIR . '/sys/File/ImageUpload.php';
 					$structure = ImageUpload::getObjectStructure('');
@@ -476,7 +476,7 @@ class WebBuilder_AJAX extends JSON_Action {
 			'message' => 'Unknown error getting upload form',
 		];
 		if (UserAccount::isLoggedIn()) {
-			if (UserAccount::userHasPermission('Administer All Web Content')) {
+			if (UserAccount::userHasPermission(['Administer All Web Content', 'Administer Web Content for Home Library'])) {
 				$editorName = strip_tags($_REQUEST['editorName']);
 				$interface->assign('editorName', $editorName);
 				$result = [
