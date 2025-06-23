@@ -64,6 +64,9 @@ ob_start();
 
 initMemcache();
 initDatabase();
+$timer->logTime("Initialized Database");
+requireSystemLibraries();
+initLocale();
 
 if ($aspenUsage->getInstance() != 'aspen_internal') {
 	$isValidServerName = true;
@@ -116,49 +119,72 @@ if (isset($_SERVER['HTTP_USER_AGENT'])) {
 	$userAgentString = $_SERVER['HTTP_USER_AGENT'];
 }
 try {
-	$userAgent = new UserAgent();
-	if (strlen($userAgentString) > 512) {
-		$userAgentString = substr($userAgentString, 0, 512);
-	}
-	if (isSpammyUserAgent($userAgentString)) {
-		http_response_code(404);
-		echo("<html><head><title>Page Not Found</title></head><body><h1>404</h1> <p>We're sorry, but the page you are looking for can't be found.</p></body></html>");
-		die();
-	}
-	$userAgent->userAgent = $userAgentString;
-	if ($userAgent->find(true)) {
-		$userAgentId = $userAgent->id;
-	}else{
-		if (!$userAgent->insert()) {
-			$logger->log("Could not insert user agent $userAgentString", Logger::LOG_ERROR);
-			$logger->log($userAgent->getLastError(), Logger::LOG_ERROR);
-		}
-		$userAgentId = $userAgent->id;
-	}
-	require_once ROOT_DIR . '/sys/SystemLogging/UsageByUserAgent.php';
-	$usageByUserAgent = new UsageByUserAgent();
-	$usageByUserAgent->userAgentId = $userAgentId;
-	$usageByUserAgent->year = date('Y');
-	$usageByUserAgent->month = date('n');
-	global $aspenUsage;
-	$usageByUserAgent->instance = $aspenUsage->getInstance();
-	// Attempts to load an existing row from usage_by_user_agent that matches the index userAgentId.
-	$foundExisting = $usageByUserAgent->find(true);
+	// Check if user agent tracking is disabled
+	$systemVariables = new SystemVariables();
+	$trackingEnabled = !($systemVariables->find(true) && $systemVariables->disable_user_agent_logging);
 
-	if ($userAgent->blockAccess) {
-		$usageByUserAgent->numBlockedRequests++;
-		if ($usageByUserAgent->update() == 0){
-			$logger->log("Could not update user agent usage", Logger::LOG_ERROR);
-			$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+	if ($trackingEnabled) {
+		$userAgent = new UserAgent();
+		if (strlen($userAgentString) > 512) {
+			$userAgentString = substr($userAgentString, 0, 512);
 		}
-		http_response_code(403);
-		echo("<h1>Forbidden</h1><p><strong>We are unable to handle your request.</strong></p>");
-		die();
-	}else{
-		$usageByUserAgent->numRequests++;
-		if ($usageByUserAgent->update() == 0){
-			$logger->log("Could not update user agent usage", Logger::LOG_ERROR);
-			$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+		if (isSpammyUserAgent($userAgentString)) {
+			http_response_code(404);
+			echo("<html><head><title>Page Not Found</title></head><body><h1>404</h1> <p>We're sorry, but the page you are looking for can't be found.</p></body></html>");
+			die();
+		}
+
+		$userAgent->userAgent = $userAgentString;
+		if ($userAgent->find(true)) {
+			$userAgentId = $userAgent->id;
+		}else{
+			if (!$userAgent->insert()) {
+				$logger->log("Could not insert user agent $userAgentString", Logger::LOG_ERROR);
+				$logger->log($userAgent->getLastError(), Logger::LOG_ERROR);
+			}
+			$userAgentId = $userAgent->id;
+		}
+		require_once ROOT_DIR . '/sys/SystemLogging/UsageByUserAgent.php';
+		$usageByUserAgent = new UsageByUserAgent();
+		$usageByUserAgent->userAgentId = $userAgentId;
+		$usageByUserAgent->year = date('Y');
+		$usageByUserAgent->month = date('n');
+		global $aspenUsage;
+		$usageByUserAgent->instance = $aspenUsage->getInstance();
+		// Attempts to load an existing row from usage_by_user_agent that matches the index userAgentId.
+		$foundExisting = $usageByUserAgent->find(true);
+
+		if ($userAgent->blockAccess) {
+			if ($foundExisting) {
+				$updateResult = $usageByUserAgent->incrementNumBlockedRequests();
+				if ($updateResult === false) {
+					$logger->log("Could not update blocked user agent usage", Logger::LOG_ERROR);
+					$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+				}
+			}else{
+				$usageByUserAgent->numBlockedRequests = 1;
+				if (!$usageByUserAgent->insert()) {
+					$logger->log("Could not insert blocked user agent usage", Logger::LOG_ERROR);
+					$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+				}
+			}
+			http_response_code(403);
+			echo("<h1>Forbidden</h1><p><strong>We are unable to handle your request.</strong></p>");
+			die();
+		}else{
+			if ($foundExisting) {
+				$updateResult = $usageByUserAgent->incrementNumRequests();
+				if ($updateResult === false) {
+					$logger->log("Could not update user agent usage", Logger::LOG_ERROR);
+					$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+				}
+			}else{
+				$usageByUserAgent->numRequests = 1;
+				if (!$usageByUserAgent->insert()) {
+					$logger->log("Could not insert user agent usage", Logger::LOG_ERROR);
+					$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+				}
+			}
 		}
 	}
 }catch (Exception $e) {
@@ -178,29 +204,19 @@ try {
 } catch (Exception $e) {
 	//Table has not been created yet, ignore it
 }
-$usageByIPAddress->lastRequest = time();
-$usageByIPAddress->numRequests++;
-
-$timer->logTime("Initialized Database");
-requireSystemLibraries();
-initLocale();
 
 //Check to see if we should be blocking based on the IP address
 if (IPAddress::isClientIpBlocked()) {
 	$aspenUsage->blockedRequests++;
 	$aspenUsage->update();
-	try {
-		$usageByIPAddress->numBlockedRequests++;
-		if (SystemVariables::getSystemVariables()->trackIpAddresses) {
-			$usageByIPAddress->update();
-		}
-	} catch (Exception $e) {
-		//Ignore this, the class has not been created yet
-	}
+
+	$usageByIPAddress->incrementNumBlockedRequests();
 
 	http_response_code(403);
 	echo("<h1>Forbidden</h1><p><strong>We are unable to handle your request.</strong></p>");
 	die();
+}else{
+	$usageByIPAddress->incrementNumRequests();
 }
 if (IPAddress::showDebuggingInformation()) {
 	ini_set('display_errors', true);
@@ -221,6 +237,10 @@ try {
 	}
 } catch (Exception $e) {
 	//Modules are not installed yet
+}
+
+if (array_key_exists('Community Engagement', $enabledModules)) {
+	require_once ROOT_DIR . '/sys/CommunityEngagement/action-hooks.php';
 }
 
 $timer->logTime("Basic Initialization");
@@ -247,9 +267,8 @@ function initDatabase() {
 	} catch (PDOException $e) {
 		global $serverName;
 		echo("Server name: $serverName<br>\r\n");
-		var_dump($configArray);
 		if ($configArray['System']['debug']) {
-			echo("Could not connect to database {$configArray['Dataase']['database_dsn']}, define database connection information in config.pwd.ini<br>\r\n");
+			echo("Could not connect to database {$configArray['Database']['database_dsn']}, define database connection information in config.pwd.ini<br>\r\n");
 		} else {
 			echo("Could not connect to database\r\n");
 		}

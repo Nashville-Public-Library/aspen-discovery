@@ -9438,37 +9438,59 @@ AspenDiscovery.Admin = (function () {
 				$("#propertyRowthemes").show();
 			}
 		},
-		updateMaterialsRequestFields: function () {
-			var materialRequestType = $("#enableMaterialsRequestSelect option:selected").val();
-			$("#propertyRowallowDeletingILSRequests").hide();
-			if (materialRequestType === "0" || materialRequestType === "2") {
-				$("#propertyRowexternalMaterialsRequestUrl").hide();
-				$("#propertyRowmaxRequestsPerYear").hide();
-				$("#propertyRowmaxActiveRequests").hide();
-				$("#propertyRowmaterialsRequestDaysToPreserve").hide();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").hide();
-				$("#propertyRowmaterialsRequestFormats").hide();
-				$("#propertyRowmaterialsRequestFormFields").hide();
-				if (materialRequestType === "2") {
-					$("#propertyRowallowDeletingILSRequests").show();
-				}
-			} else if (materialRequestType === "1") {
-				$("#propertyRowexternalMaterialsRequestUrl").hide();
-				$("#propertyRowmaxRequestsPerYear").show();
-				$("#propertyRowmaxActiveRequests").show();
-				$("#propertyRowmaterialsRequestDaysToPreserve").show();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").show();
-				$("#propertyRowmaterialsRequestFormats").show();
-				$("#propertyRowmaterialsRequestFormFields").show()
-			} else if (materialRequestType === "3") {
-				$("#propertyRowexternalMaterialsRequestUrl").show();
-				$("#propertyRowmaxRequestsPerYear").hide();
-				$("#propertyRowmaxActiveRequests").hide();
-				$("#propertyRowmaterialsRequestDaysToPreserve").hide();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").hide();
-				$("#propertyRowmaterialsRequestFormats").hide();
-				$("#propertyRowmaterialsRequestFormFields").hide()
+		updateMaterialsRequestFields() {
+			const materialRequestType = $("#enableMaterialsRequestSelect option:selected").val();
+			const rowsToHide = [
+				"#propertyRowdisplayMaterialsRequestToPublic",
+				"#propertyRowallowDeletingILSRequests",
+				"#propertyRowexternalMaterialsRequestUrl",
+				"#propertyRowmaxRequestsPerYear",
+				"#propertyRowmaxActiveRequests",
+				"#propertyRowrequestCalendarStartDate",
+				"#propertyRowmaterialsRequestDaysToPreserve",
+				"#propertyRowmaterialsRequestFieldsToDisplay",
+				"#propertyRowmaterialsRequestFormats",
+				"#propertyRowmaterialsRequestFormFields",
+				"#propertyRowmaterialsRequestSendStaffEmailOnNew",
+				"#propertyRowmaterialsRequestNewEmail",
+				"#propertyRowmaterialsRequestSendStaffEmailOnAssign",
+				"#propertyRownewMaterialsRequestSummary",
+				"#propertyRowyearlyRequestLimitType",
+				"#propertyRowcheckRequestsForExistingTitles"
+			];
+			rowsToHide.forEach(selector => $(selector).hide());
+
+			switch (materialRequestType) {
+				case "1": // Aspen Request System
+					[
+						"#propertyRowdisplayMaterialsRequestToPublic",
+						"#propertyRowmaxRequestsPerYear",
+						"#propertyRowyearlyRequestLimitType",
+						"#propertyRowmaxActiveRequests",
+						"#propertyRowrequestCalendarStartDate",
+						"#propertyRownewMaterialsRequestSummary",
+						"#propertyRowmaterialsRequestDaysToPreserve",
+						"#propertyRowmaterialsRequestFieldsToDisplay",
+						"#propertyRowmaterialsRequestFormats",
+						"#propertyRowmaterialsRequestFormFields",
+						"#propertyRowmaterialsRequestSendStaffEmailOnNew",
+						"#propertyRowmaterialsRequestNewEmail",
+						"#propertyRowmaterialsRequestSendStaffEmailOnAssign",
+						"#propertyRowcheckRequestsForExistingTitles"
+					].forEach(selector => $(selector).show());
+					break;
+				case "2": // ILS Request System
+					["#propertyRowallowDeletingILSRequests", "#propertyRowdisplayMaterialsRequestToPublic"]
+						.forEach(selector => $(selector).show());
+					break;
+				case "3": // External Request Link
+					["#propertyRowexternalMaterialsRequestUrl", "#propertyRowdisplayMaterialsRequestToPublic"]
+						.forEach(selector => $(selector).show());
+					break;
+				default: // None (0)
+					break;
 			}
+
 			return false;
 		},
 		updateDonationFields: function () {
@@ -10244,6 +10266,19 @@ AspenDiscovery.Admin = (function () {
 					$('#propertyRowssoUsernameAttr').hide();
 				}
 			});
+		},
+		toggleLibrarySharingOptions: function () {
+			if ($('#owningLibrarySelect').val() !== '-1'){
+				$('#propertyRowsharing').show();
+				if ($('#sharingSelect').val() === '1'){
+					$('#propertyRowsharedWithLibrary').show();
+				} else {
+					$('#propertyRowsharedWithLibrary').hide();
+				}
+			} else {
+				$('#propertyRowsharing').hide();
+				$('#propertyRowsharedWithLibrary').hide();
+			}
 		},
 		linkingSettingOptionChange: function () {
 			var url = Globals.path + "/Admin/AJAX";
@@ -18612,6 +18647,19 @@ AspenDiscovery.CommunityEngagement = function() {
 				automaticRewardControl.style.display = '';
 			}
 		},
+		updateConditionalOperator: function () {
+			let conditionalField = document.querySelector('[name="conditionalField"]');
+			let conditionalOperator = document.querySelector('[name="conditionalOperator"]');
+
+			if (!conditionalField || !conditionalOperator) return;
+
+			let isLikeOption = conditionalOperator.querySelector('option[value="like"]');
+
+			if(isLikeOption) {
+				isLikeOption.style.display = (conditionalField.value === 'user_list') ? 'none' : '';
+			}
+			
+		}
 
 	}
 	
