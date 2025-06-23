@@ -336,10 +336,10 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				require_once ROOT_DIR . '/RecordDrivers/TalpaRecordDriver.php';
 				$record = new TalpaRecordDriver($current);
 
-				$groupedWorkIds = $current['groupedworkidA'];
+				$groupedWorkIds = $current['groupedworkidA'] ?? [];
 				$foundLibraryResult = false;
 				foreach ($groupedWorkIds  as $groupedWorkId) {
-					if ($inLibraryResults[$groupedWorkId]) {
+					if (array_key_exists($groupedWorkId, $inLibraryResults)) {
 						require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 						$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
 						if ($groupedWorkDriver->isValid()) {
@@ -369,8 +369,8 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 0;
 						$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
 						$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
-						$this->lastSearchResults['response']['resultlist'][$x]['author'] = $bibInfo['author'];
-						$this->lastSearchResults['response']['resultlist'][$x]['pubYear'] = $bibInfo['date'];
+						$this->lastSearchResults['response']['resultlist'][$x]['author'] = !empty($bibInfo['author']) ? $bibInfo['author'] : '';
+						$this->lastSearchResults['response']['resultlist'][$x]['pubYear'] = !empty($bibInfo['date']) ? $bibInfo['date'] : '';
 						$this->lastSearchResults['response']['talpa_result_count']++;
 						$this->resultsTotal++;
 					}
@@ -981,7 +981,8 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		$this->startQueryTimer();
 		$recordData = $this->httpRequest($baseUrl, $queryString, $headers, $settings, $queryId);
 		$json_response = json_decode($recordData, true);
-		if( $json_response['error'])
+
+		if( !empty($json_response['error']))
 		{
 			$code = $json_response['error']['code'];
 			$wording = $json_response['error']['wording'];
@@ -1053,9 +1054,8 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				return $input;
 			}
 			SearchObject_TalpaSearcher::$searchOptions = json_decode($input, true);
-			$resultsList = SearchObject_TalpaSearcher::$searchOptions ['response']['resultlist'];
-			$warnings = SearchObject_TalpaSearcher::$searchOptions ['response']['warnings'];
-
+			$resultsList = SearchObject_TalpaSearcher::$searchOptions ['response']['resultlist'] ?? [];
+			$warnings = SearchObject_TalpaSearcher::$searchOptions ['response']['warnings'] ?? false;
 			if (!SearchObject_TalpaSearcher::$searchOptions) {
 				SearchObject_TalpaSearcher::$searchOptions = array(
 					'recordCount' => 0,
