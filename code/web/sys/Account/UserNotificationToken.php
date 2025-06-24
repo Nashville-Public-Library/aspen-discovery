@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class UserNotificationToken extends DataObject {
 	public $__table = 'user_notification_tokens';

@@ -85,7 +85,6 @@ class NotificationSetting extends DataObject {
 					],
 				],
 			],
-			/*
 			'ilsNotificationSettingId' => [
 				'property' => 'ilsNotificationSettingId',
 				'type' => 'enum',
@@ -95,7 +94,6 @@ class NotificationSetting extends DataObject {
 				'values' => $ilsNotificationSettings,
 				'hideInLists' => true,
 			],
-			*/
 			'libraries' => [
 				'property' => 'libraries',
 				'type' => 'multiSelect',
