@@ -423,8 +423,8 @@ class Koha extends AbstractIlsDriver {
 						$error = $messageInformation[1];
 						$result['messages'][] = trim($error);
 					}
-				}else{
-					$result['messages'][] = 'There was an error logging in to the backend system. Unable to update your contact information.';
+				} else {
+					$result['messages'][] = $loginResult['message'] ?? 'There was an error logging in to the backend system. Unable to update your contact information.';
 				}
 			}
 		}
@@ -4200,6 +4200,23 @@ class Koha extends AbstractIlsDriver {
 			'hideInLists' => true,
 			'expandByDefault' => true,
 			'properties' => [
+				'borrower_primary_contact_method' => [
+					'property' => 'borrower_primary_contact_method',
+					'type' => 'enum',
+					'label' => 'Primary Contact Method',
+					'values' => [
+						'' => '',
+						'Primary Phone' => 'Primary Phone',
+						'Secondary Phone' => 'Secondary Phone',
+						'Other Phone' => 'Other Phone',
+						'Primary Email' => 'Primary Email',
+						'Secondary Email' => 'Secondary Email',
+						'Fax' => 'Fax',
+					],
+					'description' => 'The main method of contact',
+					'required' => false,
+					'autocomplete' => false,
+				],
 				'borrower_phone' => [
 					'property' => 'borrower_phone',
 					'type' => 'text',
@@ -4515,6 +4532,7 @@ class Koha extends AbstractIlsDriver {
 						'description' => $passwordNotes,
 						'minLength' => $pinValidationRules['minLength'],
 						'maxLength' => $pinValidationRules['maxLength'],
+						'onlyDigitsAllowed' => $pinValidationRules['onlyDigitsAllowed'],
 						'showConfirm' => false,
 						'required' => true,
 						'showDescription' => true,
@@ -4527,6 +4545,7 @@ class Koha extends AbstractIlsDriver {
 						'description' => 'Reenter your PIN',
 						'minLength' => $pinValidationRules['minLength'],
 						'maxLength' => $pinValidationRules['maxLength'],
+						'onlyDigitsAllowed' => $pinValidationRules['onlyDigitsAllowed'],
 						'showConfirm' => false,
 						'required' => true,
 						'showDescription' => false,
@@ -4692,6 +4711,47 @@ class Koha extends AbstractIlsDriver {
 	function selfRegister(): array {
 		global $library;
 		$result = ['success' => false,];
+
+		if (isset($_REQUEST['borrower_password'])) {
+			$password = $_REQUEST['borrower_password'];
+			$pinValidationRules = $this->getPasswordPinValidationRules();
+
+			if (strlen($password) < $pinValidationRules['minLength']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must be at least {$pinValidationRules['minLength']} characters long.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if (strlen($password) > $pinValidationRules['maxLength']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must be longer than {$pinValidationRules['maxLength']} characters.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if ($pinValidationRules['onlyDigitsAllowed'] && !ctype_digit($password)) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must only contain numbers.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if (isset($_REQUEST['borrower_password2']) && $_REQUEST['borrower_password'] !== $_REQUEST['borrower_password2']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Passwords do not match.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+		}
 
 		if ($this->getKohaVersion() < 20.05) {
 			$catalogUrl = $this->accountProfile->vendorOpacUrl;
@@ -4933,6 +4993,21 @@ class Koha extends AbstractIlsDriver {
 			]);
 		} else {
 			$apiUrl = $this->getWebServiceURL() . "/api/v1/patrons";
+
+			if ($this->getKohaVersion() > 21.05) {
+				$formattedExtendedAttributes = [];
+				foreach ($this->setExtendedAttributes() as $extendedAttribute) {
+					if (!isset($_REQUEST["borrower_attribute_" . $extendedAttribute['code']])) {
+						continue;
+					}
+					$formattedExtendedAttributes[] = [
+						'type' =>  $extendedAttribute['code'],
+						'value' => $_REQUEST["borrower_attribute_" . $extendedAttribute['code']]
+					];
+				}
+				$postVariables['extended_attributes'] = $formattedExtendedAttributes;
+			}
+
 			$postParams = json_encode($postVariables);
 
 			$this->apiCurlWrapper->addCustomHeaders([
@@ -4990,17 +5065,6 @@ class Koha extends AbstractIlsDriver {
 						}
 					} else {
 						$result['message'] = translate(['text'=>"Your account was registered, but a barcode was not provided, please contact your library for barcode and password to use when logging in.",'isPublicFacing'=>true]);
-					}
-				}
-
-				// check for patron attributes
-				if ($this->getKohaVersion() > 21.05) {
-					$jsonResponse = json_decode($response);
-					$patronId = $jsonResponse->patron_id;
-					$extendedAttributes = $this->setExtendedAttributes();
-
-					if (!empty($extendedAttributes)) {
-						$this->updateExtendedAttributesInKoha($patronId, $extendedAttributes, $oauthToken);
 					}
 				}
 			}
@@ -5400,7 +5464,7 @@ class Koha extends AbstractIlsDriver {
 			if (!$loginResult['success']) {
 				return [
 					'success' => false,
-					'message' => 'Unable to login to Koha',
+					'message' => $loginResult['message'] ?? 'Unable to log in to Koha.',
 				];
 			} else {
 				$postFields = [
@@ -5595,51 +5659,61 @@ class Koha extends AbstractIlsDriver {
 		return 'koha-requests.tpl';
 	}
 
-	function deleteMaterialsRequests(User $patron) {
-		if ($this->getKohaVersion() > 21.05) {
-			$result = [
+	function deleteMaterialsRequests(User $patron): array {
+		$suggestionIds = $_REQUEST['delete_field'] ?? [];
+		if (!is_array($suggestionIds)) {
+			$suggestionIds = [$suggestionIds];
+		}
+
+		if (empty($suggestionIds)) {
+			return [
 				'success' => false,
 				'message' => translate([
-					'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
+					'text' => 'No requests were selected for deletion.',
 					'isPublicFacing' => true,
-				])
+				]),
 			];
-			
-			$suggestionId = $_REQUEST['delete_field'];
-			$response = $this->kohaApiUserAgent->delete("/api/v1/suggestions/$suggestionId",'koha.deleteMaterialsRequests');
-			if ($response) {
-				if ($response['code'] == 204) {
-					$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);
-					$result = [
-						'success' => true,
-						'message' => 'Your requests have been deleted succesfully',
-					];
-				} else {
-					$result = [
-						'success' => false,
-						'message' => $response['error']
-					];
-				}
+		}
+
+		$errors = [];
+		$successCount = 0;
+		foreach ($suggestionIds as $suggestionId) {
+			$response = $this->kohaApiUserAgent->delete("/api/v1/suggestions/$suggestionId", 'koha.deleteMaterialsRequests');
+			if ($response && $response['code'] === 204) {
+				$successCount++;
+			} else {
+				$errors[] = $response['error'] ?? translate([
+					'text' => "There was an error deleting request with ID $suggestionId.",
+					'isPublicFacing' => true,
+				]);
 			}
-			return $result;
-		} else {
-			$this->loginToKohaOpac($patron);
+		}
 
-			$catalogUrl = $this->accountProfile->vendorOpacUrl;
-			$this->getKohaPage($catalogUrl . '/cgi-bin/koha/opac-suggestions.pl');
+		$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);
 
-			$postFields = [
-				'op' => 'delete_confirm',
-				'delete_field' => $_REQUEST['delete_field'],
-			];
-			$this->postToKohaPage($catalogUrl . '/cgi-bin/koha/opac-suggestions.pl', $postFields);
-
-			$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);
-
+		if (empty($errors)) {
+			$messageText = count($suggestionIds) > 1
+				? 'All selected requests have been deleted successfully.'
+				: 'Your request has been deleted successfully.';
 			return [
 				'success' => true,
-				'message' => 'deleted your requests',
+				'message' => translate([
+					'text' => $messageText,
+					'isPublicFacing' => true,
+				]),
 			];
+		} else {
+			if ($successCount > 0) {
+				return [
+					'success' => true,
+					'message' => "Successfully deleted {$successCount} request(s), but encountered errors with " . count($errors) . " request(s):<br/>" . implode('<br/>', $errors)
+				];
+			} else {
+				return [
+					'success' => false,
+					'message' => "Failed to delete requests:<br/>" . implode('<br/>', $errors)
+				];
+			}
 		}
 	}
 

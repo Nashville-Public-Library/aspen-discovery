@@ -18,6 +18,7 @@ class SeriesMember extends DataObject {
 	public $userAdded;
 	public $excluded;
 	public $deleted;
+	public $priorityScore;
 
 	public static function getObjectStructure($context = ''): array {
 		global $configArray;
