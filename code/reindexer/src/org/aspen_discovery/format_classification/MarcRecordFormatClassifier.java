@@ -220,6 +220,9 @@ public class MarcRecordFormatClassifier {
 					if (physicalDescriptionData.contains("atlas")) {
 						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format Atlas based on 300 Physical Description", 2);}
 						result.add("Atlas");
+					} else if (physicalDescriptionData.contains("online resource")) {
+						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format online_resource based on 300 Physical Description.", 2);}
+						result.add("online_resource");
 					} else if (physicalDescriptionData.contains("large type") || physicalDescriptionData.contains("large print")) {
 						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format LargePrint based on 300 Physical Description", 2);}
 						result.add("LargePrint");
