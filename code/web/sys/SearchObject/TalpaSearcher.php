@@ -34,11 +34,22 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	protected $queryEndTime = null;
 	protected $queryTime = null;
 
+	/**Track record fetch time info */
+	protected $recordFetchStartTime = null;
+	protected $recordFetchEndTime = null;
+	protected $recordFetchTime = null;
+
+	/**Track preliminary search time info */
+	protected $preliminarySearchStartTime = null;
+	protected $preliminarySearchEndTime = null;
+	protected $preliminarySearchTime = null;
+
 	// STATS
 	protected $resultsTotal = 0;
 
 	protected $searchTerms;
 
+	protected $preliminarySearchResults = null;
 	protected $lastSearchResults;
 
 	// Module and Action for building search results
@@ -295,17 +306,29 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	public function processData($recordData, $textQuery = null)
 	{
 		global $configArray;
-//		$this->indexEngine = new GroupedWorksSolrConnector2($configArray['Index']['url']);
 		require_once ROOT_DIR.'/sys/SolrConnector/GroupedWorksSolrConnector2.php';
 		$GroupedWorksSolrConnector2 = new GroupedWorksSolrConnector2($configArray['Index']['url']);
 
 		$recordData = $this->process($recordData, $textQuery);
-//var_dump(is_array($recordData));
+
 		if (is_array($recordData)) {
 			$this->lastSearchResults = $recordData;
 			$this->lastSearchResults['response']['talpa_result_count'] = 0;
 			$this->lastSearchResults['response']['global_count'] = 0;
 			$resultsList = $recordData['response']['resultlist'];
+//var_dump($resultsList);
+			$this->startRecordFetchTimer();
+			$inLibraryResults = array();
+			$allGroupedWorks = explode(',',$recordData['response']['aspen']['all_grouped_workidA'] );
+			$allGroupedWorks_chunked = array_chunk($allGroupedWorks,20, true);
+			foreach ($allGroupedWorks_chunked as $chunk) {
+				$foundGroupedWorks = $GroupedWorksSolrConnector2->searchForRecordIds($chunk);
+
+				foreach ($foundGroupedWorks['response']['docs'] as $recordItem) {
+					extract($recordItem);
+					$inLibraryResults[$id] = $recordItem;
+				}
+			}
 
 			for ($x = 0; $x < count($resultsList); $x++) {
 				$current = &$resultsList[$x];
@@ -313,43 +336,54 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				require_once ROOT_DIR . '/RecordDrivers/TalpaRecordDriver.php';
 				$record = new TalpaRecordDriver($current);
 
-				if ($groupedWorkID = $record->isInLibrary()) {
-					require_once ROOT_DIR.'/RecordDrivers/GroupedWorkDriver.php';
-					$groupedWorkDriver = new GroupedWorkDriver($groupedWorkID);
-					if ($groupedWorkDriver->isValid()) {
-						//add the groupedWork data into the recordData
-						$this->lastSearchResults['response']['resultlist'][$x]['groupedWork'] = $groupedWorkDriver->getFields();
-						$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 1;
-						$this->lastSearchResults['response']['resultlist'][$x]['groupedWorkID'] = $groupedWorkID;
+				$groupedWorkIds = $current['groupedworkidA'] ?? [];
+				$foundLibraryResult = false;
+				foreach ($groupedWorkIds  as $groupedWorkId) {
+					if (array_key_exists($groupedWorkId, $inLibraryResults)) {
+						require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
+						$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
+						if ($groupedWorkDriver->isValid()) {
+							$relatedManifestations = $groupedWorkDriver->getRelatedManifestations();
+							if(!empty($relatedManifestations)) {
+								//add the groupedWork data into the recordData
+								$this->lastSearchResults['response']['resultlist'][$x]['groupedWork'] = $inLibraryResults[$groupedWorkId];
+								$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 1;
+								$this->lastSearchResults['response']['resultlist'][$x]['groupedWorkID'] = $groupedWorkId;
+								//add solr data into recordData
+								$_recordData = $GroupedWorksSolrConnector2->getRecord($groupedWorkId, $this->getFieldsToReturn());
+								$this->lastSearchResults['response']['resultlist'][$x]['solrRecord'] = $_recordData;
 
-						//add solr data into recordData
-//						$_recordData = $this->indexEngine->getRecord($groupedWorkID, $this->getFieldsToReturn());
-						$_recordData = $GroupedWorksSolrConnector2->getRecord($groupedWorkID, $this->getFieldsToReturn());
-//						var_dump($_recordData);
+								//get count of in-library records
+								$this->lastSearchResults['response']['global_count']++;
+								$this->resultsTotal++;
+								$foundLibraryResult = true;
+								break;
+							}
+						}
+					}
+				}
+				if(!$foundLibraryResult) {
 
-						$this->lastSearchResults['response']['resultlist'][$x]['solrRecord'] = $_recordData;
-
-						//get count of in-library records
-						$this->lastSearchResults['response']['global_count']++;
+					$bibInfo = $record->getRecord();
+					if(!empty($bibInfo['isbns'])) {
+						$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 0;
+						$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
+						$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
+						$this->lastSearchResults['response']['resultlist'][$x]['author'] = !empty($bibInfo['author']) ? $bibInfo['author'] : '';
+						$this->lastSearchResults['response']['resultlist'][$x]['pubYear'] = !empty($bibInfo['date']) ? $bibInfo['date'] : '';
+						$this->lastSearchResults['response']['talpa_result_count']++;
 						$this->resultsTotal++;
 					}
 
-				} elseif ($record->isValid()) {
-
-					$bibInfo = $record->getRecord();
-					$this->lastSearchResults['response']['resultlist'][$x]['inLibraryB'] = 0;
-					$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
-					$this->lastSearchResults['response']['resultlist'][$x]['hasIsbnB'] = 1;
-					$this->lastSearchResults['response']['resultlist'][$x]['author'] = $bibInfo['author'];
-					$this->lastSearchResults['response']['resultlist'][$x]['pubYear'] = $bibInfo['date'];
-					$this->lastSearchResults['response']['talpa_result_count']++;
-					$this->resultsTotal++;
 				}
 
 //				$this->resultsTotal = count($resultsList);
 			}
+			$this->stopRecordFetchTimer();
+
 			return $recordData;
 		}
+		return false;
 	}
 	public function splitFacets($combinedFacets) {
 		$splitFacets = [];
@@ -455,6 +489,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			}
 
 			$_resultList = $this->lastSearchResults['response']['resultlist'];
+
 			//used in getSearchResult() to generate item url to return to talpa search results page
 			$interface->assign('searchSource', 'talpa');
 
@@ -487,6 +522,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				$resultlist = [];
 			}
 			$this->lastSearchResults['response']['global_count']++;
+
 			for ($x = 0; $x < count($resultlist); $x++) {
 				$current = &$resultlist[$x];
 				$interface->assign('recordIndex', $x + 1);
@@ -696,12 +732,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 					$facetCounts['global']['count']++;
 					$allFacets['availability_toggle'][]= array('global', 1);
 				}
-//				foreach ($availableAt as $location){
-//					if(preg_match('mpl#', $location)){
-//						$allFacets['available_at'][]= array($location, 1);
-//					}
-//
-//				}
+
 			} elseif ($talpaResultB) {
 //				$allFacets['availability_toggle']['talpa_result']['count']++;
 				$facetCounts['talpa_result']['count']++;
@@ -873,18 +904,6 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		return $this->limitList;
 	}
 
-	//Retreive a specific record - used to retreive bookcovers
-	public function retrieveRecord ($id) {
-
-//		$baseUrl = $this->talpaBaseApi . '/' .$this->version . '/' .$this->service;
-//		$settings = $this->getSettings();
-//		$queryString = "s.q=ID:($id)";
-//		$headers = $this->authenticate($settings, $queryString);
-//		$recordData = $this->httpRequest($baseUrl, $queryString, $headers);
-//		if (!empty($recordData)){
-//			$recordData = $this->processData($recordData, $queryString);
-//		}return $recordData['documents'][0];
-	}
 
 	//Compile filter options chosen in side facets and add to filter array to be passed in via options array
 	public function getTalpaFilters() {
@@ -945,23 +964,25 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	public function sendRequest($queryId=null) {
 		$baseUrl = $this->talpaBaseApi;
 		$settings = $this->getSettings();
-		$this->startQueryTimer();
-
 
 		$queryString = $this->searchTerms[0]['lookfor']?:'The man with the yellow hat';
-		$queryString = urlencode($queryString);
+		$this->query = $queryString;
+		// Perform preliminary search of the library catalog
+		$preliminaryResults = $this->performPreliminarySearch($queryString);
+		$this->preliminarySearchResults = $preliminaryResults;
+
 
 		if(!$settings->talpaApiToken) {
 			$msg = $settings->talpaSearchSourceString.' settings are not configured by your library: missing API token.';
-//					implode('<br />', $errors); //add this in for debugging, but not for public display.
 			AspenError::raiseError(new AspenError($msg));
 		}
 
 		$headers = $this->authenticate($settings);
-
+		$this->startQueryTimer();
 		$recordData = $this->httpRequest($baseUrl, $queryString, $headers, $settings, $queryId);
 		$json_response = json_decode($recordData, true);
-		if( $json_response['error'])
+
+		if( !empty($json_response['error']))
 		{
 			$code = $json_response['error']['code'];
 			$wording = $json_response['error']['wording'];
@@ -975,21 +996,17 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 			$this->stopQueryTimer();
 		}
 		$this->processSearch(); //Add in facets for recommendations to use
-		if (1) {
-			$this->initRecommendations();
-			if ( is_array($this->recommend)) {
-//				print_r($this->recommend);
-				foreach ($this->recommend as $currentSet) {
-					/** @var RecommendationInterface $current */
-					foreach ($currentSet as $current) {
-//						print_r($current);
-						$current->process();
-					}
+
+		$this->initRecommendations();
+		if ( is_array($this->recommend)) {
+			foreach ($this->recommend as $currentSet) {
+				/** @var RecommendationInterface $current */
+				foreach ($currentSet as $current) {
+					$current->process();
 				}
 			}
 		}
 
-//		if ($this->selectedAvailabilityToggleValue == null) {
 
 		$_SESSION['last_query_id'] = $this->lastSearchResults['response']['query_id'];
 
@@ -1037,8 +1054,8 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 				return $input;
 			}
 			SearchObject_TalpaSearcher::$searchOptions = json_decode($input, true);
-			$resultsList = SearchObject_TalpaSearcher::$searchOptions ['response']['resultlist'];
-
+			$resultsList = SearchObject_TalpaSearcher::$searchOptions ['response']['resultlist'] ?? [];
+			$warnings = SearchObject_TalpaSearcher::$searchOptions ['response']['warnings'] ?? false;
 			if (!SearchObject_TalpaSearcher::$searchOptions) {
 				SearchObject_TalpaSearcher::$searchOptions = array(
 					'recordCount' => 0,
@@ -1046,11 +1063,11 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 					'errors' => array(
 						array(
 							'code' => 'PHP-Internal',
-							'message' => 'Cannot decode JSON response: ' . $input.' '.$textQuery
+							'message' => 'Cannot decode JSON response.'
 						)
 					)
 				);
-			} elseif(!is_array(SearchObject_TalpaSearcher::$searchOptions))
+			} elseif( !is_array(SearchObject_TalpaSearcher::$searchOptions))
 			{
 				SearchObject_TalpaSearcher::$searchOptions = array(
 					'recordCount' => 0,
@@ -1062,7 +1079,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 						)
 					)
 				);
-			} elseif(!$resultsList || count($resultsList) == 0)
+			} elseif( empty($resultsList) && !$warnings)
 			{
 				SearchObject_TalpaSearcher::$searchOptions = array(
 					'recordCount' => 0,
@@ -1078,15 +1095,114 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 			$talpaSettings = $this -> getSettings();
 			$searchSourceString = $talpaSettings->talpaSearchSourceString?:'Talpa Search';
+			require_once ROOT_DIR . '/services/Talpa/TalpaWarning.php';
 
 			// Detect errors
 			if (isset(SearchObject_TalpaSearcher::$searchOptions['errors']) && is_array(SearchObject_TalpaSearcher::$searchOptions['errors'])) {
 				foreach (SearchObject_TalpaSearcher::$searchOptions['errors'] as $current) {
 					$errors[] = "{$current['code']}: {$current['message']}";
+
+					$msg = $searchSourceString.' encountered an error while processing your request: '. $current['message'];
 				}
-				$msg = $searchSourceString.' encountered an error while processing your request: '. $current['message'];
-//					implode('<br />', $errors); //add this in for debugging, but not for public display.
-				AspenError::raiseError(new AspenError($msg));
+
+
+				$retryLink = '';
+				if (!empty($this->searchTerms[0]['lookfor'])) {
+					$retryLink = $this->renderSearchUrl();
+					$retryLink = str_replace('/Search/Results','/Union/Search', $retryLink);
+				}
+
+
+
+				$TalpaWarning = new TalpaWarning();
+				$TalpaWarning->launchError($msg, $retryLink);
+				exit();
+			}
+			elseif (isset($warnings) && is_array($warnings))
+			{
+				foreach ($warnings as $current) {
+					$header = 'Unable to display results.';
+					$msg = $current['wording'];
+
+					if($current['reason'] =='selfharm') {
+						$header = 'Help is available.';
+						$msg = preg_replace('/Help is available\./', '', $msg);
+					}elseif ($header == $msg)
+					{
+						$msg = '';
+					}
+
+					global $interface;
+					$interface->assign('header', $header);
+					$interface->assign('msg', $msg);
+
+
+				if($current['stop'] || empty($resultsList)) {
+				SearchObject_TalpaSearcher::$searchOptions = array(
+						'recordCount' => 0,
+						'documents' => array(),
+						'warnings' => array(
+							array(
+								'code' => 'API Offensive Warning',
+								'message' => $current['wording'],
+								'stop'	=> $current['stop'],
+								'reason' => $current['reason']
+							)
+						)
+					);
+
+					$TalpaWarning = new TalpaWarning();
+					$TalpaWarning->launch();
+					exit();
+				} else {
+					$interface->assign('talpa_warning', $current['wording']);
+					$_SESSION['talpa_warning'] = $current['wording'];
+					}
+				}
+			}
+			elseif (isset($warnings) && is_array($warnings))
+			{
+				foreach ($warnings as $current) {
+					$header = 'Unable to display results.';
+					$msg = $current['wording'];
+
+					if($current['reason'] =='selfharm') {
+						$header = 'Help is available.';
+						$msg = preg_replace('/Help is available\./', '', $msg);
+					}elseif ($header == $msg)
+					{
+						$msg = '';
+					}
+
+					global $interface;
+					$interface->assign('header', $header);
+					$interface->assign('msg', $msg);
+
+
+				if($current['stop'] || empty($resultsList)) {
+				SearchObject_TalpaSearcher::$searchOptions = array(
+						'recordCount' => 0,
+						'documents' => array(),
+						'warnings' => array(
+							array(
+								'code' => 'API Offensive Warning',
+								'message' => $current['wording'],
+								'stop'	=> $current['stop'],
+								'reason' => $current['reason']
+							)
+						)
+					);
+
+
+					require_once ROOT_DIR . '/services/Talpa/TalpaWarning.php';
+					$TalpaWarning = new TalpaWarning();
+					$TalpaWarning->launch();
+					exit();
+				} else {
+					$interface->assign('talpa_warning', $current['wording']);
+					$_SESSION['talpa_warning'] = $current['wording'];
+					}
+				}
 			}
 			if (SearchObject_TalpaSearcher::$searchOptions) {
 				return SearchObject_TalpaSearcher::$searchOptions;
@@ -1105,12 +1221,36 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		foreach ($headers as $key =>$value) {
 			$modified_headers[] = $key.": ".$value;
 		}
+		global $activeLanguage;;
 
-		$requestUrl = $baseUrl.'?search='.$queryString.'&token='.$headers['token'].'&limit='.$this->getLimit().'&bib_info=1';
-		if($queryId){
-			$requestUrl =$baseUrl.'?query_id='.$queryId.'&token='.$headers['token'].'&limit='.$this->getLimit().'&bib_info=1';
+		$params = array(
+			'search' => $queryString,
+			'token' => $headers['token'],
+			'limit' => $this ->getLimit(),
+			'aspen'=> 1,
+			'lang_code' => $activeLanguage->code,
+		);
+		if($queryId) {
+			$params['query_id'] = $queryId;
 		}
 
+		$requestUrl = $baseUrl.'?'.http_build_query($params);
+
+
+		if ($this->preliminarySearchResults) {
+			$isbns = $this->preliminarySearchResults['isbns'];
+			$groupedWorkIds = $this->preliminarySearchResults['groupedWorkIds'];
+
+//			if (!empty($isbns)) {
+//				$isbnParam = '&isbns=' . urlencode(implode(',', $isbns));
+//				$requestUrl .= $isbnParam;
+//			}
+
+			if (!empty($groupedWorkIds)) {
+				$groupedWorkParam = '&grouped_work_ids=' . urlencode(implode(',', $groupedWorkIds));
+				$requestUrl .= $groupedWorkParam;
+			}
+		}
 		$curlConnection = $this->getCurlConnection();
 		$curlOptions = array(
 			CURLOPT_RETURNTRANSFER => 1,
@@ -1155,10 +1295,72 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 	}
 
 	/**
+	 * Start the timer to work out how long it takes to fetch record data.
+	 * stopRecordFetchTimer().
+	 *
+	 * @access protected
+	 */
+	protected function startRecordFetchTimer() {
+		// Get time before the query
+		$time = explode(" ", microtime());
+		$this->recordFetchStartTime = $time[1] + $time[0];
+	}
+
+	/**
+	 * End the timer to work out how long a query takes.  Complements
+	 * startRecordFetchTimer().
+	 *
+	 * @access protected
+	 */
+	protected function stopRecordFetchTimer() {
+		$time = explode(" ", microtime());
+		$this->recordFetchEndTime = $time[1] + $time[0];
+		$this->recordFetchTime = $this->recordFetchEndTime - $this->recordFetchStartTime;
+	}
+
+	/**
+	 * Start the timer to work out how long it takes to do a preliminary search of the catalog for results that Talpa can review.
+	 *
+	 * @access protected
+	 */
+	protected function startPreliminarySearchTimer() {
+		$time = explode(" ", microtime());
+		$this->preliminarySearchStartTime = $time[1] + $time[0];
+	}
+
+	/**
+	 * End the timer to work out how long a preliminary query takes.  Complements
+	 * startPreliminarySearchTimer().
+	 *
+	 * @access protected
+	 */
+	protected function stopPreliminarySearchTimer() {
+		$time = explode(" ", microtime());
+		$this->preliminarySearchEndTime = $time[1] + $time[0];
+		$this->preliminarySearchTime = $this->preliminarySearchEndTime - $this->preliminarySearchStartTime;
+
+	}
+
+
+	/**
 	 * Work out how long the query took
 	 */
 	public function getQuerySpeed() {
 		return $this->queryTime;
+	}
+
+	/**
+	 * Work out how long the record fetch
+	 */
+	public function getRecordFetchSpeed() {
+		return $this->recordFetchTime;
+	}
+
+	/**
+	 * Work out how long the record fetch
+	 */
+	public function getPreliminarySearchSpeed() {
+		return $this->preliminarySearchTime;
 	}
 
 	 /**
@@ -1240,6 +1442,72 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 
 	public function getresultsTotal(){
 		return $this->resultsTotal;
+	}
+
+	/**
+	 * Perform a preliminary keyword search of the library catalog
+	 * @param string $queryString The search query
+	 * @return array Array containing ISBNs and groupedWorkIDs found
+	 */
+	protected function performPreliminarySearch($queryString) {
+		global $configArray;
+
+		$this->startPreliminarySearchTimer();
+
+		require_once ROOT_DIR.'/sys/SolrConnector/GroupedWorksSolrConnector2.php';
+		$solrConnector = new GroupedWorksSolrConnector2($configArray['Index']['url']);
+
+
+		// Perform a basic keyword search
+		$searchResults = $solrConnector->search($queryString, 'Keyword', [], 0, 50, [], '', '', null, 'id,isbn,primary_isbn', 'POST', false);
+		$this->stopPreliminarySearchTimer();
+
+		$isbns = [];
+		$groupedWorkIds = [];
+
+		if ($searchResults && isset($searchResults['response']['docs'])) {
+			foreach ($searchResults['response']['docs'] as $doc) {
+
+				if (isset($doc['id'])) {
+					$groupedWorkIds[] = $doc['id'];
+				}
+
+				if (isset($doc['isbn'])) {
+					if (is_array($doc['isbn'])) {
+						$isbns = array_merge($isbns, $doc['isbn']);
+					} else {
+						$isbns[] = $doc['isbn'];
+					}
+				}
+
+				if (isset($doc['primary_isbn'])) {
+					if (is_array($doc['primary_isbn'])) {
+						$isbns = array_merge($isbns, $doc['primary_isbn']);
+					} else {
+						$isbns[] = $doc['primary_isbn'];
+					}
+				}
+			}
+		}
+
+		// Remove duplicates
+		$isbns = array_unique($isbns);
+		$groupedWorkIds = array_unique($groupedWorkIds);
+
+		return [
+			'isbns' => $isbns,
+			'groupedWorkIds' => $groupedWorkIds,
+			'searchTime' => $this->preliminarySearchTime
+		];
+	}
+
+
+	/**
+	 * Get the preliminary search results
+	 * @return array|null
+	 */
+	public function getPreliminarySearchResults() {
+		return $this->preliminarySearchResults;
 	}
 
 	public function processSearch(bool $returnIndexErrors = false, bool $recommendations = true, bool $preventQueryModification = false): SimpleXMLElement|array|AspenError|stdClass|null
@@ -1384,18 +1652,7 @@ class SearchObject_TalpaSearcher extends SearchObject_BaseSearcher{
 		if (isset($_REQUEST['allFields'])) {
 			$fieldsToReturn = '*,score';
 		} else {
-			$fieldsToReturn = SearchObject_GroupedWorkSearcher2::$fields_to_return;
-			global $solrScope;
-			if ($solrScope != false) {
-				$fieldsToReturn .= ',local_days_since_added_' . $solrScope;
-				$fieldsToReturn .= ',local_time_since_added_' . $solrScope;
-				$fieldsToReturn .= ',local_callnumber_' . $solrScope;
-				$fieldsToReturn .= ',scoping_details_' . $solrScope;
-			} else {
-				$fieldsToReturn .= ',days_since_added';
-				$fieldsToReturn .= ',local_callnumber';
-			}
-			$fieldsToReturn .= ',collection';
+			$fieldsToReturn = 'collection';
 			$fieldsToReturn .= ',detailed_location';
 			$fieldsToReturn .= ',owning_location';
 			$fieldsToReturn .= ',owning_library';

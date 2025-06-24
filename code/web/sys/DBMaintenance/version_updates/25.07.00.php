@@ -120,5 +120,14 @@ function getUpdates25_07_00(): array {
 
 		//other
 
+		//Talpa Search
+		'talpa_settings_defaults_update_07_25' => [
+			'title' => 'Update to Talpa Default "Other Results" Explainer Text',
+			'description' => 'Updates the default value of talpaOtherResultsExplainerText to clarify results are not owned by the user’s library.',
+			'sql' => [
+				"ALTER TABLE talpa_settings MODIFY COLUMN talpaOtherResultsExplainerText VARCHAR(180) DEFAULT 'Talpa Search found these other results not owned by your library.'"
+			]
+		]
+
 	];
 }

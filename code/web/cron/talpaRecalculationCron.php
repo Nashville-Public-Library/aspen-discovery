@@ -11,13 +11,13 @@ require_once ROOT_DIR . '/sys/ISBN.php';
 $startTime = time();
 $talpaWorkAPI ='https://www.librarything.com/api_aspen_works.php';
 
+
 //Set up Globals
 global $configArray;
 global $serverName;
 global $interface;
 global $aspen_db;
 global $logger;
-
 
 global $library;
 global $enabledModules;
@@ -33,29 +33,26 @@ $talpaSettings->find();
 while ($talpaSettings->fetch(true)) {
 	$token = $talpaSettings->talpaApiToken;
 
-	$logger->log("Running Talpa groupedWorks cron for settings " . $talpaSettings->id, Logger::LOG_NOTICE);
+	$logger->log("Running Talpa recalculation cron for settings " . $talpaSettings->id, Logger::LOG_NOTICE);
 
 	$noIsbns = 0;
 	$noIsbnA = array();
-//Get all Grouped works:
+
+	//Get all Grouped works for recalculation (not just unprocessed ones)
 	$results = $aspen_db->query('SELECT COUNT(1) AS total
 										FROM grouped_work gw
-										LEFT JOIN talpa_ltwork_to_groupedwork ltg
-											ON gw.permanent_id = ltg.groupedRecordPermanentId
-										WHERE LENGTH(gw.permanent_id) > 36 AND ltg.groupedRecordPermanentId IS NULL AND (checked = 0 OR checked IS NULL)
+										WHERE LENGTH(gw.permanent_id) > 36
 								');
 
 	if ($results) {
 		while ($result = $results->fetch()) {
-			$logger->log('found '. $result['total'] . ' permanent IDs to send to Talpa for processing', Logger::LOG_NOTICE);
+			$logger->log('found '. $result['total'] . ' permanent IDs to send to Talpa for recalculation', Logger::LOG_NOTICE);
 		}
 	}
 
-	$results = $aspen_db->query('SELECT gw.permanent_id, ltg.id
+	$results = $aspen_db->query('SELECT gw.permanent_id
 										FROM grouped_work gw
-										LEFT JOIN talpa_ltwork_to_groupedwork ltg
-											ON gw.permanent_id = ltg.groupedRecordPermanentId
-										WHERE LENGTH(gw.permanent_id) > 36 AND ltg.groupedRecordPermanentId IS NULL AND (checked = 0 OR checked IS NULL)
+										WHERE LENGTH(gw.permanent_id) > 36
 								');
 
 	$permanent_ids = array();
@@ -70,18 +67,9 @@ while ($talpaSettings->fetch(true)) {
 		while ($result = $results->fetch()) {
 			$seenN++;
 			$permanent_ids[] = $result['permanent_id'];
-			if (!empty($result['id'])) {
-				$ids[] = $result['id'];
-			}
 
 			if( count($permanent_ids) > $BATCH_SIZE ) {
-				$logger->log("getting works for batch ". $batchN. ' of size:'. $BATCH_SIZE, Logger::LOG_DEBUG);
-
-				// mark that we have checked these works
-				if (!empty($ids)) {
-					$sql = 'UPDATE talpa_ltwork_to_groupedwork SET checked=1 WHERE id IN (' . implode(',', $ids) . ')';
-					$results_update = $aspen_db->query($sql);
-				}
+				$logger->log("getting works for recalculation batch ". $batchN. ' of size:'. $BATCH_SIZE, Logger::LOG_DEBUG);
 
 				foreach ($permanent_ids as $permanent_id) {
 					$groupedWork = new GroupedWork();
@@ -91,7 +79,6 @@ while ($talpaSettings->fetch(true)) {
 
 						//All Fields
 						$fields = $groupedWorkDriver->getFields();
-
 
 						$isbnA = array();
 						//ISBN Data
@@ -106,7 +93,6 @@ while ($talpaSettings->fetch(true)) {
 								$isbnA[]= $primaryISBN;
 							}
 						}
-
 
 						$allIsbns = $groupedWorkDriver->getISBNs();
 						if(!$allIsbns  && isset($fields['isbn'])) {
@@ -155,6 +141,7 @@ while ($talpaSettings->fetch(true)) {
 							$retA[$permanent_id]['upcA'][] =$upcA;
 						}
 
+
 						//Title and Author
 						$primaryAuthor = $groupedWorkDriver->getPrimaryAuthor();
 						if(!$primaryAuthor) {
@@ -187,6 +174,7 @@ while ($talpaSettings->fetch(true)) {
 						//Contributors
 						$retA[$permanent_id]['contributorsA'][] = $groupedWorkDriver->getContributors();
 
+
 						//ISSNS
 						$retA[$permanent_id]['issnA'][] = $groupedWorkDriver->getISSNs();
 
@@ -205,10 +193,10 @@ while ($talpaSettings->fetch(true)) {
 					$data = array(
 						'works' => $chunk,
 						'token' => $token,
-						'type' => 'daily',
+						'type' => 'monthly',
 					);
 
-					$logger->log('Sending '.count($chunk).' records', Logger::LOG_DEBUG);
+					$logger->log('Sending '.count($chunk).' records for recalculation', Logger::LOG_DEBUG);
 
 					$curlConnection = curl_init($talpaWorkAPI);
 					curl_setopt($curlConnection, CURLOPT_CONNECTTIMEOUT, 15);
@@ -232,7 +220,7 @@ while ($talpaSettings->fetch(true)) {
 					if(!empty($resA['msg']) && !empty($resA['mappedWorkIDs'])) {
 						$mappedWorkIDs = $resA['mappedWorkIDs'];
 						$notFoundA = $resA['notFoundA'];
-						$logger->log('Work API returned  '.count($mappedWorkIDs).' mapped workids. Not found: '.count($notFoundA), Logger::LOG_DEBUG);
+						$logger->log('Talpa recalculated  '.count($mappedWorkIDs).' mapped workids. Not found: '.count($notFoundA), Logger::LOG_DEBUG);
 
 						//save to the talpa_lt_to_groupedwork table
 						if($mappedWorkIDs) {
@@ -253,17 +241,16 @@ while ($talpaSettings->fetch(true)) {
 								$talpaData = null;
 							}
 						} else {
-							$logger->log("no works to update", Logger::LOG_DEBUG);
+							$logger->log("no works to update during recalculation", Logger::LOG_DEBUG);
 						}
 					} else {
-						$logger->log("something went wrong with the response", Logger::LOG_DEBUG);
+						$logger->log("something went wrong with the recalculation response", Logger::LOG_DEBUG);
 					}
 				} // foreach chunksA
 
 				// reset aggregator arrays
 				$retA = array();
 				$permanent_ids = array();
-				$ids = array();
 			} // if we have enough in batch
 
 		} // each row needing LT work
@@ -271,8 +258,6 @@ while ($talpaSettings->fetch(true)) {
 	$results->closeCursor();
 	$endTime = time();
 
-	$logger->log("seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN, Logger::LOG_NOTICE);
-	$logger->log("total time: ".($endTime - $startTime), Logger::LOG_NOTICE);
+	$logger->log("Recalculation complete - seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN, Logger::LOG_NOTICE);
+	$logger->log("total recalculation time: ".($endTime - $startTime), Logger::LOG_NOTICE);
 }
-
-
