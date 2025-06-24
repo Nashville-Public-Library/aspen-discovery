@@ -8,6 +8,12 @@ class Greenhouse_PartnerTicketDashboard extends Admin_Admin{
 	function launch() {
 		global $interface;
 
+		require_once ROOT_DIR . '/sys/Support/RequestTrackerConnection.php';
+		$supportConnections = new RequestTrackerConnection();
+		if ($supportConnections->find(true)) {
+			$interface->assign('rtBaseUrl', $supportConnections->baseUrl);
+		}
+
 		$aspenSite = new AspenSite();
 		$aspenSite->siteType = 0;
 		$aspenSite->orderBy('name');
