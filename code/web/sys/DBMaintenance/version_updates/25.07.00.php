@@ -38,6 +38,13 @@ function getUpdates25_07_00(): array {
 				"UPDATE ils_notification_setting SET accountProfileId = (SELECT id from account_profiles where name <> 'admin' and name <> 'admin_sso' LIMIT 1)",
 			]
 		], //ils_notification_setting_account_profile
+		'remove_vendor_specific_defaults' => [
+			'title' => 'Remove Vendor Specific Defaults',
+			'description' => 'Remove Vendor Specific Default Values',
+			'sql' => [
+				"ALTER TABLE system_variables CHANGE COLUMN supportingCompany supportingCompany varchar(72) DEFAULT ''",
+			]
+		], //remove_vendor_specific_defaults
 
 		//katherine - Grove
 		'add_series_member_priority_score' => [
