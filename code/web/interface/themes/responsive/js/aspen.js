@@ -4725,6 +4725,7 @@ var AspenDiscovery = (function(){
 		});
 		// Set initial visibility.
 		$lookfor.trigger("input");
+		AspenDiscovery.FormFields.initializeCharacterCounters();
 	});
 
 	return {
@@ -9437,37 +9438,59 @@ AspenDiscovery.Admin = (function () {
 				$("#propertyRowthemes").show();
 			}
 		},
-		updateMaterialsRequestFields: function () {
-			var materialRequestType = $("#enableMaterialsRequestSelect option:selected").val();
-			$("#propertyRowallowDeletingILSRequests").hide();
-			if (materialRequestType === "0" || materialRequestType === "2") {
-				$("#propertyRowexternalMaterialsRequestUrl").hide();
-				$("#propertyRowmaxRequestsPerYear").hide();
-				$("#propertyRowmaxActiveRequests").hide();
-				$("#propertyRowmaterialsRequestDaysToPreserve").hide();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").hide();
-				$("#propertyRowmaterialsRequestFormats").hide();
-				$("#propertyRowmaterialsRequestFormFields").hide();
-				if (materialRequestType === "2") {
-					$("#propertyRowallowDeletingILSRequests").show();
-				}
-			} else if (materialRequestType === "1") {
-				$("#propertyRowexternalMaterialsRequestUrl").hide();
-				$("#propertyRowmaxRequestsPerYear").show();
-				$("#propertyRowmaxActiveRequests").show();
-				$("#propertyRowmaterialsRequestDaysToPreserve").show();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").show();
-				$("#propertyRowmaterialsRequestFormats").show();
-				$("#propertyRowmaterialsRequestFormFields").show()
-			} else if (materialRequestType === "3") {
-				$("#propertyRowexternalMaterialsRequestUrl").show();
-				$("#propertyRowmaxRequestsPerYear").hide();
-				$("#propertyRowmaxActiveRequests").hide();
-				$("#propertyRowmaterialsRequestDaysToPreserve").hide();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").hide();
-				$("#propertyRowmaterialsRequestFormats").hide();
-				$("#propertyRowmaterialsRequestFormFields").hide()
+		updateMaterialsRequestFields() {
+			const materialRequestType = $("#enableMaterialsRequestSelect option:selected").val();
+			const rowsToHide = [
+				"#propertyRowdisplayMaterialsRequestToPublic",
+				"#propertyRowallowDeletingILSRequests",
+				"#propertyRowexternalMaterialsRequestUrl",
+				"#propertyRowmaxRequestsPerYear",
+				"#propertyRowmaxActiveRequests",
+				"#propertyRowrequestCalendarStartDate",
+				"#propertyRowmaterialsRequestDaysToPreserve",
+				"#propertyRowmaterialsRequestFieldsToDisplay",
+				"#propertyRowmaterialsRequestFormats",
+				"#propertyRowmaterialsRequestFormFields",
+				"#propertyRowmaterialsRequestSendStaffEmailOnNew",
+				"#propertyRowmaterialsRequestNewEmail",
+				"#propertyRowmaterialsRequestSendStaffEmailOnAssign",
+				"#propertyRownewMaterialsRequestSummary",
+				"#propertyRowyearlyRequestLimitType",
+				"#propertyRowcheckRequestsForExistingTitles"
+			];
+			rowsToHide.forEach(selector => $(selector).hide());
+
+			switch (materialRequestType) {
+				case "1": // Aspen Request System
+					[
+						"#propertyRowdisplayMaterialsRequestToPublic",
+						"#propertyRowmaxRequestsPerYear",
+						"#propertyRowyearlyRequestLimitType",
+						"#propertyRowmaxActiveRequests",
+						"#propertyRowrequestCalendarStartDate",
+						"#propertyRownewMaterialsRequestSummary",
+						"#propertyRowmaterialsRequestDaysToPreserve",
+						"#propertyRowmaterialsRequestFieldsToDisplay",
+						"#propertyRowmaterialsRequestFormats",
+						"#propertyRowmaterialsRequestFormFields",
+						"#propertyRowmaterialsRequestSendStaffEmailOnNew",
+						"#propertyRowmaterialsRequestNewEmail",
+						"#propertyRowmaterialsRequestSendStaffEmailOnAssign",
+						"#propertyRowcheckRequestsForExistingTitles"
+					].forEach(selector => $(selector).show());
+					break;
+				case "2": // ILS Request System
+					["#propertyRowallowDeletingILSRequests", "#propertyRowdisplayMaterialsRequestToPublic"]
+						.forEach(selector => $(selector).show());
+					break;
+				case "3": // External Request Link
+					["#propertyRowexternalMaterialsRequestUrl", "#propertyRowdisplayMaterialsRequestToPublic"]
+						.forEach(selector => $(selector).show());
+					break;
+				default: // None (0)
+					break;
 			}
+
 			return false;
 		},
 		updateDonationFields: function () {
@@ -10243,6 +10266,19 @@ AspenDiscovery.Admin = (function () {
 					$('#propertyRowssoUsernameAttr').hide();
 				}
 			});
+		},
+		toggleLibrarySharingOptions: function () {
+			if ($('#owningLibrarySelect').val() !== '-1'){
+				$('#propertyRowsharing').show();
+				if ($('#sharingSelect').val() === '1'){
+					$('#propertyRowsharedWithLibrary').show();
+				} else {
+					$('#propertyRowsharedWithLibrary').hide();
+				}
+			} else {
+				$('#propertyRowsharing').hide();
+				$('#propertyRowsharedWithLibrary').hide();
+			}
 		},
 		linkingSettingOptionChange: function () {
 			var url = Globals.path + "/Admin/AJAX";
@@ -18611,6 +18647,19 @@ AspenDiscovery.CommunityEngagement = function() {
 				automaticRewardControl.style.display = '';
 			}
 		},
+		updateConditionalOperator: function () {
+			let conditionalField = document.querySelector('[name="conditionalField"]');
+			let conditionalOperator = document.querySelector('[name="conditionalOperator"]');
+
+			if (!conditionalField || !conditionalOperator) return;
+
+			let isLikeOption = conditionalOperator.querySelector('option[value="like"]');
+
+			if(isLikeOption) {
+				isLikeOption.style.display = (conditionalField.value === 'user_list') ? 'none' : '';
+			}
+			
+		}
 
 	}
 	
@@ -18849,7 +18898,7 @@ AspenDiscovery.FormFields = (function() {
 	 *
 	 * @param {jQuery|HTMLElement|string} container
 	 */
-	function initializeCharacterCounters(container) {
+	function initializeCharacterCounters(container = 'body') {
 		const $container = $(container);
 		if (!$container.length) return;
 
@@ -18857,6 +18906,23 @@ AspenDiscovery.FormFields = (function() {
 		const ccCanvas = document.createElement('canvas');
 		const ccCtx = ccCanvas.getContext('2d');
 		const buffer = 8;
+		const maxlenFieldsSelector = 'textarea[maxlength], input[maxlength][type=text], input[maxlength][type=search], ' +
+											'input[maxlength][type=tel], input[maxlength][type=url], input[maxlength][type=email], ' +
+											'input[maxlength][type=email2], input[maxlength][type=password], input[maxlength][type=storedPassword],' +
+											'input[maxlength]:not([type])';
+
+		if ($.validator) {
+			$.validator.setDefaults({
+				errorPlacement: function(error, element) {
+					if (element.is(maxlenFieldsSelector)) {
+						// Place jQuery's validation error after the wrapper, so it doesn't grow the wrapper height.
+						element.closest('.field-wrapper').after(error);
+					} else {
+						error.insertAfter(element);
+					}
+				}
+			});
+		}
 
 		// Helper to wrap and inject the counter.
 		function initCharCounterField($f) {
@@ -18869,7 +18935,7 @@ AspenDiscovery.FormFields = (function() {
 		}
 
 		// Initialize on page-load for all existing fields.
-		$container.find('input[maxlength], textarea[maxlength]').each(function() {
+		$container.find(maxlenFieldsSelector).each(function() {
 			initCharCounterField($(this));
 		});
 
@@ -18880,10 +18946,10 @@ AspenDiscovery.FormFields = (function() {
 			mutations.forEach(function (mutation) {
 				Array.prototype.forEach.call(mutation.addedNodes, function (node) {
 					let $n = $(node);
-					if ($n.is('input[maxlength], textarea[maxlength]')) {
+					if ($n.is(maxlenFieldsSelector)) {
 						initCharCounterField($n);
 					}
-					$n.find('input[maxlength], textarea[maxlength]').each(function () {
+					$n.find(maxlenFieldsSelector).each(function () {
 						initCharCounterField($(this));
 					});
 				});
@@ -18892,10 +18958,10 @@ AspenDiscovery.FormFields = (function() {
 		observer.observe($container[0], { childList: true, subtree: true });
 
 		// Handle input events on fields with maxlength.
-		$container.on('input', 'input[maxlength], textarea[maxlength]', function() {
+		$container.on('input', maxlenFieldsSelector, function() {
 			const $f = $(this);
 			const fld = $f[0];
-			const $ctr = $f.next('.char-counter');
+			const $ctr = $f.closest('.field-wrapper').find('.char-counter');
 			const max = parseInt($f.attr('maxlength'), 10);
 			if (isNaN(max) || max <= 0) return;
 			const val = $f.val();
@@ -18936,11 +19002,11 @@ AspenDiscovery.FormFields = (function() {
 		});
 
 		// On focus: if already at max, show the counter; otherwise, hide it immediately.
-		$container.on('focus', 'input[maxlength], textarea[maxlength]', function() {
-			const $f   = $(this);
-			const max  = parseInt($f.attr('maxlength'), 10);
-			const len  = $f.val().length;
-			const $ctr = $f.next('.char-counter');
+		$container.on('focus', maxlenFieldsSelector, function() {
+			const $f = $(this);
+			const max = parseInt($f.attr('maxlength'), 10);
+			const len = $f.val().length;
+			const $ctr = $f.closest('.field-wrapper').find('.char-counter');
 
 			if (len >= max) {
 				$ctr.text(len + '/' + max).addClass('visible');
@@ -18950,9 +19016,9 @@ AspenDiscovery.FormFields = (function() {
 		});
 
 		// On blur: always hide the counter after a short interval.
-		$container.on('blur', 'input[maxlength], textarea[maxlength]', function() {
-			const $f   = $(this);
-			const $ctr = $f.next('.char-counter');
+		$container.on('blur', maxlenFieldsSelector, function() {
+			const $f = $(this);
+			const $ctr = $f.closest('.field-wrapper').find('.char-counter');
 			clearTimeout($f.data('ccTimer'));
 			const tid = setTimeout(function() {
 				$ctr.removeClass('visible');

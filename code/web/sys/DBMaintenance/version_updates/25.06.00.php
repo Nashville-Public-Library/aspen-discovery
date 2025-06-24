@@ -89,6 +89,14 @@ function getUpdates25_06_00(): array {
 				'ALTER TABLE languages ADD INDEX languageLookup(weight, displayName)',
 			]
 		], //improve_location_lookup_performance
+		'expand_sideload_column_lengths' => [
+			'title' => 'Expand Sideload Column Lengths',
+			'description' => 'Expand Sideload Column Lengths to accommodate automatic fill',
+			'sql' => [
+				"ALTER TABLE sideloads CHANGE column recordUrlComponent recordUrlComponent VARCHAR(76) NOT NULL DEFAULT 'DefineThis'",
+				"ALTER TABLE sideloads CHANGE column marcPath marcPath VARCHAR(200) NOT NULL"
+			]
+		], //expand_sideload_column_lengths
 
 		//katherine - Grove
 		'add_lida_barcode_entry_keyboard_type_setting' => [
