@@ -2347,25 +2347,34 @@ AspenDiscovery.Account = (function () {
 			}
 			return false;
 		},
-		deleteAll: function (id) {
-			if (confirm("Are you sure you want to delete all items in this list?")) {
-				var url = Globals.path + '/MyAccount/AJAX?method=deleteListItems&id=' + id;
-				$.getJSON(url, function () {
-					location.reload();
-				});
+		deleteAllListTitles: function (id) {
+			AspenDiscovery.confirm("Delete All Titles?", "Are you sure you want to delete all items from this list? The titles will be permanently deleted.","Yes", "No", true, "AspenDiscovery.Account.doDeleteAllListTitles(" + id + ");", "btn-danger");
+			return false;
+		},
+		doDeleteAllListTitles: function (id) {
+			var url = Globals.path + '/MyAccount/AJAX?method=deleteListItems&id=' + id;
+			$('#confirmOkBtn').prop('disabled', true).addClass('disabled');
+			$('#confirmOkBtn .fa-spinner').removeClass('hidden');
+			$.getJSON(url, function () {
+				location.reload();
+			});
+		},
+		deleteSelectedListTitles: function (id) {
+			var selectedTitles = AspenDiscovery.getSelectedTitles(false);
+			if (selectedTitles) {
+				AspenDiscovery.confirm("Delete Selected Titles?", "Are you sure you want to delete the selected items from this list? The titles will be permanently deleted.","Yes", "No", true, "AspenDiscovery.Account.doDeleteSelectedListTitles(" + id + ");", "btn-danger");
+			}else{
+				AspenDiscovery.confirm("Delete Selected Titles?", "No titles are selected, would you like to delete all titles on this page? The titles will be permanently deleted.","Yes", "No", true, "AspenDiscovery.selectAllTitles();AspenDiscovery.Account.doDeleteSelectedListTitles(" + id + ");", "btn-danger");
 			}
 			return false;
 		},
-		deleteSelected: function (id) {
-			var selectedTitles = AspenDiscovery.getSelectedTitles();
-			if (selectedTitles) {
-				if (confirm("Are you sure you want to delete the selected items from this list?")) {
-					$.getJSON(Globals.path + '/MyAccount/AJAX?method=deleteListItems&id=' + id + '&' + selectedTitles, function () {
-						location.reload();
-					});
-				}
-			}
-			return false;
+		doDeleteSelectedListTitles: function(id) {
+			var selectedTitles = AspenDiscovery.getSelectedTitles(false);
+			$('#confirmOkBtn').prop('disabled', true).addClass('disabled');
+			$('#confirmOkBtn .fa-spinner').removeClass('hidden');
+			$.getJSON(Globals.path + '/MyAccount/AJAX?method=deleteListItems&id=' + id + '&' + selectedTitles, function () {
+				location.reload();
+			});
 		},
 		deleteSelectedLists: function () {
 			var selectedLists = AspenDiscovery.getSelectedLists();
