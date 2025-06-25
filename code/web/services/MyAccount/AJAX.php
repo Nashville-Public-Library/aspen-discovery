@@ -10055,6 +10055,12 @@ class MyAccount_AJAX extends JSON_Action {
 						$userCampaign->campaignId = $campaignMilestoneProgressEntry->ce_campaign_id;
 						$userCampaign->find(true);
 
+						$unwantedOverflowProgress = $campaignMilestoneUsersProgress->progress > $campaignMilestone->goal &&  !$milestone->progressBeyondOneHundredPercent;
+						$wantedOverflowProgress = $campaignMilestoneUsersProgress->progress > $campaignMilestone->goal &&  $milestone->progressBeyondOneHundredPercent;
+						if( $unwantedOverflowProgress ){
+							exit();
+						}
+
 						# Handle milestone progress notification
 						echo "event: ce_notification\n";
 						echo "data: " . json_encode(
@@ -10078,7 +10084,7 @@ class MyAccount_AJAX extends JSON_Action {
 						) . "\n\n";
 
 						# Handle milestone completion notification
-						if ($campaignMilestoneUsersProgress->progress >= $campaignMilestone->goal ) {
+						if ($campaignMilestoneUsersProgress->progress >= $campaignMilestone->goal && !$wantedOverflowProgress) {
 							echo "event: ce_notification\n";
 							echo "data: " . json_encode(
 								array(
@@ -10102,7 +10108,7 @@ class MyAccount_AJAX extends JSON_Action {
 						}
 
 						# Handle campaign completion notification
-						if ($userCampaign->completed) {
+						if ($userCampaign->completed && !$wantedOverflowProgress) {
 							echo "event: ce_notification\n";
 							echo "data: " . json_encode(
 								array(
