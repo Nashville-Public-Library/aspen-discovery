@@ -504,7 +504,7 @@ class MyAccount_AJAX extends JSON_Action {
 				'isPublicFacing' => true,
 			]),
 			'modalBody' => $interface->fetch('MyAccount/bulkAddToListPopup.tpl'),
-			'modalButtons' => "<button type='button' class='tool btn btn-primary' onclick='AspenDiscovery.Lists.processBulkAddForm(); return false;'>" . translate([
+			'modalButtons' => "<button type='button' id='doBulkAddToListBtn' class='tool btn btn-primary' onclick=\"$('#doBulkAddToListBtn').prop('disabled', true).addClass('disabled');$('#doBulkAddToListBtn .fa-spinner').removeClass('hidden');AspenDiscovery.Lists.processBulkAddForm(); return false;\"><i class='fas fa-spinner fa-spin hidden'></i> " . translate([
 					'text' => "Add To List",
 					'isPublicFacing' => true,
 				]) . "</button>",
