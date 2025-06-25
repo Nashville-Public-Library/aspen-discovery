@@ -2,9 +2,9 @@
 	<div class="btn-toolbar">
 		<div class="btn-group btn-group-sm">
 			{if !$userMessage->isRead}
-				<a class="btn btn-default" href="" onclick="return AspenDiscovery.Account.markILSMessageAsRead({$userMessage->id})"><i class="far fa-envelope-open" role="presentation"></i> {translate text="Mark As Read" isPublicFacing=true}</a>
+				<a class="btn btn-default" href="" onclick="return AspenDiscovery.Account.markILSMessageAsRead({$userMessage->id})"><i class="fas fa-envelope-open" role="presentation"></i> {translate text="Mark As Read" isPublicFacing=true}</a>
 			{else}
-				<a class="btn btn-default" href="" onclick="return AspenDiscovery.Account.markILSMessageAsUnread({$userMessage->id})"><i class="far fa-envelope" role="presentation"></i> {translate text="Mark As Unread" isPublicFacing=true}</a>
+				<a class="btn btn-default" href="" onclick="return AspenDiscovery.Account.markILSMessageAsUnread({$userMessage->id})"><i class="fas fa-envelope" role="presentation"></i> {translate text="Mark As Unread" isPublicFacing=true}</a>
 			{/if}
 		</div>
 	</div>

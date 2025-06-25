@@ -295,9 +295,10 @@ if (!empty($library) && !empty($library->cookieStorageConsent)) {
 }
 
 //system variable for supporting company name
-$interface->assign('supportingCompany', 'ByWater Solutions');
 if (!empty($systemVariables) && !empty($systemVariables->supportingCompany)) {
 	$interface->assign('supportingCompany', $systemVariables->supportingCompany);
+}else{
+	$interface->assign('supportingCompany', '');
 }
 
 $deviceName = get_device_name();

@@ -5540,6 +5540,14 @@ class UserAPI extends AbstractAPI {
 		}
 	}
 
+	/**
+	 * This is called from LiDA to get information about a patron's app preferences.
+	 * The same information is also available within getPatronProfile so if that data
+	 * has already been loaded, this call is redundant.
+	 *
+	 * @return array
+	 * @noinspection PhpUnused
+	 */
 	function getAppPreferencesForUser(): array {
 		$user = $this->getUserForApiCall();
 		if ($user && !($user instanceof AspenError)) {

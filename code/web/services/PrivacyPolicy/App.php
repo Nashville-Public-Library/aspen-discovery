@@ -21,11 +21,12 @@ class PrivacyPolicy_App extends Action {
 			}
 		}
 
-		$appOwner = 'ByWater Solutions, LLC';
 		require_once ROOT_DIR . '/sys/SystemVariables.php';
 		$systemVariables = SystemVariables::getSystemVariables();
 		if (!empty($systemVariables) && !empty($systemVariables->supportingCompany)) {
 			$appOwner = $systemVariables->supportingCompany;
+		}else{
+			$appOwner = 'The Library';
 		}
 
 		if($appName !== 'Aspen LiDA') {

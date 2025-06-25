@@ -311,8 +311,8 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 				$interface->assign('idsToShow', $idsToShow);
 			}
 
-			$materialsRequestsPerPage = isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize'])) ? $_REQUEST['pageSize'] : 30;
-			if($_REQUEST['pageSize'] == 'all')
+			$materialsRequestsPerPage = isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize']) || $_REQUEST['pageSize'] == 'all') ? $_REQUEST['pageSize'] : 30;
+			if($materialsRequestsPerPage == 'all')
 			{
 				$materialsRequestsPerPage = $materialsRequests->count();
 			}
@@ -349,7 +349,8 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 					// Get Available Assignees
 					$materialsRequestManagers = new User();
 					if (count($locationsForLibrary) > 0) {
-						if ($materialsRequestManagers->query("SELECT * from user WHERE id IN (SELECT userId FROM user_roles WHERE roleId = $rolePermissions->roleId) AND homeLocationId IN (" . implode(', ', $locationsForLibrary) . ")")) {
+						//Get all user that can manage material requests based on their home library as well ad additional locations to manage
+						if ($materialsRequestManagers->query("SELECT * from user WHERE id IN (SELECT userId FROM user_roles WHERE roleId = $rolePermissions->roleId) AND ((id IN (SELECT userId from user_administration_locations WHERE locationId IN (" . implode(', ', $locationsForLibrary) . "))) OR homeLocationId IN (" . implode(', ', $locationsForLibrary) . "))")) {
 							while ($materialsRequestManagers->fetch()) {
 								if (empty($materialsRequestManagers->displayName)) {
 									$assignees[$materialsRequestManagers->id] = $materialsRequestManagers->firstname . ' ' . $materialsRequestManagers->lastname;
