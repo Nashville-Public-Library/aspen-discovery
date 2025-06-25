@@ -9,20 +9,20 @@ class MyAccount_MyList extends MyAccount {
 	}
 
 	/** @noinspection PhpUnused */
-	function reloadCover() {
+	function reloadCover() : array {
 		$listId = $_REQUEST['id'];
 		$listEntry = new UserListEntry();
 		$listEntry->listId = $listId;
 
 		require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
 		$bookCoverInfo = new BookCoverInfo();
-		$bookCoverInfo->recordType = 'list';
-		$bookCoverInfo->recordId = $listEntry->listId;
+		$bookCoverInfo->setRecordType('list');
+		$bookCoverInfo->setRecordId($listEntry->listId);
 		if ($bookCoverInfo->find(true)) {
-			$bookCoverInfo->imageSource = '';
-			$bookCoverInfo->thumbnailLoaded = 0;
-			$bookCoverInfo->mediumLoaded = 0;
-			$bookCoverInfo->largeLoaded = 0;
+			$bookCoverInfo->setImageSource('');
+			$bookCoverInfo->setThumbnailLoaded(0);
+			$bookCoverInfo->setMediumLoaded(0);
+			$bookCoverInfo->setLargeLoaded(0);
 			$bookCoverInfo->update();
 		}
 
@@ -32,10 +32,10 @@ class MyAccount_MyList extends MyAccount {
 		];
 	}
 
-	function launch() {
+	function launch() : void {
 		global $interface;
 
-		// Fetch List object
+		// Fetch the List object
 		$listId = $_REQUEST['id'];
 		$_SESSION['returnToModule'] = 'MyAccount';
 		$_SESSION['returnToAction'] = 'MyList';
@@ -57,7 +57,7 @@ class MyAccount_MyList extends MyAccount {
 		}
 
 		// Ensure user has privileges to view the list
-		if (!isset($list) || (!$list->public && !UserAccount::isLoggedIn())) {
+		if (!$list->public && !UserAccount::isLoggedIn()) {
 			require_once ROOT_DIR . '/services/MyAccount/Login.php';
 			$loginAction = new MyAccount_Login();
 			$loginAction->launch();
@@ -71,7 +71,7 @@ class MyAccount_MyList extends MyAccount {
 			}
 		}
 
-		//List Notes are created as part of bulk add to list
+		//List Notes are created as part of the "bulk add to list" function
 		if (isset($_SESSION['listNotes'])) {
 			$interface->assign('notes', $_SESSION['listNotes']);
 			unset($_SESSION['listNotes']);
@@ -80,7 +80,7 @@ class MyAccount_MyList extends MyAccount {
 		//Perform an action on the list, but verify that the user has permission to do so.
 		$userCanEdit = false;
 		$userObj = UserAccount::getActiveUserObj();
-		if ($userObj != false) {
+		if ($userObj !== false) {
 			$userCanEdit = $userObj->canEditList($list);
 			if ($userCanEdit && UserAccount::userHasPermission('Upload List Covers')){
 				global $configArray;
@@ -126,11 +126,11 @@ class MyAccount_MyList extends MyAccount {
 			}
 
 			//Redirect back to avoid having the parameters stay in the URL.
-			header("Location: /MyAccount/MyList/{$list->id}");
+			header("Location: /MyAccount/MyList/$list->id");
 			die();
 		}
 
-		// Send list to template so title/description can be displayed:
+		// Send the list to the template so title/description can be displayed:
 		$interface->assign('userList', $list);
 		$interface->assign('listSelected', $list->id);
 
@@ -199,7 +199,7 @@ class MyAccount_MyList extends MyAccount {
 	 * @param bool $allowEdit
 	 * @param string $sortName
 	 */
-	public function buildListForDisplay(UserList $list, $allowEdit = false, $sortName = 'dateAdded') {
+	public function buildListForDisplay(UserList $list, bool $allowEdit = false, string $sortName = 'dateAdded') : void {
 		global $interface;
 
 		$queryParams = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
@@ -222,27 +222,27 @@ class MyAccount_MyList extends MyAccount {
 			'title' => [
 				'desc' => 'Title',
 				'selected' => $sortName == 'title',
-				'sortUrl' => "/MyAccount/MyList/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'title'])),
+				'sortUrl' => "/MyAccount/MyList/$list->id?" . http_build_query(array_merge($queryParams, ['sort' => 'title'])),
 			],
 			'author' => [
 				'desc' => 'Author',
 				'selected' => $sortName == 'author',
-				'sortUrl' => "/MyAccount/MyList/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'author'])),
+				'sortUrl' => "/MyAccount/MyList/$list->id?" . http_build_query(array_merge($queryParams, ['sort' => 'author'])),
 			],
 			'dateAdded' => [
 				'desc' => 'Date Added',
 				'selected' => $sortName == 'dateAdded',
-				'sortUrl' => "/MyAccount/MyList/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'dateAdded'])),
+				'sortUrl' => "/MyAccount/MyList/$list->id?" . http_build_query(array_merge($queryParams, ['sort' => 'dateAdded'])),
 			],
 			'recentlyAdded' => [
 				'desc' => 'Recently Added',
 				'selected' => $sortName == 'recentlyAdded',
-				'sortUrl' => "/MyAccount/MyList/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'recentlyAdded'])),
+				'sortUrl' => "/MyAccount/MyList/$list->id?" . http_build_query(array_merge($queryParams, ['sort' => 'recentlyAdded'])),
 			],
 			'custom' => [
 				'desc' => 'User Defined',
 				'selected' => $sortName == 'custom',
-				'sortUrl' => "/MyAccount/MyList/{$list->id}?" . http_build_query(array_merge($queryParams, ['sort' => 'custom'])),
+				'sortUrl' => "/MyAccount/MyList/$list->id?" . http_build_query(array_merge($queryParams, ['sort' => 'custom'])),
 			],
 		];
 
@@ -251,7 +251,7 @@ class MyAccount_MyList extends MyAccount {
 
 		$recordsPerPage = isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize'])) ? $_REQUEST['pageSize'] : 20;
 		$totalRecords = $list->numValidListItems();
-		$page = isset($_REQUEST['page']) ? $_REQUEST['page'] : 1;
+		$page = $_REQUEST['page'] ?? 1;
 		$startRecord = ($page - 1) * $recordsPerPage;
 		if ($startRecord < 0) {
 			$startRecord = 0;
@@ -295,7 +295,7 @@ class MyAccount_MyList extends MyAccount {
 
 	}
 
-	function bulkAddTitles(UserList $list) {
+	function bulkAddTitles(UserList $list) : array {
 		$totalRecords = $list->numValidListItems();
 		$numAdded = 0;
 		$notes = [];
