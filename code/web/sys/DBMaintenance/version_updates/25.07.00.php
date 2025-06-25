@@ -90,6 +90,13 @@ function getUpdates25_07_00(): array {
 				"ALTER TABLE comprise_settings ADD COLUMN customerIdForDonation INT(11) DEFAULT NULL",
 			]
 		], //add_comprise_donation_settings
+		'remove_starRating_from_overdrive_api_product_metadata' => [
+			'title' => 'Remove Star Rating from overdrive_api_product_metadata',
+			'description' => 'Remove starRating from overdrive_api_product_metadata table.',
+			'sql' => [
+				"ALTER TABLE overdrive_api_product_metadata DROP COLUMN starRating",
+			]
+		], //remove_starRating_from_overdrive_api_product_metadata
 
 		// Leo Stoyanov - BWS
 
