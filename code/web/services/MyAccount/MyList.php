@@ -1,6 +1,7 @@
 <?php
 require_once ROOT_DIR . '/Action.php';
 require_once ROOT_DIR . '/services/MyAccount/MyAccount.php';
+require_once ROOT_DIR . '/sys/User/PageDefaults.php';
 
 class MyAccount_MyList extends MyAccount {
 	function __construct() {
@@ -130,6 +131,17 @@ class MyAccount_MyList extends MyAccount {
 			die();
 		}
 
+		//Check to see if we have page defaults
+		$defaultPageSize = 20;
+		$defaultSort = $list->defaultSort;
+		if ($userObj !== false) {
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($userObj->id, 'MyAccount', 'MyList', $list->id);
+			if ($pageDefaults != null) {
+				$defaultPageSize = $pageDefaults->pageSize ?? $defaultPageSize;
+				$defaultSort = $pageDefaults->pageSort ?? $defaultSort;
+			}
+		}
+
 		// Send the list to the template so title/description can be displayed:
 		$interface->assign('userList', $list);
 		$interface->assign('listSelected', $list->id);
@@ -164,13 +176,26 @@ class MyAccount_MyList extends MyAccount {
 		$interface->assign('allowEdit', $userCanEdit);
 
 		//Determine the sort options
-		$activeSort = $list->defaultSort;
+		$activeSort = $defaultSort;
 		if (isset($_REQUEST['sort']) && array_key_exists($_REQUEST['sort'], UserList::getSortOptions())) {
 			$activeSort = $_REQUEST['sort'];
+			//Update the default sort for the user as well
+			if ($userObj !== false) {
+				PageDefaults::updatePageDefaultsForUser($userObj->id, 'MyAccount', 'MyList', $list->id, null, $activeSort);
+			}
 		}
 		if (empty($activeSort)) {
 			$activeSort = 'dateAdded';
 		}
+
+		//Determine the page size
+		if (isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize']))) {
+			$defaultPageSize = $_REQUEST['pageSize'];
+			if ($userObj !== false) {
+				PageDefaults::updatePageDefaultsForUser($userObj->id, 'MyAccount', 'MyList', $list->id, $defaultPageSize, null);
+			}
+		}
+
 		//Set the default sort (for people other than the list editor to match what the editor does)
 		if ($userCanEdit && $activeSort != $list->defaultSort) {
 			$list->defaultSort = $activeSort;
@@ -178,7 +203,7 @@ class MyAccount_MyList extends MyAccount {
 			$list->update();
 		}
 
-		$this->buildListForDisplay($list, $userCanEdit, $activeSort);
+		$this->buildListForDisplay($list, $userCanEdit, $activeSort, $defaultPageSize);
 
 		if (UserAccount::isLoggedIn()) {
 			$sidebar = 'Search/home-sidebar.tpl';
@@ -198,8 +223,9 @@ class MyAccount_MyList extends MyAccount {
 	 * @param UserList $list
 	 * @param bool $allowEdit
 	 * @param string $sortName
+	 * @param int $pageSize
 	 */
-	public function buildListForDisplay(UserList $list, bool $allowEdit = false, string $sortName = 'dateAdded') : void {
+	private function buildListForDisplay(UserList $list, bool $allowEdit, string $sortName, int $pageSize) : void {
 		global $interface;
 
 		$queryParams = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
@@ -249,14 +275,13 @@ class MyAccount_MyList extends MyAccount {
 		$interface->assign('sortList', $sortOptions);
 		$interface->assign('userSort', ($sortName == 'custom')); // switch for when users can sort their list
 
-		$recordsPerPage = isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize'])) ? $_REQUEST['pageSize'] : 20;
 		$totalRecords = $list->numValidListItems();
 		$page = $_REQUEST['page'] ?? 1;
-		$startRecord = ($page - 1) * $recordsPerPage;
+		$startRecord = ($page - 1) * $pageSize;
 		if ($startRecord < 0) {
 			$startRecord = 0;
 		}
-		$endRecord = $page * $recordsPerPage;
+		$endRecord = $page * $pageSize;
 		if ($endRecord > $totalRecords) {
 			$endRecord = $totalRecords;
 		}
@@ -264,9 +289,9 @@ class MyAccount_MyList extends MyAccount {
 			'resultTotal' => $totalRecords,
 			'startRecord' => $startRecord,
 			'endRecord' => $endRecord,
-			'perPage' => $recordsPerPage,
+			'perPage' => $pageSize,
 		];
-		$resourceList = $list->getListRecords($startRecord, $recordsPerPage, $allowEdit, 'html', null, $sortName);
+		$resourceList = $list->getListRecords($startRecord, $pageSize, $allowEdit, 'html', null, $sortName);
 		$interface->assign('resourceList', $resourceList);
 
 		// Set up paging of list contents:

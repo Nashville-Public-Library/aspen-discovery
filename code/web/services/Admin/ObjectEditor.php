@@ -2,7 +2,7 @@
 
 require_once ROOT_DIR . '/Action.php';
 require_once ROOT_DIR . '/services/Admin/Admin.php';
-
+require_once ROOT_DIR . '/sys/User/PageDefaults.php';
 abstract class ObjectEditor extends Admin_Admin {
 	protected $activeObject;
 	protected $objectAction;
@@ -239,6 +239,7 @@ abstract class ObjectEditor extends Admin_Admin {
 
 	function viewExistingObjects($structure) {
 		global $interface;
+		$user = UserAccount::getActiveUserObj();
 		$interface->assign('instructions', $this->getListInstructions());
 		$interface->assign('sortableFields', $this->getSortableFields($structure));
 		$interface->assign('sort', $this->getSort());
@@ -252,7 +253,20 @@ abstract class ObjectEditor extends Admin_Admin {
 		if (!is_numeric($page)) {
 			$page = 1;
 		}
-		$recordsPerPage = isset($_REQUEST['pageSize']) ? $_REQUEST['pageSize'] : $this->getDefaultRecordsPerPage();
+
+		if (isset($_REQUEST['pageSize'])) {
+			$recordsPerPage = $_REQUEST['pageSize'];
+			if ($user !== false) {
+				PageDefaults::updatePageDefaultsForUser($user->id, $this->getModule(), $this->getToolName(),null, $recordsPerPage, null);
+			}
+		}else{
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($user->id, $this->getModule(), $this->getToolName(),null);
+			if ($pageDefaults !== null && !empty($pageDefaults->pageSize)) {
+				$recordsPerPage =  $pageDefaults->pageSize;
+			}else{
+				$recordsPerPage = $this->getDefaultRecordsPerPage();
+			}
+		}
 		if (isset($_REQUEST['objectAction']) && $_REQUEST['objectAction'] == 'exportToCSV') { // Export [all, filtered] to CSV
 			$allObjects = $this->getAllObjects('1', min(1000, $numObjects));
 			Exporter::downloadCSV($this->getToolName(), 'Admin/propertiesListCSV.tpl', $structure, $allObjects);
@@ -770,8 +784,20 @@ abstract class ObjectEditor extends Admin_Admin {
 		return $this->getNumObjects() > 3;
 	}
 
-	function getSort() {
-		return isset($_REQUEST['sort']) ? $_REQUEST['sort'] : $this->getDefaultSort();
+	function getSort() : string {
+		$user = UserAccount::getActiveUserObj();
+		if (isset($_REQUEST['sort'])) {
+			$sort = $_REQUEST['sort'];
+			PageDefaults::updatePageDefaultsForUser($user->id, $this->getModule(), $this->getToolName(), null, null, $sort);
+		} else {
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($user->id, $this->getModule(), $this->getToolName(), null);
+			if ($pageDefaults == null || is_null($pageDefaults->pageSort)) {
+				$sort = $this->getDefaultSort();
+			}else{
+				$sort = $pageDefaults->pageSort;
+			}
+		}
+		return $sort;
 	}
 
 	abstract function getDefaultSort(): string;
