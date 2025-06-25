@@ -478,7 +478,7 @@ var AspenDiscovery = (function(){
 			if (translate === true) {
 				var language = Globals.language;
 				$.getJSON(Globals.path + '/API/SystemAPI?method=getBulkTranslations&terms[1]=' + encodeURI(messageTitle) + '&terms[2]=' + encodeURI(messageBody) + '&terms[3]=' + okButtonLabel + '&terms[4]=' + cancelButtonLabel + '&language=' + language, function (data) {
-					if (data.success) {
+					if (data.result.success) {
 						if (data[language]) {
 							messageTitle = data[language][1];
 							messageBody = data[language][2];

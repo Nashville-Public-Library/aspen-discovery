@@ -24,7 +24,11 @@ class SystemAPI extends AbstractAPI {
 			return $this->$method();
 		}else if ($method === 'getTranslation' || 'getTranslationWithValues' || 'getBulkTranslations') {
 			//These methods don't need additional authentication, just return the data.
-			echo json_encode($this->$method());
+			$result = [
+				'result' => $this->$method(),
+			];
+			$output = json_encode($result);
+			echo $output;
 			die();
 		}
 
