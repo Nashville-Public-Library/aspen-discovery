@@ -5694,6 +5694,8 @@ class Library extends DataObject {
 			'selfRegistrationFormMessage' => $this->selfRegistrationFormMessage,
 			'selfRegistrationSuccessMessage' => $this->selfRegistrationSuccessMessage,
 			'promptForBirthDateInSelfReg' => $this->promptForBirthDateInSelfReg,
+			'allowRememberPickupLocation' => $this->allowRememberPickupLocation,
+			'allowPickupLocationUpdates' => $this->allowPickupLocationUpdates,
 		];
 		if (empty($this->baseUrl)) {
 			$apiInfo['baseUrl'] = $configArray['Site']['url'];
