@@ -22,7 +22,7 @@ class SystemAPI extends AbstractAPI {
 
 		if ($method === 'getLogoFile') {
 			return $this->$method();
-		}else if ($method === 'getTranslation' || 'getTranslationWithValues' || 'getBulkTranslations') {
+		}else if ($method === 'getTranslation' || $method === 'getTranslationWithValues' || $method === 'getBulkTranslations') {
 			//These methods don't need additional authentication, just return the data.
 			$result = [
 				'result' => $this->$method(),
