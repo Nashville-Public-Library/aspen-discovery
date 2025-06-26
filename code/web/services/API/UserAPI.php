@@ -1996,7 +1996,7 @@ class UserAPI extends AbstractAPI {
 						$user->setRememberHoldPickupLocation($_REQUEST['rememberHoldPickupLocation']);
 					}
 
-					if ($library->allowPickupLocationUpdates) {
+					if ($library->allowPickupLocationUpdates && $user->rememberHoldPickupLocation) {
 						if (isset($_REQUEST['pickupBranch'])) {
 							$pickupLocation = new Location();
 							$pickupLocation->code = $_REQUEST['pickupBranch'];
