@@ -73,8 +73,7 @@
 				{if !empty($listEditAllowed)}
 					<div class="btn-group-vertical" role="group">
 						<a href="/MyAccount/Edit?seriesMemberId={$seriesMemberId|escape:"url"}{if !is_null($listSelected)}&amp;listId={$listSelected|escape:"url"}{/if}" class="btn btn-default">{translate text='Edit' isPublicFacing=true}</a>
-						{* Use a different delete URL if we're removing from a specific list or the overall favorites: *}
-						<a href="/MyAccount/MyList/{$listSelected|escape:"url"}?delete={$seriesMemberId|escape:"url"}" onclick="return confirm('{translate text="Are you sure you want to delete this?" isPublicFacing=true}');" class="btn btn-default">{translate text='Delete' isPublicFacing=true}</a>
+						<a href="#" onclick="AspenDiscovery.confirm('Delete Title?', 'Are you sure you want to delete this?', 'Yes', 'No', true, 'AspenDiscovery.Lists.deleteEntryFromList({$listSelected}, {$listEntryId})', 'btn-danger');" class="btn btn-danger">{translate text='Delete' isPublicFacing=true}</a>
 					</div>
 
 				{/if}

@@ -14165,6 +14165,10 @@ AspenDiscovery.Lists = (function(){
 			return false;
 		},
 
+		deleteEntryFromList: function (listId, listEntryId){
+			window.location.href = Globals.path + '/MyAccount/MyList/' + listId + '?delete=' + listEntryId;
+		},
+
 		doDeleteList: function () {
 			this.submitListForm('deleteList');
 		},

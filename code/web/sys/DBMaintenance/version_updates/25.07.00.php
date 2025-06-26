@@ -61,6 +61,13 @@ function getUpdates25_07_00(): array {
 				)'
 			]
 		], //remember_page_defaults_for_user
+		'increase_allowable_sort_length' => [
+			'title' => 'Increase Allowable Sort Length for User page defaults',
+			'description' => 'Increase Allowable Sort Length for User page defaults',
+			'sql' => [
+				'ALTER TABLE user_page_defaults CHANGE COLUMN pageSort pageSort VARCHAR(50)'
+			]
+		], //increase_allowable_sort_length
 
 		//katherine - Grove
 		'add_series_member_priority_score' => [
