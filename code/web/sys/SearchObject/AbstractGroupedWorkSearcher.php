@@ -428,7 +428,7 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 	 * @access  public
 	 * @return  array    Sort value => description array.
 	 */
-	protected function getSortOptions() {
+	public function getSortOptions() {
 		// Author/Search screen
 		if ($this->searchType == 'author' && $this->searchSubType == 'search') {
 			// It's important to remember here we are talking about on-screen
