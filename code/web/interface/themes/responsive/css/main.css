@@ -9183,6 +9183,7 @@ a.placard-link {
 .dropdown-menu-right {
   right: 0;
   left: auto;
+  cursor: pointer;
 }
 #home-page-browse-results .grid-col {
   text-align: center;
