@@ -76,6 +76,16 @@ class Genealogy_Results extends ResultsAction {
 		// Hide Covers when the user has set that setting on the Search Results Page
 		$this->setShowCovers();
 
+		//Set default sort by setting the request variable so the init grabs it
+		if (!array_key_exists('sort', $_REQUEST) && UserAccount::isLoggedIn()) {
+			$userId = UserAccount::getActiveUserId();
+			require_once ROOT_DIR . '/sys/User/PageDefaults.php';
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($userId, 'Genealogy', 'Results', null);
+			if ($pageDefaults != null) {
+				$_REQUEST['sort'] = $pageDefaults->pageSort;
+			}
+		}
+
 		// Include Search Engine Class
 		require_once ROOT_DIR . '/sys/SolrConnector/GenealogySolrConnector.php';
 		$timer->logTime('Include search engine');

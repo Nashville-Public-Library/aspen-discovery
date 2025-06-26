@@ -45,6 +45,29 @@ function getUpdates25_07_00(): array {
 				"ALTER TABLE system_variables CHANGE COLUMN supportingCompany supportingCompany varchar(72) DEFAULT ''",
 			]
 		], //remove_vendor_specific_defaults
+		'remember_page_defaults_for_user' => [
+			'title' => 'Remember Page Size and Sort For User',
+			'description' => 'Remember Page Size and Sort for User',
+			'sql' => [
+				'CREATE TABLE user_page_defaults (
+					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					userId INT(11),
+					module VARCHAR(100),
+					action VARCHAR(100),
+					objectId INT(11),
+					pageSize INT(11),
+					pageSort VARCHAR(25),
+					UNIQUE INDEX (userId, module, action, objectId)
+				)'
+			]
+		], //remember_page_defaults_for_user
+		'increase_allowable_sort_length' => [
+			'title' => 'Increase Allowable Sort Length for User page defaults',
+			'description' => 'Increase Allowable Sort Length for User page defaults',
+			'sql' => [
+				'ALTER TABLE user_page_defaults CHANGE COLUMN pageSort pageSort VARCHAR(50)'
+			]
+		], //increase_allowable_sort_length
 
 		//katherine - Grove
 		'add_series_member_priority_score' => [
@@ -90,6 +113,13 @@ function getUpdates25_07_00(): array {
 				"ALTER TABLE comprise_settings ADD COLUMN customerIdForDonation INT(11) DEFAULT NULL",
 			]
 		], //add_comprise_donation_settings
+		'remove_starRating_from_overdrive_api_product_metadata' => [
+			'title' => 'Remove Star Rating from overdrive_api_product_metadata',
+			'description' => 'Remove starRating from overdrive_api_product_metadata table.',
+			'sql' => [
+				"ALTER TABLE overdrive_api_product_metadata DROP COLUMN starRating",
+			]
+		], //remove_starRating_from_overdrive_api_product_metadata
 
 		// Leo Stoyanov - BWS
 

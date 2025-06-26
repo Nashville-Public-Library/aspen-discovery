@@ -82,6 +82,7 @@
 			{if !empty($timeUntilSessionExpiration)}
 				Globals.timeUntilSessionExpiration = {$timeUntilSessionExpiration};
 			{/if}
+			Globals.language = '{$userLang->code}';
 		{literal}
 			});
 		{/literal}
