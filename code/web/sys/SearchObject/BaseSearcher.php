@@ -1426,7 +1426,7 @@ abstract class SearchObject_BaseSearcher {
 	 * @access  protected
 	 * @return  mixed    various internal variables
 	 */
-	protected function getSortOptions() {
+	public function getSortOptions() {
 		return $this->sortOptions;
 	}
 
