@@ -311,10 +311,8 @@ class CommunityEngagement_AJAX extends JSON_Action {
 	}
 
 	public function manuallyProgressUserMilestone() {
-		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
-		require_once ROOT_DIR . '/sys/CommunityEngagement/Milestone.php';
 		require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
-		require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneUsersProgress.php';
+		require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestone.php';
 
 		$milestoneId = $_GET['milestoneId'] ?? null;
 		$userId = $_GET['userId'] ?? null;
@@ -365,20 +363,10 @@ class CommunityEngagement_AJAX extends JSON_Action {
 			exit;
 		}
 
-
-		$campaignMilestoneUsersProgress = new CampaignMilestoneUsersProgress();
-		$campaignMilestoneUsersProgress->ce_milestone_id = $milestoneId;
-		$campaignMilestoneUsersProgress->userId = $userId;
-		$campaignMilestoneUsersProgress->ce_campaign_id = $campaignId;
-
-
-		if ($campaignMilestoneUsersProgress->find(true)) {
-			$campaignMilestoneUsersProgress->progress++;
-			$campaignMilestoneUsersProgress->update();
-		} else {
-			$campaignMilestoneUsersProgress->progress++;
-			$campaignMilestoneUsersProgress->insert();
-		}
+		$campaignMilestone = new CampaignMilestone();
+		$campaignMilestone->campaignId = $campaignId;
+		$campaignMilestone->milestoneId = $milestoneId;
+		$campaignMilestone->addCampaignMilestoneProgressEntry(null, $userId, null);
 
 		$userCampaign = new UserCampaign();
 		$userCampaign->userId = $userId;
