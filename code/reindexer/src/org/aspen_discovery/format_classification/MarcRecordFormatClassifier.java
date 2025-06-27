@@ -216,13 +216,19 @@ public class MarcRecordFormatClassifier {
 			List<Subfield> subFields = field.getSubfields();
 			for (Subfield subfield : subFields) {
 				if (subfield.getCode() != 'e') {
+					Subfield extentSubfield = field.getSubfield('a');
+					if (extentSubfield != null) {
+						String extentData = extentSubfield.getData().toLowerCase();
+						if (extentData.contains("online resource")) {
+							if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format online_resource based on 300$a Physical Description.", 2);}
+							result.add("OnlineResource");
+						}
+					}
+
 					String physicalDescriptionData = subfield.getData().toLowerCase();
 					if (physicalDescriptionData.contains("atlas")) {
 						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format Atlas based on 300 Physical Description", 2);}
 						result.add("Atlas");
-					} else if (physicalDescriptionData.contains("online resource")) {
-						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format online_resource based on 300 Physical Description.", 2);}
-						result.add("online_resource");
 					} else if (physicalDescriptionData.contains("large type") || physicalDescriptionData.contains("large print")) {
 						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format LargePrint based on 300 Physical Description", 2);}
 						result.add("LargePrint");
