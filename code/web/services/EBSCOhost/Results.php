@@ -14,6 +14,16 @@ class EBSCOhost_Results extends ResultsAction {
 
 		$aspenUsage->ebscohostSearches++;
 
+		//Set default sort by setting the request variable so the init grabs it
+		if (!array_key_exists('sort', $_REQUEST) && UserAccount::isLoggedIn()) {
+			$userId = UserAccount::getActiveUserId();
+			require_once ROOT_DIR . '/sys/User/PageDefaults.php';
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($userId, 'EBSCOhost', 'Results', null);
+			if ($pageDefaults != null) {
+				$_REQUEST['sort'] = $pageDefaults->pageSort;
+			}
+		}
+
 		//Include Search Engine
 		/** @var SearchObject_EbscohostSearcher $searchObject */
 		$searchObject = SearchObjectFactory::initSearchObject("Ebscohost");

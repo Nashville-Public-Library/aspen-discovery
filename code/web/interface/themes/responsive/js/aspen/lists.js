@@ -34,10 +34,16 @@ AspenDiscovery.Lists = (function(){
 		},
 
 		deleteListAction: function (){
-			if (confirm("Are you sure you want to delete this entire list?")){
-				this.submitListForm('deleteList');
-			}
+			AspenDiscovery.confirm("Delete List?", "Are you sure you want to delete this entire list? The list and all titles within it will be permanently deleted.","Yes", "No", true, "AspenDiscovery.Lists.doDeleteList()", "btn-danger");
 			return false;
+		},
+
+		deleteEntryFromList: function (listId, listEntryId){
+			window.location.href = Globals.path + '/MyAccount/MyList/' + listId + '?delete=' + listEntryId;
+		},
+
+		doDeleteList: function () {
+			this.submitListForm('deleteList');
 		},
 
 		updateListAction: function (){
