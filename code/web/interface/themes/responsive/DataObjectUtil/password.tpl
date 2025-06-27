@@ -3,7 +3,7 @@
     {if !empty($property.minLength)} minlength='{$property.minLength}'{/if}
     {if !empty($property.maxLength)} maxlength='{$property.maxLength}'{/if}
     {if !empty($property.size)} size='{$property.size}'{/if}
-    class='form-control{if !empty($property.required)} required{/if}{if !empty($property.onlyDigitsAllowed)} digits{/if}'
+    class='form-control{if !empty($property.required)} required{/if}{if !empty($property.onlyDigitsAllowed)} digits{/if}{if !empty($property.requireStrongPassword)} strongPassword{/if}'
     {if !empty($property.readOnly)} readonly{/if}
     {if $property.type == 'storedPassword' && !empty($propValue)} placeholder="{translate text='Use previously saved value' inAttribute=true isAdminFacing=true}"{/if}
     {if !empty($property.autocomplete)} autocomplete="{$property.autocomplete}"{/if}
@@ -22,7 +22,7 @@
         {if !empty($property.minLength)} minlength='{$property.minLength}'{/if}
         {if !empty($property.maxLength)} maxlength='{$property.maxLength}'{/if}
         {if !empty($property.size)} size='{$property.size}'{/if}
-        class='form-control repeat {if !empty($property.onlyDigitsAllowed)} digits{/if}'
+        class='form-control repeat {if !empty($property.onlyDigitsAllowed)} digits{/if}{if !empty($property.requireStrongPassword)} strongPassword{/if}'
         {if !empty($property.readOnly)} readonly{/if}
         {if !empty($property.autocomplete)} autocomplete="{$property.autocomplete}"{/if}
     />
