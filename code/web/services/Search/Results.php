@@ -212,6 +212,16 @@ class Search_Results extends ResultsAction {
 			}
 		}
 
+		//Set default sort by setting the request variable so the init grabs it
+		if (!array_key_exists('sort', $_REQUEST) && UserAccount::isLoggedIn()) {
+			$userId = UserAccount::getActiveUserId();
+			require_once ROOT_DIR . '/sys/User/PageDefaults.php';
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($userId, 'Search', 'Results', null);
+			if ($pageDefaults != null) {
+				$_REQUEST['sort'] = $pageDefaults->pageSort;
+			}
+		}
+
 		// Cannot use the current search globals since we may change the search term above
 		// Display of query is not right when reusing the global search object
 		/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
@@ -7,10 +7,10 @@ class ILSNotificationSetting extends DataObject {
 	public $__table = 'ils_notification_setting';
 	public $id;
 	public $name;
+	public $accountProfileId;
 
 	private $_messageTypes;
 	private $_notificationSettings;
-	private $_catalogDriver;
 
 	public function getNumericColumnNames(): array {
 		return [
@@ -25,6 +25,16 @@ class ILSNotificationSetting extends DataObject {
 		while($notificationSetting->fetch()) {
 			$notificationSettings[$notificationSetting->id] = $notificationSetting->name;
 		}
+
+		$accountProfiles = [];
+		require_once ROOT_DIR . '/sys/Account/AccountProfile.php';
+		$accountProfile = new AccountProfile();
+		$accountProfile->whereAdd("name <> 'admin' AND name <> 'admin_sso'");
+		$accountProfile->whereAdd("recordSource <> ''");
+		$accountProfile->orderBy('name');
+		$accountProfile->find();
+		$accountProfiles = $accountProfile->fetchAll('id', 'name');
+		unset($accountProfile);
 
 		require_once ROOT_DIR . '/sys/AspenLiDA/ILSMessageType.php';
 		$messageTypeStructure = ILSMessageType::getObjectStructure($context);
@@ -42,6 +52,14 @@ class ILSNotificationSetting extends DataObject {
 				'label' => 'Name',
 				'maxLength' => 50,
 				'description' => 'A name for these settings',
+				'required' => true,
+			],
+			'accountProfileId' => [
+				'property' => 'accountProfileId',
+				'type' => 'enum',
+				'label' => 'Account Profile',
+				'values' => $accountProfiles,
+				'description' => 'Select the Account Profile linked to these notification settings.',
 				'required' => true,
 			],
 			'messageTypes' => [
@@ -70,9 +88,14 @@ class ILSNotificationSetting extends DataObject {
 			]
 		];
 
+		if ($context == 'addNew') {
+			unset($structure['messageTypes']);
+		}
+
 		return $structure;
 	}
 
+	/** @noinspection PhpUnusedParameterInspection */
 	public function getEditLink($context): string {
 		return '/AspenLiDA/ILSNotificationSettings?objectAction=edit&id=' . $this->id;
 	}
@@ -106,10 +129,7 @@ class ILSNotificationSetting extends DataObject {
 		}
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update($context = '') : bool|int {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveMessageTypes();
@@ -118,7 +138,7 @@ class ILSNotificationSetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert($context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->updateMessageTypes();
@@ -148,25 +168,24 @@ class ILSNotificationSetting extends DataObject {
 		return $this->_messageTypes;
 	}
 
-	public function saveMessageTypes() {
+	public function saveMessageTypes() : void {
 		if (isset ($this->_messageTypes) && is_array($this->_messageTypes)) {
 			$this->saveOneToManyOptions($this->_messageTypes, 'ilsNotificationSettingId');
 			unset($this->_messageTypes);
 		}
 	}
 
-	public function updateMessageTypes() {
-		global $library;
+	public function updateMessageTypes() : void {
 		$messageTypesList = [];
 
 		require_once ROOT_DIR . '/sys/Account/AccountProfile.php';
 		$accountProfile = new AccountProfile();
-		$accountProfile->id = $library->accountProfileId;
+		$accountProfile->id = $this->accountProfileId;
 		if($accountProfile->find(true)) {
 			$catalogDriver = trim($accountProfile->driver);
 			if (!empty($catalogDriver)) {
-				$this->_catalogDriver = CatalogFactory::getCatalogConnectionInstance($catalogDriver, $accountProfile);
-				$messageTypesList = $this->_catalogDriver->getMessageTypes();
+				$_catalogDriver = CatalogFactory::getCatalogConnectionInstance($catalogDriver, $accountProfile);
+				$messageTypesList = $_catalogDriver->getMessageTypes();
 			}
 		}
 
@@ -183,7 +202,7 @@ class ILSNotificationSetting extends DataObject {
 		}
 	}
 
-	public function saveNotificationSettings() {
+	public function saveNotificationSettings() : void {
 		if (isset($this->_notificationSettings) && is_array($this->_notificationSettings)) {
 			$notificationSettingsList = [];
 			$notificationSettings = new NotificationSetting();

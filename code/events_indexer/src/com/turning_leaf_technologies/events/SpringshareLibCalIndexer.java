@@ -216,7 +216,7 @@ class SpringshareLibCalIndexer {
 					solrDocument.addField("event_type", eventType);
 
 					//Don't index reservations since they are restricted to staff and
-					// LibCal has space bookings, see https://bywater.libcal.com/admin/api/1.1/endpoint/space_post
+					// LibCal has space bookings, see https://{instance}.libcal.com/admin/api/1.1/endpoint/space_post
 
 					solrDocument.addField("last_indexed", new Date());
 

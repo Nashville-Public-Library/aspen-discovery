@@ -104,6 +104,9 @@ class RecordDriverFactory {
 		} elseif ($recordType == 'course_reserves') {
 			require_once ROOT_DIR . '/RecordDrivers/CourseReservesRecordDriver.php';
 			$recordDriver = new CourseReservesRecordDriver($recordId);
+		} elseif ($recordType == 'talpa') {
+			require_once ROOT_DIR . '/RecordDrivers/TalpaRecordDriver.php';
+			$recordDriver = new TalpaRecordDriver($recordId);
 		} else {
 			global $indexingProfiles;
 			global $sideLoadSettings;

@@ -1,0 +1,114 @@
+<?php
+
+if (count($_SERVER['argv']) > 1) {
+	$serverName = $_SERVER['argv'][1];
+	// Check to see if the update already exists properly.
+	$fhnd = fopen('/usr/local/aspen-discovery/sites/' . $serverName . '/conf/crontab_settings.txt', 'r');
+	if ($fhnd) {
+		$lines = [];
+		$insertFetchIlsMessages = true;
+		$fetchIlsMessagesInserted = false;
+		$insertSendIlsMessages = true;
+		$sendIlsMessagesInserted = false;
+		$insertTalpaRecalculation = true;
+		$talpaRecalculationInserted = false;
+		while (($line = fgets($fhnd)) !== false) {
+			// Detect if the cron job is already present.
+			if (str_contains($line, 'fetchILSMessages.php')) {
+				$insertFetchIlsMessages = false;
+				$line = "*/40 * * * * root php /usr/local/aspen-discovery/code/web/cron/fetchILSMessages.php $serverName\n";
+			}
+			if (str_contains($line, 'sendILSMessages.php')) {
+				$insertFetchIlsMessages = false;
+				$line = "*/59 8-19 * * * root php /usr/local/aspen-discovery/code/web/cron/sendILSMessages.php $serverName\n";
+			}
+			if (str_contains($line, 'talpaRecalculationCron.php')) {
+				$insertTalpaRecalculation = false;
+			}
+			// Insert before Debian end-of-file marker.
+			if ($insertFetchIlsMessages && str_contains($line, 'Debian needs a blank line at the end of cron')) {
+				if (!empty($lines) && trim(end($lines)) !== '') {
+					$lines[] = "\n";
+				}
+				$lines[] = "#######################\n";
+				$lines[] = "# Fetch ILS Messages  #\n";
+				$lines[] = "#######################\n";
+				$lines[] = "*/40 * * * * root php /usr/local/aspen-discovery/code/web/cron/fetchILSMessages.php $serverName\n";
+				$lines[] = "\n";
+				$fetchIlsMessagesInserted = true;
+			}
+			if ($insertSendIlsMessages && str_contains($line, 'Debian needs a blank line at the end of cron')) {
+				if (!empty($lines) && trim(end($lines)) !== '') {
+					$lines[] = "\n";
+				}
+				$lines[] = "#######################\n";
+				$lines[] = "# Send ILS Messages   #\n";
+				$lines[] = "#######################\n";
+				$lines[] = "*/59 8-19 * * * root php /usr/local/aspen-discovery/code/web/cron/sendILSMessages.php $serverName\n";
+				$lines[] = "\n";
+				$sendIlsMessagesInserted = true;
+			}
+			if ($insertTalpaRecalculation && str_contains($line, 'Debian needs a blank line at the end of cron')) {
+				if (!empty($lines) && trim(end($lines)) !== '') {
+					$lines[] = "\n";
+				}
+
+				$lines[] = "###################################################\n";
+				$lines[] = "# Recalculate grouped works for TalpaAI (monthly) #\n";
+				$lines[] = "###################################################\n";
+				$lines[] = "0 2 1 * * root php /usr/local/aspen-discovery/code/web/cron/talpaRecalculationCron.php $serverName\n";
+				$lines[] = "\n";
+				$talpaRecalculationInserted = true;
+			}
+			$lines[] = $line;
+		}
+		fclose($fhnd);
+
+		// Fallback: If marker was not found, add at the end.
+		if ($insertFetchIlsMessages && !$fetchIlsMessagesInserted) {
+			if (!empty($lines) && trim(end($lines)) !== '') {
+				$lines[] = "\n";
+			}
+			$lines[] = "#######################\n";
+			$lines[] = "# Fetch ILS Messages  #\n";
+			$lines[] = "#######################\n";
+			$lines[] = "*/40 8-19 * * * root php /usr/local/aspen-discovery/code/web/cron/fetchILSMessages.php $serverName\n";
+			$lines[] = "\n";
+			$fetchIlsMessagesInserted = true;
+		}
+		if ($insertSendIlsMessages && !$sendIlsMessagesInserted) {
+			if (!empty($lines) && trim(end($lines)) !== '') {
+				$lines[] = "\n";
+			}
+			$lines[] = "#######################\n";
+			$lines[] = "# Send ILS Messages   #\n";
+			$lines[] = "#######################\n";
+			$lines[] = "*/59 8-19 * * * root php /usr/local/aspen-discovery/code/web/cron/sendILSMessages.php $serverName\n";
+			$lines[] = "\n";
+			$sendIlsMessagesInserted = true;
+		}
+		if ($insertTalpaRecalculation && !($talpaRecalculationInserted)) {
+			if (!empty($lines) && trim(end($lines)) !== '') {
+				$lines[] = "\n";
+			}
+
+			$lines[] = "###################################################\n";
+			$lines[] = "# Recalculate grouped works for TalpaAI (monthly) #\n";
+			$lines[] = "###################################################\n";
+			$lines[] = "0 2 1 * * root php /usr/local/aspen-discovery/code/web/cron/talpaRecalculationCron.php $serverName\n";
+			$lines[] = "\n";
+			$talpaRecalculationInserted = true;
+		}
+
+		// Write the file only if the new cron job was inserted.
+		if ($fetchIlsMessagesInserted || $sendIlsMessagesInserted || $talpaRecalculationInserted) {
+			$newContent = implode('', $lines);
+			file_put_contents('/usr/local/aspen-discovery/sites/' . $serverName . '/conf/crontab_settings.txt', $newContent);
+		}
+	} else {
+		echo '- Could not find cron settings file.' . PHP_EOL;
+	}
+} else {
+	echo 'Must provide servername as first argument.'. PHP_EOL;
+	exit();
+}
