@@ -234,11 +234,16 @@
 		<field name="author_additional" type="searchable_text" indexed="true" stored="true" multiValued="true"/>
 		<field name="author_additionalStr" type="unchanged_string" indexed="true" stored="false" multiValued="true"/>
 
+		<!-- TITLE/AUTHOR -->
+		<field name="title_author" type="searchable_text" indexed="true" stored="false" multiValued="true"/>
+
 		<!-- SERIES Fields -->
 		<field name="series" type="searchable_text" indexed="true" stored="true" multiValued="true"/>
 		<field name="series_facet" type="unchanged_string" indexed="true" stored="true" multiValued="true" docValues="true"/>
 		<field name="series_proper" type="textProper" indexed="true" stored="false" multiValued="true"/>
 		<field name="series_with_volume" type="textProper" indexed="false" stored="true" multiValued="true"/>
+
+		<field name="series_author" type="searchable_text" indexed="true" stored="false" multiValued="true"/>
 
 		<!-- Information about related records, TODO: Try storing most of this in the database for faster access and smaller solr index -->
 		<field name="record_details" type="unchanged_string" indexed="false" stored="true" multiValued="true"/>
