@@ -5,42 +5,35 @@ require_once ROOT_DIR . '/RecordDrivers/RecordInterface.php';
 class TalpaRecordDriver extends RecordInterface {
 	private $record;
 	private $isn;
+	private $upc;
 	/**
 	 * Constructor.  We build the object using all the data retrieved
 	 * @param array|File_MARC_Record||string   $recordData     Data to construct the driver from
 	 * @access  public
 	 */
 	public function __construct($record) {
-		if (is_string($record)) {
-			/** @var SearchObject_TalpaSearcher $TalpaSearcher */
-			$TalpaSearcher = SearchObjectFactory::initSearchObject("Talpa");
-			$this->record = $TalpaSearcher->retrieveRecord($record);
-		}else{
-			$this->record= $record;
-		}
-	}
 
-	public function isInLibrary() {
-		$lt_workcode = $this ->record['work_id'];
-		if($lt_workcode){ //get the corresponding groupedWorkID, if we have it.
-			require_once ROOT_DIR . '/sys/Talpa/TalpaData.php';
-			$talpaData = new TalpaData();
-			$talpaData->whereAdd();
-			$talpaData->whereAdd("lt_workcode=".$lt_workcode);
-			if ($talpaData->find(true)) {
-				$groupedWorkID = $talpaData->groupedRecordPermanentId;
-				return $groupedWorkID;
-			}
-			else
-			{
-			return false;
-			}
+		if(is_array($record)) {
+			$this->record= $record;
+		}else{
+
+			$_record = json_decode($record, true);
+
+			$passedRecord = array();
+			$passedRecord['isbns'][] = $_record['isbn']; //formatting the data for later use
+			$passedRecord['upcs'][] = $_record['upc'];
+			$passedRecord['title'] = urldecode($_record['title']);
+			$passedRecord['author'] = urldecode($_record['author']);
+
+			$this->record = $passedRecord;
+		//from bookcover
 		}
+
 	}
 
 	public function isValid()
 	{
-		return !empty($this->record['isbns']);
+		return (!empty($this->record['isbns']) || !empty($this->record['upcs']));
 	}
 
 	public function getBookcoverUrl($size='medium', $absolutePath = false) {
@@ -59,7 +52,17 @@ class TalpaRecordDriver extends RecordInterface {
 			$bookCoverUrl = '';
 		}
 
-		$bookCoverUrl .= "/bookcover.php?id={$this->getUniqueID()}&size={$size}&type=talpa";
+		$params = array(
+			'id'=> $this->getUniqueID(),
+			'isbn'=> $this->isn,
+			'upc'=> $this->upc,
+			'author' => urlencode($this->record['author'] ),
+			'title' => urlencode($this->record['title']),
+			'size' => $size,
+			'type' => 'talpa'
+		);
+//		$bookCoverUrl .= "/bookcover.php?id={$this->getUniqueID()}&size={$size}&type=talpa";
+		$bookCoverUrl .= "/bookcover.php?".http_build_query($params);
 		return $bookCoverUrl;
 	}
 
@@ -86,6 +89,8 @@ class TalpaRecordDriver extends RecordInterface {
 			return (string)$this->record['ID'][0];
 		} elseif ($this->isn) {
 			return (string)$this->isn;
+		} elseif ($this->upc) {
+			return (string)$this->upc;
 		}else{
 			return null;
 		}
@@ -99,129 +104,117 @@ class TalpaRecordDriver extends RecordInterface {
 
 		global $interface;
 		global $configArray;
-		$lt_workcode = $this ->record['work_id'];
-		if($inLibrary)
-		{
 
-			if($lt_workcode){ //get the corresponding groupedWorkID, if we have it.
-				require_once ROOT_DIR . '/sys/Talpa/TalpaData.php';
-				$talpaData = new TalpaData();
-				$talpaData->whereAdd();
-				$talpaData->whereAdd("lt_workcode=".$lt_workcode);
-				if ($talpaData->find(true)) {
-					require_once ROOT_DIR.'/RecordDrivers/GroupedWorkDriver.php';
-					$groupedWorkDriver = new GroupedWorkDriver($talpaData->groupedRecordPermanentId);
-					if ($groupedWorkDriver->isValid()) {
-						$interface->assign('summId', $groupedWorkDriver->getId());
-						$interface->assign('talpaResult', 0);
-						$interface->assign('groupedWorkDriver', $groupedWorkDriver);
+		if($inLibrary) {
+			if($this->record['groupedWork']['id']){
+				require_once ROOT_DIR.'/RecordDrivers/GroupedWorkDriver.php';
+				$groupedWorkDriver = new GroupedWorkDriver($this->record['groupedWork']['id']);
+				if ($groupedWorkDriver->isValid()) {
+					$interface->assign('summId', $groupedWorkDriver->getId());
+					$interface->assign('talpaResult', 0);
+					$interface->assign('groupedWorkDriver', $groupedWorkDriver);
 
-						$relatedRecords = $groupedWorkDriver->getRelatedRecords();
-						$summPublisher = null;
-						$summPubDate = null;
-						$summPlaceOfPublication =  null;
-						$summPhysicalDesc = null;
-						$summEdition = null;
-						$summLanguage = null;
-						$summClosedCaptioned = null;
-						$isFirst = true;
-						foreach ($relatedRecords as $relatedRecord) {
-							if ($isFirst) {
-								$summPublisher = $relatedRecord->publisher;
-								$summPubDate = $relatedRecord->publicationDate;
-								$summPlaceOfPublication = $relatedRecord->placeOfPublication;
-								$summPhysicalDesc = $relatedRecord->physical;
-								$summEdition = $relatedRecord->edition;
-								$summLanguage = $relatedRecord->language;
-								$summClosedCaptioned = $relatedRecord->closedCaptioned;
-							} else {
-								if ($summPublisher != $relatedRecord->publisher) {
-									$summPublisher = null;
-								}
-								if ($summPubDate != $relatedRecord->publicationDate) {
-									$summPubDate = null;
-								}
-								if ($summPlaceOfPublication != $relatedRecord->placeOfPublication) {
-									$summPlaceOfPublication = null;
-								}
-								if ($summPhysicalDesc != $relatedRecord->physical) {
-									$summPhysicalDesc = null;
-								}
-								if ($summEdition != $relatedRecord->edition) {
-									$summEdition = null;
-								}
-								if ($summLanguage != $relatedRecord->language) {
-									$summLanguage = null;
-								}
-								if ($summClosedCaptioned != $relatedRecord->closedCaptioned) {
-									$summClosedCaptioned = null;
-								}
+					$relatedRecords = $groupedWorkDriver->getRelatedRecords();
+					$summPublisher = null;
+					$summPubDate = null;
+					$summPlaceOfPublication =  null;
+					$summPhysicalDesc = null;
+					$summEdition = null;
+					$summLanguage = null;
+					$summClosedCaptioned = null;
+					$isFirst = true;
+					foreach ($relatedRecords as $relatedRecord) {
+						if ($isFirst) {
+							$summPublisher = $relatedRecord->publisher;
+							$summPubDate = $relatedRecord->publicationDate;
+							$summPlaceOfPublication = $relatedRecord->placeOfPublication;
+							$summPhysicalDesc = $relatedRecord->physical;
+							$summEdition = $relatedRecord->edition;
+							$summLanguage = $relatedRecord->language;
+							$summClosedCaptioned = $relatedRecord->closedCaptioned;
+						} else {
+							if ($summPublisher != $relatedRecord->publisher) {
+								$summPublisher = null;
 							}
-							$isFirst = false;
+							if ($summPubDate != $relatedRecord->publicationDate) {
+								$summPubDate = null;
+							}
+							if ($summPlaceOfPublication != $relatedRecord->placeOfPublication) {
+								$summPlaceOfPublication = null;
+							}
+							if ($summPhysicalDesc != $relatedRecord->physical) {
+								$summPhysicalDesc = null;
+							}
+							if ($summEdition != $relatedRecord->edition) {
+								$summEdition = null;
+							}
+							if ($summLanguage != $relatedRecord->language) {
+								$summLanguage = null;
+							}
+							if ($summClosedCaptioned != $relatedRecord->closedCaptioned) {
+								$summClosedCaptioned = null;
+							}
 						}
-
-						$interface->assign('summUrl', $groupedWorkDriver->getLinkUrl());
-						$interface ->assign('summRating', $groupedWorkDriver ->getRatingData());
-
-
-						$shortTitle = $groupedWorkDriver->getShortTitle();
-						if (empty($shortTitle)) {
-							$interface->assign('summTitle', $groupedWorkDriver->getTitle());
-							$interface->assign('summSubTitle', '');
-						} else {
-							$interface->assign('summTitle', $shortTitle);
-							$interface->assign('summSubTitle', $groupedWorkDriver->getSubtitle());
-						}
-
-						$interface->assign('summAuthor', rtrim($groupedWorkDriver->getPrimaryAuthor(true), ','));
-						$interface->assign('summPublisher', $summPublisher);
-						$interface->assign('summPubDate', $summPubDate);
-						$interface->assign('summPlaceOfPublication', $summPlaceOfPublication);
-						$interface->assign('summPhysicalDesc', $summPhysicalDesc);
-						$interface->assign('summEdition', $summEdition);
-						$interface->assign('summClosedCaptioned', $summClosedCaptioned);
-						$interface ->assign('summLanguage', $summLanguage);
-						$interface->assign('relatedManifestations', $groupedWorkDriver->getRelatedManifestations());
-						$interface->assign('summDescription', $groupedWorkDriver->getDescription());
-						$interface->assign('bookCoverUrl', $groupedWorkDriver->getBookcoverUrl('small'));
-						$interface->assign('bookCoverUrlMedium', $groupedWorkDriver->getBookcoverUrl('medium'));
-//						$interface->assign('summDescription', $this->getDescriptionFast(true));
-						if ($groupedWorkDriver->hasCachedSeries()) {
-							$interface->assign('ajaxSeries', false);
-							$interface->assign('summSeries', $groupedWorkDriver->getSeries(false));
-						} else {
-							$interface->assign('ajaxSeries', true);
-							$interface->assign('summSeries', null);
-						}
-
-
-						$isbn = $groupedWorkDriver->getCleanISBN();
-						$interface->assign('summISBN', $isbn);
-						$interface->assign('summFormats', $groupedWorkDriver->getFormats());
-						$interface->assign('numRelatedRecords', count($relatedRecords));
-
-						$acceleratedReaderInfo = $groupedWorkDriver->getAcceleratedReaderDisplayString();
-						$interface->assign('summArInfo', $acceleratedReaderInfo);
-
-						$lexileInfo = $groupedWorkDriver->getLexileDisplayString();
-						$interface->assign('summLexileInfo', $lexileInfo);
-
-						$interface->assign('summFountasPinnell', $groupedWorkDriver->getFountasPinnellLevel());
-
-//
+						$isFirst = false;
 					}
-					else
-					{
-						//We shouldn't land here- if results are coming in as "in library" and the API is returning a work code.
+
+					$interface->assign('summUrl', $groupedWorkDriver->getLinkUrl());
+					$interface ->assign('summRating', $groupedWorkDriver ->getRatingData());
+
+
+					$shortTitle = $groupedWorkDriver->getShortTitle();
+					if (empty($shortTitle)) {
+						$interface->assign('summTitle', $groupedWorkDriver->getTitle());
+						$interface->assign('summSubTitle', '');
+					} else {
+						$interface->assign('summTitle', $shortTitle);
+						$interface->assign('summSubTitle', $groupedWorkDriver->getSubtitle());
 					}
+
+					$interface->assign('summAuthor', rtrim($groupedWorkDriver->getPrimaryAuthor(true), ','));
+					$interface->assign('summPublisher', $summPublisher);
+					$interface->assign('summPubDate', $summPubDate);
+					$interface->assign('summPlaceOfPublication', $summPlaceOfPublication);
+					$interface->assign('summPhysicalDesc', $summPhysicalDesc);
+					$interface->assign('summEdition', $summEdition);
+					$interface->assign('summClosedCaptioned', $summClosedCaptioned);
+					$interface ->assign('summLanguage', $summLanguage);
+					$interface->assign('relatedManifestations', $groupedWorkDriver->getRelatedManifestations());
+					$interface->assign('summDescription', $groupedWorkDriver->getDescription());
+					$interface->assign('bookCoverUrl', $groupedWorkDriver->getBookcoverUrl('small'));
+					$interface->assign('bookCoverUrlMedium', $groupedWorkDriver->getBookcoverUrl('medium'));
+	//						$interface->assign('summDescription', $this->getDescriptionFast(true));
+					if ($groupedWorkDriver->hasCachedSeries()) {
+						$interface->assign('ajaxSeries', false);
+						$interface->assign('summSeries', $groupedWorkDriver->getSeries(false));
+					} else {
+						$interface->assign('ajaxSeries', true);
+						$interface->assign('summSeries', null);
+					}
+
+
+					$isbn = $groupedWorkDriver->getCleanISBN();
+					$interface->assign('summISBN', $isbn);
+					$interface->assign('summFormats', $groupedWorkDriver->getFormats());
+					$interface->assign('numRelatedRecords', count($relatedRecords));
+
+					$acceleratedReaderInfo = $groupedWorkDriver->getAcceleratedReaderDisplayString();
+					$interface->assign('summArInfo', $acceleratedReaderInfo);
+
+					$lexileInfo = $groupedWorkDriver->getLexileDisplayString();
+					$interface->assign('summLexileInfo', $lexileInfo);
+
+					$interface->assign('summFountasPinnell', $groupedWorkDriver->getFountasPinnellLevel());
 				}
 			}
-
 		}
 		else{ //Not a library result
 			$interface->assign('summId', $this->record['work_id']);
+			$interface->assign('summUrl','');
 			$this->isn = $this->record['isbns'][0];
-//			$interface->assign('summUrl', 'https://www.librarything.com/work/'.$this->record['work_id']);
+			$this->upc = !empty($this->record['upcs']) ? $this->record['upcs'][0] : null;
+			$this->title = $this->record['title'];
+			$this->author = $this->record['author'];
 			$interface->assign('summTitle', $this->record['title']);
 			$interface->assign('bookCoverUrlMedium',$this->getBookcoverUrl());
 			$interface->assign('summAuthor', $this->record['author']);
@@ -261,7 +254,7 @@ class TalpaRecordDriver extends RecordInterface {
 				$title .= ': ' . $this->record['Subtitle'][0];
 			}
 		} else {
-			$title='Unknown Title';
+			$title=$this->record['title'];
 		}
 		return $title;
 	}
@@ -357,10 +350,11 @@ class TalpaRecordDriver extends RecordInterface {
 	}
 
 	public function getAuthor() {
+
 		if(isset($this->record['Author_xml'][0]['fullname'])) {
 			$author=$this->record['Author_xml'][0]['fullname'];
 		} else {
-			$author='Unknown Title';
+			$author=$this->record['author'];
 		}
 		return $author;
 	}

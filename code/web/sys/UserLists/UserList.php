@@ -58,8 +58,8 @@ class UserList extends DataObject {
 		'title' => 'title ASC',
 		'dateAdded' => 'dateAdded ASC',
 		'recentlyAdded' => 'dateAdded DESC',
-		'custom' => 'weight ASC',
-		// this puts items with no set weight towards the end of the list
+		'custom' => 'weight ASC', // Puts items with no set weight towards the end of the list.
+		'author' => '',
 	];
 
 	/** @noinspection PhpUnusedParameterInspection */
@@ -371,24 +371,66 @@ class UserList extends DataObject {
 	}
 
 	/**
-	 * @param int $start position of first list item to fetch (0 based)
-	 * @param int $numItems Number of items to fetch for this result
-	 * @param boolean $allowEdit whether or not the list should be editable
-	 * @param string $format The format of the records, valid values are html, summary, recordDrivers, citation
-	 * @param string $citationFormat How citations should be formatted
-	 * @param string $sortName How records should be sorted, if no sort is provided, will use the default for the list
-	 * @param boolean $forLiDA Whether or not the records are being requested by Aspen LiDA
-	 * @param float $appVersion If LiDA, include the version to ensure proper filtering when needed
-	 * @return array     Array of HTML to display to the user
+	 * @param int $start Position of first list item to fetch (0 based)
+	 * @param int $numItems Number of items to fetch for this result.
+	 * @param boolean $allowEdit Whether or not the list should be editable.
+	 * @param string $format The format of the records; valid values are html, summary, recordDrivers, and citation.
+	 * @param string|null $citationFormat How citations should be formatted.
+	 * @param string|null $sortName How records should be sorted, if no sort is provided, will use the default for the list.
+	 * @param boolean $forLiDA Whether or not the records are being requested by Aspen LiDA.
+	 * @param float|int $appVersion If LiDA, include the version to ensure proper filtering when needed.
+	 * @return array Array of HTML to display to the user.
 	 */
-	public function getListRecords($start, $numItems, $allowEdit, $format, $citationFormat = null, $sortName = null, $forLiDA = false, $appVersion = 0): array {
-		//Get all entries for the list
+	public function getListRecords(
+		int $start, int $numItems, bool $allowEdit, string $format, string $citationFormat = null,
+		string $sortName = null, bool $forLiDA = false, float|int $appVersion = 0
+	): array {
 		if ($sortName == null) {
 			$sortName = $this->defaultSort;
 		}
+
+		// Because the DB does not persist an "author" column on the list itself,
+		// pull it from the underlying record when the sort of list is rendered.
+		if ($sortName === 'author') {
+			$allEntriesInfo = $this->getListEntries(null, $forLiDA, $appVersion, 0, 0);
+			$allEntries = $allEntriesInfo['listEntries'];
+			$idsBySource = $allEntriesInfo['idsBySource'];
+			$authorMap = [];
+			foreach ($idsBySource as $sourceType => $sourceIds) {
+				$searchObject = SearchObjectFactory::initSearchObject($sourceType);
+				if ($searchObject !== false) {
+					$records = $searchObject->getRecords($sourceIds);
+					foreach ($records as $recordDriver) {
+						$authorMap[$sourceType][$recordDriver->getId()] = trim($recordDriver->getPrimaryAuthor() ?? '');
+					}
+				}
+			}
+
+			$emptyFirst = [];
+			$authorList = [];
+			foreach ($allEntries as $idx => $entry) {
+				$src = $entry['source'];
+				$id = $entry['sourceId'];
+				$auth = $authorMap[$src][$id] ?? '';
+				$authorList[$idx] = $auth;
+				$emptyFirst[$idx] = ($auth === '') ? 1 : 0;
+			}
+
+			array_multisort(
+				$emptyFirst, SORT_ASC, SORT_NUMERIC,
+				$authorList, SORT_ASC, SORT_NATURAL | SORT_FLAG_CASE,
+				$allEntries
+			);
+
+			if ($numItems > 0) {
+				$filteredListEntries = array_slice($allEntries, $start, $numItems);
+			} else {
+				$filteredListEntries = $allEntries;
+			}
+		} else {
 			$listEntryInfo = $this->getListEntries($sortName, $forLiDA, $appVersion, $start, $numItems);
-			// No need to check $numItems as getListEntries() already checks for this before limiting the query.
 			$filteredListEntries = $listEntryInfo['listEntries'];
+		}
 
 		$filteredIdsBySource = [];
 		foreach ($filteredListEntries as $listItemEntry) {
@@ -598,7 +640,6 @@ class UserList extends DataObject {
 	 * @return array     Array of HTML to display to the user
 	 */
 	public function getBrowseRecords($start, $numItems): array {
-		// Get from $start to $numItems entries for the list.
 		$listEntryInfo = $this->getListEntries($this->defaultSort, false, 0, $start, $numItems);
 		$filteredListEntries = $listEntryInfo['listEntries'];
 
@@ -1191,7 +1232,7 @@ class UserList extends DataObject {
 	 * Turn our results into a csv document
 	 * @param null|array $result
 	 */
-	public function buildCSV() {
+	public function buildCSV() : void {
 		try {
 			$titleDetails = $this->getListRecords(0, 1000, false, 'recordDrivers'); // get all titles for email list, not just a page's worth
 
@@ -1204,7 +1245,7 @@ class UserList extends DataObject {
 			header('Content-Disposition: attachment;filename="UserList.csv"');
 			$fp = fopen('php://output', 'w');
 
-			$fields = array('Link', 'Title', 'Author', 'Publisher', 'Publish Date', 'Format', 'Location & Call Number');
+			$fields = array('Link', 'Title', 'Author', 'Publisher', 'Publish Date', 'Format', 'Location & Call Number', 'ISBN', 'UPC');
 			fputcsv($fp, $fields);
 
 			foreach ($titleDetails as $curDoc) {
@@ -1281,6 +1322,9 @@ class UserList extends DataObject {
 								}
 							}
 						}
+
+						$isbn = $curDoc->getPrimaryIsbn() ?? '';
+						$upc = $curDoc->getCleanUPC() ?? '';
 					}else{
 						$link = "No Link Available";
 						$title = $curDoc['title_display'];
@@ -1289,6 +1333,8 @@ class UserList extends DataObject {
 						$publishDate = '';
 						$uniqueFormats = '';
 						$output = ["No copies currently owned by this library"];
+						$isbn = '';
+						$upc = '';
 					}
 				} elseif ($curDoc instanceof ListsRecordDriver) {
 					// Hyperlink to title
@@ -1302,6 +1348,8 @@ class UserList extends DataObject {
 					$publishers = '';
 					$publishDate = '';
 					$uniqueFormats = '';
+					$isbn = '';
+					$upc = '';
 					$output = [''];
 				} elseif ($curDoc instanceof PersonRecord) {
 					// Hyperlink to Person Record
@@ -1313,6 +1361,8 @@ class UserList extends DataObject {
 					$publishers = '';
 					$publishDate = '';
 					$uniqueFormats = '';
+					$isbn = '';
+					$upc = '';
 					$output = [''];
 				} elseif ($curDoc instanceof OpenArchivesRecordDriver) {
 					// Hyperlink to Open Archive target
@@ -1324,6 +1374,8 @@ class UserList extends DataObject {
 					$publishers = '';
 					$publishDate = '';
 					$uniqueFormats = '';
+					$isbn = '';
+					$upc = '';
 					$output = [''];
 				} elseif ($curDoc instanceof EbscohostRecordDriver) {
 					// Hyperlink to EBSCOHost record
@@ -1336,6 +1388,8 @@ class UserList extends DataObject {
 					$publishers = '';
 					$publishDate = '';
 					$uniqueFormats = '';
+					$isbn = $curDoc->getPrimaryISBN() ?? '';
+					$upc = '';
 					$output = [''];
 
 				} elseif ($curDoc instanceof EbscoRecordDriver) {
@@ -1349,6 +1403,8 @@ class UserList extends DataObject {
 					$publishers = '';
 					$publishDate = '';
 					$uniqueFormats = '';
+					$isbn = $curDoc->getPrimaryISBN() ?? '';
+					$upc = '';
 					$output = [''];
 
 				} elseif ($curDoc instanceof SummonRecordDriver) {
@@ -1362,6 +1418,8 @@ class UserList extends DataObject {
 					$publishers = '';
 					$publishDate = '';
 					$uniqueFormats = '';
+					$isbn = $curDoc->getPrimaryISBN() ?? '';
+					$upc = '';
 					$output = [''];
 
 				} elseif ($curDoc instanceof WebsitePageRecordDriver) {
@@ -1374,6 +1432,8 @@ class UserList extends DataObject {
 					$publishers = '';
 					$publishDate = '';
 					$uniqueFormats = '';
+					$isbn = '';
+					$upc = '';
 					$output = [''];
 
 				} elseif ($curDoc instanceof WebResourceRecordDriver) {
@@ -1386,11 +1446,13 @@ class UserList extends DataObject {
 					$publishers = '';
 					$publishDate = '';
 					$uniqueFormats = '';
+					$isbn = '';
+					$upc = '';
 					$output = [''];
 				}
 
 				$output = implode(', ', $output);
-				$row = array ($link, $title, $author, $publishers, $publishDate, $uniqueFormats, $output);
+				$row = array ($link, $title, $author, $publishers, $publishDate, $uniqueFormats, $output, $isbn, $upc);
 				fputcsv($fp, $row);
 			}
 			exit();
@@ -1436,233 +1498,4 @@ class UserList extends DataObject {
 			$logger->log("Unable to create RIS file " . $e, Logger::LOG_ERROR);
 		}
 	}
-
-	//Helper Functions
-	// private function formatGroupedWorkCitation($curDoc) {
-	// 	require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
-	// 	require_once ROOT_DIR . '/sys/CitationBuilder.php';
-
-	// 	if ($curDoc->isValid()) {
-	// 		// Initialize an array to store the RIS-formatted citation fields
-	// 		$risFields = array();
-
-	// 		// RIS TY - Format
-	// 		$format = $curDoc->getFormat() ;
-	// 		if(is_array($format) && count($format) > 0) {
-	// 			$format = implode(', ', $format);
-
-	// 		switch ($format) {
-	// 			case 'book':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'BOOK':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'BOOKS':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'Book':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'books':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'BK':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'Books':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'JOURNAL':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'Journal Article':
-	// 				$format = 'JOUR';
-	// 				break;
-	// 			case 'JOURNAL ARTICLE':
-	// 				$format = 'JOUR';
-	// 				break;
-	// 			case 'Journal':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 			case 'Audio-Visual':
-	// 				$format = 'SOUND';
-	// 				break;
-	// 			case 'AudioBook':
-	// 				$format = 'SOUND';
-	// 				break;
-	// 			case 'Catalog':
-	// 				$format = 'CTLG';
-	// 				break;
-	// 			case 'Dictionary':
-	// 				$format = 'DICT';
-	// 				break;
-	// 			case 'Electronic Article':
-	// 				$format = 'EJOUR';
-	// 				break;
-	// 			case 'Electronic Book':
-	// 				$format = 'EBOOK';
-	// 				break;
-	// 			case 'E-Book':
-	// 				$format = 'EBOOK';
-	// 				break;
-	// 			case 'Magazine':
-	// 				$format = 'MGZN';
-	// 				break;
-	// 			case 'Magazine Article':
-	// 				$format = 'MGZN';
-	// 				break;
-	// 			case 'Music':
-	// 				$format = 'MUSIC';
-	// 				break;
-	// 			case 'MUSIC':
-	// 				$format = 'MUSIC';
-	// 				break;
-	// 			case 'Newspaper':
-	// 				$format = 'NEWS';
-	// 				break;
-	// 			case 'Newspaper Article':
-	// 				$format = 'NEWS';
-	// 				break;
-	// 			case 'Web Page':
-	// 				$format = 'ELEC';
-	// 				break;
-	// 			case 'Visual Materials':
-	// 				$format = 'VIDEO';
-	// 				break;
-	// 			case 'Movie':
-	// 				$format = 'VIDEO';
-	// 				break;
-	// 			case 'Movie -- DVD':
-	// 				$format = 'VIDEO';
-	// 				break;
-	// 			case 'Movie -- VHS':
-	// 				$format = 'VIDEO';
-	// 				break;
-	// 			case 'Electronic Database':
-	// 				$format = 'EBOOK';
-	// 					break;
-	// 			case 'Reference':
-	// 				$format = 'BOOK';
-	// 				break;
-	// 		}
-
-	// 	 $risFields[] = "TY  - ".$format;
-	// 	}
-	// 		//RIS Tag: AU - Author
-	// 		$authors = array();
-	// 		$primaryAuthor = $curDoc->getPrimaryAuthor();
-	// 		if (!empty($primaryAuthor)) {
-	// 			$authors[] = $primaryAuthor;
-	// 		}
-
-	// 		$contributors = $curDoc->getContributors();
-	// 		if(is_array($contributors) && count($contributors) > 0) {
-	// 			$authors = array_merge($authors, $contributors);
-	// 		}
-
-	// 		if (!empty($authors)) {
-	// 			foreach ($authors as $author){
-	// 			$risFields[] = "AU - " . $author;
-	// 			}
-	// 	}
-
-	// 		// RIS Tag: TI - Title
-	// 		$title = $curDoc->getTitle();
-	// 		if (!empty($title)) {
-	// 			$risFields[] = "TI  - " . $title;
-	// 		}
-
-	// 		// RIS Tag: PB - Publisher
-	// 		$publishers = $curDoc->getPublishers();
-	// 		if (is_array($publishers) && count($publishers) > 0) {
-	// 			$publishers = implode(', ', $publishers);
-	// 			$risFields[] = "PB  - " . $publishers;
-	// 		}
-
-	// 		// RIS Tag: PY - Publication Year(s)
-	// 		$publishDates = $curDoc->getPublicationDates();
-	// 		if (!is_array($publishDates)) {
-	// 			$publishDates = [$publishDates];
-	// 		}
-	// 		foreach ($publishDates as $publishDate) {
-	// 			if (!empty($publishDate)) {
-	// 				$risFields[] = "PY  - " . $publishDate;
-	// 			}
-	// 		}
-
-	// 		$placesOfPublication = $curDoc->getPlaceOfPublication();
-	// 		if(is_array($placesOfPublication) && count($placesOfPublication) > 0) {
-	// 			$placesOfPublicationClean = implode(', ', $placesOfPublication);
-	// 			$placesOfPublicationClean = str_replace([':', '; '], ' ', $placesOfPublication);
-	// 			$risFields[] = "CY  - ".$placesOfPublicationClean;
-	// 		} else {
-	// 			if(!empty($placesOfPublication)) {
-	// 				$placesOfPublicationClean = str_replace([':', '; '], ' ', $placesOfPublication);
-	// 				$risFields[] = "CY  - ".$placesOfPublicationClean;
-	// 			}
-	// 		}
-
-	// 	// //RIS Tag: ET - Editions
-	// 			$editions = $curDoc->getEdition();
-	// 			if(is_array($editions) && count($editions) > 0) {
-	// 				$editions = implode(', ', $editions);
-	// 				$risFields[] = "ET  - ".$editions;
-	// 			} else {
-	// 				if(!empty($editions)) {
-	// 					$risFields[] = "ET  - ".$editions;
-	// 				}
-	// 			}
-
-	// 			//RIS UR - URL
-	// 			$url = $curDoc->getRecordUrl();
-	// 			if(is_array($url) && count($url) > 0) {
-	// 				$url = implode(', ', $url);
-	// 				$risFields[] = "UR  - ".$url;
-	// 			}
-
-	// 		//RIS Tag: N1 - Info
-	// 		$notes = $curDoc->getTableOfContentsNotes();
-	// 		if(is_array($notes) && count($notes) > 0) {
-	// 			$notes = implode(', ', $notes);
-	// 			$risFields[] = "N1  - ".$notes;
-	// 		}else{
-	// 		if(!empty($notes)) {
-	// 			$risFields[] = "N1  - ".$notes;
-	// 			}
-	// 		}
-
-	// 		//RIS Tag: N2 - Notes
-	// 		$description = $curDoc->getDescription();
-	// 		if(!empty($description)) {
-	// 			$risFields[] = "N2  - ".$description;
-	// 		}
-
-	// 		//RIS T2 - Series
-	// 		$series = $curDoc->getSeries();
-	// 		if(is_array($series) && count($series) >0){
-	// 			$series = implode(', ', $series);
-	// 			$risFields[] = "T2  - ".$series;
-	// 		}
-
-	// 		//RIS ST - Short Title
-	// 		$shortTilte = $curDoc->getShortTitle();
-	// 		if(!empty($shortTilte)) {
-	// 			$risFields[] = "ST  - ".$shortTilte;
-	// 		}
-
-	// 		// RIS Tag: SN - ISBN
-	// 		$ISBN = $curDoc->getPrimaryIsbn();
-	// 		if(!empty($ISBN)){
-	// 			$risFields[] = "SN  - ".$ISBN;
-	// 		}
-
-	// 		//RIS Tag: AV
-	// 		$risFields[] = "ER  -";
-
-	// 		return implode("\n", $risFields);
-	// 	} else {
-	// 		return '';
-	// 	}
-	// }
 }

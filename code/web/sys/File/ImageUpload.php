@@ -225,46 +225,70 @@ class ImageUpload extends DataObject {
 	}
 
 	private function generateDerivatives() {
-		if (!empty($this->fullSizePath)) {
+		if (!empty($this->fullSizePath) && !empty($this->id)) {
 			global $serverName;
 			require_once ROOT_DIR . '/sys/Covers/CoverImageUtils.php';
 			$fullSizeFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/full/' . $this->fullSizePath;
-			if ($this->generateXLargeSize && empty($this->xLargeSizePath)) {
-				$xLargeFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/x-large/';
-				if (!file_exists($xLargeFile)) {
-					mkdir($xLargeFile, 0755, true);
+			if ($this->generateXLargeSize) {
+				$xLargeFilePath = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/x-large/';
+				if (!file_exists($xLargeFilePath)) {
+					mkdir($xLargeFilePath, 0755, true);
 				}
-				$xLargeFile .= $this->fullSizePath;
+				$xLargeFile = $xLargeFilePath . $this->fullSizePath;
+				if (!empty($_FILES['fullSizePath']['full_path'])) {
+					$prevUpload = $xLargeFilePath . $_FILES['fullSizePath']['full_path'];
+					if (file_exists($prevUpload)) {
+						unlink($prevUpload);
+					}
+				}
 				if (resizeImage($fullSizeFile, $xLargeFile, ImageUpload::$xLargeSize, ImageUpload::$xLargeSize)) {
 					$this->xLargeSizePath = $this->fullSizePath;
 				}
 			}
-			if ($this->generateLargeSize && empty($this->largeSizePath)) {
-				$largeFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/large/';
-				if (!file_exists($largeFile)) {
-					mkdir($largeFile, 0755, true);
+			if ($this->generateLargeSize) {
+				$largeFilePath = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/large/';
+				if (!file_exists($largeFilePath)) {
+					mkdir($largeFilePath, 0755, true);
 				}
-				$largeFile .= $this->fullSizePath;
+				$largeFile = $largeFilePath . $this->fullSizePath;
+				if (!empty($_FILES['fullSizePath']['full_path'])) {
+					$prevUpload = $largeFilePath . $_FILES['fullSizePath']['full_path'];
+					if (file_exists($prevUpload)) {
+						unlink($prevUpload);
+					}
+				}
 				if (resizeImage($fullSizeFile, $largeFile, ImageUpload::$largeSize, ImageUpload::$largeSize)) {
 					$this->largeSizePath = $this->fullSizePath;
 				}
 			}
-			if ($this->generateMediumSize && empty($this->mediumSizePath)) {
-				$mediumFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/medium/';
-				if (!file_exists($mediumFile)) {
-					mkdir($mediumFile, 0755, true);
+			if ($this->generateMediumSize) {
+				$mediumFilePath = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/medium/';
+				if (!file_exists($mediumFilePath)) {
+					mkdir($mediumFilePath, 0755, true);
 				}
-				$mediumFile .= $this->fullSizePath;
+				$mediumFile = $mediumFilePath . $this->fullSizePath;
+				if (!empty($_FILES['fullSizePath']['full_path'])) {
+					$prevUpload = $mediumFilePath . $_FILES['fullSizePath']['full_path'];
+					if (file_exists($prevUpload)) {
+						unlink($prevUpload);
+					}
+				}
 				if (resizeImage($fullSizeFile, $mediumFile, ImageUpload::$mediumSize, ImageUpload::$mediumSize)) {
 					$this->mediumSizePath = $this->fullSizePath;
 				}
 			}
-			if ($this->generateSmallSize && empty($this->smallSizePath)) {
-				$smallFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/small/';
-				if (!file_exists($smallFile)) {
-					mkdir($smallFile, 0755, true);
+			if ($this->generateSmallSize) {
+				$smallFilePath = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/small/';
+				if (!file_exists($smallFilePath)) {
+					mkdir($smallFilePath, 0755, true);
 				}
-				$smallFile .= $this->fullSizePath;
+				$smallFile = $smallFilePath . $this->fullSizePath;
+				if (!empty($_FILES['fullSizePath']['full_path'])) {
+					$prevUpload = $smallFilePath . $_FILES['fullSizePath']['full_path'];
+					if (file_exists($prevUpload)) {
+						unlink($prevUpload);
+					}
+				}
 				if (resizeImage($fullSizeFile, $smallFile, ImageUpload::$smallSize, ImageUpload::$smallSize)) {
 					$this->smallSizePath = $this->fullSizePath;
 				}

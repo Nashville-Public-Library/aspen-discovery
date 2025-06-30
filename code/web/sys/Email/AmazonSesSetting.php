@@ -63,7 +63,7 @@ class AmazonSesSetting extends DataObject {
 				'type' => 'email',
 				'label' => 'From Address',
 				'description' => 'The address emails are sent from',
-				'default' => 'no-reply@bywatersolutions.com',
+				'default' => '',
 			],
 			'accessKeyId' => [
 				'property' => 'accessKeyId',

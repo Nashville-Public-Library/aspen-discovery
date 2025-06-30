@@ -3664,7 +3664,7 @@ class Koha extends AbstractIlsDriver {
 			'userid' => $user->ils_barcode,
 		];
 
-		if (empty($ils_password)) {
+		if (empty($user->ils_password)) {
 			if ($user->isLoggedInViaSSO) {
 				// This is a limitation of using Koha pages to perform logins rather than API requests.
 				// In the future, with an API request, user verification could be performed without a password when a user has logged in to Aspen via SSO.
@@ -3961,6 +3961,17 @@ class Koha extends AbstractIlsDriver {
 			];
 		} else {
 			$allowHomeLibraryUpdates = $type == 'selfReg' || $library->allowHomeLibraryUpdates;
+
+			// Try to set default based on physical location (IP address).
+			$defaultBranchCode = null;
+			if ($type == 'selfReg') {
+				global $locationSingleton;
+				$physicalLocation = $locationSingleton->getIPLocation();
+				if ($physicalLocation != null && isset($pickupLocations[$physicalLocation->code])) {
+					$defaultBranchCode = $physicalLocation->code;
+				}
+			}
+
 			$fields['librarySection'] = [
 				'property' => 'librarySection',
 				'type' => 'section',
@@ -3974,6 +3985,7 @@ class Koha extends AbstractIlsDriver {
 						'label' => 'Home Library',
 						'description' => 'Please choose the Library location you would prefer to use',
 						'values' => $pickupLocations,
+						'default' => $defaultBranchCode,
 						'required' => true,
 						'readOnly' => !$allowHomeLibraryUpdates,
 					],
@@ -4993,6 +5005,21 @@ class Koha extends AbstractIlsDriver {
 			]);
 		} else {
 			$apiUrl = $this->getWebServiceURL() . "/api/v1/patrons";
+
+			if ($this->getKohaVersion() > 21.05) {
+				$formattedExtendedAttributes = [];
+				foreach ($this->setExtendedAttributes() as $extendedAttribute) {
+					if (!isset($_REQUEST["borrower_attribute_" . $extendedAttribute['code']])) {
+						continue;
+					}
+					$formattedExtendedAttributes[] = [
+						'type' =>  $extendedAttribute['code'],
+						'value' => $_REQUEST["borrower_attribute_" . $extendedAttribute['code']]
+					];
+				}
+				$postVariables['extended_attributes'] = $formattedExtendedAttributes;
+			}
+
 			$postParams = json_encode($postVariables);
 
 			$this->apiCurlWrapper->addCustomHeaders([
@@ -5050,17 +5077,6 @@ class Koha extends AbstractIlsDriver {
 						}
 					} else {
 						$result['message'] = translate(['text'=>"Your account was registered, but a barcode was not provided, please contact your library for barcode and password to use when logging in.",'isPublicFacing'=>true]);
-					}
-				}
-
-				// check for patron attributes
-				if ($this->getKohaVersion() > 21.05) {
-					$jsonResponse = json_decode($response);
-					$patronId = $jsonResponse->patron_id;
-					$extendedAttributes = $this->setExtendedAttributes();
-
-					if (!empty($extendedAttributes)) {
-						$this->updateExtendedAttributesInKoha($patronId, $extendedAttributes, $oauthToken);
 					}
 				}
 			}

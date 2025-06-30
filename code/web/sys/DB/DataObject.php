@@ -442,6 +442,8 @@ abstract class DataObject implements JsonSerializable {
 		$encryptedFields = $this->getEncryptedFieldNames();
 		$serializedFields = $this->getSerializedFieldNames();
 		$compressedFields = $this->getCompressedColumnNames();
+		//these will be updated regardless of if they're changed or not
+		$imageUpdates = ['xLargeSizePath', 'largeSizePath', 'mediumSizePath', 'smallSizePath'];
 
 		$properties = get_object_vars($this);
 		$updates = '';
@@ -449,7 +451,7 @@ abstract class DataObject implements JsonSerializable {
 			if ($value !== null && !is_array($value) && $name[0] != '_' && $name != 'N' && $name != $this->__primaryKey) {
 				//Check to see if we are updating only selected fields and if so, only skip things that aren't changed
 				if (!empty($this->_changedFields)) {
-					if (!in_array($name, $this->_changedFields)) {
+					if (!in_array($name, $this->_changedFields) && !in_array($name, $imageUpdates)) {
 						continue;
 					}
 				}

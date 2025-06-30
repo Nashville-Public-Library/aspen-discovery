@@ -283,21 +283,27 @@ var AspenDiscovery = (function(){
 			return newValue ? (query.length > 2 ? query + "&" : "?") + param + "=" + newValue : query;
 		},
 
-		getSelectedTitles: function(){
+		getSelectedTitles: function(promptForProcessingAll){
+			if (promptForProcessingAll === undefined) {
+				promptForProcessingAll = true;
+			}
 			var selectedTitles = aspenJQ("input.titleSelect:checked ").map(function() {
 				return aspenJQ(this).attr('name') + "=" + aspenJQ(this).val();
 			}).get().join("&");
-			if (selectedTitles.length === 0){
+			if (selectedTitles.length === 0 && promptForProcessingAll){
 				var ret = confirm('You have not selected any items, process all items?');
 				if (ret === true){
-					var titleSelect = aspenJQ("input.titleSelect");
-					titleSelect.attr('checked', 'checked');
+					AspenDiscovery.selectAllTitles();
 					selectedTitles = titleSelect.map(function() {
 						return aspenJQ(this).attr('name') + "=" + aspenJQ(this).val();
 					}).get().join("&");
 				}
 			}
 			return selectedTitles;
+		},
+		selectAllTitles: function (){
+			var titleSelect = aspenJQ("input.titleSelect");
+			titleSelect.attr('checked', 'checked');
 		},
 		getSelectedLists: function(){
 			var selectedLists = aspenJQ("input.listSelect:checked ").map(function() {
@@ -457,6 +463,36 @@ var AspenDiscovery = (function(){
 					location.reload();
 				})
 			}
+		},
+
+		confirm: function(messageTitle, messageBody, okButtonLabel, cancelButtonLabel, translate, confirmFunctionAsString, confirmStyle) {
+			if (confirmStyle === undefined) {
+				confirmStyle = 'btn-primary';
+			}
+			if (okButtonLabel === undefined) {
+				okButtonLabel = 'Ok';
+			}
+			if (cancelButtonLabel === undefined) {
+				cancelButtonLabel = 'Cancel';
+			}
+			if (translate === true) {
+				var language = Globals.language;
+				$.getJSON(Globals.path + '/API/SystemAPI?method=getBulkTranslations&terms[1]=' + encodeURI(messageTitle) + '&terms[2]=' + encodeURI(messageBody) + '&terms[3]=' + okButtonLabel + '&terms[4]=' + cancelButtonLabel + '&language=' + language, function (data) {
+					if (data.result.success) {
+						if (data[language]) {
+							messageTitle = data[language][1];
+							messageBody = data[language][2];
+							okButtonLabel = data[language][3];
+							cancelButtonLabel = data[language][4];
+						}
+					}
+				}).then(function () {
+					var buttons = "<button id='confirmOkBtn' class='tool btn " + confirmStyle + "' onclick='" + confirmFunctionAsString + "'><i class='fas fa-spinner fa-spin hidden' role='status' aria-hidden='true'></i> " + okButtonLabel + "</button>";
+					buttons += "<button id='confirmCancelBtn' class='tool btn btn-default' onclick='AspenDiscovery.closeLightbox()'>" + cancelButtonLabel + "</button>";
+					AspenDiscovery.showMessageWithButtons(messageTitle, messageBody, buttons, false, '', false, messageTitle.length === 0,true);
+				});
+			}
+
 		},
 
 		// common loading message for lightbox while waiting for AJAX processes to complete.
@@ -865,7 +901,7 @@ $.validator.addMethod('repeat', function(value, element){
 		var valueOriginal = aspenJQ('#' + idOriginal).val();
 		return value === valueOriginal;
 	}
-}, "Repeat fields do not match");
+}, "Repeat fields must match.");
 
 jQuery.validator.addMethod("pinConfirmation", function (value, element) {
 	if (this.optional(element)) {
@@ -883,3 +919,38 @@ if (!String.prototype.startsWith) {
 		}
 	});
 }
+
+jQuery.validator.addMethod("strongPassword", function(value, element) {
+	// Return true early if field is empty and not required.
+	if (value.length === 0 && !$(element).hasClass('required')) {
+		return true;
+	}
+
+	const uppercaseValid = /[A-Z]/.test(value);
+	const lowercaseValid = /[a-z]/.test(value);
+	const numberValid = /[0-9]/.test(value);
+	const specialValid = /[-_~!@#$%^&*.+]/.test(value);
+
+	$(element).data('pwdUpperValid', uppercaseValid);
+	$(element).data('pwdLowerValid', lowercaseValid);
+	$(element).data('pwdNumberValid', numberValid);
+	$(element).data('pwdSpecialValid', specialValid);
+
+	return uppercaseValid && lowercaseValid && numberValid && specialValid;
+}, function(params, element) {
+	const errors = [];
+	if (!$(element).data('pwdUpperValid')) {
+		errors.push('At least one uppercase letter is required.');
+	}
+	if (!$(element).data('pwdLowerValid')) {
+		errors.push('At least one lowercase letter is required.');
+	}
+	if (!$(element).data('pwdNumberValid')) {
+		errors.push('At least one number is required.');
+	}
+	if (!$(element).data('pwdSpecialValid')) {
+		errors.push('At least one special character (-_~!@#$%^&*.+) is required.');
+	}
+
+	return '<ul class="password-error-list" style="margin-top:5px; margin-bottom:0; padding-left:1.25em; list-style-type:disc"><li>' + errors.join('</li><li>') + '</li></ul>';
+});

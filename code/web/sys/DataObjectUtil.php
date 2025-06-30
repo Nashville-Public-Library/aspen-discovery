@@ -372,8 +372,53 @@ class DataObjectUtil {
 					//Copy the full image to the files directory
 					//Filename is the name of the object + the original filename
 					global $configArray;
+					$fileType = $_FILES[$propertyName]["type"];
+					$fileType = match ($fileType) {
+						'image/gif' => ".gif",
+						'image/png' => ".png",
+						'image/svg+xml' => ".svg",
+						default => ".jpg",
+					};
+					if (!empty($object->type)){
+						$objectType = $object->type;
+					} else {
+						$objectType = $property['property'];
+						$objectType = match ($objectType) {
+							'logoName' => 'discovery_logo',
+							'defaultCover' => 'default_cover',
+							'headerBackgroundImage' => 'header_background_image',
+							'footerLogo' => 'footer_logo',
+							'logoApp' => 'logo_app',
+							'headerLogoApp' => 'header_logo_app',
+							'booksImage' => 'books_image',
+							'booksImageSelected' => 'books_image_selected',
+							'eBooksImage' => 'eBooks_image',
+							'eBooksImageSelected' => 'eBooks_image_selected',
+							'audioBooksImage' => 'audioBooks_image',
+							'audioBooksImageSelected' => 'audioBooks_image_selected',
+							'musicImage' => 'music_image',
+							'musicImageSelected' => 'music_image_selected',
+							'moviesImage' => 'movies_image',
+							'moviesImageSelected' => 'movies_image_selected',
+							'catalogImage' => 'catalog_image',
+							'genealogyImage' => 'genealogy_image',
+							'articlesDBImage' => 'articles_db_image',
+							'eventsImage' => 'events_image',
+							'listsImage' => 'lists_image',
+							'seriesImage' => 'series_image',
+							'libraryWebsiteImage' => 'library_website_image',
+							'historyArchivesImage' => 'history_archives_image',
+							default => $property['property'],
+						};
+						if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'Placards') {
+							$objectType = 'placard_image';
+						}
+						if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'WebResources') {
+							$objectType = 'web_resource_image';
+						}
+					}
 					if (isset($property['storagePath'])) {
-						$destFileName = $_FILES[$propertyName]["name"];
+						$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : $_FILES[$propertyName]["name"];
 						$destFolder = $property['storagePath'];
 						$destFullPath = $destFolder . '/' . $destFileName;
 						$copyResult = copy($_FILES[$propertyName]["tmp_name"], $destFullPath);
@@ -382,20 +427,25 @@ class DataObjectUtil {
 						$logger->log("Creating thumbnails for $propertyName", Logger::LOG_DEBUG);
 						if (isset($property['path'])) {
 							$destFolder = $property['path'];
-							$destFileName = $_FILES[$propertyName]["name"];
+							$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : $_FILES[$propertyName]["name"];
 							if (!file_exists($destFolder)) {
 								mkdir($destFolder, 0755, true);
 							}
 							$pathToThumbs = $destFolder . '/thumbnail';
 							$pathToMedium = $destFolder . '/medium';
 						} else {
-							$destFileName = $propertyName . $_FILES[$propertyName]["name"];
+							$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : $_FILES[$propertyName]["name"];
 							$destFolder = $configArray['Site']['local'] . '/files/original';
 							$pathToThumbs = $configArray['Site']['local'] . '/files/thumbnail';
 							$pathToMedium = $configArray['Site']['local'] . '/files/medium';
 						}
 
 						$destFullPath = $destFolder . '/' . $destFileName;
+						//check for previous upload that needs to be overwritten to new naming convention
+						$prevUpload = $destFolder . '/' . $_FILES[$propertyName]["name"];
+						if (file_exists($prevUpload)) {
+							rename($prevUpload, $destFullPath);
+						}
 						$copyResult = copy($_FILES[$propertyName]["tmp_name"], $destFullPath);
 
 						if ($copyResult) {
@@ -442,9 +492,15 @@ class DataObjectUtil {
 							AspenError::raiseError('Incorrect file type uploaded ' . $fileType);
 						}
 					}
+					if (!empty($object->type)){
+						$objectType = $object->type;
+					} else {
+						$objectType = $property['type'];
+					};
+					$fileType = ".pdf";
 					//Copy the full image to the correct location
 					//Filename is the name of the object + the original filename
-					$destFileName = $_FILES[$propertyName]["name"];
+					$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : $_FILES[$propertyName]["name"];
 					$destFolder = $property['path'];
 					if (!file_exists($destFolder)) {
 						mkdir($destFolder, 0775, true);
@@ -456,6 +512,11 @@ class DataObjectUtil {
 					}
 
 					$destFullPath = $destFolder . '/' . $destFileName;
+					//check for previous upload that needs to be overwritten to new naming convention
+					$prevUpload = $destFolder . '/' . $_FILES[$propertyName]["name"];
+					if (file_exists($prevUpload)) {
+						rename($prevUpload, $destFullPath);
+					}
 					$copyResult = copy($_FILES[$propertyName]["tmp_name"], $destFullPath);
 					if ($copyResult) {
 						$logger->log("Copied file from {$_FILES[$propertyName]["tmp_name"]} to $destFullPath", Logger::LOG_NOTICE);

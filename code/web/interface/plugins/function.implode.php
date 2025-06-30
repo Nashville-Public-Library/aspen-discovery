@@ -35,10 +35,20 @@ function smarty_function_implode($params, &$smarty) {
 	if (isset($params['escape'])) {
 		$escapeValues = $params['escape'];
 	}
+	$removeTrailingPunctuationFromTerms = false;
+	if (isset($params['removeTrailingPunctuationFromTerms'])) {
+		$removeTrailingPunctuationFromTerms = $params['removeTrailingPunctuationFromTerms'];
+	}
 
 	$subject = $params['subject'];
 
+	require_once ROOT_DIR . '/sys/Utils/StringUtils.php';
 	if (is_array($subject)) {
+		if ($removeTrailingPunctuationFromTerms) {
+			foreach ($subject as $key => $item) {
+				$subject[$key] = StringUtils::removeTrailingPunctuation($item);
+			}
+		}
 		if ($translate) {
 			if (isset($params['isPublicFacing'])) {
 				$isPublicFacing = $params['isPublicFacing'];
@@ -74,6 +84,9 @@ function smarty_function_implode($params, &$smarty) {
 		}
 		$implodedValue = implode($params['glue'], $subject);
 	} else {
+		if ($removeTrailingPunctuationFromTerms) {
+			$subject = StringUtils::removeTrailingPunctuation($subject);
+		}
 		if ($translate) {
 			if (isset($params['isPublicFacing'])) {
 				$isPublicFacing = $params['isPublicFacing'];
