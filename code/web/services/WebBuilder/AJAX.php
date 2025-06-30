@@ -328,9 +328,6 @@ class WebBuilder_AJAX extends JSON_Action {
 		//Save Linked Placard
 		require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
 		$imageForPlacard = $_REQUEST['image'];
-		if (!str_starts_with($imageForPlacard, 'logo')) {
-			$imageForPlacard = 'logo' . $imageForPlacard;
-		}
 		$placard = new Placard();
 		$placard->sourceId = $_REQUEST['objectId'];
 		if ($placard->find(true)) {
