@@ -126,7 +126,7 @@ function getUpdates25_07_00(): array {
 			'title' => 'Rename Web Resource and Placard Images',
 			'description' => 'Rename Web Resource and Placard image uploads so they do not conflict with other image uploads',
 			'sql' => [
-				'renameUploadedWebResourceandPlacardImages'
+				'renameUploadedWebResourceAndPlacardImages'
 			]
 		], //rename_web_resource_placard_images
 
@@ -323,8 +323,7 @@ function renameUploadedWBFiles(&$update) : void {
 		}
 		//check for thumbnail as well
 		if (!empty($uploadedFile->thumbFullPath)){
-			$thumbFullPathLength = strlen("/web/aspen-discovery/code/web/files/thumbnail/");
-			$thumbUploaded = substr($uploadedFile->thumbFullPath, $thumbFullPathLength);
+			$thumbUploaded = substr($uploadedFile->thumbFullPath, strrpos($uploadedFile->thumbFullPath, '/') + 1);
 			$fileType = substr($uploadedFile->thumbFullPath, -3);
 			$fileType = match($fileType){
 				'gif' => ".gif",
@@ -335,14 +334,17 @@ function renameUploadedWBFiles(&$update) : void {
 			$uploadedThumbPattern = 'web_builder_pdf_'.$fileId.$fileType;
 			if ($thumbUploaded != $uploadedThumbPattern) {
 				$originalThumbPath = $uploadedFile->thumbFullPath;
-				$newThumbPath = "/web/aspen-discovery/code/web/files/thumbnail/".$uploadedThumbPattern;
+				$newThumbPath = $configArray['Site']['local'] . "/files/thumbnail/".$uploadedThumbPattern;
 
+				$fileRenamed = false;
 				if (file_exists($originalThumbPath) && !file_exists($newThumbPath)) {
-					rename($originalThumbPath, $newThumbPath);
+					$fileRenamed = rename($originalThumbPath, $newThumbPath);
 				}
 
-				$aspen_db->query("UPDATE file_uploads set thumbFullPath = '$newThumbPath' WHERE id=$fileId");
-				$fileThumbnailsUpdated++;
+				if ($fileRenamed) {
+					$aspen_db->query("UPDATE file_uploads set thumbFullPath = '$newThumbPath' WHERE id=$fileId");
+					$fileThumbnailsUpdated++;
+				}
 			}
 
 		}
@@ -352,6 +354,7 @@ function renameUploadedWBFiles(&$update) : void {
 }
 function renameUploadedThemeImages(&$update) : void {
 	global $aspen_db;
+	global $configArray;
 	require_once ROOT_DIR . '/sys/Theming/Theme.php';
 	$themeImagesUpdated = 0;
 
@@ -390,8 +393,8 @@ function renameUploadedThemeImages(&$update) : void {
 		foreach ($themeImagesToCheck as $image) {
 			$dbName = $image['dbName'];
 			if (!empty($theme->$dbName) && substr($theme->$dbName, 0, -4) != $image['prefix']) {
-				$originalPath = "/web/aspen-discovery/code/web/files/original/".$theme->$dbName;
-				$originalThumbnailPath = "/web/aspen-discovery/code/web/files/thumbnail/".$theme->$dbName;
+				$originalPath = $configArray['Site']['local'] . "/files/original/".$theme->$dbName;
+				$originalThumbnailPath = $configArray['Site']['local'] . "/files/thumbnail/".$theme->$dbName;
 				$fileType = substr($theme->$dbName, -3);
 				$fileType = match($fileType){
 					'gif' => ".gif",
@@ -399,26 +402,30 @@ function renameUploadedThemeImages(&$update) : void {
 					'svg' => ".svg",
 					default => ".jpg",
 				};
-				$newPathOriginal = "/web/aspen-discovery/code/web/files/original/".$image['prefix'].$fileType;
-				$newPathThumbnail = "/web/aspen-discovery/code/web/files/thumbnail/".$image['prefix'].$fileType;
+				$newPathOriginal = $configArray['Site']['local'] . "/files/original/".$image['prefix'].$fileType;
+				$newPathThumbnail = $configArray['Site']['local'] . "/files/thumbnail/".$image['prefix'].$fileType;
 				$newFileName = $image['prefix'].$fileType;
+				$mainFileRenamed = false;
 				if (file_exists($originalPath) && !file_exists($newPathOriginal)) {
-					rename($originalPath, $newPathOriginal);
+					$mainFileRenamed = rename($originalPath, $newPathOriginal);
 				}
 				if (file_exists($originalThumbnailPath) && !file_exists($newPathThumbnail)) {
 					rename($originalThumbnailPath, $newPathThumbnail);
 				}
 
-				$aspen_db->query("UPDATE themes set $dbName = '$newFileName' WHERE id=$themeId");
-				$themeImagesUpdated++;
+				if ($mainFileRenamed) {
+					$aspen_db->query("UPDATE themes set $dbName = '$newFileName' WHERE id=$themeId");
+					$themeImagesUpdated++;
 				}
+			}
 		}
 	}
 	$update['status'] = "Renamed $themeImagesUpdated images in themes so they will not conflict with other image uploads.";
 	$update['success'] = true;
 }
-function renameUploadedWebResourceandPlacardImages(&$update) : void {
+function renameUploadedWebResourceAndPlacardImages(&$update) : void {
 	global $aspen_db;
+	global $configArray;
 
 	//Web Resources
 	require_once ROOT_DIR . '/sys/WebBuilder/WebResource.php';
@@ -432,8 +439,8 @@ function renameUploadedWebResourceandPlacardImages(&$update) : void {
 		$uploadedFilePattern = "web_resource_image_".$resourceId;
 
 		if (!empty($webResource->logo) && substr($webResource->logo, 0, -4) != $uploadedFilePattern) {
-			$originalPath =  "/web/aspen-discovery/code/web/files/original/".$webResource->logo;
-			$originalThumbnailPath = "/web/aspen-discovery/code/web/files/thumbnail/".$webResource->logo;
+			$originalPath =  $configArray['Site']['local'] . "/files/original/".$webResource->logo;
+			$originalThumbnailPath = $configArray['Site']['local'] . "/files/thumbnail/".$webResource->logo;
 			$fileType = substr($webResource->logo, -3);
 			$fileType = match($fileType){
 				'gif' => ".gif",
@@ -442,30 +449,33 @@ function renameUploadedWebResourceandPlacardImages(&$update) : void {
 				default => ".jpg",
 			};
 			$newFileName = "web_resource_image_".$resourceId.$fileType;
-			$newPathOriginal = "/web/aspen-discovery/code/web/files/original/".$newFileName;
-			$newPathThumbnail = "/web/aspen-discovery/code/web/files/thumbnail/".$newFileName;
+			$newPathOriginal = $configArray['Site']['local'] . "/files/original/".$newFileName;
+			$newPathThumbnail = $configArray['Site']['local'] . "/files/thumbnail/".$newFileName;
 
+			$fileRenamed = false;
 			if (file_exists($originalPath) && !file_exists($newPathOriginal)) {
-				rename($originalPath, $newPathOriginal);
+				$fileRenamed = rename($originalPath, $newPathOriginal);
 			}
 			if (file_exists($originalThumbnailPath) && !file_exists($newPathThumbnail)) {
 				rename($originalThumbnailPath, $newPathThumbnail);
 			}
 
-			require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
-			$linkedPlacard = new Placard();
-			$linkedPlacard->sourceId = $resourceId;
-			$linkedPlacard->sourceType = 'web_resource';
-			if ($linkedPlacard->find(true)){
-				//check if linked placard is customized, if yes only update the image if it's using the same one as the web resource
-				if (($linkedPlacard->isCustomized && $linkedPlacard->image = $webResource->logo) || !$linkedPlacard->isCustomized) {
-					$aspen_db->query("UPDATE placards set image = '$newFileName' WHERE id=$linkedPlacard->id");
-					$linkedPlacardsUpdated++;
+			if ($fileRenamed) {
+				require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
+				$linkedPlacard = new Placard();
+				$linkedPlacard->sourceId = $resourceId;
+				$linkedPlacard->sourceType = 'web_resource';
+				if ($linkedPlacard->find(true)) {
+					//check if linked placard is customized, if yes only update the image if it's using the same one as the web resource
+					if (($linkedPlacard->isCustomized && $linkedPlacard->image = $webResource->logo) || !$linkedPlacard->isCustomized) {
+						$aspen_db->query("UPDATE placards set image = '$newFileName' WHERE id=$linkedPlacard->id");
+						$linkedPlacardsUpdated++;
+					}
 				}
-			}
 
-			$aspen_db->query("UPDATE web_builder_resource set logo = '$newFileName' WHERE id=$resourceId");
-			$webResourceImagesUpdated++;
+				$aspen_db->query("UPDATE web_builder_resource set logo = '$newFileName' WHERE id=$resourceId");
+				$webResourceImagesUpdated++;
+			}
 
 		}
 	}
@@ -489,19 +499,22 @@ function renameUploadedWebResourceandPlacardImages(&$update) : void {
 				default => ".jpg",
 			};
 			$newFileName = "placard_image_".$placardId.$fileType;
-			$originalPath =  "/web/aspen-discovery/code/web/files/original/".$placard->image;
-			$originalThumbnailPath = "/web/aspen-discovery/code/web/files/thumbnail/".$placard->image;
-			$newPathOriginal = "/web/aspen-discovery/code/web/files/original/".$newFileName;
-			$newPathThumbnail = "/web/aspen-discovery/code/web/files/thumbnail/".$newFileName;
+			$originalPath =  $configArray['Site']['local'] . "/files/original/".$placard->image;
+			$originalThumbnailPath = $configArray['Site']['local'] . "/files/thumbnail/".$placard->image;
+			$newPathOriginal = $configArray['Site']['local'] . "/files/original/".$newFileName;
+			$newPathThumbnail = $configArray['Site']['local'] . "/files/thumbnail/".$newFileName;
+			$fileRenamed = false;
 			if (file_exists($originalPath) && !file_exists($newPathOriginal)) {
-				rename($originalPath, $newPathOriginal);
+				$fileRenamed = rename($originalPath, $newPathOriginal);
 			}
 			if (file_exists($originalThumbnailPath) && !file_exists($newPathThumbnail)) {
 				rename($originalThumbnailPath, $newPathThumbnail);
 			}
 
-			$aspen_db->query("UPDATE placards set image = '$newFileName' WHERE id=$placardId");
-			$placardImagesUpdated++;
+			if ($fileRenamed) {
+				$aspen_db->query("UPDATE placards set image = '$newFileName' WHERE id=$placardId");
+				$placardImagesUpdated++;
+			}
 
 		}
 	}
