@@ -2240,6 +2240,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				}
 				$seriesMember->excluded = 0;
 				$seriesInfo = null;
+				$seriesMember->orderBy('priorityScore DESC');
 				$seriesMember->find();
 				$first = true;
 				while ($seriesMember->fetch()) {

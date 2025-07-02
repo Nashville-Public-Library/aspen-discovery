@@ -5,20 +5,28 @@ require_once __DIR__ . '/../bootstrap_aspen.php';
 require_once ROOT_DIR . '/CatalogFactory.php';
 
 global $library;
-$accountProfile = $library->getAccountProfile();
-
-// Temporary disabling to re-evaluate how to handle large server queries
-/*if ($accountProfile) {
-	$catalogDriver = trim($accountProfile->driver);
-	if (!empty($catalogDriver)) {
-		$catalog = CatalogFactory::getCatalogConnectionInstance($catalogDriver, $accountProfile);
-		try {
-			$catalog->updateMessageQueue();
-		} catch (PDOException $e) {
-			echo("Could not update message queue for library $library->libraryId.");
+//Because this is run from cron, we will loop through all account profiles and update account notifications for
+// each one where account notifications are enabled.
+$accountProfiles = UserAccount::getAccountProfiles();
+foreach ($accountProfiles as $accountProfileInfo) {
+	/** @var AccountProfile $accountProfile */
+	$accountProfile = $accountProfileInfo['accountProfile'];
+	if ($accountProfile->enableFetchingIlsMessages) {
+		$ilsNotificationSetting = new ILSNotificationSetting();
+		$ilsNotificationSetting->accountProfileId =  $accountProfileInfo->accountProfileId;
+		if ($ilsNotificationSetting->find(true)) {
+			$catalogDriver = trim($accountProfile->driver);
+			if (!empty($catalogDriver)) {
+				$catalog = CatalogFactory::getCatalogConnectionInstance($catalogDriver, $accountProfile);
+				try {
+					$catalog->updateAccountNotifications();
+				} catch (PDOException $e) {
+					echo("Could not update message queue for library $library->libraryId.");
+				}
+			}
 		}
 	}
-}*/
+}
 
 global $aspen_db;
 $aspen_db = null;

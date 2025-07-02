@@ -5,6 +5,7 @@ require_once(ROOT_DIR . '/services/Admin/Admin.php');
 require_once(ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequest.php');
 require_once(ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequestStatus.php');
 require_once(ROOT_DIR . '/sys/Administration/StickyFilter.php');
+require_once ROOT_DIR . '/sys/User/PageDefaults.php';
 
 class MaterialsRequest_ManageRequests extends Admin_Admin {
 
@@ -311,7 +312,23 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 				$interface->assign('idsToShow', $idsToShow);
 			}
 
-			$materialsRequestsPerPage = isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize'])) ? $_REQUEST['pageSize'] : 30;
+			if (isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize']) || $_REQUEST['pageSize'] == 'all')) {
+				$materialsRequestsPerPage =  $_REQUEST['pageSize'];
+				PageDefaults::updatePageDefaultsForUser($user->id, 'MaterialsRequest', 'ManageRequests',null, $materialsRequestsPerPage, null);
+			} else {
+				$pageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'MaterialsRequest', 'ManageRequests',null);
+				if ($pageDefaults !== null && !empty($pageDefaults->pageSize)) {
+					$materialsRequestsPerPage =  $pageDefaults->pageSize;
+				}else{
+					$materialsRequestsPerPage = 30;
+				}
+			}
+			if($materialsRequestsPerPage == 'all') {
+				$materialsRequestsPerPage = $materialsRequests->count();
+				$interface->assign('showingAllRequests', true);
+			} else {
+				$interface->assign('showingAllRequests', false);
+			}
 			$interface->assign('materialsRequestsPerPage', $materialsRequestsPerPage);
 			$page = $_REQUEST['page'] ?? 1;
 			if (!isset($_REQUEST['exportAll'])) {
@@ -345,7 +362,8 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 					// Get Available Assignees
 					$materialsRequestManagers = new User();
 					if (count($locationsForLibrary) > 0) {
-						if ($materialsRequestManagers->query("SELECT * from user WHERE id IN (SELECT userId FROM user_roles WHERE roleId = $rolePermissions->roleId) AND homeLocationId IN (" . implode(', ', $locationsForLibrary) . ")")) {
+						//Get all user that can manage material requests based on their home library as well ad additional locations to manage
+						if ($materialsRequestManagers->query("SELECT * from user WHERE id IN (SELECT userId FROM user_roles WHERE roleId = $rolePermissions->roleId) AND ((id IN (SELECT userId from user_administration_locations WHERE locationId IN (" . implode(', ', $locationsForLibrary) . "))) OR homeLocationId IN (" . implode(', ', $locationsForLibrary) . "))")) {
 							while ($materialsRequestManagers->fetch()) {
 								if (empty($materialsRequestManagers->displayName)) {
 									$assignees[$materialsRequestManagers->id] = $materialsRequestManagers->firstname . ' ' . $materialsRequestManagers->lastname;

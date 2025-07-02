@@ -1183,8 +1183,8 @@ class Library extends DataObject {
 					'twitterLink' => [
 						'property' => 'twitterLink',
 						'type' => 'text',
-						'label' => 'Twitter Link URL',
-						'description' => 'The URL to Twitter (leave blank if the library does not have a Twitter account)',
+						'label' => 'X (Twitter) Link URL',
+						'description' => 'The URL to X (leave blank if the library does not have an X account)',
 						'size' => '40',
 						'maxLength' => 255,
 						'hideInLists' => true,
@@ -3358,26 +3358,23 @@ class Library extends DataObject {
 					'materialsRequestSendStaffEmailOnNew' => [
 						'property' => 'materialsRequestSendStaffEmailOnNew',
 						'type' => 'checkbox',
-						'label' => 'Send email to library when Materials Requests are created',
+						'label' => 'Notify Library Staff on New Request',
 						'description' => 'Whether or not an email should be sent out when a new Materials Request has been created.',
-						'note' => 'Applies to Aspen Request System Only',
 						'hideInLists' => true,
 					],
 					'materialsRequestNewEmail' => [
 						'property' => 'materialsRequestNewEmail',
 						'type' => 'text',
-						'label' => 'Email to receive notifications for new Materials Requests',
+						'label' => 'Notification Email for New Requests',
 						'description' => 'The email address that will receive emails when a patron creates a new Materials Request.',
-						'note' => 'Applies to Aspen Request System Only',
 						'maxLength' => 125,
 						'hideInLists' => true,
 					],
 					'materialsRequestSendStaffEmailOnAssign' => [
 						'property' => 'materialsRequestSendStaffEmailOnAssign',
 						'type' => 'checkbox',
-						'label' => 'Send an email to staff when they are assigned a Materials Request',
-						'description' => 'Whether or not staff are notified when assigned a Materials Request',
-						'note' => 'Applies to Aspen Request System Only',
+						'label' => 'Notify Staff on Request Assignment',
+						'description' => 'Whether or not staff are notified when assigned a Materials Request.',
 						'hideInLists' => true,
 					],
 					'allowDeletingILSRequests' => [
@@ -3711,6 +3708,7 @@ class Library extends DataObject {
 								'label' => 'SHAREit Password',
 								'description' => 'The Password for SHAREit authentication.',
 								'hideInLists' => true,
+								'autocomplete' => 'new-password',
 							],
 						],
 					],
@@ -4971,7 +4969,7 @@ class Library extends DataObject {
 		if ($allThemes !== false && !empty($allThemes)) {
 			return reset($allThemes);
 		}else{
-			return null;
+			return $this->getOrSetDefaultLibraryTheme();
 		}
 	}
 
@@ -4993,6 +4991,22 @@ class Library extends DataObject {
 			}
 		}
 		return $this->_themes;
+	}
+	
+	/**
+	 * Find or create a default theme for use in cases where a library or location has no LibraryTheme or LocationTheme
+	 */
+	public function getOrSetDefaultLibraryTheme(): LibraryTheme {
+		require_once ROOT_DIR . '/sys/Theming/Theme.php';
+		$defaultTheme = new Theme;
+		$defaultLibraryTheme = new LibraryTheme;
+
+		$defaultLibraryTheme->themeId = $defaultTheme->getDefaultTheme()->id;
+		$defaultLibraryTheme->libraryId = $this->libraryId;
+		if(!$defaultLibraryTheme->find()) {
+			$defaultLibraryTheme->insert();
+		}
+		return $defaultLibraryTheme;
 	}
 
 	/**
@@ -5621,15 +5635,15 @@ class Library extends DataObject {
 	}
 
 	/**
-	 * @return array|null
+	 * @return array
 	 */
-	public function getLiDANotifications() {
+	public function getLiDANotifications() : array {
 		$lidaNotifications = [];
 
 		$notificationSettings = new NotificationSetting();
 		$notificationSettings->id = $this->lidaNotificationSettingId;
 		if ($notificationSettings->find(true)) {
-			$lidaNotifications = clone $notificationSettings;
+			$lidaNotifications = $notificationSettings->toArray(false);
 		}
 
 		return $lidaNotifications;
@@ -5696,6 +5710,8 @@ class Library extends DataObject {
 			'selfRegistrationFormMessage' => $this->selfRegistrationFormMessage,
 			'selfRegistrationSuccessMessage' => $this->selfRegistrationSuccessMessage,
 			'promptForBirthDateInSelfReg' => $this->promptForBirthDateInSelfReg,
+			'allowRememberPickupLocation' => $this->allowRememberPickupLocation,
+			'allowPickupLocationUpdates' => $this->allowPickupLocationUpdates,
 		];
 		if (empty($this->baseUrl)) {
 			$apiInfo['baseUrl'] = $configArray['Site']['url'];
@@ -5706,7 +5722,8 @@ class Library extends DataObject {
 			$apiInfo['barcodeStyle'] = null;
 		}
 		$apiInfo['quickSearches'] = [];
-		$apiInfo['notifications'] = $this->getLiDANotifications();
+		$notifications = $this->getLiDANotifications();
+		$apiInfo['notifications'] = $notifications;
 		$allThemes = $this->getThemes();
 		if (count($allThemes) > 0) {
 			$libraryTheme = reset($allThemes);
@@ -5757,10 +5774,11 @@ class Library extends DataObject {
 		$pinValidationRules = null;
 		$forgotPasswordType = 'none';
 		$ils = 'unknown';
-		$hasIlsInbox = false;
+		$supportAccountNotifications = false;
 		$catalogRegistrationCapabilities = [];
 		$suspendRequiresReactivationDate = false;
 		$showDateWhenSuspending = true;
+		$catalogHasAccountNotifications = false;
 
 		$catalog = CatalogFactory::getCatalogConnectionInstance();
 		if ($catalog != null) {
@@ -5768,7 +5786,9 @@ class Library extends DataObject {
 				$forgotPasswordType = $catalog->getForgotPasswordType();
 			}
 			$pinValidationRules = $catalog->getPasswordPinValidationRules();
-			$hasIlsInbox = $catalog->hasIlsInbox();
+			$accountNotificationsEnabled = array_key_exists('notifyAccount', $notifications) && !empty($notifications['notifyAccount']);
+
+			$supportAccountNotifications = $catalog->supportAccountNotifications() && $accountNotificationsEnabled;
 			$catalogRegistrationCapabilities = $catalog->getRegistrationCapabilities();
 			$suspendRequiresReactivationDate = $catalog->suspendRequiresReactivationDate();
 			$showDateWhenSuspending = $catalog->showDateWhenSuspending();
@@ -5782,7 +5802,8 @@ class Library extends DataObject {
 		$apiInfo['pinValidationRules'] = $pinValidationRules;
 		$apiInfo['forgotPasswordType'] = $forgotPasswordType;
 		$apiInfo['ils'] = $ils;
-		$apiInfo['displayIlsInbox'] = $hasIlsInbox;
+		$apiInfo['displayIlsInbox'] = $supportAccountNotifications;
+		$apiInfo['supportAccountNotifications'] = $supportAccountNotifications;
 		$apiInfo['catalogRegistrationCapabilities'] = $catalogRegistrationCapabilities;
 		$apiInfo['suspendRequiresReactivationDate'] = $suspendRequiresReactivationDate;
 		$apiInfo['showDateWhenSuspending'] = $showDateWhenSuspending;

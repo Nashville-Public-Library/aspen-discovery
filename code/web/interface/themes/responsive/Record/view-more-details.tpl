@@ -123,7 +123,7 @@
 		{foreach from=$notes item=note name=loop}
 			<div class="row">
 				<div class="result-label col-sm-3">{translate text=$note.label isPublicFacing=true isMetadata=true}</div>
-				<div class="col-sm-9 result-value">{$note.note}</div>
+				<div class="col-sm-9 result-value">{$note.note}{if !empty($note.agr)} <span class="agrNote">({$note.agr})</span> {/if}</div>
 			</div>
 		{/foreach}
 	{/if}

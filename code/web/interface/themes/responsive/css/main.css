@@ -1,4 +1,6 @@
-@import "lib/fontawesome-all.min.css";
+@import "lib/fa6/fontawesome.min.css";
+@import "lib/fa6/brands.min.css";
+@import "lib/fontawesome-solid.min.css";
 @import "lib/rome.min.css";
 @import "simplemde.min.css";
 @import "lib/Chart.min.css";
@@ -9181,6 +9183,7 @@ a.placard-link {
 .dropdown-menu-right {
   right: 0;
   left: auto;
+  cursor: pointer;
 }
 #home-page-browse-results .grid-col {
   text-align: center;
@@ -9856,6 +9859,29 @@ a.browse-thumbnail.active {
 .modal-dialog.paymentModal .modal-content .modal-body {
   height: 275px;
   overflow: hidden;
+}
+#preferences-accordion .panel-group .panel + .panel {
+  margin-top: 0;
+}
+#preferences-accordion .panel-heading {
+  padding: 5px 15px;
+}
+#preferences-accordion .panel-title {
+  font-size: 13px;
+}
+#preferences-accordion .panel-title h2 {
+  font-size: 13px;
+  margin: unset;
+  font-weight: unset;
+  display: unset;
+}
+#preferences-accordion .panel-body {
+  font-size: 12px;
+  color: #333333;
+  background-color: #fcfcfc;
+  border-color: #c5c5c5;
+  border-width: 0 1px 1px 1px;
+  border-style: solid;
 }
 /**
  * Additional Styling related to the help system

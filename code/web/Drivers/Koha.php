@@ -7,7 +7,7 @@ require_once ROOT_DIR . '/sys/CurlWrapper.php';
 require_once ROOT_DIR . '/Drivers/AbstractIlsDriver.php';
 
 class Koha extends AbstractIlsDriver {
-	private $dbConnection = null;
+	private mysqli|null $dbConnection = null;
 	private KohaApiUserAgent $kohaApiUserAgent;
 
 	/** @var CurlWrapper */
@@ -423,8 +423,8 @@ class Koha extends AbstractIlsDriver {
 						$error = $messageInformation[1];
 						$result['messages'][] = trim($error);
 					}
-				}else{
-					$result['messages'][] = 'There was an error logging in to the backend system. Unable to update your contact information.';
+				} else {
+					$result['messages'][] = $loginResult['message'] ?? 'There was an error logging in to the backend system. Unable to update your contact information.';
 				}
 			}
 		}
@@ -3664,7 +3664,7 @@ class Koha extends AbstractIlsDriver {
 			'userid' => $user->ils_barcode,
 		];
 
-		if (empty($ils_password)) {
+		if (empty($user->ils_password)) {
 			if ($user->isLoggedInViaSSO) {
 				// This is a limitation of using Koha pages to perform logins rather than API requests.
 				// In the future, with an API request, user verification could be performed without a password when a user has logged in to Aspen via SSO.
@@ -3961,6 +3961,17 @@ class Koha extends AbstractIlsDriver {
 			];
 		} else {
 			$allowHomeLibraryUpdates = $type == 'selfReg' || $library->allowHomeLibraryUpdates;
+
+			// Try to set default based on physical location (IP address).
+			$defaultBranchCode = null;
+			if ($type == 'selfReg') {
+				global $locationSingleton;
+				$physicalLocation = $locationSingleton->getIPLocation();
+				if ($physicalLocation != null && isset($pickupLocations[$physicalLocation->code])) {
+					$defaultBranchCode = $physicalLocation->code;
+				}
+			}
+
 			$fields['librarySection'] = [
 				'property' => 'librarySection',
 				'type' => 'section',
@@ -3974,6 +3985,7 @@ class Koha extends AbstractIlsDriver {
 						'label' => 'Home Library',
 						'description' => 'Please choose the Library location you would prefer to use',
 						'values' => $pickupLocations,
+						'default' => $defaultBranchCode,
 						'required' => true,
 						'readOnly' => !$allowHomeLibraryUpdates,
 					],
@@ -4200,6 +4212,23 @@ class Koha extends AbstractIlsDriver {
 			'hideInLists' => true,
 			'expandByDefault' => true,
 			'properties' => [
+				'borrower_primary_contact_method' => [
+					'property' => 'borrower_primary_contact_method',
+					'type' => 'enum',
+					'label' => 'Primary Contact Method',
+					'values' => [
+						'' => '',
+						'Primary Phone' => 'Primary Phone',
+						'Secondary Phone' => 'Secondary Phone',
+						'Other Phone' => 'Other Phone',
+						'Primary Email' => 'Primary Email',
+						'Secondary Email' => 'Secondary Email',
+						'Fax' => 'Fax',
+					],
+					'description' => 'The main method of contact',
+					'required' => false,
+					'autocomplete' => false,
+				],
 				'borrower_phone' => [
 					'property' => 'borrower_phone',
 					'type' => 'text',
@@ -4515,6 +4544,7 @@ class Koha extends AbstractIlsDriver {
 						'description' => $passwordNotes,
 						'minLength' => $pinValidationRules['minLength'],
 						'maxLength' => $pinValidationRules['maxLength'],
+						'onlyDigitsAllowed' => $pinValidationRules['onlyDigitsAllowed'],
 						'showConfirm' => false,
 						'required' => true,
 						'showDescription' => true,
@@ -4527,6 +4557,7 @@ class Koha extends AbstractIlsDriver {
 						'description' => 'Reenter your PIN',
 						'minLength' => $pinValidationRules['minLength'],
 						'maxLength' => $pinValidationRules['maxLength'],
+						'onlyDigitsAllowed' => $pinValidationRules['onlyDigitsAllowed'],
 						'showConfirm' => false,
 						'required' => true,
 						'showDescription' => false,
@@ -4692,6 +4723,47 @@ class Koha extends AbstractIlsDriver {
 	function selfRegister(): array {
 		global $library;
 		$result = ['success' => false,];
+
+		if (isset($_REQUEST['borrower_password'])) {
+			$password = $_REQUEST['borrower_password'];
+			$pinValidationRules = $this->getPasswordPinValidationRules();
+
+			if (strlen($password) < $pinValidationRules['minLength']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must be at least {$pinValidationRules['minLength']} characters long.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if (strlen($password) > $pinValidationRules['maxLength']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must be longer than {$pinValidationRules['maxLength']} characters.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if ($pinValidationRules['onlyDigitsAllowed'] && !ctype_digit($password)) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Password must only contain numbers.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+
+			if (isset($_REQUEST['borrower_password2']) && $_REQUEST['borrower_password'] !== $_REQUEST['borrower_password2']) {
+				$result['success'] = false;
+				$result['message'] = translate([
+					'text' => "Passwords do not match.",
+					'isPublicFacing' => true
+				]);
+				return $result;
+			}
+		}
 
 		if ($this->getKohaVersion() < 20.05) {
 			$catalogUrl = $this->accountProfile->vendorOpacUrl;
@@ -4933,6 +5005,21 @@ class Koha extends AbstractIlsDriver {
 			]);
 		} else {
 			$apiUrl = $this->getWebServiceURL() . "/api/v1/patrons";
+
+			if ($this->getKohaVersion() > 21.05) {
+				$formattedExtendedAttributes = [];
+				foreach ($this->setExtendedAttributes() as $extendedAttribute) {
+					if (!isset($_REQUEST["borrower_attribute_" . $extendedAttribute['code']])) {
+						continue;
+					}
+					$formattedExtendedAttributes[] = [
+						'type' =>  $extendedAttribute['code'],
+						'value' => $_REQUEST["borrower_attribute_" . $extendedAttribute['code']]
+					];
+				}
+				$postVariables['extended_attributes'] = $formattedExtendedAttributes;
+			}
+
 			$postParams = json_encode($postVariables);
 
 			$this->apiCurlWrapper->addCustomHeaders([
@@ -4990,17 +5077,6 @@ class Koha extends AbstractIlsDriver {
 						}
 					} else {
 						$result['message'] = translate(['text'=>"Your account was registered, but a barcode was not provided, please contact your library for barcode and password to use when logging in.",'isPublicFacing'=>true]);
-					}
-				}
-
-				// check for patron attributes
-				if ($this->getKohaVersion() > 21.05) {
-					$jsonResponse = json_decode($response);
-					$patronId = $jsonResponse->patron_id;
-					$extendedAttributes = $this->setExtendedAttributes();
-
-					if (!empty($extendedAttributes)) {
-						$this->updateExtendedAttributesInKoha($patronId, $extendedAttributes, $oauthToken);
 					}
 				}
 			}
@@ -5400,7 +5476,7 @@ class Koha extends AbstractIlsDriver {
 			if (!$loginResult['success']) {
 				return [
 					'success' => false,
-					'message' => 'Unable to login to Koha',
+					'message' => $loginResult['message'] ?? 'Unable to log in to Koha.',
 				];
 			} else {
 				$postFields = [
@@ -5595,51 +5671,61 @@ class Koha extends AbstractIlsDriver {
 		return 'koha-requests.tpl';
 	}
 
-	function deleteMaterialsRequests(User $patron) {
-		if ($this->getKohaVersion() > 21.05) {
-			$result = [
+	function deleteMaterialsRequests(User $patron): array {
+		$suggestionIds = $_REQUEST['delete_field'] ?? [];
+		if (!is_array($suggestionIds)) {
+			$suggestionIds = [$suggestionIds];
+		}
+
+		if (empty($suggestionIds)) {
+			return [
 				'success' => false,
 				'message' => translate([
-					'text' => 'Unable to authenticate with the ILS.  Please try again later or contact the library.',
+					'text' => 'No requests were selected for deletion.',
 					'isPublicFacing' => true,
-				])
+				]),
 			];
-			
-			$suggestionId = $_REQUEST['delete_field'];
-			$response = $this->kohaApiUserAgent->delete("/api/v1/suggestions/$suggestionId",'koha.deleteMaterialsRequests');
-			if ($response) {
-				if ($response['code'] == 204) {
-					$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);
-					$result = [
-						'success' => true,
-						'message' => 'Your requests have been deleted succesfully',
-					];
-				} else {
-					$result = [
-						'success' => false,
-						'message' => $response['error']
-					];
-				}
+		}
+
+		$errors = [];
+		$successCount = 0;
+		foreach ($suggestionIds as $suggestionId) {
+			$response = $this->kohaApiUserAgent->delete("/api/v1/suggestions/$suggestionId", 'koha.deleteMaterialsRequests');
+			if ($response && $response['code'] === 204) {
+				$successCount++;
+			} else {
+				$errors[] = $response['error'] ?? translate([
+					'text' => "There was an error deleting request with ID $suggestionId.",
+					'isPublicFacing' => true,
+				]);
 			}
-			return $result;
-		} else {
-			$this->loginToKohaOpac($patron);
+		}
 
-			$catalogUrl = $this->accountProfile->vendorOpacUrl;
-			$this->getKohaPage($catalogUrl . '/cgi-bin/koha/opac-suggestions.pl');
+		$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);
 
-			$postFields = [
-				'op' => 'delete_confirm',
-				'delete_field' => $_REQUEST['delete_field'],
-			];
-			$this->postToKohaPage($catalogUrl . '/cgi-bin/koha/opac-suggestions.pl', $postFields);
-
-			$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);
-
+		if (empty($errors)) {
+			$messageText = count($suggestionIds) > 1
+				? 'All selected requests have been deleted successfully.'
+				: 'Your request has been deleted successfully.';
 			return [
 				'success' => true,
-				'message' => 'deleted your requests',
+				'message' => translate([
+					'text' => $messageText,
+					'isPublicFacing' => true,
+				]),
 			];
+		} else {
+			if ($successCount > 0) {
+				return [
+					'success' => true,
+					'message' => "Successfully deleted {$successCount} request(s), but encountered errors with " . count($errors) . " request(s):<br/>" . implode('<br/>', $errors)
+				];
+			} else {
+				return [
+					'success' => false,
+					'message' => "Failed to delete requests:<br/>" . implode('<br/>', $errors)
+				];
+			}
 		}
 	}
 
@@ -8682,7 +8768,7 @@ class Koha extends AbstractIlsDriver {
 		];
 	}
 
-	public function hasIlsInbox(): bool {
+	public function supportAccountNotifications(): bool {
 		return true;
 	}
 
@@ -8708,56 +8794,58 @@ class Koha extends AbstractIlsDriver {
 		return $transports;
 	}
 
-	public function updateMessageQueue(): array {
+	/**
+	 * Update account notifications for the user. At this point, the system has verified that the user can receive push notifications
+	 * and that they are opted in to getting account notifications.
+	 *
+	 * @param User $user
+	 * @return array
+	 */
+	public function updateAccountNotifications(User $user): array {
 		$this->initDatabaseConnection();
 
+		//Since the number of users logged who are opted in to Push Notifications will be significantly smaller than
+		// the number of users in Koha, first get all users that are opted in to push notifications, and then get
+		// the notifications for them.
+		//Get a list of all messages that have been queued in the last 24 hours
 		/** @noinspection SqlResolve */
-		$sql = "SELECT * FROM message_queue where message_transport_type like 'email' and time_queue < DATE_SUB(NOW(), INTERVAL 24 HOUR)";
+		$sql = "SELECT * FROM message_queue where message_transport_type = 'email' and time_queued > DATE_SUB(NOW(), INTERVAL 1 DAY) AND borrowernumber = '" . mysqli_escape_string($this->dbConnection, $user->unique_ils_id) . "'";
 		$results = mysqli_query($this->dbConnection, $sql);
 		if($results) {
 			$numAdded = 0;
 			while ($curRow = $results->fetch_assoc()) {
 				$timeQueued = strtotime($curRow['time_queued']);
 				$now = time();
-				$diff = ($now - $timeQueued);
-				if($diff <= 86400) {
-					// skip messages older than 24 hours
-					$user = new User();
-					$user->unique_ils_id = $curRow['borrowernumber'];
-					if($user->find(true)) {
-						// make sure the user is eligible to receive notifications and the message type is enabled
-						if($user->canReceiveNotifications('notifyAccount') && $user->canReceiveILSNotification($curRow['letter_code'])) {
-							require_once ROOT_DIR . '/sys/Account/UserILSMessage.php';
-							$existingMessage = new UserILSMessage();
-							$existingMessage->userId = $user->id;
-							$existingMessage->type = $curRow['letter_code'];
-							$existingMessage->dateQueued = $timeQueued;
-							if (!$existingMessage->find(true)) {
-								$translation = $this->getUserMessageTranslation($curRow['letter_code'], $user);
-								$content = $translation['content'];
-								$title = $translation['title'];
-								if (empty($translation['content'])) {
-									$content = trim(strip_tags($curRow['content']));
-								}
-								if (empty($translation['title'])) {
-									$title = trim(strip_tags($curRow['subject']));
-								}
 
-								$userMessage = new UserILSMessage();
-								$userMessage->messageId = $curRow['message_id'];
-								$userMessage->userId = $user->id;
-								$userMessage->status = 'pending';
-								$userMessage->type = $curRow['letter_code'];
-								$userMessage->dateQueued = $timeQueued;
-								$userMessage->content = $content;
-								$userMessage->defaultContent = $curRow['content'];
-								$userMessage->title = $title;
-								$userMessage->insert();
-								$numAdded++;
-							}
+				// make sure the user is eligible to receive notifications and the message type is enabled
+				if($user->canReceiveILSNotification($curRow['letter_code'])) {
+					require_once ROOT_DIR . '/sys/Account/UserILSMessage.php';
+					$existingMessage = new UserILSMessage();
+					$existingMessage->userId = $user->id;
+					$existingMessage->type = $curRow['letter_code'];
+					$existingMessage->dateQueued = $timeQueued;
+					if (!$existingMessage->find(true)) {
+						$translation = $this->getUserMessageTranslation($curRow['letter_code'], $user);
+						$content = $translation['content'];
+						$title = $translation['title'];
+						if (empty($translation['content'])) {
+							$content = trim(strip_tags($curRow['content']));
 						}
-					} else {
-						// borrower not found in aspen
+						if (empty($translation['title'])) {
+							$title = trim(strip_tags($curRow['subject']));
+						}
+
+						$userMessage = new UserILSMessage();
+						$userMessage->messageId = $curRow['message_id'];
+						$userMessage->userId = $user->id;
+						$userMessage->status = 'pending';
+						$userMessage->type = $curRow['letter_code'];
+						$userMessage->dateQueued = $timeQueued;
+						$userMessage->content = $content;
+						$userMessage->defaultContent = $curRow['content'];
+						$userMessage->title = $title;
+						$userMessage->insert();
+						$numAdded++;
 					}
 				}
 			}
@@ -8766,7 +8854,8 @@ class Koha extends AbstractIlsDriver {
 
 			return [
 				'success' => true,
-				'message' => 'Added ' . $numAdded . ' to message queue'
+				'message' => 'Added ' . $numAdded . ' to message queue',
+				'numMessagesAdded' => $numAdded
 			];
 		}
 
@@ -8780,7 +8869,7 @@ class Koha extends AbstractIlsDriver {
 		$this->initDatabaseConnection();
 
 		/** @noinspection SqlResolve */
-		$sql = "SELECT * FROM message_queue where message_transport_type like 'email' and time_queued < DATE_SUB(NOW(), INTERVAL 24 HOUR) and borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
+		$sql = "SELECT * FROM message_queue where message_transport_type = 'email' and time_queued > DATE_SUB(NOW(), INTERVAL 24 HOUR) and borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
 		$results = mysqli_query($this->dbConnection, $sql);
 		if($results) {
 			require_once ROOT_DIR . '/sys/Account/UserILSMessage.php';

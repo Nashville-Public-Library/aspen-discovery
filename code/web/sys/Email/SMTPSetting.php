@@ -114,6 +114,7 @@ class SMTPSetting extends DataObject {
 
 		$mail->From = $this->from_address;
 		$mail->FromName = $this->from_name;
+		$mail->Charset = 'UTF-8';
 
 		$toAddresses = explode(';', $to);
 		foreach ($toAddresses as $toAddress) {
@@ -126,12 +127,23 @@ class SMTPSetting extends DataObject {
 			}
 		}
 
+		if (!mb_check_encoding($subject, 'ASCII')) {
+			$subject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+		}
+
 		$mail->Subject = $subject;
-		$mail->Body    = $htmlBody ?: $body;
+		if (!empty($htmlBody)) {
+			$mail->isHTML(true);
+			$mail->Body = $htmlBody;
+		} else {
+			$mail->isHTML(false);
+			$mail->Body = $body;
+		}
 
 		if(!$mail->send()) {
-			echo 'Message could not be sent.';
-			echo 'Mailer Error: ' . $mail->ErrorInfo;
+			global $logger;
+			$logger->log('Message could not be sent.', Logger::LOG_ERROR);
+			$logger->log('Mailer Error: ' . $mail->ErrorInfo, Logger::LOG_ERROR);
 			return false;
 		} else {
 		//	echo 'Message has been sent';

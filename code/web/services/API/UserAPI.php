@@ -103,7 +103,8 @@ class UserAPI extends AbstractAPI {
 					'createMaterialsRequest',
 					'cancelMaterialsRequest',
                     'deleteAspenUser',
-					'updateSortPreferences'
+					'updateSortPreferences',
+					'updateHoldPickupPreferences'
 				])) {
 					header("Cache-Control: max-age=10800");
 					require_once ROOT_DIR . '/sys/SystemLogging/APIUsage.php';
@@ -1989,6 +1990,37 @@ class UserAPI extends AbstractAPI {
 						}
 					} else {
 						$pickupBranch = $user->_homeLocationCode;
+					}
+
+					if (isset($_REQUEST['rememberHoldPickupLocation']) && $library->allowRememberPickupLocation) {
+						$user->setRememberHoldPickupLocation($_REQUEST['rememberHoldPickupLocation']);
+					}
+
+					if ($library->allowPickupLocationUpdates && $user->rememberHoldPickupLocation) {
+						if (isset($_REQUEST['pickupBranch'])) {
+							$pickupLocation = new Location();
+							$pickupLocation->code = $_REQUEST['pickupBranch'];
+							if ($pickupLocation->find(true)) {
+								if ($pickupLocation->locationId != $user->pickupLocationId) {
+									$user->setPickupLocationId($pickupLocation->locationId);
+								}
+							}
+
+							if (isset($_REQUEST['pickupSublocation'])) {
+								require_once ROOT_DIR . '/sys/LibraryLocation/Sublocation.php';
+								$sublocation = new Sublocation();
+								$sublocation->id = $_REQUEST['pickupSublocation'];
+								if ($sublocation->find(true)) {
+									if ($pickupLocation->locationId == $sublocation->locationId) {
+										if ($sublocation->id != $user->pickupSublocationId) {
+											$user->setPickupSublocationId($sublocation->id);
+										}
+									}
+								}
+							}
+						}
+
+						$user->update();
 					}
 
 					$homeLibrary = $user->getHomeLibrary();
@@ -4901,6 +4933,7 @@ class UserAPI extends AbstractAPI {
 			if (empty($_REQUEST['language']) && $user !== false) {
 				global $activeLanguage;
 				global $translator;
+				require_once ROOT_DIR . '/sys/Translation/Language.php';
 				$userLanguage = new Language();
 				$userLanguage->code = $user->interfaceLanguage;
 				if ($userLanguage->find(true)) {
@@ -5540,6 +5573,14 @@ class UserAPI extends AbstractAPI {
 		}
 	}
 
+	/**
+	 * This is called from LiDA to get information about a patron's app preferences.
+	 * The same information is also available within getPatronProfile so if that data
+	 * has already been loaded, this call is redundant.
+	 *
+	 * @return array
+	 * @noinspection PhpUnused
+	 */
 	function getAppPreferencesForUser(): array {
 		$user = $this->getUserForApiCall();
 		if ($user && !($user instanceof AspenError)) {
@@ -6689,6 +6730,143 @@ class UserAPI extends AbstractAPI {
 			return [
 				'success' => true,
 			];
+		} else {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => 'Unable to validate user',
+					'isPublicFacing' => true,
+				]),
+			];
+		}
+	}
+
+	/**
+	 * updateHoldPickupPreferences
+	 *
+	 * @return array
+	 * @noinspection PhpUnused
+	 */
+	function updateHoldPickupPreferences(): array {
+		$user = $this->getUserForApiCall();
+		if ($user && !($user instanceof AspenError)) {
+			global $library;
+
+			$message = '';
+			$errMessage = '';
+			$errCount = 0;
+
+			if (isset($_REQUEST['rememberHoldPickupLocation']) && $library->allowRememberPickupLocation) {
+				$user->setRememberHoldPickupLocation($_REQUEST['rememberHoldPickupLocation']);
+			}
+
+			if ($library->allowPickupLocationUpdates) {
+				if (isset($_REQUEST['pickupLocationId'])) {
+					$pickupLocation = new Location();
+					$pickupLocation->code = $_REQUEST['pickupLocationId'];
+					if ($pickupLocation->find(true)) {
+						if ($pickupLocation->locationId != $user->pickupLocationId) {
+							$user->setPickupLocationId($pickupLocation->locationId);
+						}
+					} else {
+						$errCount++;
+						$errMessage .= " " . translate([
+								'text' => 'Unable to find preferred pickup location.',
+								'isPublicFacing' => true,
+							]);
+					}
+
+					if (isset($_REQUEST['sublocation'])) {
+						require_once ROOT_DIR . '/sys/LibraryLocation/Sublocation.php';
+						$sublocation = new Sublocation();
+						$sublocation->id = $_REQUEST['sublocation'];
+						if ($sublocation->find(true)) {
+							if ($pickupLocation->locationId == $sublocation->locationId) {
+								if ($sublocation->id != $user->pickupSublocationId) {
+									$user->setPickupSublocationId($sublocation->id);
+								}
+							}
+						} else {
+							$errCount++;
+							$errMessage .= " " . translate([
+									'text' => 'Unable to find preferred pickup sublocation.',
+									'isPublicFacing' => true,
+								]);
+						}
+					}
+				}
+
+				if (isset($_REQUEST['myLocation1Id'])) {
+					$pickupLocation = new Location();
+					$pickupLocation->code = $_REQUEST['myLocation1Id'];
+					if ($pickupLocation->find(true)) {
+						if ($pickupLocation->locationId != $user->pickupLocationId) {
+							$user->myLocation1Id = $pickupLocation->locationId;
+						}
+					} else {
+						$errCount++;
+						$errMessage .= " " . translate([
+								'text' => 'Unable to find alternative pickup location 1.',
+								'isPublicFacing' => true,
+							]);
+					}
+				}
+
+				if (isset($_REQUEST['myLocation2Id'])) {
+					$pickupLocation = new Location();
+					$pickupLocation->code = $_REQUEST['myLocation2Id'];
+					if ($pickupLocation->find(true)) {
+						if ($pickupLocation->locationId != $user->pickupLocationId) {
+							$user->myLocation2Id = $pickupLocation->locationId;
+						}
+					} else {
+						$errCount++;
+						$errMessage .= " " . translate([
+								'text' => 'Unable to find alternative pickup location 2.',
+								'isPublicFacing' => true,
+							]);
+					}
+				}
+
+				$user->update();
+				$message = translate([
+					'text' => 'Successfully updated pickup location preferences.',
+					'isPublicFacing' => true,
+				]);
+
+				if ($errCount > 0) {
+					$message = translate([
+						'text' => 'There were some errors trying to update your preferences: %1%',
+						1 => $errMessage,
+						'isPublicFacing' => true,
+					]);
+				}
+
+				return [
+					'success' => true,
+					'title' => translate([
+						'text' => 'Success',
+						'isPublicFacing' => true,
+					]),
+					'message' => $message,
+				];
+			} else {
+				return [
+					'success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'Sorry, you are not allowed to update your pickup locations.',
+						'isPublicFacing' => true,
+					]),
+				];
+			}
 		} else {
 			return [
 				'success' => false,

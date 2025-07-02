@@ -382,9 +382,7 @@ class GreenhouseAPI extends AbstractAPI {
 								} else {
 									$return['libraries'][] = $this->setLibrary($aspenSite, $libraryLocation, $distance);
 								}
-							}/* elseif ($aspenSite->name == "Test (ByWater)") {
-								$return['libraries'][] = $this->setLibrary($aspenSite, $libraryLocation, $distance);
-							}*/
+							}
 						}
 					}
 				}

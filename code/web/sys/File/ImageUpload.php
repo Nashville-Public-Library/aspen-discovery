@@ -15,6 +15,9 @@ class ImageUpload extends DataObject {
 	public $generateSmallSize;
 	public $smallSizePath; //Stores the thumbnail with a maximum size of 200x200px
 	public $type;
+	public $owningLibrary;
+	public $sharing;
+	public $sharedWithLibrary;
 
 	static $xLargeSize = 1100;
 	static $largeSize = 600;
@@ -27,6 +30,28 @@ class ImageUpload extends DataObject {
 
 	static function getObjectStructure($context = ''): array {
 		global $serverName;
+		$allSharingOptions = [
+			0 => 'Not Shared',
+			1 => 'Selected Library',
+			2 => 'All Libraries',
+			3 => 'All Libraries - Read Only'
+		];
+		$allowableSharingOptions = $allSharingOptions;
+		$libraryListForSharing[-1] = '';
+		//need to get restricted list first
+		$libraryList = Library::getLibraryList(true);
+
+		$allLibraryList[-1] = 'All Libraries';
+		$allLibraryList = $allLibraryList + Library::getLibraryList(false);
+
+		if (!UserAccount::userHasPermission('Administer All Web Content') && (UserAccount::userHasPermission('Administer Web Content for Home Library'))) {
+			unset($allowableSharingOptions[2]);
+		}else{
+			$libraryList = $allLibraryList;
+		}
+
+		$libraryListForSharing = $libraryListForSharing + $libraryList;
+
 		return [
 			'id' => [
 				'property' => 'id',
@@ -48,6 +73,32 @@ class ImageUpload extends DataObject {
 				'label' => 'Type',
 				'description' => 'The type of image being uploaded',
 				'maxLength' => 50,
+			],
+			'owningLibrary' => [
+				'property' => 'owningLibrary',
+				'type' => 'enum',
+				'values' => $libraryList,
+				'allValues' => $allLibraryList,
+				'label' => 'Owning Library',
+				'description' => 'Which library owns this content.',
+				'onchange' => "return AspenDiscovery.Admin.toggleLibrarySharingOptions();",
+			],
+			'sharing' => [
+				'property' => 'sharing',
+				'type' => 'enum',
+				'values' => $allowableSharingOptions,
+				'allValues' => $allSharingOptions,
+				'label' => 'Share With',
+				'description' => 'Who the content should be shared with.',
+				'onchange' => "return AspenDiscovery.Admin.toggleLibrarySharingOptions();",
+			],
+			'sharedWithLibrary' => [
+				'property' => 'sharedWithLibrary',
+				'type' => 'enum',
+				'values' => $libraryListForSharing,
+				'allValues' => $allLibraryList,
+				'label' => 'Library to Share With',
+				'description' => 'Which library this content is shared with.',
 			],
 			'fullSizePath' => [
 				'property' => 'fullSizePath',
@@ -174,51 +225,126 @@ class ImageUpload extends DataObject {
 	}
 
 	private function generateDerivatives() {
-		if (!empty($this->fullSizePath)) {
+		if (!empty($this->fullSizePath) && !empty($this->id)) {
 			global $serverName;
 			require_once ROOT_DIR . '/sys/Covers/CoverImageUtils.php';
 			$fullSizeFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/full/' . $this->fullSizePath;
-			if ($this->generateXLargeSize && empty($this->xLargeSizePath)) {
-				$xLargeFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/x-large/';
-				if (!file_exists($xLargeFile)) {
-					mkdir($xLargeFile, 0755, true);
+			if ($this->generateXLargeSize) {
+				$xLargeFilePath = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/x-large/';
+				if (!file_exists($xLargeFilePath)) {
+					mkdir($xLargeFilePath, 0755, true);
 				}
-				$xLargeFile .= $this->fullSizePath;
+				$xLargeFile = $xLargeFilePath . $this->fullSizePath;
+				if (!empty($_FILES['fullSizePath']['full_path'])) {
+					$prevUpload = $xLargeFilePath . $_FILES['fullSizePath']['full_path'];
+					if (file_exists($prevUpload)) {
+						unlink($prevUpload);
+					}
+				}
 				if (resizeImage($fullSizeFile, $xLargeFile, ImageUpload::$xLargeSize, ImageUpload::$xLargeSize)) {
 					$this->xLargeSizePath = $this->fullSizePath;
 				}
 			}
-			if ($this->generateLargeSize && empty($this->largeSizePath)) {
-				$largeFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/large/';
-				if (!file_exists($largeFile)) {
-					mkdir($largeFile, 0755, true);
+			if ($this->generateLargeSize) {
+				$largeFilePath = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/large/';
+				if (!file_exists($largeFilePath)) {
+					mkdir($largeFilePath, 0755, true);
 				}
-				$largeFile .= $this->fullSizePath;
+				$largeFile = $largeFilePath . $this->fullSizePath;
+				if (!empty($_FILES['fullSizePath']['full_path'])) {
+					$prevUpload = $largeFilePath . $_FILES['fullSizePath']['full_path'];
+					if (file_exists($prevUpload)) {
+						unlink($prevUpload);
+					}
+				}
 				if (resizeImage($fullSizeFile, $largeFile, ImageUpload::$largeSize, ImageUpload::$largeSize)) {
 					$this->largeSizePath = $this->fullSizePath;
 				}
 			}
-			if ($this->generateMediumSize && empty($this->mediumSizePath)) {
-				$mediumFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/medium/';
-				if (!file_exists($mediumFile)) {
-					mkdir($mediumFile, 0755, true);
+			if ($this->generateMediumSize) {
+				$mediumFilePath = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/medium/';
+				if (!file_exists($mediumFilePath)) {
+					mkdir($mediumFilePath, 0755, true);
 				}
-				$mediumFile .= $this->fullSizePath;
+				$mediumFile = $mediumFilePath . $this->fullSizePath;
+				if (!empty($_FILES['fullSizePath']['full_path'])) {
+					$prevUpload = $mediumFilePath . $_FILES['fullSizePath']['full_path'];
+					if (file_exists($prevUpload)) {
+						unlink($prevUpload);
+					}
+				}
 				if (resizeImage($fullSizeFile, $mediumFile, ImageUpload::$mediumSize, ImageUpload::$mediumSize)) {
 					$this->mediumSizePath = $this->fullSizePath;
 				}
 			}
-			if ($this->generateSmallSize && empty($this->smallSizePath)) {
-				$smallFile = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/small/';
-				if (!file_exists($smallFile)) {
-					mkdir($smallFile, 0755, true);
+			if ($this->generateSmallSize) {
+				$smallFilePath = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image/small/';
+				if (!file_exists($smallFilePath)) {
+					mkdir($smallFilePath, 0755, true);
 				}
-				$smallFile .= $this->fullSizePath;
+				$smallFile = $smallFilePath . $this->fullSizePath;
+				if (!empty($_FILES['fullSizePath']['full_path'])) {
+					$prevUpload = $smallFilePath . $_FILES['fullSizePath']['full_path'];
+					if (file_exists($prevUpload)) {
+						unlink($prevUpload);
+					}
+				}
 				if (resizeImage($fullSizeFile, $smallFile, ImageUpload::$smallSize, ImageUpload::$smallSize)) {
 					$this->smallSizePath = $this->fullSizePath;
 				}
 			}
 		}
+	}
+
+	public function updateStructureForEditingObject($structure) : array {
+		if ($this->isReadOnly()) {
+			$structure['title']['readOnly'] = true;
+			$structure['owningLibrary']['readOnly'] = true;
+			$structure['sharing']['readOnly'] = true;
+			$structure['sharedWithLibrary']['readOnly'] = true;
+			$structure['fullSizePath']['readOnly'] = true;
+			$structure['generateXLargeSize']['readOnly'] = true;
+			$structure['xLargeSizePath']['readOnly'] = true;
+			$structure['generateLargeSize']['readOnly'] = true;
+			$structure['largeSizePath']['readOnly'] = true;
+			$structure['generateMediumSize']['readOnly'] = true;
+			$structure['mediumSizePath']['readOnly'] = true;
+			$structure['generateSmallSize']['readOnly'] = true;
+			$structure['smallSizePath']['readOnly'] = true;
+		}
+		return $structure;
+	}
+
+	private ?bool $_isReadOnly = null;
+	/**
+	 * Determine whether the Image can be changed by the active user.
+	 * This is slightly different from canActiveUserEdit because we want the user to be able to view
+	 * but not change the image and access the image(s) they have access to
+	 *
+	 * @return bool
+	 */
+	public function isReadOnly() : bool {
+		if ($this->_isReadOnly === null) {
+			//Active user can edit if they have permission to edit everything or this is for their home location or sharing allows editing
+			if (UserAccount::userHasPermission('Administer All Web Content')) {
+				$this->_isReadOnly = false;
+			}elseif (UserAccount::userHasPermission( 'Administer Web Content for Home Library')){
+				$allowableLibraries = Library::getLibraryList(true);
+				if (array_key_exists($this->owningLibrary, $allowableLibraries)) {
+					$this->_isReadOnly = false;
+				}else{
+					//Ok if shared by everyone
+					if ($this->sharing == 2) {
+						$this->_isReadOnly = false;
+					}else{
+						$this->_isReadOnly = true;
+					}
+				}
+			}else{ //Manage images for Home Library Only
+				$this->_isReadOnly = true;
+			}
+		}
+		return $this->_isReadOnly;
 	}
 
 	public function okToExport(array $selectedFilters): bool {

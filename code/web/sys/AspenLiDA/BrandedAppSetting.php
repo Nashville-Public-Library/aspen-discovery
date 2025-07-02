@@ -31,6 +31,8 @@ class BrandedAppSetting extends DataObject {
 	/** @noinspection PhpUnused */
 	public $apiKey5;
 
+	public $notificationAccessToken;
+
 	public $loadingMessageType;
 	public $_loadingMessages;
 
@@ -164,6 +166,14 @@ class BrandedAppSetting extends DataObject {
 				'description' => 'Whether or not to Aspen LiDA should log in the user based on their home location instead of prompting them to select one',
 				'hideInLists' => true,
 				'required' => false,
+			],
+			'notificationAccessToken' => [
+				'property' => 'notificationAccessToken',
+				'type' => 'storedPassword',
+				'label' => 'Notification API Access Token',
+				'description' => 'API key for authenticating access to Notification APIs',
+				'canBatchUpdate' => false,
+				'hideInLists' => true,
 			],
 			'apiKeySection' => [
 				'property' => 'apiKeySection',
