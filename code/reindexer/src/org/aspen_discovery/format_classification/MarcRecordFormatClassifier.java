@@ -219,6 +219,7 @@ public class MarcRecordFormatClassifier {
 			List<Subfield> subFields = field.getSubfields();
 			for (Subfield subfield : subFields) {
 				if (subfield.getCode() != 'e') {
+					Subfield extentSubfield = field.getSubfield('a');
 					String physicalDescriptionData = subfield.getData().toLowerCase();
 					if (physicalDescriptionData.contains("atlas")) {
 						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format Atlas based on 300 Physical Description", 2);}
@@ -268,6 +269,9 @@ public class MarcRecordFormatClassifier {
 								result.add("SoundDisc");
 							}
 						}
+					} else if (subfield.getCode() == 'a' && physicalDescriptionData.contains("online resource")) {
+						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format online_resource based on 300$a Physical Description.", 2);}
+						result.add("online_resource");
 					} else if (subfield.getCode() == 'a' && (pagesPattern2.matcher(physicalDescriptionData).matches())){
 						Subfield subfieldE = field.getSubfield('e');
 						if (subfieldE != null && (subfieldE.getData().toLowerCase().contains("dvd") || subfieldE.getData().toLowerCase().contains("videodisc"))){

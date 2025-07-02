@@ -31,7 +31,9 @@ class WebBuilder_Images extends ObjectEditor {
 			$object->whereAddIn("owningLibrary", array_keys($libraryList), false, "OR");
 			$object->whereAdd("owningLibrary = -1", "OR");
 			$object->whereAdd("sharing = 2 OR sharing = 3", "OR");
-			$object->whereAdd("sharing = 1 AND sharedWithLibrary = " . $user->getHomeLibrary()->libraryId, "OR");
+			if (Library::getLibraryList(true)){
+				$object->whereAdd("sharing = 1 AND sharedWithLibrary IN (" . implode(array_keys($libraryList)) . ")", "OR");
+			}
 		}
 		$object->find();
 		$objectList = [];
