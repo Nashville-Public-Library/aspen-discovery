@@ -66,6 +66,12 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			doc.addField("author2-role", author2Role);
 			doc.addField("author_additional", authorAdditional);
 			doc.addField("author_display", authorDisplay);
+
+			//title auth
+			HashSet<String> titleAuthors = new HashSet<>();
+			titleAuthors.add(fullTitle + " " + getPrimaryAuthor());
+			doc.addField("title_author", titleAuthors);
+
 			//format
 			doc.addField("grouping_category", groupingCategory);
 
@@ -98,9 +104,14 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			doc.addField("series", series.values());
 			String[] sortedSeriesWithVolume = seriesWithVolumePriority.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).map(Map.Entry::getKey).toArray(String[]::new);
 			//seriesWithVolume.values().removeAll(GroupedWorkIndexer.hideSeries);
+			boolean isFirstSeries = true;
 			for (String seriesName : sortedSeriesWithVolume) {
 				if (seriesWithVolume.containsKey(seriesName)) {
 					doc.addField("series_with_volume", seriesWithVolume.get(seriesName));
+					if (isFirstSeries) {
+						doc.addField("series_author", seriesName + " " + getPrimaryAuthor());
+						isFirstSeries = false;
+					}
 				}
 			}
 

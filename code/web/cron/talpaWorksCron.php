@@ -33,7 +33,7 @@ $talpaSettings->find();
 while ($talpaSettings->fetch(true)) {
 	$token = $talpaSettings->talpaApiToken;
 
-	$logger->log("Running Talpa ISBNs cron for settings " . $talpaSettings->id, Logger::LOG_NOTICE);
+	$logger->log("Running Talpa groupedWorks cron for settings " . $talpaSettings->id, Logger::LOG_NOTICE);
 
 	$noIsbns = 0;
 	$noIsbnA = array();
@@ -47,7 +47,7 @@ while ($talpaSettings->fetch(true)) {
 
 	if ($results) {
 		while ($result = $results->fetch()) {
-			$logger->log('found '. $result['total'] . ' permanent IDs needing associating with librarything works', Logger::LOG_NOTICE);
+			$logger->log('found '. $result['total'] . ' permanent IDs to send to Talpa for processing', Logger::LOG_NOTICE);
 		}
 	}
 
@@ -133,12 +133,26 @@ while ($talpaSettings->fetch(true)) {
 								}
 							}
 						}
-						if($isbnA) {
-							$retA[$permanent_id]['isbnA'] = $isbnA;
-						} else{ //We can't use it.
+
+
+						//Check if we have either ISBNs or UPCs to process this record
+						$upcA = $groupedWorkDriver->getUpcs();
+
+						$hasIsbns = !empty($isbnA);
+						$hasUpcs = !empty($upcA);
+
+						if(!$hasIsbns && !$hasUpcs) {
+							// We can't use it - no identifiers
 							$noIsbnA[]= $permanent_id;
 							$noIsbns++;
 							continue;
+						}
+
+						if($hasIsbns) {
+							$retA[$permanent_id]['isbnA'] = $isbnA;
+						}
+						if ($hasUpcs) {
+							$retA[$permanent_id]['upcA'][] =$upcA;
 						}
 
 						//Title and Author
@@ -173,9 +187,6 @@ while ($talpaSettings->fetch(true)) {
 						//Contributors
 						$retA[$permanent_id]['contributorsA'][] = $groupedWorkDriver->getContributors();
 
-						//UPCs
-						$retA[$permanent_id]['upcA'][] = $groupedWorkDriver->getUpcs();
-
 						//ISSNS
 						$retA[$permanent_id]['issnA'][] = $groupedWorkDriver->getISSNs();
 
@@ -194,6 +205,7 @@ while ($talpaSettings->fetch(true)) {
 					$data = array(
 						'works' => $chunk,
 						'token' => $token,
+						'type' => 'daily',
 					);
 
 					$logger->log('Sending '.count($chunk).' records', Logger::LOG_DEBUG);
@@ -228,12 +240,10 @@ while ($talpaSettings->fetch(true)) {
 								$talpaData = new TalpaData();
 								$talpaData->groupedRecordPermanentId = $permanent_id;
 								if ($talpaData->find(true)) {
-									$talpaData->lt_workcode=$lt_workcode;
 									$talpaData->checked = 1;
 									$talpaData->update();
 									$updatedN++;
 								} else {
-									$talpaData->lt_workcode = $lt_workcode;
 									$talpaData->groupedRecordPermanentId = $permanent_id;
 									$talpaData->checked = 1;
 									$talpaData->insert();

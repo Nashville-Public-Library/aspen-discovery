@@ -4969,7 +4969,7 @@ class Library extends DataObject {
 		if ($allThemes !== false && !empty($allThemes)) {
 			return reset($allThemes);
 		}else{
-			return null;
+			return $this->getOrSetDefaultLibraryTheme();
 		}
 	}
 
@@ -4991,6 +4991,22 @@ class Library extends DataObject {
 			}
 		}
 		return $this->_themes;
+	}
+	
+	/**
+	 * Find or create a default theme for use in cases where a library or location has no LibraryTheme or LocationTheme
+	 */
+	public function getOrSetDefaultLibraryTheme(): LibraryTheme {
+		require_once ROOT_DIR . '/sys/Theming/Theme.php';
+		$defaultTheme = new Theme;
+		$defaultLibraryTheme = new LibraryTheme;
+
+		$defaultLibraryTheme->themeId = $defaultTheme->getDefaultTheme()->id;
+		$defaultLibraryTheme->libraryId = $this->libraryId;
+		if(!$defaultLibraryTheme->find()) {
+			$defaultLibraryTheme->insert();
+		}
+		return $defaultLibraryTheme;
 	}
 
 	/**
@@ -5619,15 +5635,15 @@ class Library extends DataObject {
 	}
 
 	/**
-	 * @return array|null
+	 * @return array
 	 */
-	public function getLiDANotifications() {
+	public function getLiDANotifications() : array {
 		$lidaNotifications = [];
 
 		$notificationSettings = new NotificationSetting();
 		$notificationSettings->id = $this->lidaNotificationSettingId;
 		if ($notificationSettings->find(true)) {
-			$lidaNotifications = clone $notificationSettings;
+			$lidaNotifications = $notificationSettings->toArray(false);
 		}
 
 		return $lidaNotifications;
@@ -5694,6 +5710,8 @@ class Library extends DataObject {
 			'selfRegistrationFormMessage' => $this->selfRegistrationFormMessage,
 			'selfRegistrationSuccessMessage' => $this->selfRegistrationSuccessMessage,
 			'promptForBirthDateInSelfReg' => $this->promptForBirthDateInSelfReg,
+			'allowRememberPickupLocation' => $this->allowRememberPickupLocation,
+			'allowPickupLocationUpdates' => $this->allowPickupLocationUpdates,
 		];
 		if (empty($this->baseUrl)) {
 			$apiInfo['baseUrl'] = $configArray['Site']['url'];
@@ -5704,7 +5722,8 @@ class Library extends DataObject {
 			$apiInfo['barcodeStyle'] = null;
 		}
 		$apiInfo['quickSearches'] = [];
-		$apiInfo['notifications'] = $this->getLiDANotifications();
+		$notifications = $this->getLiDANotifications();
+		$apiInfo['notifications'] = $notifications;
 		$allThemes = $this->getThemes();
 		if (count($allThemes) > 0) {
 			$libraryTheme = reset($allThemes);
@@ -5755,10 +5774,11 @@ class Library extends DataObject {
 		$pinValidationRules = null;
 		$forgotPasswordType = 'none';
 		$ils = 'unknown';
-		$hasIlsInbox = false;
+		$supportAccountNotifications = false;
 		$catalogRegistrationCapabilities = [];
 		$suspendRequiresReactivationDate = false;
 		$showDateWhenSuspending = true;
+		$catalogHasAccountNotifications = false;
 
 		$catalog = CatalogFactory::getCatalogConnectionInstance();
 		if ($catalog != null) {
@@ -5766,7 +5786,9 @@ class Library extends DataObject {
 				$forgotPasswordType = $catalog->getForgotPasswordType();
 			}
 			$pinValidationRules = $catalog->getPasswordPinValidationRules();
-			$hasIlsInbox = $catalog->hasIlsInbox();
+			$accountNotificationsEnabled = array_key_exists('notifyAccount', $notifications) && !empty($notifications['notifyAccount']);
+
+			$supportAccountNotifications = $catalog->supportAccountNotifications() && $accountNotificationsEnabled;
 			$catalogRegistrationCapabilities = $catalog->getRegistrationCapabilities();
 			$suspendRequiresReactivationDate = $catalog->suspendRequiresReactivationDate();
 			$showDateWhenSuspending = $catalog->showDateWhenSuspending();
@@ -5780,7 +5802,8 @@ class Library extends DataObject {
 		$apiInfo['pinValidationRules'] = $pinValidationRules;
 		$apiInfo['forgotPasswordType'] = $forgotPasswordType;
 		$apiInfo['ils'] = $ils;
-		$apiInfo['displayIlsInbox'] = $hasIlsInbox;
+		$apiInfo['displayIlsInbox'] = $supportAccountNotifications;
+		$apiInfo['supportAccountNotifications'] = $supportAccountNotifications;
 		$apiInfo['catalogRegistrationCapabilities'] = $catalogRegistrationCapabilities;
 		$apiInfo['suspendRequiresReactivationDate'] = $suspendRequiresReactivationDate;
 		$apiInfo['showDateWhenSuspending'] = $showDateWhenSuspending;

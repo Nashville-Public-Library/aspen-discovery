@@ -113,7 +113,7 @@
 						</td>
 						<td>
 							{$site->version}<br>
-							<a class="btn btn-xs btn-warning" onclick="return AspenDiscovery.Admin.showScheduleUpdateForm('{$site->id}');"><i class="far fa-clock"></i> {translate text="Schedule Update" isAdminFacing=true}</a>
+							<a class="btn btn-xs btn-warning" onclick="return AspenDiscovery.Admin.showScheduleUpdateForm('{$site->id}');"><i class="fas fa-clock"></i> {translate text="Schedule Update" isAdminFacing=true}</a>
 						</td>
 						<td>
 							{translate text=$site->getSiteTypeName() isAdminFacing=true}

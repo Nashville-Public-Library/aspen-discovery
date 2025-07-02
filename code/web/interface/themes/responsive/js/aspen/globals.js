@@ -29,6 +29,7 @@ var Globals = (function () {
 		ssoLoginUrl: '',
 		cookiePolicyHTML: '',
 		timeUntilSessionExpiration: 0,
-		modalCloseDestination: ''
+		modalCloseDestination: '',
+		language: 'en'
 	}
 })(Globals || {});

@@ -168,8 +168,19 @@
 
 								</div>
 								{if !empty($allowEdit)}
-									<div class="btn-group btn-group-sm">
-										<button value="deleteList" id="FavDelete" class="btn btn-sm btn-danger listViewButton" onclick='return AspenDiscovery.Lists.deleteListAction();'>{translate text='Delete List' isPublicFacing=true}</button>
+									<div class="btn-group" role="group">
+										<button type="button" id="FavDelete" class="btn btn-sm btn-danger dropdown-toggle listViewButton" data-toggle="dropdown" aria-expanded="false">{translate text='Delete' isPublicFacing=true}&nbsp;<span class="caret"></span></button>
+										<ul class="dropdown-menu dropdown-menu-right" role="menu">
+											<li>
+												<a onclick="return AspenDiscovery.Account.deleteSelectedListTitles({$listSelected})">{translate text="Selected Items" isPublicFacing=true}</a>
+											</li>
+											<li>
+												<a onclick="return AspenDiscovery.Account.deleteAllListTitles({$listSelected})">{translate text="All Items" isPublicFacing=true}</a>
+											</li>
+											<li>
+												<a onclick="return AspenDiscovery.Lists.deleteListAction();">{translate text="Entire List" isPublicFacing=true}</a>
+											</li>
+										</ul>
 									</div>
 								{/if}
 							</div>
@@ -183,8 +194,9 @@
 	{if $userList->deleted == 0}
 		{if !empty($resourceList)}
 			<div class="row">
-				<div class="col-xs-12">
-					<form class="navbar form-inline">
+				<form class="navbar form-inline">
+					<div class="col-xs-4">
+
 						{if $recordCount > 20}
 						<label for="pageSize" class="control-label">{translate text='Records Per Page' isPublicFacing=true}</label>&nbsp;
 						<select id="pageSize" class="pageSize form-control-sm" onchange="AspenDiscovery.changePageSize()">
@@ -203,9 +215,20 @@
 							{/if}
 						</select>
 						{/if}
+					</div>
+					<div class="col-xs-4">
+						{if !empty($allowEdit)}
+							<div class="form-group checkbox">
+								<label for="selectAllMenuItems">
+									<input type="checkbox" name="selectAllMenuItems" id="selectAllMenuItems" onchange="AspenDiscovery.toggleCheckboxes('.titleSelect', '#selectAllMenuItems');"> <strong>{translate text="Select/Deselect All" isPublicFacing=true}</strong>
+								</label>
+							</div>
+						{/if}
+					</div>
+					<div class="col-xs-4">
 						<label for="hideCovers" class="control-label checkbox pull-right"> {translate text='Hide Covers' isPublicFacing=true} <input id="hideCovers" type="checkbox" onclick="AspenDiscovery.Account.toggleShowCovers(!$(this).is(':checked'))" {if $showCovers == false}checked="checked"{/if}></label>
-					</form>
-				</div>
+					</div>
+				</form>
 			</div>
 
 			<input type="hidden" name="myListActionItem" id="myListActionItem">
@@ -216,12 +239,6 @@
 						{$resource}
 					</div>
 				{/foreach}
-			</div>
-			<div class="btn-group">
-				{if !empty($listEditAllowed)}
-					<button onclick="return AspenDiscovery.Account.deleteSelected({$listSelected})" class="btn btn-sm btn-danger">{translate text="Delete Selected Items" isPublicFacing=true}</button>
-					<button onclick="return AspenDiscovery.Account.deleteAll({$listSelected})" class="btn btn-sm btn-danger">{translate text="Delete All Items" isPublicFacing=true}</button>
-				{/if}
 			</div>
 			{if !empty($userSort)}
 				<script type="text/javascript">

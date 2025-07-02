@@ -1,6 +1,6 @@
 {strip}
 	<h1>{translate text="Notification History" isPublicFacing=true}</h1>
-	{if empty($messages)}
+	{if empty($userMessages)}
 		<div class="alert alert-info">
 			{translate text="You do not have any notifications at this time." isPublicFacing=true}
 		</div>
@@ -37,9 +37,9 @@
 					<div class="btn-group">
 						<a href="" class="btn btn-sm btn-default" onclick="return AspenDiscovery.Account.showILSMessage({$message->id})">{translate text="Open" isPublicFacing=true}</a>
 						{if !$message->isRead}
-							<a class="btn btn-sm btn-default" href="" onclick="return AspenDiscovery.Account.markILSMessageAsRead({$message->id})"><i class="far fa-envelope-open" role="presentation"></i> {translate text="Mark As Read" isPublicFacing=true}</a>
+							<a class="btn btn-sm btn-default" href="" onclick="return AspenDiscovery.Account.markILSMessageAsRead({$message->id})"><i class="fas fa-envelope-open" role="presentation"></i> {translate text="Mark As Read" isPublicFacing=true}</a>
 						{else}
-							<a class="btn btn-sm btn-default" href="" onclick="return AspenDiscovery.Account.markILSMessageAsUnread({$message->id})"><i class="far fa-envelope" role="presentation"></i> {translate text="Mark As Unread" isPublicFacing=true}</a>
+							<a class="btn btn-sm btn-default" href="" onclick="return AspenDiscovery.Account.markILSMessageAsUnread({$message->id})"><i class="fas fa-envelope" role="presentation"></i> {translate text="Mark As Unread" isPublicFacing=true}</a>
 						{/if}
 					</div>
 					</div>
