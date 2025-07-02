@@ -41,6 +41,7 @@ code/web/node_modules
 tests/jmeter/results/*
 tests/selenium/*
 tests/conf/config.ini
+tests/e2e/site-test-config.json
 data-import
 config.pwd.ini
 author_authorities.properties.temp
