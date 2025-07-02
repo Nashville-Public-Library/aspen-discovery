@@ -7,6 +7,7 @@
 					{foreach from=$subject item=subjectPart name=subloop}
 						{if empty($smarty.foreach.subloop.first)} -- {/if}
 						<a href="/Search/Results?lookfor=%22{$subjectPart.title|escape:"url"}%22&amp;searchIndex=Subject">{$subjectPart.title|escape}</a>
+						{if !empty($subjectPart.agr)} <span class="agrSubject">({$subjectPart.agr.title})</span>{/if}
 					{/foreach}
 					<br>
 			{/foreach}

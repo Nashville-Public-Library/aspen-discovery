@@ -172,6 +172,7 @@ class UserCampaign extends DataObject {
 
 	public function checkAndHandleCampaignCompletion($userId, $campaignId) {
 		require_once ROOT_DIR . '/sys/Email/EmailTemplate.php';
+		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 		global $logger;
 
 		$userCampaign = new UserCampaign();
@@ -223,11 +224,7 @@ class UserCampaign extends DataObject {
 					if ($userCampaign->optInToCampaignEmailNotifications == 1 && $userCampaign->campaignCompleteEmailSent == 0) {
 						$emailTemplate = EmailTemplate::getActiveTemplate('campaignComplete');
 						if ($emailTemplate) {
-							$parameters = [
-								'user' => $user,
-								'campaignName' => $campaignName,
-								'library' => $user->getHomeLibrary(),
-							];
+							$parameters = $campaign->getCampaignEmailParameters($user, $campaignId);
 							try {
 								$emailTemplate->sendEmail($user->email, $parameters);
 								$userCampaign->campaignCompleteEmailSent = 1;
@@ -248,6 +245,21 @@ class UserCampaign extends DataObject {
 						$milestoneObj->id = $milestone->milestoneId;
 						if ($milestoneObj->find(true)) {
 							$milestone->name = $milestoneObj->name;
+
+							if (!empty($milestone->reward)) {
+								require_once ROOT_DIR . '/sys/CommunityEngagement/Reward.php';
+
+								$reward = new Reward();
+								$reward->id = $milestone->reward;
+
+								if ($reward->find(true)) {
+									$milestone->rewardName = $reward->name;
+								} else {
+									$milestone->rewardName = '';
+								}
+							} else {
+								$milestone->rewardName = '';
+							}
 						}
 						$milestones[] = clone $milestone;
 					}
@@ -270,6 +282,7 @@ class UserCampaign extends DataObject {
 									'user' => $user,
 									'campaignName' => $campaign->name,
 									'milestoneName' => $milestone->name,
+									'milestoneReward' => $milestone->rewardName,
 									'library' => $user->getHomeLibrary(),
 								];
 

@@ -185,6 +185,25 @@ abstract class ObjectEditor extends Admin_Admin {
 		$validationResults = $this->updateFromUI($newObject, $structure, null);
 		if ($validationResults['validatedOk']) {
 			$ret = $newObject->insert($this->getContext());
+			//for images we need to also update the object to assign correct image names
+			switch ($objectType) {
+				case 'WebResource':
+				case 'ImageUpload':
+				case 'FileUpload':
+				case 'Placard':
+				case 'Theme':
+					$doUpdate = true;
+					break;
+				default:
+					$doUpdate = false;
+					break;
+			}
+			if ($ret && $doUpdate) {
+				$validationResults = $this->updateFromUI($newObject, $structure, null);
+				if ($validationResults['validatedOk']) {
+					$ret = $newObject->update($this->getContext());
+				}
+			}
 			if (!$ret) {
 				global $logger;
 				if ($newObject->getLastError()) {

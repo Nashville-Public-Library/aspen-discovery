@@ -16,7 +16,7 @@
 			<h1>
 				{*{$recordDriver->getTitle()|escape}*}{* // ever a case when the trailing punction is needed? *}
 				{* Title includes the title section *}
-				{$recordDriver->getTitle()|removeTrailingPunctuation}
+				{$recordDriver->getTitle()|removeTrailingPunctuation}{if !empty($recordDriver->get880Title())} <span class="agrTitle">({$recordDriver->get880Title()|removeTrailingPunctuation})</span>{/if}
 				{if $recordDriver->getFormats()}
 					<br>
 					<small>
