@@ -8539,7 +8539,7 @@ class Koha extends AbstractIlsDriver {
 
 	public function bypassReadingHistoryUpdate($patron, $isNightlyUpdate) : bool {
 		// Last seen only updates once a day so only do this check if we're running the nightly update.
-		if (!$isNightlyUpdate) {
+		if ($isNightlyUpdate) {
 			$this->initDatabaseConnection();
 			/** @noinspection SqlResolve */
 			$sql = "SELECT lastseen, dateexpiry FROM borrowers where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "'";
@@ -8559,15 +8559,25 @@ class Koha extends AbstractIlsDriver {
 				$results->close();
 			}
 
-			// Don't update reading history if we've never seen the patron or the patron was last seen before we last updated reading history.
-			$lastReadingHistoryUpdate = $patron->lastReadingHistoryUpdate;
-			if ($lastSeenDate != null && ($lastSeenDate > $lastReadingHistoryUpdate)) {
-				// Do not update if the patron's account expired more than 4 weeks ago.
-				if ($expirationDate == null || ($expirationDate > (time() - 4 * 7 * 24 * 60 * 60))) {
-					return true;
-				}
+			// Bypass if the patron has no activity according to Koha.
+			if ($lastSeenDate == null) {
+				return true;
+			}
+			// Bypass if the patron's account expired more than 4 weeks ago (expiration takes precedence).
+			if ($expirationDate != null && ($expirationDate <= (time() - 4 * 7 * 24 * 60 * 60))) {
+				return true;
+			}
+			/* The check cannot be between $lastSeenDate and $lastReadingHistoryUpdate because the patron may have activity according to Koha,
+			but never view his or her reading history, which is what prompts updates to it when logged in. Thus, the reading history
+			must be kept up to date in the background; otherwise, patrons will report gaps in their reading history. */
+			//$lastReadingHistoryUpdate = $patron->lastReadingHistoryUpdate;
+			//if ($lastSeenDate <= $lastReadingHistoryUpdate) {}
+			// Bypass reading history update if the patron hasn't been seen in the last 2 weeks (inactive patron).
+			if ($lastSeenDate <= (time() - 2 * 7 * 24 * 60 * 60)) {
+				return true;
 			}
 		}
+
 		return false;
 	}
 

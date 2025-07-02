@@ -4347,7 +4347,12 @@ class User extends DataObject {
 			'Administer Library Browse Categories',
 			'Administer Selected Browse Category Groups'
 		]);
-		$sections['local_enrichment']->addAction(new AdminAction('Collection Spotlights', 'Define spotlights that can be embedded within Aspen custom pages or other websites.', '/Admin/CollectionSpotlights'), [
+		$collectionSpotlightsAction = new AdminAction('Collection Spotlights', 'Define spotlights that can be embedded within Aspen custom pages or other websites.', '/Admin/CollectionSpotlights');
+		$sections['local_enrichment']->addAction($collectionSpotlightsAction, [
+			'Administer All Collection Spotlights',
+			'Administer Library Collection Spotlights',
+		]);
+		$collectionSpotlightsAction->addSubAction(new AdminAction('Collection Spotlight Lists', 'Define lists within each spotlight.', '/Admin/CollectionSpotlightLists'), [
 			'Administer All Collection Spotlights',
 			'Administer Library Collection Spotlights',
 		]);
@@ -4658,10 +4663,10 @@ class User extends DataObject {
 			$sections['side_loads'] = new AdminSection('Side Loads');
 			$sideLoadsSettingsAction = new AdminAction('Settings', 'Define connection information between Side Loads and Aspen Discovery.', '/SideLoads/SideLoads');
 			$sideLoadsScopesAction = new AdminAction('Scopes', 'Define which records are loaded for each library and location.', '/SideLoads/Scopes');
-			if ($sections['side_loads']->addAction($sideLoadsSettingsAction, ['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library'])) {
-				$sideLoadsSettingsAction->addSubAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library']);
+			if ($sections['side_loads']->addAction($sideLoadsSettingsAction, ['Administer All Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library'])) {
+				$sideLoadsSettingsAction->addSubAction($sideLoadsScopesAction, ['Administer All Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library']);
 			} else {
-				$sections['side_loads']->addAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Load Scopes for Home Library']);
+				$sections['side_loads']->addAction($sideLoadsScopesAction, ['Administer All Side Loads', 'Administer Side Load Scopes for Home Library']);
 			}
 			$sections['side_loads']->addAction(new AdminAction('Indexing Log', 'View the indexing log for Side Loads.', '/SideLoads/IndexingLog'), [
 				'View System Reports',
