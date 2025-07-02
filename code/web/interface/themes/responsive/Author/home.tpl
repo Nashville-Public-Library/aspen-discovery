@@ -51,7 +51,6 @@
 
 {* Embedded Javascript For this Page *}
 <script type="text/javascript">
-	Globals.ipDebugEnabled = {if $ipDebugEnabled}true{else}false{/if};
 	$(document).ready(function (){ldelim}
 		{if !empty($showWikipedia)}
 			AspenDiscovery.Wikipedia.getWikipediaArticle('{$wikipediaAuthorName}');

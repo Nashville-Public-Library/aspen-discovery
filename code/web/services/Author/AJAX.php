@@ -52,9 +52,11 @@ class Author_AJAX extends JSON_Action {
 			$authorEnrichment = new AuthorEnrichment();
 			$authorEnrichment->authorName = $authorName;
 			$doLookup = true;
+			$errorType = '';
 			if ($authorEnrichment->find(true)) {
 				if ($authorEnrichment->hideWikipedia) {
 					$doLookup = false;
+					$errorType = 'lookup_disabled';
 				} else {
 					require_once ROOT_DIR . '/sys/WikipediaParser.php';
 					$wikipediaUrl = $authorEnrichment->wikipediaUrl;
@@ -82,14 +84,18 @@ class Author_AJAX extends JSON_Action {
 					$returnVal['formatted_article'] = $interface->fetch('Author/wikipedia_article.tpl');
 				} else {
 					$returnVal['success'] = false;
-					$returnVal['error'] = 'not_found';
+					$errorType = 'not_found';
 				}
 			} else {
-				// Lookup was disabled via override.
 				$returnVal['searchedName'] = $authorName;
 				$returnVal['success'] = false;
-				$returnVal['error'] = 'lookup_disabled';
 			}
+
+			if (!$returnVal['success'] && IPAddress::showDebuggingInformation() && !empty($errorType)) {
+				$returnVal['debugMessage'] = 'Wikipedia search for "' . $authorName . '" returned no result (' . $errorType . '). ' .
+					'Consider using Wikipedia Integration (Author Enrichment) to correct the Wikipedia search or to prevent Wikipedia searching for this author.';
+			}
+
 		} else {
 			$returnVal['success'] = false;
 		}
