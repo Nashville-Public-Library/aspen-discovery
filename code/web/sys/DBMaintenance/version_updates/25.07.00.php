@@ -68,6 +68,35 @@ function getUpdates25_07_00(): array {
 				'ALTER TABLE user_page_defaults CHANGE COLUMN pageSort pageSort VARCHAR(50)'
 			]
 		], //increase_allowable_sort_length
+		'increase_record_to_include_fields' => [
+			'title' => 'Increase Record To Include Field Lengths',
+			'description' => 'Increase Record To Include Field Lengths',
+			'sql' => [
+				'ALTER TABLE library_records_to_include CHANGE COLUMN location location VARCHAR(250) NOT NULL',
+				'ALTER TABLE location_records_to_include CHANGE COLUMN location location VARCHAR(250) NOT NULL',
+				"ALTER TABLE library_records_to_include CHANGE COLUMN subLocation subLocation VARCHAR(250) NOT NULL DEFAULT ''",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN subLocation subLocation VARCHAR(250) NOT NULL DEFAULT ''",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN iType iType VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN iType iType VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN iTypesToExclude iTypesToExclude VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN iTypesToExclude iTypesToExclude VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN audience audience VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN audience audience VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN audiencesToExclude audiencesToExclude VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN audiencesToExclude audiencesToExclude VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN format format VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN format format VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN formatsToExclude formatsToExclude VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN formatsToExclude formatsToExclude VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN shelfLocation shelfLocation VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN shelfLocation shelfLocation VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN shelfLocationsToExclude shelfLocationsToExclude VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN shelfLocationsToExclude shelfLocationsToExclude VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE library_records_to_include CHANGE COLUMN collectionCode collectionCode VARCHAR(250) DEFAULT NULL",
+				"ALTER TABLE location_records_to_include CHANGE COLUMN collectionCode collectionCode VARCHAR(250) DEFAULT NULL",
+			]
+		], //increase_record_to_include_fields
+
 
 		//katherine - Grove
 		'add_series_member_priority_score' => [
