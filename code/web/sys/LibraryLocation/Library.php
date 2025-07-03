@@ -5719,7 +5719,7 @@ class Library extends DataObject {
 			'enableForgotPasswordLink' => $this->enableForgotPasswordLink,
 			'enableForgotBarcode' => $this->enableForgotBarcode,
 			'showShareOnExternalSites' => $this->showShareOnExternalSites,
-			'discoveryVersion' => $interface->getVariable('gitBranchWithCommit'),
+			'discoveryVersion' => $interface->getVariable('aspenVersion'),
 			'usernameLabel' => $this->loginFormUsernameLabel ?? 'Library Card Number',
 			'passwordLabel' => $this->loginFormPasswordLabel ?? 'PIN or Password',
 			'code' => $this->ilsCode,
