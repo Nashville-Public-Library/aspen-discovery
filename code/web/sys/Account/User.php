@@ -4453,9 +4453,11 @@ class User extends DataObject {
 		foreach (UserAccount::getAccountProfiles() as $accountProfileInfo) {
 			/** @var AccountProfile $accountProfile */
 			$accountProfile = $accountProfileInfo['accountProfile'];
+			if ($accountProfile->ils == 'koha' || $accountProfile->ils == 'sierra') {
+				$allowILSMessaging = true;
+			}
 			if ($accountProfile->ils == 'koha') {
 				$hasCurbside = true;
-				$allowILSMessaging = true;
 			}
 			if ($accountProfile->ils == 'symphony' || $accountProfile->ils == 'carlx' || $accountProfile->ils == 'sierra') {
 				$customSelfRegForms = true;

@@ -8790,13 +8790,13 @@ class Koha extends AbstractIlsDriver {
 		$results = mysqli_query($this->dbConnection, $sql);
 		$transports = [];
 		if($results) {
-			$i = 0;
 			while ($curRow = $results->fetch_assoc()) {
-				$transports[$curRow['module']][$i]['module'] = $curRow['module'];
-				$transports[$curRow['module']][$i]['code'] = $curRow['code'];
-				$transports[$curRow['module']][$i]['branch'] = $curRow['branchcode'];
-				$transports[$curRow['module']][$i]['name'] = $curRow['name'];
-				$i++;
+				$transports[] = [
+					'module' => $curRow['module'],
+					'code' => $curRow['code'],
+					'branch' => $curRow['branchcode'],
+					'name' => $curRow['name']
+				];
 			}
 			$results->close();
 		}
@@ -8808,16 +8808,14 @@ class Koha extends AbstractIlsDriver {
 	 * Update account notifications for the user. At this point, the system has verified that the user can receive push notifications
 	 * and that they are opted in to getting account notifications.
 	 *
-	 * @param User $user
+	 * @param User $user - the user to update notifications for
+	 * @param ILSNotificationSetting $ilsNotificationSetting - the settings to base notifications on
 	 * @return array
 	 */
-	public function updateAccountNotifications(User $user): array {
+	public function updateAccountNotifications(User $user, ILSNotificationSetting $ilsNotificationSetting): array {
 		$this->initDatabaseConnection();
 
-		//Since the number of users logged who are opted in to Push Notifications will be significantly smaller than
-		// the number of users in Koha, first get all users that are opted in to push notifications, and then get
-		// the notifications for them.
-		//Get a list of all messages that have been queued in the last 24 hours
+		//Get a list of all messages that have been queued in the last 24 hours for the user
 		/** @noinspection SqlResolve */
 		$sql = "SELECT * FROM message_queue where message_transport_type = 'email' and time_queued > DATE_SUB(NOW(), INTERVAL 1 DAY) AND borrowernumber = '" . mysqli_escape_string($this->dbConnection, $user->unique_ils_id) . "'";
 		$results = mysqli_query($this->dbConnection, $sql);
