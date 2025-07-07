@@ -2027,6 +2027,22 @@ class UserAPI extends AbstractAPI {
 
 					if (!empty($_REQUEST['cancelDate'])) {
 						$cancelDate = $_REQUEST['cancelDate'];
+
+						if ($homeLibrary->maxHoldCancellationDate > 0) {
+							$maxAllowedTimestamp = time() + ($homeLibrary->maxHoldCancellationDate * 24 * 60 * 60);
+							$cancelDateTimestamp = strtotime($cancelDate);
+
+							if ($cancelDateTimestamp > $maxAllowedTimestamp) {
+								return [
+									'success' => false,
+									'message' => translate([
+										'text' => 'The cancellation date cannot be more than %1% days from today.',
+										1 => $homeLibrary->maxHoldCancellationDate,
+										'isPublicFacing' => true,
+									]),
+								];
+							}
+						}
 					} elseif ($homeLibrary->defaultNotNeededAfterDays <= 0) {
 						$cancelDate = null;
 					} else {

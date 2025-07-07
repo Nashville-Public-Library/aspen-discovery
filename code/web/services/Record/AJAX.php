@@ -979,6 +979,26 @@ class Record_AJAX extends Action {
 
 					if (!empty($_REQUEST['cancelDate'])) {
 						$cancelDate = $_REQUEST['cancelDate'];
+
+						if ($homeLibrary->maxHoldCancellationDate > 0) {
+							$maxAllowedTimestamp = time() + ($homeLibrary->maxHoldCancellationDate * 24 * 60 * 60);
+							$cancelDateTimestamp = strtotime($cancelDate);
+
+							if ($cancelDateTimestamp > $maxAllowedTimestamp) {
+								return [
+									'success' => false,
+									'title' => translate([
+										'text' => 'Invalid Cancellation Date',
+										'isPublicFacing' => true,
+									]),
+									'message' => translate([
+										'text' => 'The cancellation date cannot be more than %1% days from today.',
+										1 => $homeLibrary->maxHoldCancellationDate,
+										'isPublicFacing' => true,
+									]),
+								];
+							}
+						}
 					} else {
 						if ($homeLibrary->defaultNotNeededAfterDays <= 0) {
 							$cancelDate = null;
@@ -1902,6 +1922,7 @@ class Record_AJAX extends Action {
 
 		$interface->assign('showHoldCancelDate', $library->showHoldCancelDate);
 		$interface->assign('defaultNotNeededAfterDays', $library->defaultNotNeededAfterDays);
+		$interface->assign('maxHoldCancellationDate', $library->maxHoldCancellationDate);
 		$interface->assign('allowRememberPickupLocation', $library->allowRememberPickupLocation && !$promptForHoldNotifications);
 		$interface->assign('showLogMeOut', $library->showLogMeOutAfterPlacingHolds);
 
