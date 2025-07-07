@@ -204,7 +204,8 @@ abstract class ObjectEditor extends Admin_Admin {
 					$ret = $newObject->update($this->getContext());
 				}
 			}
-			if (!$ret) {
+			// Strict comparison because the update() above could return 0, as no rows changed.
+			if ($ret === false) {
 				global $logger;
 				if ($newObject->getLastError()) {
 					$errorDescription = $newObject->getLastError();
