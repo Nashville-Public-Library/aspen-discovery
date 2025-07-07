@@ -516,6 +516,11 @@ class DataObjectUtil {
 					$prevUpload = $destFolder . '/' . $_FILES[$propertyName]["name"];
 					if (file_exists($prevUpload)) {
 						rename($prevUpload, $destFullPath);
+						// Remove any old thumbnail for this PDF.
+						$thumbPath = $prevUpload . '.jpg';
+						if (file_exists($thumbPath)) {
+							@unlink($thumbPath);
+						}
 					}
 					$copyResult = copy($_FILES[$propertyName]["tmp_name"], $destFullPath);
 					if ($copyResult) {

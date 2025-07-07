@@ -34,8 +34,8 @@ if (count($updatesToRun) == 0) {
 
 			$versionToUpdateTo = $scheduledUpdate->updateToVersion;
 			$currentVersion = getAspenVersion();
-			if (str_contains($versionToUpdateTo, ' ')) {
-				$currentVersion  = substr($versionToUpdateTo, 0, strpos($versionToUpdateTo, ' '));
+			if (str_contains($currentVersion, ' ')) {
+				$currentVersion  = substr($currentVersion, 0, strpos($currentVersion, ' '));
 			}
 
 			if (!preg_match('/\d{2}\.\d{2}\.\d{2}/', $versionToUpdateTo)) {
