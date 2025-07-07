@@ -2028,8 +2028,8 @@ class UserAPI extends AbstractAPI {
 					if (!empty($_REQUEST['cancelDate'])) {
 						$cancelDate = $_REQUEST['cancelDate'];
 
-						if ($homeLibrary->maxHoldCancellationDate > 0) {
-							$maxAllowedTimestamp = time() + ($homeLibrary->maxHoldCancellationDate * 24 * 60 * 60);
+						if ($library->maxHoldCancellationDate > 0) {
+							$maxAllowedTimestamp = time() + ($library->maxHoldCancellationDate * 24 * 60 * 60);
 							$cancelDateTimestamp = strtotime($cancelDate);
 
 							if ($cancelDateTimestamp > $maxAllowedTimestamp) {
@@ -2037,18 +2037,19 @@ class UserAPI extends AbstractAPI {
 									'success' => false,
 									'message' => translate([
 										'text' => 'The cancellation date cannot be more than %1% days from today.',
-										1 => $homeLibrary->maxHoldCancellationDate,
+										1 => $library->maxHoldCancellationDate,
 										'isPublicFacing' => true,
 									]),
 								];
 							}
 						}
-					} elseif ($homeLibrary->defaultNotNeededAfterDays <= 0) {
-						$cancelDate = null;
 					} else {
-						//Default to a date based on the default not needed after days in the library configuration.
-						$nnaDate = time() + $homeLibrary->defaultNotNeededAfterDays * 24 * 60 * 60;
-						$cancelDate = date('Y-m-d', $nnaDate);
+						if ($library->defaultNotNeededAfterDays <= 0) {
+							$cancelDate = null;
+						} else {
+							$nnaDate = time() + $library->defaultNotNeededAfterDays * 24 * 60 * 60;
+							$cancelDate = date('Y-m-d', $nnaDate);
+						}
 					}
 
 					$holdType = $_REQUEST['holdType'];

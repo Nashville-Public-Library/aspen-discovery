@@ -973,15 +973,15 @@ class Record_AJAX extends Action {
 						'title' => 'Select valid user',
 					];
 				} else {
-					$homeLibrary = $patron->getHomeLibrary();
+					global $library;
 
 					$holdType = $_REQUEST['holdType'];
 
 					if (!empty($_REQUEST['cancelDate'])) {
 						$cancelDate = $_REQUEST['cancelDate'];
 
-						if ($homeLibrary->maxHoldCancellationDate > 0) {
-							$maxAllowedTimestamp = time() + ($homeLibrary->maxHoldCancellationDate * 24 * 60 * 60);
+						if ($library->maxHoldCancellationDate > 0) {
+							$maxAllowedTimestamp = time() + ($library->maxHoldCancellationDate * 24 * 60 * 60);
 							$cancelDateTimestamp = strtotime($cancelDate);
 
 							if ($cancelDateTimestamp > $maxAllowedTimestamp) {
@@ -993,18 +993,17 @@ class Record_AJAX extends Action {
 									]),
 									'message' => translate([
 										'text' => 'The cancellation date cannot be more than %1% days from today.',
-										1 => $homeLibrary->maxHoldCancellationDate,
+										1 => $library->maxHoldCancellationDate,
 										'isPublicFacing' => true,
 									]),
 								];
 							}
 						}
 					} else {
-						if ($homeLibrary->defaultNotNeededAfterDays <= 0) {
+						if ($library->defaultNotNeededAfterDays <= 0) {
 							$cancelDate = null;
 						} else {
-							//Default to a date based on the default not needed after days in the library configuration.
-							$nnaDate = time() + $homeLibrary->defaultNotNeededAfterDays * 24 * 60 * 60;
+							$nnaDate = time() + $library->defaultNotNeededAfterDays * 24 * 60 * 60;
 							$cancelDate = date('Y-m-d', $nnaDate);
 						}
 					}
@@ -1151,7 +1150,7 @@ class Record_AJAX extends Action {
 						}
 
 						$interface->assign('confirmationNeeded', $confirmationNeeded);
-
+						$homeLibrary = $user->getHomeLibrary();
 						$canUpdateContactInfo = $homeLibrary->allowProfileUpdates == 1;
 						// Set the update permission based on active library's settings. Or allow by default.
 						$canChangeNoticePreference = $homeLibrary->showNoticeTypeInProfile == 1;
