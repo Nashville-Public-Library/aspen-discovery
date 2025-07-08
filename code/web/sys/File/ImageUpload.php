@@ -236,7 +236,7 @@ class ImageUpload extends DataObject {
 				}
 				$xLargeFile = $xLargeFilePath . $this->fullSizePath;
 				if (!empty($_FILES['fullSizePath']['full_path'])) {
-					$prevUpload = $xLargeFilePath . $_FILES['fullSizePath']['full_path'];
+					$prevUpload = $xLargeFilePath . "Temp_" . $_FILES['fullSizePath']['full_path'];
 					if (file_exists($prevUpload)) {
 						unlink($prevUpload);
 					}
@@ -252,7 +252,7 @@ class ImageUpload extends DataObject {
 				}
 				$largeFile = $largeFilePath . $this->fullSizePath;
 				if (!empty($_FILES['fullSizePath']['full_path'])) {
-					$prevUpload = $largeFilePath . $_FILES['fullSizePath']['full_path'];
+					$prevUpload = $largeFilePath . "Temp_" . $_FILES['fullSizePath']['full_path'];
 					if (file_exists($prevUpload)) {
 						unlink($prevUpload);
 					}
@@ -268,7 +268,7 @@ class ImageUpload extends DataObject {
 				}
 				$mediumFile = $mediumFilePath . $this->fullSizePath;
 				if (!empty($_FILES['fullSizePath']['full_path'])) {
-					$prevUpload = $mediumFilePath . $_FILES['fullSizePath']['full_path'];
+					$prevUpload = $mediumFilePath . "Temp_" . $_FILES['fullSizePath']['full_path'];
 					if (file_exists($prevUpload)) {
 						unlink($prevUpload);
 					}
@@ -284,7 +284,7 @@ class ImageUpload extends DataObject {
 				}
 				$smallFile = $smallFilePath . $this->fullSizePath;
 				if (!empty($_FILES['fullSizePath']['full_path'])) {
-					$prevUpload = $smallFilePath . $_FILES['fullSizePath']['full_path'];
+					$prevUpload = $smallFilePath . "Temp_" . $_FILES['fullSizePath']['full_path'];
 					if (file_exists($prevUpload)) {
 						unlink($prevUpload);
 					}
