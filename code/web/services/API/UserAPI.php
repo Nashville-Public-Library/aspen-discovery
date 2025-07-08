@@ -6599,6 +6599,9 @@ class UserAPI extends AbstractAPI {
 			$materialsRequest->dateUpdated = time();
 
 			if($materialsRequest->insert()) {
+				require_once ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequestUsage.php';
+				MaterialsRequestUsage::incrementStat($materialsRequest->status, $materialsRequest->libraryId);
+
 				return [
 					'success' => true,
 					'title' => 'Success',
