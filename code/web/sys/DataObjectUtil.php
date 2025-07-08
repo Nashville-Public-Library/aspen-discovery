@@ -418,7 +418,7 @@ class DataObjectUtil {
 						}
 					}
 					if (isset($property['storagePath'])) {
-						$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : $_FILES[$propertyName]["name"];
+						$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : "Temp_".$_FILES[$propertyName]["name"];
 						$destFolder = $property['storagePath'];
 						$destFullPath = $destFolder . '/' . $destFileName;
 						$copyResult = copy($_FILES[$propertyName]["tmp_name"], $destFullPath);
@@ -427,14 +427,14 @@ class DataObjectUtil {
 						$logger->log("Creating thumbnails for $propertyName", Logger::LOG_DEBUG);
 						if (isset($property['path'])) {
 							$destFolder = $property['path'];
-							$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : $_FILES[$propertyName]["name"];
+							$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : "Temp_".$_FILES[$propertyName]["name"];
 							if (!file_exists($destFolder)) {
 								mkdir($destFolder, 0755, true);
 							}
 							$pathToThumbs = $destFolder . '/thumbnail';
 							$pathToMedium = $destFolder . '/medium';
 						} else {
-							$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : $_FILES[$propertyName]["name"];
+							$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : "Temp_".$_FILES[$propertyName]["name"];
 							$destFolder = $configArray['Site']['local'] . '/files/original';
 							$pathToThumbs = $configArray['Site']['local'] . '/files/thumbnail';
 							$pathToMedium = $configArray['Site']['local'] . '/files/medium';
@@ -442,7 +442,7 @@ class DataObjectUtil {
 
 						$destFullPath = $destFolder . '/' . $destFileName;
 						//check for previous upload that needs to be overwritten to new naming convention
-						$prevUpload = $destFolder . '/' . $_FILES[$propertyName]["name"];
+						$prevUpload = $destFolder . '/' . "Temp_" . $_FILES[$propertyName]["name"];
 						if (file_exists($prevUpload)) {
 							rename($prevUpload, $destFullPath);
 						}
@@ -500,7 +500,7 @@ class DataObjectUtil {
 					$fileType = ".pdf";
 					//Copy the full image to the correct location
 					//Filename is the name of the object + the original filename
-					$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : $_FILES[$propertyName]["name"];
+					$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : "Temp_".$_FILES[$propertyName]["name"];
 					$destFolder = $property['path'];
 					if (!file_exists($destFolder)) {
 						mkdir($destFolder, 0775, true);
@@ -513,7 +513,7 @@ class DataObjectUtil {
 
 					$destFullPath = $destFolder . '/' . $destFileName;
 					//check for previous upload that needs to be overwritten to new naming convention
-					$prevUpload = $destFolder . '/' . $_FILES[$propertyName]["name"];
+					$prevUpload = $destFolder . '/' . "Temp_" . $_FILES[$propertyName]["name"];
 					if (file_exists($prevUpload)) {
 						rename($prevUpload, $destFullPath);
 						// Remove any old thumbnail for this PDF.
