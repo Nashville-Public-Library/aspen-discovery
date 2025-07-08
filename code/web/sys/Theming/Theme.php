@@ -553,8 +553,8 @@ class Theme extends DataObject {
 	public $placardImageMaxHeight;
 
 
-	private $_libraries;
-	private $_locations;
+	protected $_libraries;
+	protected $_locations;
 
 	public function getNumericColumnNames(): array {
 		return [
