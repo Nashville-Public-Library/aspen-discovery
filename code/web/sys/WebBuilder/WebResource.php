@@ -26,7 +26,7 @@ class WebResource extends DB_LibraryLinkedObject {
 	public $lastUpdate;
 	public $generatePlacard;
 
-	private $_allowAccessByLibrary;
+	protected $_allowAccessByLibrary;
 
 	protected $_audiences;
 	protected $_categories;
