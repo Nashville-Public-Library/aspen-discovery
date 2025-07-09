@@ -618,6 +618,7 @@
 			"timeout": 600,
 			"tests": [
 				"030-place-hold",
+				"034-view-hold",
 				"035-freeze-hold",
 				"036-thaw-hold",
 				"037-change-pickup-location",
