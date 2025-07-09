@@ -23,7 +23,7 @@ class DataObjectUtil {
 		return $interface->fetch('DataObjectUtil/objectEditForm.tpl');
 	}
 
-	static function getFormContentType(array $structure, ?string $contentType = null) : string {
+	static function getFormContentType(array $structure, ?string $contentType = null) : ?string {
 		if ($contentType != null) {
 			return $contentType;
 		}
