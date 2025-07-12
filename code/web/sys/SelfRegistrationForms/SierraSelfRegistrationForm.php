@@ -23,6 +23,7 @@ class SierraSelfRegistrationForm extends DataObject {
 	public $selfRegGuardianField;
 	public $selfRegEmailBarcode;
 	public $selfRegNoDuplicateCheck;
+	public $selfRegUseAgency;
 
 
 	private $_fields;
@@ -177,6 +178,14 @@ class SierraSelfRegistrationForm extends DataObject {
 					't' => 'Text'
 				],
 				'default' => '-'
+			],
+			'selfRegUseAgency' => [
+				'property' => 'selfRegUseAgency',
+				'type' => 'checkbox',
+				'label' => 'Use patron agency',
+				'description' => "This field (158) is only available with the Sierra Consortium Management Extension and should be turned off otherwise",
+				'hideInLists' => true,
+				'default' => 0,
 			],
 			'selfRegAgency' => [
 				'property' => 'selfRegAgency',

@@ -1995,11 +1995,13 @@ class Sierra extends Millennium {
 					'label' => 'Notice Preference',
 					'value' => $selfRegistrationForm->selfRegNoticePref
 				],
-				'158' => [
+			];
+			if ($selfRegistrationForm->selfRegUseAgency) {
+				$params['fixedFields']['158'] = [
 					'label' => 'Patron Agency',
 					'value' => $selfRegistrationForm->selfRegAgency
-				],
-			];
+				];
+			}
 		}
 		if (!$selfRegistrationForm->selfRegNoDuplicateCheck) {
 			if ($this->checkForDuplicateUsers($_REQUEST['lastName'], $_REQUEST['firstName'], $params['birthDate'])) {

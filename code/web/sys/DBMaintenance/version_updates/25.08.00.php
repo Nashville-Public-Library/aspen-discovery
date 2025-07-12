@@ -20,7 +20,8 @@ function getUpdates25_08_00(): array {
 			'description' => 'Add new settings to Sierra Self Registration',
 			'continueOnError' => false,
 			'sql' => [
-				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegNoDuplicateCheck TINYINT(1) DEFAULT 0'
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegNoDuplicateCheck TINYINT(1) DEFAULT 0',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegUseAgency TINYINT(1) DEFAULT 0'
 			]
 		], //sierra_self_reg_enhancements
 
