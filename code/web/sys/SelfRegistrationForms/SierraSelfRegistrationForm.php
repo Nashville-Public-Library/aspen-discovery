@@ -22,6 +22,7 @@ class SierraSelfRegistrationForm extends DataObject {
 	public $selfRegAgency;
 	public $selfRegGuardianField;
 	public $selfRegEmailBarcode;
+	public $selfRegNoDuplicateCheck;
 
 
 	private $_fields;
@@ -198,6 +199,14 @@ class SierraSelfRegistrationForm extends DataObject {
 				'type' => 'checkbox',
 				'label' => 'Use Email for Barcode',
 				'description' => "Use user's email for their barcode",
+				'hideInLists' => true,
+				'default' => 0,
+			],
+			'selfRegNoDuplicateCheck' => [
+				'property' => 'selfRegNoDuplicateCheck',
+				'type' => 'checkbox',
+				'label' => 'Turn Off Duplicate Checking',
+				'description' => "Do not check if a user with the same first name, last name, and birth date already exists",
 				'hideInLists' => true,
 				'default' => 0,
 			],

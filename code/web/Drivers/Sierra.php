@@ -2001,6 +2001,17 @@ class Sierra extends Millennium {
 				],
 			];
 		}
+		if (!$selfRegistrationForm->selfRegNoDuplicateCheck) {
+			if ($this->checkForDuplicateUsers($_REQUEST['lastName'], $_REQUEST['firstName'], $params['birthDate'])) {
+				return [
+					'success' => false,
+					'message' => translate([
+						'text' => "It looks like you already have an account with the library. Please sign in with your library card. If you believe you're receiving this message in error, please contact the library.",
+						'isPublicFacing' => true
+					])
+				];
+			}
+		}
 
 		$sierraUrl = $this->accountProfile->vendorOpacUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/";
 		$this->_postPage('sierra.createPatron', $sierraUrl, json_encode($params));
@@ -2034,6 +2045,22 @@ class Sierra extends Millennium {
 			$attempts++;
 		}
 		return $foundValidBarcode ? $barcode : null;
+	}
+
+	private function checkForDuplicateUsers($lastName, $firstName, $birthDate): bool {
+		$sierraDnaConnection = $this->connectToSierraDNA();
+
+		$getDuplicatePatronsStmt = "SELECT prf.last_name, prf.first_name, pr.birth_date_gmt FROM sierra_view.patron_record_fullname AS prf LEFT JOIN sierra_view.patron_record AS pr ON prf.patron_record_id = pr.id WHERE UPPER(prf.last_name) = $1 AND UPPER(prf.first_name) = $2 AND pr.birth_date_gmt = $3";
+
+		$getPatronsRS = pg_query_params($sierraDnaConnection, $getDuplicatePatronsStmt, [strtoupper(trim($lastName)), strtoupper(trim($firstName)), $birthDate]);
+		//$getPatronsRS = pg_query_params($sierraDnaConnection, $getDuplicatePatronsStmt, []);
+		if ($getPatronsRS === false || pg_num_rows($getPatronsRS) === 0) {
+			// No duplicate patrons
+			return false;
+		} else {
+			// Found one or more duplicates
+			return true;
+		}
 	}
 
 	public function getFines($patron = null, $includeMessages = false): array {
