@@ -740,24 +740,38 @@ AspenDiscovery.CommunityEngagement = function() {
 				new Promise(resolve => AspenDiscovery.CommunityEngagement.loadCheckoutsForUser(userId, resolve)),
 				new Promise(resolve => AspenDiscovery.CommunityEngagement.loadHoldsForUser(userId, resolve))
 			]).then(() => {
-			const refreshUrl = Globals.path + "/CommunityEngagement/AJAX";
-			const refreshParams = {
-				method: 'filterCampaigns',
-				filterType: 'user',
-				userId: userId
-			};
+				const refreshUrl = Globals.path + "/CommunityEngagement/AJAX";
+				const refreshParams = {
+					method: 'filterCampaigns',
+					filterType: 'user',
+					userId: userId
+				};
 
-			$.getJSON(refreshUrl, refreshParams, function(refreshData) {
-			if (refreshData.success && refreshData.html) {
-				$("#filteredCampaign").html(refreshData.html);
-			} else {
-				AspenDiscovery.showMessage('Error', 'Failed to refresh campaign data.');
-			}
+				$.getJSON(refreshUrl, refreshParams, function(refreshData) {
+					if (refreshData.success && refreshData.html) {
+						$("#filteredCampaign").html(refreshData.html);
+					} else {
+						AspenDiscovery.showMessage('Error', 'Failed to refresh campaign data.');
+					}
+				});
+			}).catch(() => {
+				AspenDiscovery.showMessage('Error', 'Failed to load user data.');
 			});
-		}).catch(() => {
-			AspenDiscovery.showMessage('Error', 'Failed to load user data.');
-		});
+		},
+		displayExtraCreditBentoBox: function () {
+			let addExtraCreditActivities = document.getElementById('addExtraCreditActivities');
+			let extraCreditBentoBox = document.getElementById('propertyRowavailableExtraCreditActivities');
+
+
+
+			if (addExtraCreditActivities && addExtraCreditActivities.checked) {
+				extraCreditBentoBox.style.display = '';
+
+			} else {
+				extraCreditBentoBox.style.display = 'none';
+			}
 		}
+		
 	}
 	
 }(AspenDiscovery.CommunityEngagement || {});
