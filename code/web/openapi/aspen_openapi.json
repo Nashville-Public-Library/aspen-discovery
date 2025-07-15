@@ -59,6 +59,62 @@
     }
   ],
   "paths": {
+      "/ListAPI?method=getListTitles": {
+      "get": {
+        "tags": ["ListAPI"],
+        "summary": "Get information of a list",
+        "description": "Returns list of items and list metadata about a particular list made by a patron or staff.",
+        "parameters": [
+          {
+            "in" : "query",
+            "name": "formId",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The ID of the list to return information about",
+            "example": "42"
+          }, 
+          {
+            "in" : "query",
+            "name": "numTitles",
+            "schema": {
+              "type": "integer", 
+              "default": "25"
+            },
+            "description": "The number of results within the list to return",
+            "example": "42"
+          },
+          {
+            "in" : "query",
+            "name": "page",
+            "schema": {
+              "type": "integer", 
+              "default": "1"
+            },
+            "description": "The page of Results to return (rephrase)",
+            "example": "4"
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAPIResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
     "/SystemAPI?method=getLocalIllForm": {
       "get": {
         "tags": ["SystemAPI"],
@@ -302,6 +358,47 @@
               "required" : {
                 "type": "boolean",
                 "description": "Whether the field must be filled out by the patron"
+              }
+            }
+          }
+        }
+      },
+      "ListAPIResult": {
+        "type": "object",
+        "properties": {
+          "result" : {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "description": "Whether the user method was successful or not",
+                "example": "true"
+              },
+              "listTitle": {
+                "type": "string",
+                "description": "Title of the user's list"
+              },
+              "listDescription": {
+                "type": "string",
+                "nullable": "true",
+                "description": "List description"
+              },
+              "defaultSort": {
+                "type": "string",
+                "description": "Unknown"
+              },
+              "totalResults": {
+                "type": "string",
+                "nullable": "true",
+                "description": "Number of results, but stored as a string"
+              },
+              "titles": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FormFieldResult"
+                },
+                "nullable": "true",
+                "description": "An array of field information to be displayed"
               }
             }
           }
