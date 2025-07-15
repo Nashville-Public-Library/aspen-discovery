@@ -1838,7 +1838,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 				'body' => '<div><div id="descriptionPlaceholder">' . translate([
 						'text' => 'Loading Description...',
 						'isPublicFacing' => true,
-					]) . '</div><div id="agrDescription">' . $this->get880Description() . '</div>',
+					]) . '</div><div id="agrDescription">' . $this->get880Description() . '</div></div>',
 				'hideByDefault' => false,
 				'openByDefault' => true,
 			];
