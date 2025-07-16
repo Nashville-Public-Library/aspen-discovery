@@ -363,8 +363,40 @@
           }
         }
       },
-      "ListAPIResult": {
+      "ListAPIItemResult": {
         "type": "object",
+        "properties": {
+          "author": {
+                "type": "string",
+                "description": "Author of the work"
+          }, 
+                "description": {
+                "type": "string",
+                "description": "brief synopsis of book"
+          },
+           "id": {
+                "type": "string",
+                "description": "Unique ID"
+          },
+          "image": {
+                "type": "string",
+                "description": "URL partial for an image of 200px height"
+          }, 
+          "small_image": {
+                "type": "string",
+                "description": "URL partial for an image of 100px height"
+          }, 
+          "title": {
+                "type": "string",
+                "description": "Title of the work"
+          }, 
+          "titleURL": {
+                "type": "string",
+                "description": "Full URL to access the title in the catalog "
+          }
+        }
+      },
+      "ListAPIResult": {
         "properties": {
           "result" : {
             "type": "object",
@@ -395,10 +427,19 @@
               "titles": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/FormFieldResult"
+                  "$ref": "#/components/schemas/ListAPIItemResult"
                 },
                 "nullable": "true",
                 "description": "An array of field information to be displayed"
+              }, 
+              "page_current": {
+                "type": "integer", 
+                "description": "The current page of ", 
+                "default": 1
+              },
+              "page_total": {
+                "type": "integer", 
+                "description": "Total pages of results for this list; This is also the number of API calls required to obtain all items in the specified list"
               }
             }
           }
