@@ -11218,7 +11218,7 @@ AspenDiscovery.Admin = (function () {
 			}
 			return false;
 		},
-			displayDigitalRewardPlaceholderUpload: function () {
+		displayDigitalRewardPlaceholderUpload: function () {
 			const placeholderImageUpload = $('#propertyRowdigitalRewardPlaceholderImage');
 			const digitalRewardControl = $('#displayDigitalRewardOnlyWhenAwarded');
 			const displayOnRewardOnlyIsChecked = digitalRewardControl.is(':checked');
@@ -11228,6 +11228,17 @@ AspenDiscovery.Admin = (function () {
 			} else {
 				placeholderImageUpload.hide();
 			}
+		},
+		highlightCampaignsOpenToEnroll: function() {
+			const highlightOpenToEnrollCampaigns = $('#propertyRowhighlightCommunityEngagementOpenToEnroll');
+			const highlightCampaigns = $('#highlightCommunityEngagement');
+			const isChecked = highlightCampaigns.is(':checked');
+
+				if (isChecked) {
+					highlightOpenToEnrollCampaigns.show();
+				} else {
+					highlightOpenToEnrollCampaigns.hide();
+				}
 		}
 	};
 }(AspenDiscovery.Admin || {}));
