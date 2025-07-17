@@ -467,6 +467,7 @@ class Library extends DataObject {
 	public $communityEngagementAdminUserSelect;
 	public $displayOnlyUsersForLocationInUserAdmin;
 	public $allowAdminToEnrollUsersInAdminView;
+	public $displayDigitalRewardOnlyWhenAwarded;
 
 	//SHAREit
 	public $repeatInShareIt;
@@ -3884,6 +3885,14 @@ class Library extends DataObject {
 						'description' => 'Whether to display only the users who have their home location set to the current library when searching bu user in the admin view',
 						'default' => 0,
 						'hideInLists' => true,
+					],
+					'displayDigitalRewardOnlyWhenAwarded' => [
+						'property' => 'displayDigitalRewardOnlyWhenAwarded',
+						'type' => 'checkbox',
+						'label' => 'Display Digital Reward Only When Awarded',
+						'description' => 'Whether to always display the reward or display only on competion of milestone or campaign',
+						'hideInLists' => true,
+						'default' => 0,
 					],
 					'sendStaffEmailOnCampaignCompletion' => [
 						'property' => 'sendStaffEmailOnCampaignCompletion',
