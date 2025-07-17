@@ -1390,6 +1390,10 @@ class Campaign extends DataObject {
 				continue;
 			}
 
+			if (!$campaign->isActive && !$campaign->isUpcoming) {
+				continue;
+			}
+
 			if ($campaign->isUserEnrolled($userId)) {
 				continue;
 			}
