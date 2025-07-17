@@ -255,7 +255,7 @@ class SideLoadedEContentProcessor extends MarcRecordProcessor{
 							econtentRecord.setFormatBoost(10);
 						}
 					} else {
-                        logger.warn("Could not find appropriate eContent format for {} while side loading eContent {}.", format, econtentRecord.getFullIdentifier());
+						logger.warn("Could not find appropriate eContent format for {} while side loading eContent {}.", format, econtentRecord.getFullIdentifier());
 					}
 				}
 			}else{
