@@ -3,6 +3,7 @@ package org.aspen_discovery.reindexer;
 import com.turning_leaf_technologies.indexing.*;
 import com.turning_leaf_technologies.marc.MarcUtil;
 import org.apache.logging.log4j.Logger;
+import org.marc4j.marc.ControlField;
 import org.marc4j.marc.DataField;
 import org.marc4j.marc.Subfield;
 
@@ -243,8 +244,18 @@ class SideLoadedEContentProcessor extends MarcRecordProcessor{
 						econtentItem.setFormat("eComic");
 						econtentItem.setFormatCategory("eBook");
 						econtentRecord.setFormatBoost(8);
+					} else if (format.equalsIgnoreCase("online_resource")) {
+						if (isVideoResource(record)) {
+							econtentItem.setFormat("eVideo");
+							econtentItem.setFormatCategory("Movies");
+							econtentRecord.setFormatBoost(10);
+						} else {
+							econtentItem.setFormat("eBook");
+							econtentItem.setFormatCategory("eBook");
+							econtentRecord.setFormatBoost(10);
+						}
 					} else {
-						logger.warn("Could not find appropriate eContent format for " + format + " while side loading eContent " + econtentRecord.getFullIdentifier());
+                        logger.warn("Could not find appropriate eContent format for {} while side loading eContent {}.", format, econtentRecord.getFullIdentifier());
 					}
 				}
 			}else{
@@ -285,5 +296,50 @@ class SideLoadedEContentProcessor extends MarcRecordProcessor{
 		}else{
 			return null;
 		}
+	}
+
+	/**
+	 * Check if a MARC record represents a video resource based on various indicators.
+	 *
+	 * @param record Side loaded MARC record to be checked.
+	 * @return True if the MARC record is a video resource, false otherwise.
+	 */
+	private boolean isVideoResource(org.marc4j.marc.Record record) {
+		// Check 007 field for video indicators.
+		List<ControlField> fields007 = record.getControlFields(7);
+		for (ControlField field : fields007) {
+			if (field.getData() != null && !field.getData().isEmpty()) {
+				char materialType = field.getData().charAt(0);
+				if (materialType == 'v' || materialType == 'V') {
+					return true;
+				}
+			}
+		}
+		
+		// Check 336 field for RDA content type indicators.
+		List<DataField> fields336 = MarcUtil.getDataFields(record, 336);
+		for (DataField field : fields336) {
+			Subfield subfieldA = field.getSubfield('a');
+			if (subfieldA != null) {
+				String contentType = subfieldA.getData().toLowerCase();
+				if (contentType.contains("moving image") || contentType.contains("video")) {
+					return true;
+				}
+			}
+		}
+		
+		// Check 300$a for video file indicators.
+		List<DataField> fields300 = MarcUtil.getDataFields(record, 300);
+		for (DataField field : fields300) {
+			Subfield subfieldA = field.getSubfield('a');
+			if (subfieldA != null) {
+				String physicalDesc = subfieldA.getData().toLowerCase();
+				if (physicalDesc.contains("video")) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 }
