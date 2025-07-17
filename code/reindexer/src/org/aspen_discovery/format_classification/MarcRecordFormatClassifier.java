@@ -145,7 +145,7 @@ public class MarcRecordFormatClassifier {
 		getFormatFromPublicationInfo(groupedWork, record, printFormats);
 		getFormatFromNotes(groupedWork, record, printFormats);
 		getFormatFromEdition(groupedWork, record, printFormats);
-		getFormatFromPhysicalDescription(groupedWork, record, printFormats);
+		getFormatFromPhysicalDescription(groupedWork, record, printFormats, settings);
 		getFormatFromSubjects(groupedWork, record, printFormats);
 		getFormatFromTitle(groupedWork, record, printFormats);
 		getFormatFromDigitalFileCharacteristics(groupedWork, record, printFormats);
@@ -213,7 +213,7 @@ public class MarcRecordFormatClassifier {
 	Pattern pagesPattern = Pattern.compile("^.*?\\d+\\s+(p\\.|pages|v\\.|volume|volumes).*$");
 	Pattern pagesPattern2 = Pattern.compile("^.*?\\b\\d+\\s+(p\\.|pages|v\\.|volume|volumes)\\b.*");
 	Pattern kitPattern = Pattern.compile(".*\\bkit\\b.*");
-	public void getFormatFromPhysicalDescription(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, Set<String> result) {
+	public void getFormatFromPhysicalDescription(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, Set<String> result, BaseIndexingSettings settings) {
 		List<DataField> physicalDescriptions = MarcUtil.getDataFields(record, 300);
 		for (DataField field : physicalDescriptions) {
 			List<Subfield> subFields = field.getSubfields();
@@ -268,8 +268,8 @@ public class MarcRecordFormatClassifier {
 								result.add("SoundDisc");
 							}
 						}
-					} else if (subfield.getCode() == 'a' && physicalDescriptionData.contains("online resource")) {
-						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format online_resource based on 300$a Physical Description", 2);}
+					} else if (subfield.getCode() == 'a' && physicalDescriptionData.contains("online resource") && settings instanceof IndexingProfile) {
+						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format online_resource based on 300$a Physical Description (ILS records only).", 2);}
 						result.add("online_resource");
 					} else if (subfield.getCode() == 'a' && (pagesPattern2.matcher(physicalDescriptionData).matches())){
 						Subfield subfieldE = field.getSubfield('e');
