@@ -101,6 +101,13 @@ function getUpdates25_08_00(): array {
 				"ALTER TABLE library ADD COLUMN allowAdminToEnrollUsersInAdminView TINYINT(1) DEFAULT 0",
 			],
 		], //allow_admin_to_enroll_users_via_admin_view
+		'add_admin_control_over_digital_reward_display' => [
+			'title' => 'Add Admin Control Over Digital Reward Display',
+			'description' => 'Add the option for libraries to choose whether the digital reward displays all the time or only once awarded',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN displayDigitalRewardOnlyWhenAwarded TINYINT(1) DEFAULT 0",
+			]
+		], //add_admin_control_over_digital_reward_display
 
 		//chloe - Open Fifth
 
