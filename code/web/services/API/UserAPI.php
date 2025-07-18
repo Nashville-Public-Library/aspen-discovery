@@ -6770,15 +6770,17 @@ class UserAPI extends AbstractAPI {
 	 */
 	function updateHoldPickupPreferences(): array {
 		$user = $this->getUserForApiCall();
+		global $logger;
 		if ($user && !($user instanceof AspenError)) {
-			global $library;
+			$library = $user->getHomeLibrary();
 
 			$message = '';
 			$errMessage = '';
 			$errCount = 0;
 
 			if (isset($_REQUEST['rememberHoldPickupLocation']) && $library->allowRememberPickupLocation) {
-				$user->setRememberHoldPickupLocation($_REQUEST['rememberHoldPickupLocation']);
+				$rememberHoldPickupLocationValue = (int) filter_var($_REQUEST['rememberHoldPickupLocation'], FILTER_VALIDATE_BOOLEAN);
+				$user->setRememberHoldPickupLocation($rememberHoldPickupLocationValue);
 			}
 
 			if ($library->allowPickupLocationUpdates) {
@@ -6821,8 +6823,8 @@ class UserAPI extends AbstractAPI {
 					$pickupLocation = new Location();
 					$pickupLocation->code = $_REQUEST['myLocation1Id'];
 					if ($pickupLocation->find(true)) {
-						if ($pickupLocation->locationId != $user->pickupLocationId) {
-							$user->myLocation1Id = $pickupLocation->locationId;
+						if ($pickupLocation->locationId != $user->myLocation1Id) {
+							$user->setMyLocation1Id($pickupLocation->locationId);
 						}
 					} else {
 						$errCount++;
@@ -6837,8 +6839,8 @@ class UserAPI extends AbstractAPI {
 					$pickupLocation = new Location();
 					$pickupLocation->code = $_REQUEST['myLocation2Id'];
 					if ($pickupLocation->find(true)) {
-						if ($pickupLocation->locationId != $user->pickupLocationId) {
-							$user->myLocation2Id = $pickupLocation->locationId;
+						if ($pickupLocation->locationId != $user->myLocation2Id) {
+							$user->setMyLocation2Id($pickupLocation->locationId);
 						}
 					} else {
 						$errCount++;
