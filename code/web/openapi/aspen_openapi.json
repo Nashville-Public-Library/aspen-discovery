@@ -378,7 +378,8 @@
         "properties": {
           "author": {
             "type": "string",
-            "description": "Author of the work"
+            "description": "Author of the work", 
+            "example": "Ellison, Ralph"
           },
           "description": {
             "type": "string",
@@ -389,7 +390,13 @@
             "description": "mediums (book, e-book, cassette) that the work is available",
             "items": {
               "type": "string"
-            }
+            }, 
+            "example": [
+                    "Book",
+                    "eAudiobook",
+                    "Audiobook CD",
+                    "eBook"
+                ]
           },
           "id": {
             "type": "string",
@@ -414,17 +421,22 @@
             "type": "string",
             "description": "publisher of the work"
           },
+          "recordType": {
+            "type": "string",
+            "description": "TO ADD, typically grouped_work"
+          },
           "small_image": {
             "type": "string",
             "description": "URL partial for an image of 100px height"
           },
           "title": {
             "type": "string",
-            "description": "Title of the work"
+            "description": "Title of the work",
+            "example": "Invisible Man"
           },
           "titleURL": {
             "type": "string",
-            "description": "Full URL to access the title in the catalog "
+            "description": "Full URL to access the title in the catalog"
           }
         }
       },
@@ -440,7 +452,8 @@
               },
               "listTitle": {
                 "type": "string",
-                "description": "Title of the user's list"
+                "description": "Title of the user's list", 
+                "example": "Recommended Reads of Summer Classics"
               },
               "listDescription": {
                 "type": "string",
