@@ -1,6 +1,6 @@
 {
-  "openapi" : "3.1.0",
-  "info" : {
+  "openapi": "3.1.0",
+  "info": {
     "title": "Aspen Discovery API",
     "version": "1.0.0",
     "license": {
@@ -59,44 +59,46 @@
     }
   ],
   "paths": {
-      "/ListAPI?method=getListTitles": {
+    "/ListAPI?method=getListTitles": {
       "get": {
-        "tags": ["ListAPI"],
+        "tags": [
+          "ListAPI"
+        ],
         "summary": "Get information of a list",
         "description": "Returns list of items and list metadata about a particular list made by a patron or staff.",
         "parameters": [
           {
-            "in" : "query",
-            "name": "formId",
+            "in": "query",
+            "name": "id",
             "schema": {
               "type": "integer"
             },
             "description": "The ID of the list to return information about",
             "example": "42"
-          }, 
+          },
           {
-            "in" : "query",
+            "in": "query",
             "name": "numTitles",
             "schema": {
-              "type": "integer", 
+              "type": "integer",
               "default": "25"
             },
-            "description": "The number of results within the list to return",
+            "description": "The number of work/titles within the list to return",
             "example": "42"
           },
           {
-            "in" : "query",
+            "in": "query",
             "name": "page",
             "schema": {
-              "type": "integer", 
+              "type": "integer",
               "default": "1"
             },
             "description": "The page of Results to return (rephrase)",
             "example": "4"
           }
         ],
-        "responses" : {
-          "200" : {
+        "responses": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -117,12 +119,14 @@
     },
     "/SystemAPI?method=getLocalIllForm": {
       "get": {
-        "tags": ["SystemAPI"],
+        "tags": [
+          "SystemAPI"
+        ],
         "summary": "Get Local ILL Form",
         "description": "Returns information needed to display a Local ILL Form to the user.",
         "parameters": [
           {
-            "in" : "query",
+            "in": "query",
             "name": "formId",
             "schema": {
               "type": "integer"
@@ -131,8 +135,8 @@
             "example": "1"
           }
         ],
-        "responses" : {
-          "200" : {
+        "responses": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -153,11 +157,13 @@
     },
     "/UserAPI?method=isLoggedIn": {
       "get": {
-        "tags": ["UserAPI"],
+        "tags": [
+          "UserAPI"
+        ],
         "summary": "Login status",
         "description": "Determines if a user is logged in based on session information in the active browser. Typically not useful because the calling application will not be using the same browser as the patron.",
-        "responses" : {
-          "200" : {
+        "responses": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -177,13 +183,15 @@
       }
     },
     "/UserAPI?method=login": {
-      "post" : {
-        "tags": ["UserAPI"],
+      "post": {
+        "tags": [
+          "UserAPI"
+        ],
         "summary": "Login user",
         "description": "Logs in the user, sets a cookie indicating that the user is logged in, and returns the session_id for the new session. In general, this method is only useful when called from Aspen itself or from files that share cookies with the Aspen server.",
         "parameters": [
           {
-            "in" : "query",
+            "in": "query",
             "name": "username",
             "schema": {
               "type": "string"
@@ -192,7 +200,7 @@
             "example": "23025003575917"
           },
           {
-            "in" : "query",
+            "in": "query",
             "name": "password",
             "schema": {
               "type": "string"
@@ -222,13 +230,15 @@
       }
     },
     "/UserAPI?method=submitLocalIllRequest": {
-      "post" : {
-        "tags": ["UserAPI"],
+      "post": {
+        "tags": [
+          "UserAPI"
+        ],
         "summary": "Submit Local ILL Request",
         "description": "Submits a Local ILL Request for the user.",
         "parameters": [
           {
-            "in" : "query",
+            "in": "query",
             "name": "username",
             "schema": {
               "type": "string"
@@ -237,7 +247,7 @@
             "example": "23025003575917"
           },
           {
-            "in" : "query",
+            "in": "query",
             "name": "password",
             "schema": {
               "type": "string"
@@ -303,7 +313,7 @@
       "BasicResult": {
         "type": "object",
         "properties": {
-          "result" : {
+          "result": {
             "type": "boolean"
           }
         }
@@ -311,7 +321,7 @@
       "BasicAPIResult": {
         "type": "object",
         "properties": {
-          "result" : {
+          "result": {
             "success": {
               "type": "boolean",
               "description": "Whether the user method was successful or not",
@@ -332,7 +342,7 @@
       "FormFieldResult": {
         "type": "object",
         "properties": {
-          "result" : {
+          "result": {
             "type": "object",
             "properties": {
               "type": {
@@ -351,11 +361,11 @@
                 "type": "string",
                 "description": "The label for the field"
               },
-              "description" : {
+              "description": {
                 "type": "string",
                 "description": "The description for the field, can be shown as a tooltip or under the field"
               },
-              "required" : {
+              "required": {
                 "type": "boolean",
                 "description": "Whether the field must be filled out by the patron"
               }
@@ -367,38 +377,60 @@
         "type": "object",
         "properties": {
           "author": {
-                "type": "string",
-                "description": "Author of the work"
-          }, 
-                "description": {
-                "type": "string",
-                "description": "brief synopsis of book"
+            "type": "string",
+            "description": "Author of the work"
           },
-           "id": {
-                "type": "string",
-                "description": "Unique ID"
+          "description": {
+            "type": "string",
+            "description": "brief synopsis of book"
+          },
+          "format": {
+            "type": "array",
+            "description": "mediums (book, e-book, cassette) that the work is available",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique ID"
           },
           "image": {
-                "type": "string",
-                "description": "URL partial for an image of 200px height"
-          }, 
+            "type": "string",
+            "description": "URL partial for an image of 200px height"
+          },
+          "language": {
+            "type": "array",
+            "description": "language(s) that the work is recorded in",
+            "items": {
+              "type": "string"
+            }
+          },
+          "length": {
+            "type": "string",
+            "description": "unkwown how this is used"
+          },
+          "publisher": {
+            "type": "string",
+            "description": "publisher of the work"
+          },
           "small_image": {
-                "type": "string",
-                "description": "URL partial for an image of 100px height"
-          }, 
+            "type": "string",
+            "description": "URL partial for an image of 100px height"
+          },
           "title": {
-                "type": "string",
-                "description": "Title of the work"
-          }, 
+            "type": "string",
+            "description": "Title of the work"
+          },
           "titleURL": {
-                "type": "string",
-                "description": "Full URL to access the title in the catalog "
+            "type": "string",
+            "description": "Full URL to access the title in the catalog "
           }
         }
       },
       "ListAPIResult": {
         "properties": {
-          "result" : {
+          "result": {
             "type": "object",
             "properties": {
               "success": {
@@ -422,7 +454,7 @@
               "totalResults": {
                 "type": "string",
                 "nullable": "true",
-                "description": "Number of results, but stored as a string"
+                "description": "Number of total items in the list, stored as a string"
               },
               "titles": {
                 "type": "array",
@@ -430,15 +462,15 @@
                   "$ref": "#/components/schemas/ListAPIItemResult"
                 },
                 "nullable": "true",
-                "description": "An array of field information to be displayed"
-              }, 
+                "description": "Works/items in the list"
+              },
               "page_current": {
-                "type": "integer", 
-                "description": "The current page of ", 
+                "type": "integer",
+                "description": "The current page of the list (rephrase)",
                 "default": 1
               },
               "page_total": {
-                "type": "integer", 
+                "type": "integer",
                 "description": "Total pages of results for this list; This is also the number of API calls required to obtain all items in the specified list"
               }
             }
@@ -448,7 +480,7 @@
       "LocalIllFormResult": {
         "type": "object",
         "properties": {
-          "result" : {
+          "result": {
             "type": "object",
             "properties": {
               "success": {
@@ -490,7 +522,7 @@
       "LoginResult": {
         "type": "object",
         "properties": {
-          "result" : {
+          "result": {
             "type": "object",
             "properties": {
               "success": {
