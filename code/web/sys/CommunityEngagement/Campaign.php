@@ -1116,6 +1116,7 @@ class Campaign extends DataObject {
 					$userCampaign->campaignId = $campaign->id;
 	
 					$isEnrolled = $userCampaign->find(true);
+					$rewardGiven = (int)$userCampaign->rewardGiven;
 					$campaignReward = null;
 					$rewardDetails = $campaign->getRewardDetails();
 					if ($rewardDetails != null) {
@@ -1126,6 +1127,8 @@ class Campaign extends DataObject {
 							'rewardExists' => $rewardDetails['rewardExists'],
 							'displayName' => $rewardDetails['displayName'],
 							'rewardDescription' => $rewardDetails['rewardDescription'],
+							'awardAutomatically' =>$rewardDetails['awardAutomatically'],
+
 						];
 					}
 
@@ -1150,6 +1153,8 @@ class Campaign extends DataObject {
 						usort($progressData, function ($a, $b) {
 							return $a['checkoutDate'] <=> $b['checkoutDate'];
 						});
+
+						$milestoneRewardGiven = CampaignMilestoneUsersProgress::getRewardGivenForMilestone($milestone->id, $linkedUser->id, $campaign->id);
 
 						if ($milestoneProgress['progress'] >= 100) {
 							$numCompletedMilestones++;
@@ -1176,6 +1181,7 @@ class Campaign extends DataObject {
 							'progressBeyondOneHundredPercent' => $milestone->progressBeyondOneHundredPercent,
 							'allowPatronProgressInput' => $milestone->allowPatronProgressInput,
 							'milestoneComplete' => ($completedGoals >= $totalGoals),
+							'rewardGiven' => $milestoneRewardGiven,
 						];
 					}
 					usort($milestoneRewards, function($a, $b) {
@@ -1193,7 +1199,9 @@ class Campaign extends DataObject {
 						'numCampaignMilestones' => $numCampaignMilestones,
 						'startDate' => $startDate,
 						'endDate' => $endDate,
-						'canEnroll' => $canEnroll
+						'canEnroll' => $canEnroll,
+						'isComplete' => $numCompletedMilestones >= $numCampaignMilestones,
+						'rewardGiven' => $rewardGiven
 					];
 				}
 			}
