@@ -74,6 +74,7 @@
               "type": "integer"
             },
             "description": "The ID of the list to return information about",
+            "required": true, 
             "example": "42"
           },
           {
@@ -383,7 +384,8 @@
           },
           "description": {
             "type": "string",
-            "description": "brief synopsis of book"
+            "description": "brief synopsis of book",
+            "example": "In the course of his wanderings from a Southern Negro college to New York's Harlem, an American black man becomes involved in a series of adventures. Introduction explains circumstances under which the book was written. Ellison won the National Book Award for this searing record of a black man's journey through contemporary America. Unquestionably, Ellison's book is a work of extraordinary intensity -- powerfully imagined and written with a savage, wryly humorous gusto"
           },
           "format": {
             "type": "array",
@@ -411,8 +413,11 @@
             "description": "language(s) that the work is recorded in",
             "items": {
               "type": "string"
-            }
-          },
+            },
+            "example": [
+              "English"
+            ]
+          }, 
           "length": {
             "type": "string",
             "description": "unkwown how this is used"
@@ -422,6 +427,10 @@
             "description": "publisher of the work"
           },
           "recordType": {
+            "type": "string",
+            "description": "TO ADD, typically grouped_work"
+          },
+          "shortID": {
             "type": "string",
             "description": "TO ADD, typically grouped_work"
           },
@@ -458,16 +467,19 @@
               "listDescription": {
                 "type": "string",
                 "nullable": "true",
-                "description": "List description"
+                "description": "List description",
+                "example": "Recommended readed of classic books that taken place in the summer"
               },
               "defaultSort": {
                 "type": "string",
-                "description": "Unknown"
+                "description": "Unknown", 
+                "example": "dateAdded"
               },
               "totalResults": {
                 "type": "string",
                 "nullable": "true",
-                "description": "Number of total items in the list, stored as a string"
+                "description": "Number of total items in the list, stored as a string",
+                "example": "30"
               },
               "titles": {
                 "type": "array",
@@ -480,11 +492,13 @@
               "page_current": {
                 "type": "integer",
                 "description": "The current page of the list (rephrase)",
-                "default": 1
+                "default": 1, 
+                "example": 1
               },
               "page_total": {
                 "type": "integer",
-                "description": "Total pages of results for this list; This is also the number of API calls required to obtain all items in the specified list"
+                "description": "Total pages of results for this list; This is also the number of API calls required to obtain all items in the specified list",
+                "example": 2
               }
             }
           }
