@@ -182,6 +182,7 @@ class User extends DataObject {
 		'location' => 'location',
 		'position' => 'position',
 		'placed' => 'placed',
+		'cancelDate' => 'cancelDate'
 	];
 
 	function getNumericColumnNames(): array {
@@ -2137,27 +2138,14 @@ class User extends DataObject {
 			uasort($holdsToReturn['available'], $holdSort);
 		}
 		if (!empty($holdsToReturn['unavailable'])) {
-			switch ($unavailableSort) {
-				case 'author' :
-				case 'position' :
-				case 'status' :
-				case 'format' :
-					//This is used in the sort function
-					$indexToSortBy = $unavailableSort;
-					break;
-				case 'placed' :
-					$indexToSortBy = 'createDate';
-					break;
-				case 'libraryAccount' :
-					$indexToSortBy = 'user';
-					break;
-				case 'location' :
-					$indexToSortBy = 'pickupLocationName';
-					break;
-				case 'title' :
-				default :
-					$indexToSortBy = 'sortTitle';
-			}
+			$indexToSortBy = match ($unavailableSort) {
+				'author', 'position', 'status', 'format' => $unavailableSort,
+				'placed' => 'createDate',
+				'cancelDate' => 'automaticCancellationDate',
+				'libraryAccount' => 'user',
+				'location' => 'pickupLocationName',
+				default => 'sortTitle',
+			};
 			uasort($holdsToReturn['unavailable'], $holdSort);
 		}
 
