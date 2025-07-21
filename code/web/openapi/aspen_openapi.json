@@ -75,7 +75,7 @@
             },
             "description": "The ID of the list to return information about",
             "required": true, 
-            "example": "42"
+            "example": "44114"
           },
           {
             "in": "query",
@@ -472,8 +472,15 @@
               },
               "defaultSort": {
                 "type": "string",
-                "description": "Unknown", 
-                "example": "dateAdded"
+                "description": "order that the list's items appear, defined within the user list's settings", 
+                "example": "recentlyAdded", 
+                "default": "dateAdded",
+                "enum": [
+                  "dateAdded",
+                  "recentlyAdded",
+                  "title",
+                  "custom"
+                ]
               },
               "totalResults": {
                 "type": "string",
