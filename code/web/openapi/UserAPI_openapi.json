@@ -7,7 +7,13 @@
   },
   "servers": [
     {
-      "url": "https://aspenurl/API/UserAPI?method="
+      "url": "https://{aspenDomain}/API/UserAPI?method=",
+      "variables": {
+        "aspenDomain": {
+          "default": "example.aspendiscovery.org",
+          "description": "The URL of the Aspen instance"
+        }
+      }
     }
   ],
   "tags": [
@@ -36,8 +42,8 @@
       "description": "View fines and payment history"
     },
     {
-      "name": "Notifications",
-      "description": "Manage notification preferences and push tokens"
+      "name": "Notifications & ILS Messages",
+      "description": "Manage notification preferences, push tokens, and ILS messages"
     },
     {
       "name": "Linked Accounts",
@@ -52,36 +58,16 @@
       "description": "Miscellaneous user preferences and utility functions"
     },
     {
-      "name": "Messaging",
-      "description": "Manage ILS messaging and notifications"
-    },
-    {
-      "name": "Alternate Library Card",
-      "description": "Manage alternate library card credentials"
-    },
-    {
       "name": "Interlibrary Loan",
-      "description": "Submit and manage interlibrary loan requests"
+      "description": "Submit and manage interlibrary loan requests (ILL)"
     },
     {
       "name": "Browse Categories",
       "description": "View and manage browse categories"
     },
     {
-      "name": "LiDA",
-      "description": "LiDA mobile app integration endpoints"
-    },
-    {
-      "name": "Aspen Discovery",
-      "description": "Endpoints specific to Aspen Discovery features"
-    },
-    {
-      "name": "Aspen Discovery Staff",
-      "description": "Staff-specific endpoints for Aspen Discovery"
-    },
-    {
-      "name": "Miscellaneous",
-      "description": "Other miscellaneous functions including staff tools"
+      "name": "Aspen LiDA",
+      "description": "Endpoints for Aspen LiDA mobile app integration"
     }
   ],
   "paths": {
@@ -89,18 +75,8 @@
       "get": {
         "tags": ["Authentication & Session"],
         "summary": "Check if user is logged in",
-        "description": "Returns true/false if the user is logged in.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["isLoggedIn"]
-            }
-          }
-        ],
+        "description": "Returns whether a user is currently logged in based on session information. This method is only useful from VuFind itself or from files which can share cookies with the VuFind server.",
+        "parameters": [],
         "responses": {
           "200": {
             "description": "JSON result with login status.",
@@ -124,44 +100,32 @@
       "post": {
         "tags": ["Authentication & Session"],
         "summary": "Log in a user",
-        "description": "Log in a user with barcode and pin/password.",
+        "description": "Logs in the user and sets a cookie indicating that the user is logged in. Must be called by POSTing data to the API. This method is only useful from VuFind itself or from files which can share cookies with the VuFind server.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Login response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "result": {
-                        "type": "object",
-                        "properties": {
-                          "success": {
-                            "type": "boolean"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "session": {
-                            "type": "string"
-                          }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Login response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Jane Doe"
+                        },
+                        "session": {
+                          "type": "string",
+                          "example": "abc123xyz-session-token"
                         }
                       }
                     }
@@ -169,6 +133,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request - Invalid parameters or missing required fields.",
+            "schema": {
+              "$ref": "#/components/responses/BadRequest"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid credentials or access denied.",
+            "schema": { "$ref": "#/components/responses/Unauthorized" }
           }
         }
       }
@@ -177,18 +151,7 @@
       "get": {
         "tags": ["Authentication & Session"],
         "summary": "Log out a user",
-        "description": "Logs out the current user.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["logout"]
-            }
-          }
-        ],
+        "description": "Logs the user out of the system and clears cookies indicating that the user is logged in. This method is only useful from VuFind itself or from files which can share cookies with the VuFind server.",
         "responses": {
           "200": {
             "description": "Logout response.",
@@ -198,7 +161,8 @@
                   "type": "object",
                   "properties": {
                     "result": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "example": true
                     }
                   }
                 }
@@ -209,35 +173,30 @@
       }
     },
     "validateAccount": {
-      "get": {
+      "post": {
         "tags": ["Authentication & Session"],
         "summary": "Validate user account",
-        "description": "Validates a user account using barcode/username and pin/password.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["validateAccount"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "username",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "password",
-            "schema": {
-              "type": "string"
+        "description": "Validate whether or not an account is valid based on the barcode and pin number provided.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "127848793122"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password123"
+                  }
+                }
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "Validation result.",
@@ -250,14 +209,45 @@
                       "type": "object",
                       "properties": {
                         "success": {
-                          "oneOf": [
-                            {
-                              "type": "boolean"
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
                             },
-                            {
-                              "type": "object"
+                            "username": {
+                              "type": "string"
+                            },
+                            "password": {
+                              "type": "string"
+                            },
+                            "firstname": {
+                              "type": "string"
+                            },
+                            "lastname": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "cat_username": {
+                              "type": "string"
+                            },
+                            "cat_password": {
+                              "type": "string"
+                            },
+                            "homeLocationId": {
+                              "type": "string",
+                              "default": null
+                            },
+                            "myLocation1Id": {
+                              "type": "string",
+                              "default": null
+                            },
+                            "myLocation2Id": {
+                              "type": "string",
+                              "default": null
                             }
-                          ]
+                          }
                         }
                       }
                     }
@@ -271,33 +261,59 @@
     },
     "loginToLiDA": {
       "post": {
-        "tags": ["Authentication & Session"],
+        "tags": ["Authentication & Session", "Aspen LiDA"],
         "summary": "Validate account for LiDA (mobile app)",
-        "description": "Validates a user account for the LiDA app.",
+        "description": "Validates an account based on the username and PIN provided, while returning errors such as expired PINs.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Validation result.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Validation result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Login successful"
+                        },
+                        "resetToken": {
+                          "type": "string",
+                          "description": "Token to reset PIN if expired (only returned if an action needs taken to log in, like an expired pin)",
+                          "example": "reset_token_123"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "description": "User ID associated with the account (only returned if an action needs taken to log in, like an expired pin)",
+                          "example": "127848793122"
+                        },
+                        "session": {
+                          "type": "string",
+                          "example": "session_token_123"
+                        },
+                        "validUntil": {
+                          "type": "string",
+                          "example": "2023-10-01T12:00:00Z"
+                        },
+                        "lang": {
+                          "type": "string",
+                          "example": "en"
+                        },
+                        "homeLocationId": {
+                          "type": "string",
+                          "example": "28"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -330,15 +346,15 @@
                 }
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "PIN reset response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PIN reset response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResultOnlyMessage"
                 }
               }
             }
@@ -360,14 +376,30 @@
                 "properties": {}
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Password reset response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reset password response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -377,28 +409,20 @@
       }
     },
     "validateSession": {
-      "get": {
+      "post": {
         "tags": ["Authentication & Session"],
         "summary": "Validate user session",
         "description": "Validates if the current session is valid and re-authenticates if expired.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["validateSession"]
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Session validation response.",
+            "description": "Validate session response.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/BasicResultOnlyMessage"
                 }
               }
             }
@@ -408,33 +432,33 @@
     },
     "prepareSharedSession": {
       "post": {
-        "tags": ["Authentication & Session"],
+        "tags": ["Authentication & Session", "Aspen LiDA"],
         "summary": "Prepare shared session",
         "description": "Validates and prepares a shared session for the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Shared session response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Shared session response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "session": {
+                          "type": "string",
+                          "example": "session_token_123"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -449,29 +473,25 @@
         "summary": "Validate user credentials",
         "description": "Checks if user credentials are still valid after password/barcode change.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Credentials validation response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Validate user credentials response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "valid": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -481,35 +501,13 @@
       }
     },
     "getPatronProfile": {
-      "get": {
+      "post": {
         "tags": ["Profile"],
         "summary": "Get patron profile",
         "description": "Gets the profile information for a user.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getPatronProfile"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "username",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "password",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
             "description": "Profile information.",
@@ -538,28 +536,42 @@
       }
     },
     "getAppPreferencesForUser": {
-      "get": {
-        "tags": ["Profile"],
+      "post": {
+        "tags": ["Aspen LiDA"],
         "summary": "Get app preferences for user",
-        "description": "Gets notification/brightness preferences for user.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getAppPreferencesForUser"]
-            }
-          }
-        ],
+        "description": "This is called from LiDA to get information about a patron's app preferences. The same information is also available within getPatronProfile so if that data has already been loaded, this call is redundant.",
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Preferences response.",
+            "description": "App preferences information.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "onboardAppNotifications": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "shouldAskBrightness": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "notification_preferences": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -569,31 +581,19 @@
     },
     "updateScreenBrightnessStatus": {
       "post": {
-        "tags": ["Profile"],
+        "tags": ["Aspen LiDA"],
         "summary": "Update screen brightness prompt status",
         "description": "Updates user preference for screen brightness prompt.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Update response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Updates user preference for screen brightness prompt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -607,27 +607,15 @@
         "summary": "Set user language preference",
         "description": "Saves the user's preferred interface language.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "languageCode": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Language update response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Updates user preference for screen brightness prompt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -636,38 +624,16 @@
       }
     },
     "getPatronHolds": {
-      "get": {
+      "post": {
         "tags": ["Holds"],
         "summary": "Get patron holds",
         "description": "Gets all holds for a patron (ILS, eContent).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getPatronHolds"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "username",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "password",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Holds response.",
+            "description": "Return eContent and ILS holds for a user.",
             "content": {
               "application/json": {
                 "schema": {
@@ -679,16 +645,27 @@
                         "success": {
                           "type": "boolean"
                         },
+                        "sortMethods": {
+                          "type": "object",
+                          "properties": {
+                            "unavailableSort": {
+                              "type": "string"
+                            },
+                            "availableSort": {
+                              "type": "string"
+                            }
+                          }
+                        },
                         "holds": {
                           "type": "object",
                           "properties": {
-                            "available": {
+                            "unavailable": {
                               "type": "array",
                               "items": {
                                 "type": "object"
                               }
                             },
-                            "unavailable": {
+                            "available": {
                               "type": "array",
                               "items": {
                                 "type": "object"
@@ -707,42 +684,47 @@
       }
     },
     "getPatronHoldsOverDrive": {
-      "get": {
+      "post": {
         "tags": ["Holds"],
         "summary": "Get OverDrive holds",
         "description": "Gets OverDrive eContent holds for a patron.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getPatronHoldsOverDrive"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "username",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "password",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "OverDrive holds response.",
+            "description": "Return OverDrive eContent holds for a user.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "holds": {
+                          "type": "object",
+                          "properties": {
+                            "unavailable": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "available": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -751,42 +733,47 @@
       }
     },
     "getPatronOverDriveSummary": {
-      "get": {
-        "tags": ["Holds"],
+      "post": {
+        "tags": ["Profile"],
         "summary": "Get OverDrive summary",
         "description": "Gets summary (holds, wishlist, checked out) for OverDrive account.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getPatronOverDriveSummary"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "username",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "password",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
             "description": "OverDrive summary response.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "numAvailableHolds": {
+                              "type": "integer"
+                            },
+                            "numUnavailableHolds": {
+                              "type": "integer"
+                            },
+                            "numCheckedOut": {
+                              "type": "integer"
+                            },
+                            "numWishlistItems": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -795,28 +782,39 @@
       }
     },
     "getILSMessages": {
-      "get": {
-        "tags": ["Holds"],
+      "post": {
+        "tags": ["Profile"],
         "summary": "Get ILS messages",
         "description": "Gets messages for a patron from the ILS.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getILSMessages"]
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "ILS messages response.",
+            "description": "Returns ILS messages for the patron.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "messages": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -830,44 +828,126 @@
         "summary": "Place a hold on an item",
         "description": "Places a hold on an item for the user in the ILS or eContent.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "bibId": {
-                    "type": "string"
-                  },
-                  "recordId": {
-                    "type": "string"
-                  },
-                  "itemSource": {
-                    "type": "string"
-                  },
-                  "pickupBranch": {
-                    "type": "string"
-                  },
-                  "holdType": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "bibId",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Hold placement response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          {
+            "in": "query",
+            "name": "recordId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "itemId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "volumeId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "itemSource",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ils",
+                "overdrive",
+                "cloud_library",
+                "axis360",
+                "palace_project",
+                "hoopla"
+              ],
+              "default": "ils"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pickupBranch",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pickupSublocation",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "campus",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Place hold response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string"
+                        },
+                        "confirmationNeeded": {
+                          "type": "boolean"
+                        },
+                        "confirmationId": {
+                          "type": "string"
+                        },
+                        "shouldBeItemHold": {
+                          "type": "boolean"
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "needsIllRequest": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -882,39 +962,58 @@
         "summary": "Cancel a hold",
         "description": "Cancels a hold for the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "recordId": {
-                    "type": "string"
-                  },
-                  "cancelId": {
-                    "type": "string"
-                  },
-                  "itemSource": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "recordId",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Hold cancellation response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "cancelId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "isIll",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "itemSource",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ils",
+                "overdrive",
+                "cloud_library",
+                "axis360",
+                "palace_project",
+                "hoopla"
+              ],
+              "default": "ils"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hold cancellation response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -928,42 +1027,60 @@
         "summary": "Freeze (suspend) a hold",
         "description": "Freezes a hold for the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "recordId": {
-                    "type": "string"
-                  },
-                  "holdId": {
-                    "type": "string"
-                  },
-                  "reactivationDate": {
-                    "type": "string"
-                  },
-                  "itemSource": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "recordId",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Hold freeze response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "holdId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+
+          {
+            "in": "query",
+            "name": "reactivationDate",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "overDriveId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "itemSource",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["ils", "overdrive", "axis360"],
+              "default": "ils"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Freeze hold response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -977,39 +1094,51 @@
         "summary": "Activate (thaw) a hold",
         "description": "Activates a suspended hold for the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "recordId": {
-                    "type": "string"
-                  },
-                  "holdId": {
-                    "type": "string"
-                  },
-                  "itemSource": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "recordId",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Hold activation response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "holdId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "overDriveId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "itemSource",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["ils", "overdrive", "axis360"],
+              "default": "ils"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activate hold response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -1023,30 +1152,33 @@
         "summary": "Confirm a hold",
         "description": "Confirms a hold if confirmation is required.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "confirmationId": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Confirm hold response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "confirmationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hold confirmation response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -1060,33 +1192,42 @@
         "summary": "Change hold pickup location",
         "description": "Changes the pickup location for an existing hold.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "holdId": {
-                    "type": "string"
-                  },
-                  "newLocation": {
-                    "type": "string"
-                  },
-                  "newSublocation": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "holdId",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Change location response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "newLocation",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+
+          {
+            "in": "query",
+            "name": "newSublocation",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Change hold pickup location response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -1095,105 +1236,16 @@
       }
     },
     "getValidPickupLocations": {
-      "get": {
-        "tags": ["Holds"],
+      "post": {
+        "tags": ["Profile"],
         "summary": "Get valid pickup locations for patron",
         "description": "Gets a list of valid pickup locations for the user.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getValidPickupLocations"]
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Pickup locations response.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "getValidSublocations": {
-      "get": {
-        "tags": ["Holds"],
-        "summary": "Get valid pickup sublocations",
-        "description": "Gets valid pickup sublocations for user/location.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getValidSublocations"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "locationCode",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Sublocations response.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "getPatronCheckedOutItems": {
-      "get": {
-        "tags": ["Checkouts"],
-        "summary": "Get patron checked out items",
-        "description": "Gets all checked out items for a patron (ILS, eContent).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getPatronCheckedOutItems"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "username",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "password",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Checked out items response.",
+            "description": "Valid pickup locations response.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1204,6 +1256,108 @@
                       "properties": {
                         "success": {
                           "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "pickupLocations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "getValidSublocations": {
+      "post": {
+        "tags": ["Profile"],
+        "summary": "Get valid pickup sublocations",
+        "description": "Gets valid pickup sublocations for user/location.",
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Valid sublocations response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "sublocations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "ilsId": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "locationCode": {
+                                "type": "string"
+                              },
+                              "locationId": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "getPatronCheckedOutItems": {
+      "post": {
+        "tags": ["Profile"],
+        "summary": "Get patron checked out items",
+        "description": "Gets all checked out items for a patron (ILS, eContent).",
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Patron checked out items response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
                         },
                         "checkedOutItems": {
                           "type": "array",
@@ -1227,35 +1381,89 @@
         "summary": "Checkout item",
         "description": "Checks out an item for the user (ILS, eContent).",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "itemSource": {
-                    "type": "string"
-                  },
-                  "itemId": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "itemId",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Checkout response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          {
+            "in": "query",
+            "name": "itemSource",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ils",
+                "overdrive",
+                "cloud_library",
+                "axis360",
+                "palace_project",
+                "hoopla"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "overDriveId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "barcode",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "locationId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout item results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string"
+                        },
+                        "itemData": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1270,36 +1478,56 @@
         "summary": "Return a checked out item",
         "description": "Returns a checked out item for the user (ILS, eContent).",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "itemSource": {
-                    "type": "string"
-                  },
-                  "itemId": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "itemId",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Return response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "overDriveId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "itemSource",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "overdrive",
+                "cloud_library",
+                "axis360",
+                "palace_project",
+                "hoopla"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Return checkout response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -1313,38 +1541,78 @@
         "summary": "Renew a checked out item",
         "description": "Renews a checked out item for the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "itemSource": {
-                    "type": "string"
-                  },
-                  "recordId": {
-                    "type": "string"
-                  },
-                  "itemBarcode": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "recordId",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Renew response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          {
+            "in": "query",
+            "name": "itemBarcode",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "itemSource",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ils",
+                "overdrive",
+                "cloud_library",
+                "axis360",
+                "palace_project"
+              ],
+              "default": "ils"
+            }
+          },
+          {
+            "in": "query",
+            "name": "overDriveId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Renew a checked out item response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string"
+                        },
+                        "confirmRenewalFee": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1359,29 +1627,36 @@
         "summary": "Renew all checked out items",
         "description": "Renews all checked out items for the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Renew all response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Renew all checkouts response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string"
+                        },
+                        "confirmRenewalFee": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1391,34 +1666,14 @@
       }
     },
     "getPatronReadingHistory": {
-      "get": {
+      "post": {
         "tags": ["Reading History"],
         "summary": "Get patron reading history",
         "description": "Gets the reading history for a patron.",
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getPatronReadingHistory"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "username",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "password",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "in": "query",
             "name": "page",
@@ -1443,11 +1698,42 @@
         ],
         "responses": {
           "200": {
-            "description": "Reading history response.",
+            "description": "Patron reading history response.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "totalResults": {
+                          "type": "integer"
+                        },
+                        "page_current": {
+                          "type": "integer"
+                        },
+                        "page_total": {
+                          "type": "integer"
+                        },
+                        "sort": {
+                          "type": "string"
+                        },
+                        "readingHistory": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1456,31 +1742,42 @@
       }
     },
     "updatePatronReadingHistory": {
-      "post": {
+      "get": {
         "tags": ["Reading History"],
         "summary": "Update reading history from current checkouts",
         "description": "Updates the user's reading history based on current checkouts.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Update response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Update patron reading history response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "skipped": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1493,32 +1790,17 @@
       "post": {
         "tags": ["Reading History"],
         "summary": "Opt into reading history",
-        "description": "Enables reading history collection for a patron.",
+        "description": "Allows reading history to be collected for the patron.  If this option is not selected, no reading history for the patron will be stored.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Opt-in response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Enable reading history response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResultOnlyMessage"
                 }
               }
             }
@@ -1530,32 +1812,17 @@
       "post": {
         "tags": ["Reading History"],
         "summary": "Opt out of reading history",
-        "description": "Disables reading history collection for a patron.",
+        "description": "Stops collecting reading history for the patron and removes any reading history entries that have been collected already.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Opt-out response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Disable reading history response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResultOnlyMessage"
                 }
               }
             }
@@ -1567,32 +1834,17 @@
       "post": {
         "tags": ["Reading History"],
         "summary": "Delete all reading history",
-        "description": "Deletes all reading history for a patron.",
+        "description": "Clears the user's reading history, but does not stop the collection of new data.  If items are currently checked out to the user they will be added to the reading history the next time cron runs.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Delete all response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Delete all from reading history response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResultOnlyMessage"
                 }
               }
             }
@@ -1604,38 +1856,29 @@
       "post": {
         "tags": ["Reading History"],
         "summary": "Delete selected reading history",
-        "description": "Deletes selected titles from reading history.",
+        "description": "Removes one or more titles from the user's reading history.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "selected": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "selected",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Delete selected response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delete selected items from reading history response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResultOnlyMessage"
                 }
               }
             }
@@ -1647,25 +1890,33 @@
       "get": {
         "tags": ["Reading History"],
         "summary": "Get reading history sort options",
-        "description": "Gets available sort options for reading history.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getReadingHistorySortOptions"]
-            }
-          }
-        ],
+        "description": "Gets the available sort options for reading history.",
         "responses": {
           "200": {
-            "description": "Sort options response.",
+            "description": "Patron reading history response.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sort": {
+                            "type": "string"
+                          },
+                          "default": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1674,42 +1925,39 @@
       }
     },
     "getPatronFines": {
-      "get": {
-        "tags": ["Fines & Payments"],
+      "post": {
+        "tags": ["Profile"],
         "summary": "Get patron fines",
-        "description": "Gets fines for a patron.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getPatronFines"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "username",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "password",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "description": "Gets fines for a patron from the ILS.",
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Fines response.",
+            "description": "Patron fine response.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "fines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "totalOwed": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1718,20 +1966,11 @@
       }
     },
     "getPaymentHistory": {
-      "get": {
-        "tags": ["Fines & Payments"],
+      "post": {
+        "tags": ["Profile"],
         "summary": "Get payment history",
         "description": "Gets payment history for a user.",
         "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getPaymentHistory"]
-            }
-          },
           {
             "in": "query",
             "name": "page",
@@ -1747,13 +1986,44 @@
             }
           }
         ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Payment history response.",
+            "description": "Patron payment history response.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "totalResults": {
+                          "type": "integer"
+                        },
+                        "page_current": {
+                          "type": "integer"
+                        },
+                        "page_total": {
+                          "type": "integer"
+                        },
+                        "paymentHistory": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "explanationText": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1762,35 +2032,49 @@
       }
     },
     "getPaymentDetails": {
-      "get": {
-        "tags": ["Fines & Payments"],
+      "post": {
+        "tags": ["Profile"],
         "summary": "Get payment details",
         "description": "Gets detailed information about a specific payment.",
         "parameters": [
           {
             "in": "query",
-            "name": "method",
+            "name": "paymentId",
             "required": true,
             "schema": {
-              "type": "string",
-              "enum": ["getPaymentDetails"]
-            }
-          },
-          {
-            "in": "query",
-            "name": "paymentId",
-            "schema": {
-              "type": "integer"
+              "type": "number"
             }
           }
         ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Payment details response.",
+            "description": "Patron payment history response.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "payment": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1800,34 +2084,43 @@
     },
     "saveNotificationPushToken": {
       "post": {
-        "tags": ["Notifications"],
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Save notification push token",
         "description": "Stores the push token for notifications for a user.",
         "requestBody": {
-          "required": true,
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
                 "type": "object",
                 "properties": {
+                  "username": {
+                    "required": true,
+                    "type": "string"
+                  },
+                  "password": {
+                    "required": true,
+                    "type": "string"
+                  },
                   "pushToken": {
+                    "required": true,
                     "type": "string"
                   },
                   "deviceModel": {
+                    "required": false,
                     "type": "string"
                   }
                 }
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Push token save response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for saving notification push token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -1837,31 +2130,43 @@
     },
     "deleteNotificationPushToken": {
       "post": {
-        "tags": ["Notifications"],
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Delete notification push token",
         "description": "Deletes the push token for notifications.",
         "requestBody": {
-          "required": true,
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
                 "type": "object",
                 "properties": {
+                  "username": {
+                    "required": true,
+                    "type": "string"
+                  },
+                  "password": {
+                    "required": true,
+                    "type": "string"
+                  },
                   "pushToken": {
+                    "required": true,
+                    "type": "string"
+                  },
+                  "deviceModel": {
+                    "required": false,
                     "type": "string"
                   }
                 }
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Push token delete response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for deleting notification push token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -1870,28 +2175,65 @@
       }
     },
     "getNotificationPushToken": {
-      "get": {
-        "tags": ["Notifications"],
+      "post": {
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Get notification push tokens",
         "description": "Gets all push tokens for the user.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getNotificationPushToken"]
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Push tokens response.",
+            "description": "Response for getting notification push tokens.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "tokens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "userId": {
+                                "type": "string"
+                              },
+                              "pushToken": {
+                                "type": "string"
+                              },
+                              "deviceModel": {
+                                "type": "string"
+                              },
+                              "notifySavedSearch": {
+                                "type": "boolean"
+                              },
+                              "notifyCustom": {
+                                "type": "boolean"
+                              },
+                              "notifyAccount": {
+                                "type": "boolean"
+                              },
+                              "onboardAppNotifications": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1901,7 +2243,7 @@
     },
     "getNotificationPreferences": {
       "post": {
-        "tags": ["Notifications"],
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Get notification preferences for device",
         "description": "Gets notification preferences for a given push token/device.",
         "requestBody": {
@@ -1911,20 +2253,71 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
                   "pushToken": {
                     "type": "string"
                   }
                 }
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Notification preferences response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response getting a users notification preferences.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "savedPreferences": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "userId": {
+                                "type": "string"
+                              },
+                              "pushToken": {
+                                "type": "string"
+                              },
+                              "deviceModel": {
+                                "type": "string"
+                              },
+                              "notifySavedSearch": {
+                                "type": "boolean"
+                              },
+                              "notifyCustom": {
+                                "type": "boolean"
+                              },
+                              "notifyAccount": {
+                                "type": "boolean"
+                              },
+                              "onboardAppNotifications": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1935,7 +2328,7 @@
     },
     "getNotificationPreference": {
       "post": {
-        "tags": ["Notifications"],
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Get notification preference for type",
         "description": "Gets notification preference for a type and device.",
         "requestBody": {
@@ -1945,7 +2338,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "type": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
                     "type": "string"
                   },
                   "pushToken": {
@@ -1954,14 +2350,43 @@
                 }
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Notification preference response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for a users notification preference.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "allow": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1972,37 +2397,45 @@
     },
     "setNotificationPreference": {
       "post": {
-        "tags": ["Notifications"],
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Set notification preference for type",
         "description": "Sets notification preference for a type and device.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "type": {
-                    "type": "string"
-                  },
-                  "pushToken": {
-                    "type": "string"
-                  },
-                  "value": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Set notification preference response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "pushToken",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "value",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for saving users notification preference.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2012,34 +2445,37 @@
     },
     "updateNotificationOnboardingStatus": {
       "post": {
-        "tags": ["Notifications"],
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Update notification onboarding status",
         "description": "Updates onboarding status for notification push token.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "string"
-                  },
-                  "token": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Update onboarding status response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for updating onboarding status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2048,28 +2484,100 @@
       }
     },
     "getLinkedAccounts": {
-      "get": {
+      "post": {
         "tags": ["Linked Accounts"],
         "summary": "Get linked accounts",
         "description": "Gets accounts linked to the user.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getLinkedAccounts"]
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Linked accounts response.",
+            "description": "Response for getting linked accounts for a user.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "linkedAccounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "homeLocation": {
+                                "type": "string"
+                              },
+                              "barcode": {
+                                "type": "string"
+                              },
+                              "barcodeStyle": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "expired": {
+                                "type": "boolean"
+                              },
+                              "expires": {
+                                "type": "string"
+                              },
+                              "ils_barcode": {
+                                "type": "string"
+                              },
+                              "alternateLibraryCard": {
+                                "type": "string"
+                              },
+                              "alternateLibraryCardPassword": {
+                                "type": "string"
+                              },
+                              "alternateLibraryCardOptions": {
+                                "type": "object",
+                                "properties": {
+                                  "showAlternateLibraryCard": {
+                                    "type": "boolean"
+                                  },
+                                  "alternateLibraryCardFormMessage": {
+                                    "type": "string"
+                                  },
+                                  "alternateLibraryCardLabel": {
+                                    "type": "string"
+                                  },
+                                  "alternateLibraryCardStyle": {
+                                    "type": "string"
+                                  },
+                                  "alternateLibraryCardPasswordLabel": {
+                                    "type": "string"
+                                  },
+                                  "showAlternateLibraryCardPassword": {
+                                    "type": "boolean"
+                                  },
+                                  "useAlternateLibraryCardForCloudLibrary": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2078,28 +2586,56 @@
       }
     },
     "getViewers": {
-      "get": {
+      "post": {
         "tags": ["Linked Accounts"],
         "summary": "Get viewers",
         "description": "Gets viewers (accounts with access to user's account).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getViewers"]
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Viewers response.",
+            "description": "Response for getting viewer accounts for a user.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "viewers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "homeLocation": {
+                                "type": "string"
+                              },
+                              "barcode": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2134,15 +2670,15 @@
                 }
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Add link response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for adding a linked account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2156,27 +2692,25 @@
         "summary": "Remove linked account",
         "description": "Removes a linked account from the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "idToRemove": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "idToRemove",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Remove link response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for removing a linked account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2190,27 +2724,25 @@
         "summary": "Remove viewer link",
         "description": "Removes a viewer (managing account) from the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "idToRemove": {
-                    "type": "string"
-                  }
-                }
-              }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "idToRemove",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Remove viewer response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for removing a viewer account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2224,28 +2756,15 @@
         "summary": "Disable account linking",
         "description": "Disables account linking for the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "type": "string",
-                    "enum": ["disableAccountLinking"]
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Disable account linking response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for disabling account linking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2259,28 +2778,15 @@
         "summary": "Enable account linking",
         "description": "Enables account linking for the user.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "type": "string",
-                    "enum": ["enableAccountLinking"]
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Enable account linking response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for enabling account linking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2289,28 +2795,54 @@
       }
     },
     "getMaterialsRequests": {
-      "get": {
+      "post": {
         "tags": ["Materials Requests"],
         "summary": "Get materials requests",
         "description": "Gets all materials requests for the user.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getMaterialsRequests"]
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Materials requests response.",
+            "description": "Response for getting materials requests for a user.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requests": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "maxActiveRequests": {
+                          "type": "integer"
+                        },
+                        "maxRequestsPerYear": {
+                          "type": "integer"
+                        },
+                        "requestsThisYear": {
+                          "type": "integer"
+                        },
+                        "openRequests": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2319,35 +2851,52 @@
       }
     },
     "getMaterialsRequestDetails": {
-      "get": {
+      "post": {
         "tags": ["Materials Requests"],
         "summary": "Get materials request details",
         "description": "Gets details for a specific materials request.",
         "parameters": [
           {
             "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getMaterialsRequestDetails"]
-            }
-          },
-          {
-            "in": "query",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string"
             }
           }
         ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Materials request details response.",
+            "description": "Response for getting a specific materials request for a user.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "request": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2360,27 +2909,260 @@
         "tags": ["Materials Requests"],
         "summary": "Create materials request",
         "description": "Creates a new materials request for the user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "format": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Create materials request response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
+          {
+            "in": "query",
+            "name": "phone",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "email",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "magazineTitle",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "magazineDate",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "magazineVolume",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "magazineNumber",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "magazinePageNumbers",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "author",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ageLevel",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bookType",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "isbn",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "upc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "issn",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "oclcNumber",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "publisher",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "publicationYear",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "about",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "comments",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "placeHoldWhenAvailable",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "holdPickupLocation",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bookmobileStop",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "illItem",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ebookFormat",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "eaudioFormat",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "abridged",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for creating a materials request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "summary": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -2394,28 +3176,26 @@
         "tags": ["Materials Requests"],
         "summary": "Cancel materials request",
         "description": "Cancels a specific materials request for the user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Cancel materials request response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for canceling a materials request for a user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2427,30 +3207,43 @@
       "post": {
         "tags": ["Profile"],
         "summary": "Update sort preferences",
-        "description": "Updates the sort preference for the user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "type": "string",
-                    "enum": ["updateSortPreferences"]
-                  }
-                }
-              }
+        "description": "Updates the active account sort method for a user for account related functionality.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "availableHoldSort",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Sort preferences update response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "unavailableHoldSort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for updating a users sort preferences.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2460,32 +3253,61 @@
     },
     "updateHoldPickupPreferences": {
       "post": {
-        "tags": ["Holds"],
+        "tags": ["Profile"],
         "summary": "Update hold pickup preferences",
         "description": "Updates hold pickup preferences for the user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "type": "string",
-                    "enum": ["updateHoldPickupPreferences"]
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "rememberHoldPickupLocation",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Hold pickup preferences update response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "pickupLocationId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "myLocation1Id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "myLocation2Id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sublocation",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for updating a users hold pickup location preferences.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2499,28 +3321,15 @@
         "summary": "Delete Aspen user",
         "description": "Deletes the Aspen user account.",
         "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "type": "string",
-                    "enum": ["deleteAspenUser"]
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "User deletion response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for deleting a user from the Aspen database.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2534,15 +3343,6 @@
         "summary": "Get barcode for patron",
         "description": "Gets the barcode for a patron given their Aspen or ILS ID.",
         "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getBarcodeForPatron"]
-            }
-          },
           {
             "in": "query",
             "name": "patronId",
@@ -2560,11 +3360,27 @@
         ],
         "responses": {
           "200": {
-            "description": "Barcode response.",
+            "description": "Response for getting a patrons barcode.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2580,15 +3396,6 @@
         "parameters": [
           {
             "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getUserByBarcode"]
-            }
-          },
-          {
-            "in": "query",
             "name": "username",
             "schema": {
               "type": "string"
@@ -2597,11 +3404,36 @@
         ],
         "responses": {
           "200": {
-            "description": "User info response.",
+            "description": "Response for getting a user by barcode.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "patronId": {
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2610,28 +3442,42 @@
       }
     },
     "getHiddenBrowseCategories": {
-      "get": {
+      "post": {
         "tags": ["Browse Categories"],
         "summary": "Get hidden browse categories",
         "description": "Gets all browse categories hidden by the user.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getHiddenBrowseCategories"]
-            }
-          }
-        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Hidden categories response.",
+            "description": "Response for a users hidden browse categories.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "categories": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2644,28 +3490,26 @@
         "tags": ["Browse Categories"],
         "summary": "Dismiss browse category",
         "description": "Dismisses/hides a browse category for the user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "browseCategoryId": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "browseCategoryId",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Dismiss browse category response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for a user dismissing a browse category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2678,28 +3522,26 @@
         "tags": ["Browse Categories"],
         "summary": "Show browse category",
         "description": "Shows/unhides a browse category for the user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "browseCategoryId": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "browseCategoryId",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Show browse category response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for a user showing a hidden browse category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2712,28 +3554,26 @@
         "tags": ["Browse Categories"],
         "summary": "Update browse category status",
         "description": "Updates the browse category dismissal status for the user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "browseCategoryId": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "browseCategoryId",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Update browse status response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for a user updating a browse category status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2742,20 +3582,11 @@
       }
     },
     "getInbox": {
-      "get": {
-        "tags": ["Messaging"],
+      "post": {
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Get user message inbox",
         "description": "Gets the user's message inbox from ILS.",
         "parameters": [
-          {
-            "in": "query",
-            "name": "method",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["getInbox"]
-            }
-          },
           {
             "in": "query",
             "name": "page",
@@ -2771,13 +3602,82 @@
             }
           }
         ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
         "responses": {
           "200": {
-            "description": "Inbox response.",
+            "description": "Response for getting user inbox messages.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "page_current": {
+                          "type": "integer"
+                        },
+                        "page_total": {
+                          "type": "integer"
+                        },
+                        "totalResults": {
+                          "type": "integer"
+                        },
+                        "inbox": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "messageId": {
+                                "type": "string"
+                              },
+                              "userId": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "defaultContent": {
+                                "type": "string"
+                              },
+                              "dateQueued": {
+                                "type": "string"
+                              },
+                              "dateSent": {
+                                "type": "string"
+                              },
+                              "isRead": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2787,31 +3687,29 @@
     },
     "markMessageAsRead": {
       "post": {
-        "tags": ["Messaging"],
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Mark message as read",
         "description": "Marks a user message as read.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Mark as read response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for marking a message as read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2821,31 +3719,29 @@
     },
     "markMessageAsUnread": {
       "post": {
-        "tags": ["Messaging"],
+        "tags": ["Notifications & ILS Messages"],
         "summary": "Mark message as unread",
         "description": "Marks a user message as unread.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Mark as unread response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for marking a message as unread.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2858,34 +3754,39 @@
         "tags": ["Profile"],
         "summary": "Update alternate library card",
         "description": "Updates or deletes the user's alternate library card.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "alternateLibraryCard": {
-                    "type": "string"
-                  },
-                  "alternateLibraryCardPassword": {
-                    "type": "string"
-                  },
-                  "deleteAlternateLibraryCard": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "alternateLibraryCard",
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "Alternate card update response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "alternateLibraryCardPassword",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "deleteAlternateLibraryCard",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for updating a users alternate library card.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2898,29 +3799,82 @@
         "tags": ["Interlibrary Loan"],
         "summary": "Submit VDX ILL request",
         "description": "Submits a VDX interlibrary loan request.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "type": "string",
-                    "enum": ["submitVdxRequest"]
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "catalogKey",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
-          "responses": {
-            "200": {
-              "description": "VDX request response.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object"
-                  }
+          {
+            "in": "query",
+            "name": "title",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pickupLocation",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "author",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "publisher",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "isbn",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "acceptFee",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "note",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
+        },
+        "responses": {
+          "200": {
+            "description": "Response for creating a VDX ILL request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2933,31 +3887,33 @@
         "tags": ["Interlibrary Loan"],
         "summary": "Cancel VDX ILL request",
         "description": "Cancels a VDX ILL request.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "sourceId": {
-                    "type": "string"
-                  },
-                  "cancelId": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cancelId",
+
+            "schema": {
+              "type": "string"
             }
           }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
         },
         "responses": {
           "200": {
-            "description": "Cancel VDX request response.",
+            "description": "Response for canceling a users VDX ILL request.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
@@ -2970,357 +3926,148 @@
         "tags": ["Interlibrary Loan"],
         "summary": "Submit local ILL request",
         "description": "Submits a local ILL request for the user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "type": {
-                    "type": "string"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "catalogKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "volumeId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "acceptFee",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "default": false
+          },
+          {
+            "in": "query",
+            "name": "pickupLocation",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
+        ],
+        "requestBody": {
+          "$ref": "#/components/parameters/BasicUserAuth"
         },
         "responses": {
           "200": {
-            "description": "Local ILL request response.",
+            "description": "Response for creating a local ILL request.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/BasicResult"
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "initMasquerade": {
-      "post": {
-        "tags": ["Profile"],
-        "summary": "Initialize masquerade",
-        "description": "Initializes a masquerade session as a user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "cardNumber": {
-                    "type": "string"
-                  },
-                  "username": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Masquerade response.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "endMasquerade": {
-      "post": {
-        "tags": ["Profile"],
-        "summary": "End masquerade",
-        "description": "Ends a masquerade session as a user.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "type": "string",
-                    "enum": ["endMasquerade"]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "End masquerade response.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "checkoutILSItem": {
-      "post": {
-        "tags": ["Checkouts"],
-        "summary": "Checkout ILS item (self-check)",
-        "description": "Checks out an item via ILS for self-check (barcode, location).",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "patronBarcode": {
-                    "type": "string"
-                  },
-                  "patronPassword": {
-                    "type": "string"
-                  },
-                  "itemBarcode": {
-                    "type": "string"
-                  },
-                  "activeLocationId": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "ILS checkout response.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "checkinILSItem": {
-      "post": {
-        "tags": ["Checkouts"],
-        "summary": "Checkin ILS item (self-check)",
-        "description": "Checks in an item via ILS for self-check (barcode, location).",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "patronBarcode": {
-                    "type": "string"
-                  },
-                  "patronPassword": {
-                    "type": "string"
-                  },
-                  "itemBarcode": {
-                    "type": "string"
-                  },
-                  "activeLocationId": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "ILS checkin response.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
+          },
+          "400": {
+            "description": "Bad Request - Invalid parameters or missing required fields.",
+            "schema": {
+              "$ref": "#/components/responses/BadRequest"
             }
           }
         }
       }
     }
   },
-  "initMasquerade": {
-    "post": {
-      "tags": ["Profile"],
-      "summary": "Initialize masquerade",
-      "description": "Initializes a masquerade session as a user.",
-      "requestBody": {
+  "components": {
+    "parameters": {
+      "BasicUserAuth": {
         "required": true,
         "content": {
           "application/x-www-form-urlencoded": {
             "schema": {
               "type": "object",
               "properties": {
-                "method": {
-                  "type": "string",
-                  "enum": ["initMasquerade"]
-                },
-                "cardNumber": {
-                  "type": "string"
-                },
                 "username": {
                   "type": "string"
+                },
+                "password": {
+                  "type": "string"
                 }
-              }
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "Masquerade response.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
               }
             }
           }
         }
       }
-    }
-  },
-  "endMasquerade": {
-    "post": {
-      "tags": ["Profile"],
-      "summary": "End masquerade",
-      "description": "Ends a masquerade session as a user.",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/x-www-form-urlencoded": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "method": {
-                  "type": "string",
-                  "enum": ["endMasquerade"]
-                }
-              }
-            }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request - Invalid method or parameters",
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "invalid_method"
           }
         }
       },
-      "responses": {
-        "200": {
-          "description": "End masquerade response.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
-            }
+      "Unauthorized": {
+        "description": "Unauthorized - Request requires authentication",
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "unauthorized_access"
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The specified resource was not found.",
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
           }
         }
       }
-    }
-  },
-  "checkoutILSItem": {
-    "post": {
-      "tags": ["Checkouts"],
-      "summary": "Checkout ILS item (self-check)",
-      "description": "Checks out an item via ILS for self-check (barcode, location).",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/x-www-form-urlencoded": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "method": {
-                  "type": "string",
-                  "enum": ["checkoutILSItem"]
-                },
-                "patronBarcode": {
-                  "type": "string"
-                },
-                "patronPassword": {
-                  "type": "string"
-                },
-                "itemBarcode": {
-                  "type": "string"
-                },
-                "activeLocationId": {
-                  "type": "string"
-                }
+    },
+    "schemas": {
+      "BasicResult": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "title": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
               }
             }
           }
         }
       },
-      "responses": {
-        "200": {
-          "description": "ILS checkout response.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "checkinILSItem": {
-    "post": {
-      "tags": ["Checkouts"],
-      "summary": "Checkin ILS item (self-check)",
-      "description": "Checks in an item via ILS for self-check (barcode, location).",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/x-www-form-urlencoded": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "method": {
-                  "type": "string",
-                  "enum": ["checkoutILSItem"]
-                },
-                "patronBarcode": {
-                  "type": "string"
-                },
-                "patronPassword": {
-                  "type": "string"
-                },
-                "itemBarcode": {
-                  "type": "string"
-                },
-                "activeLocationId": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "ILS checkin response.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
+      "BasicResultOnlyMessage": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "message": {
+                "type": "string"
               }
             }
           }
