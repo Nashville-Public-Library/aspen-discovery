@@ -1281,7 +1281,7 @@ public class KohaExportMain {
 						}
 					}
 				} else {
-                    logger.error("Aspen does not currently have a location defined for code {}. Please create the location in Aspen first so the library information is properly defined.", ilsCode);
+					logger.error("Aspen does not currently have a location defined for code {}. Please create the location in Aspen first so the library information is properly defined.", ilsCode);
 				}
 				existingAspenLocationRS.close();
 			}
