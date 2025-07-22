@@ -87,14 +87,6 @@
                         "registrationRequired": {
                           "type": "boolean"
                         },
-                        "userIsRegistered": {
-                          "type": "null",
-                          "description": "Requires POST request"
-                        },
-                        "inUserEvents": {
-                          "type": "null",
-                          "description": "Requires POST request"
-                        },
                         "registrationBody": {
                           "type": "string"
                         },
@@ -121,10 +113,6 @@
                         },
                         "location": {
                           "type": "string"
-                        },
-                        "canAddToList": {
-                          "type": "null",
-                          "description": "Requires POST request"
                         }
                       }
                     }
