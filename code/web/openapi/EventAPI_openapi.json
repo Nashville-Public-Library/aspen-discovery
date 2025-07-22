@@ -43,6 +43,16 @@
                 "assabet"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -272,6 +282,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -323,6 +343,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -385,6 +415,16 @@
               "type": "integer"
             },
             "default": 20
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {

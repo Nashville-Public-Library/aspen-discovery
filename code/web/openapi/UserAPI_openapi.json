@@ -3,7 +3,7 @@
   "info": {
     "title": "Aspen Discovery User API",
     "version": "1.0.0",
-    "description": "OpenAPI documentation for the Aspen Discovery User API endpoints.\nThese endpoints allow user authentication, account management, holds, checkouts,\nnotifications, reading history, linked accounts, materials requests, preferences,\nand other user actions through the API."
+    "description": "OpenAPI documentation for the Aspen Discovery User API endpoints. These endpoints allow user authentication, account management, holds, checkouts, notifications, reading history, linked accounts, materials requests, preferences, and other user actions through the API."
   },
   "servers": [
     {
@@ -76,6 +76,18 @@
         "tags": ["Authentication & Session"],
         "summary": "Validate user account",
         "description": "Validate whether or not an account is valid based on the barcode and pin number provided.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -163,6 +175,18 @@
         "tags": ["Authentication & Session", "Aspen LiDA"],
         "summary": "Validate account for LiDA (mobile app)",
         "description": "Validates an account based on the username and PIN provided, while returning errors such as expired PINs.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -226,6 +250,18 @@
         "tags": ["Authentication & Session"],
         "summary": "Reset expired PIN",
         "description": "Resets a user's expired PIN using a reset token.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -266,6 +302,18 @@
         "tags": ["Authentication & Session"],
         "summary": "Initiate PIN/password reset",
         "description": "Initiates a PIN/password reset request for a user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -312,6 +360,18 @@
         "tags": ["Authentication & Session"],
         "summary": "Validate user session",
         "description": "Validates if the current session is valid and re-authenticates if expired.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -334,6 +394,18 @@
         "tags": ["Authentication & Session", "Aspen LiDA"],
         "summary": "Prepare shared session",
         "description": "Validates and prepares a shared session for the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -371,6 +443,18 @@
         "tags": ["Authentication & Session"],
         "summary": "Validate user credentials",
         "description": "Checks if user credentials are still valid after password/barcode change.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -404,6 +488,18 @@
         "tags": ["Profile"],
         "summary": "Get patron profile",
         "description": "Gets the profile information for a user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -439,6 +535,18 @@
         "tags": ["Aspen LiDA"],
         "summary": "Get app preferences for user",
         "description": "This is called from LiDA to get information about a patron's app preferences. The same information is also available within getPatronProfile so if that data has already been loaded, this call is redundant.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -483,6 +591,18 @@
         "tags": ["Aspen LiDA"],
         "summary": "Update screen brightness prompt status",
         "description": "Updates user preference for screen brightness prompt.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -505,6 +625,18 @@
         "tags": ["Profile"],
         "summary": "Set user language preference",
         "description": "Saves the user's preferred interface language.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -527,6 +659,18 @@
         "tags": ["Holds"],
         "summary": "Get patron holds",
         "description": "Gets all holds for a patron (ILS, eContent).",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -587,6 +731,18 @@
         "tags": ["Holds"],
         "summary": "Get OverDrive holds",
         "description": "Gets OverDrive eContent holds for a patron.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -636,6 +792,18 @@
         "tags": ["Profile"],
         "summary": "Get OverDrive summary",
         "description": "Gets summary (holds, wishlist, checked out) for OverDrive account.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -685,6 +853,18 @@
         "tags": ["Profile"],
         "summary": "Get ILS messages",
         "description": "Gets messages for a patron from the ILS.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -802,6 +982,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -904,6 +1094,16 @@
               ],
               "default": "ils"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -971,6 +1171,16 @@
               "enum": ["ils", "overdrive", "axis360"],
               "default": "ils"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -1029,6 +1239,16 @@
               "enum": ["ils", "overdrive", "axis360"],
               "default": "ils"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -1069,6 +1289,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -1110,7 +1340,6 @@
               "type": "string"
             }
           },
-
           {
             "in": "query",
             "name": "newSublocation",
@@ -1118,6 +1347,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -1139,6 +1378,18 @@
         "tags": ["Profile"],
         "summary": "Get valid pickup locations for patron",
         "description": "Gets a list of valid pickup locations for the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1180,6 +1431,18 @@
         "tags": ["Profile"],
         "summary": "Get valid pickup sublocations",
         "description": "Gets valid pickup sublocations for user/location.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1238,6 +1501,18 @@
         "tags": ["Profile"],
         "summary": "Get patron checked out items",
         "description": "Gets all checked out items for a patron (ILS, eContent).",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1330,6 +1605,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -1418,6 +1703,16 @@
                 "hoopla"
               ]
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -1482,6 +1777,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -1525,6 +1830,18 @@
         "tags": ["Checkouts"],
         "summary": "Renew all checked out items",
         "description": "Renews all checked out items for the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1569,6 +1886,18 @@
         "tags": ["Reading History"],
         "summary": "Get patron reading history",
         "description": "Gets the reading history for a patron.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1653,6 +1982,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -1690,6 +2029,18 @@
         "tags": ["Reading History"],
         "summary": "Opt into reading history",
         "description": "Allows reading history to be collected for the patron.  If this option is not selected, no reading history for the patron will be stored.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1712,6 +2063,18 @@
         "tags": ["Reading History"],
         "summary": "Opt out of reading history",
         "description": "Stops collecting reading history for the patron and removes any reading history entries that have been collected already.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1734,6 +2097,18 @@
         "tags": ["Reading History"],
         "summary": "Delete all reading history",
         "description": "Clears the user's reading history, but does not stop the collection of new data.  If items are currently checked out to the user they will be added to the reading history the next time cron runs.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1756,6 +2131,18 @@
         "tags": ["Reading History"],
         "summary": "Delete selected reading history",
         "description": "Removes one or more titles from the user's reading history.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1790,6 +2177,18 @@
         "tags": ["Reading History"],
         "summary": "Get reading history sort options",
         "description": "Gets the available sort options for reading history.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "responses": {
           "200": {
             "description": "Patron reading history response.",
@@ -1828,6 +2227,18 @@
         "tags": ["Profile"],
         "summary": "Get patron fines",
         "description": "Gets fines for a patron from the ILS.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -1883,6 +2294,16 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -1943,6 +2364,16 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -1986,6 +2417,18 @@
         "tags": ["Notifications & ILS Messages"],
         "summary": "Save notification push token",
         "description": "Stores the push token for notifications for a user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {
@@ -2032,6 +2475,18 @@
         "tags": ["Notifications & ILS Messages"],
         "summary": "Delete notification push token",
         "description": "Deletes the push token for notifications.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {
@@ -2078,6 +2533,18 @@
         "tags": ["Notifications & ILS Messages"],
         "summary": "Get notification push tokens",
         "description": "Gets all push tokens for the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -2145,6 +2612,18 @@
         "tags": ["Notifications & ILS Messages"],
         "summary": "Get notification preferences for device",
         "description": "Gets notification preferences for a given push token/device.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2259,6 +2738,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -2326,6 +2815,16 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -2366,6 +2865,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -2387,6 +2896,18 @@
         "tags": ["Linked Accounts"],
         "summary": "Get linked accounts",
         "description": "Gets accounts linked to the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -2489,6 +3010,18 @@
         "tags": ["Linked Accounts"],
         "summary": "Get viewers",
         "description": "Gets viewers (accounts with access to user's account).",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -2547,6 +3080,18 @@
         "tags": ["Linked Accounts"],
         "summary": "Add linked account",
         "description": "Adds a linked account for the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2601,6 +3146,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -2633,6 +3188,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -2654,6 +3219,18 @@
         "tags": ["Linked Accounts"],
         "summary": "Disable account linking",
         "description": "Disables account linking for the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -2676,6 +3253,18 @@
         "tags": ["Linked Accounts"],
         "summary": "Enable account linking",
         "description": "Enables account linking for the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -2698,6 +3287,18 @@
         "tags": ["Materials Requests"],
         "summary": "Get materials requests",
         "description": "Gets all materials requests for the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -2762,6 +3363,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3032,6 +3643,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3083,6 +3704,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3131,6 +3762,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3195,6 +3836,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3219,6 +3870,18 @@
         "tags": ["Profile"],
         "summary": "Delete Aspen user",
         "description": "Deletes the Aspen user account.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -3255,6 +3918,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -3299,6 +3972,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
@@ -3345,6 +4028,18 @@
         "tags": ["Browse Categories"],
         "summary": "Get hidden browse categories",
         "description": "Gets all browse categories hidden by the user.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -3397,6 +4092,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3429,6 +4134,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3461,6 +4176,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3499,6 +4224,16 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3597,6 +4332,16 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3629,6 +4374,16 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3674,6 +4429,16 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3762,6 +4527,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3801,6 +4576,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
@@ -3858,6 +4643,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "requestBody": {
