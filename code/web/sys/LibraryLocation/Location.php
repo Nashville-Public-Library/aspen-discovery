@@ -185,7 +185,7 @@ class Location extends DataObject {
 
 	static $_objectStructure = [];
 	static function getObjectStructure($context = ''): array {
-		if (self::$_objectStructure[$context] !== null) {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
 			return self::$_objectStructure[$context];
 		}
 		//Load Libraries for lookup values

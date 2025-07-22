@@ -3379,8 +3379,16 @@ class User extends DataObject {
 		$this->__set('pickupSublocationId', $pickupSublocationId);
 	}
 
+	public function setMyLocation1Id(int $myLocation1Id) : void {
+		$this->__set('myLocation1Id', $myLocation1Id);
+	}
+
+	public function setMyLocation2Id(int $myLocation2Id) : void {
+		$this->__set('myLocation2Id', $myLocation2Id);
+	}
+
 	public function setRememberHoldPickupLocation(bool $rememberPickupLocation) {
-		$this->__set('rememberHoldPickupLocation', $rememberPickupLocation);
+		$this->__set('rememberHoldPickupLocation', $rememberPickupLocation ? 1 : 0);
 	}
 
 	function setNumMaterialsRequests($val) {
