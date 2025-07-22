@@ -127,7 +127,7 @@
         }
       },
       "post": {
-        "summary": "Get a grouped work",
+        "summary": "Get a grouped work in relation to a user",
         "description": "Return data about a specified grouped work.",
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
