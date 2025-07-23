@@ -196,6 +196,8 @@ class UserList extends DataObject {
 		if (!empty($sort)) {
 			$sortOptions = UserList::getSortOptions();
 			if (array_key_exists($sort, $sortOptions)) {
+				$listEntry->selectAdd();
+				$listEntry->selectAdd("user_list_entry.*");
 				if ($sort == "title") {
 					//set cases for what to use as sorting title
 					$listEntry->selectAdd('CASE WHEN user_list_entry.source = "GroupedWork" THEN groupedWork.full_title WHEN user_list_entry.source = "Lists" THEN userList.title WHEN user_list_entry.source = "Series" THEN series.groupedWorkSeriesTitle ELSE user_list_entry.title END AS ItemTitle');
@@ -211,13 +213,17 @@ class UserList extends DataObject {
 					require_once ROOT_DIR . '/sys/Series/Series.php';
 					$seriesInfo = new Series();
 					$listEntry->joinAdd($seriesInfo, "LEFT", 'series', 'sourceId', 'id');
-					$listEntry->orderBy("ItemTitle");
+					$listEntry->orderBy("CASE WHEN ItemTitle IS NULL THEN 1 ELSE 0 END ASC, ItemTitle");
 				} elseif ($sort == "author") {
-					$listEntry->selectAdd('CASE WHEN user_list_entry.source = "GroupedWork" THEN groupedWork.author ELSE NULL END');
+					$listEntry->selectAdd('CASE WHEN user_list_entry.source = "GroupedWork" THEN groupedWork.author WHEN user_list_entry.source = "Series" THEN series.author ELSE NULL END AS ItemAuthor');
 					require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 					$groupedWorkInfo = new GroupedWork();
 					$listEntry->joinAdd($groupedWorkInfo, "LEFT", 'groupedWork', 'sourceId', 'permanent_id');
-					$listEntry->orderBy("author");
+
+					require_once ROOT_DIR . '/sys/Series/Series.php';
+					$seriesInfo = new Series();
+					$listEntry->joinAdd($seriesInfo, "LEFT", 'series', 'sourceId', 'id');
+					$listEntry->orderBy("CASE WHEN ItemAuthor IS NULL THEN 1 ELSE 0 END ASC, ItemAuthor");
 				} else {
 					$listEntry->orderBy($sortOptions[$sort]);
 				}
