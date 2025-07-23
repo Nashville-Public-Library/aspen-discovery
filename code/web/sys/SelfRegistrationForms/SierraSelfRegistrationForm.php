@@ -1,6 +1,7 @@
 <?php
 require_once ROOT_DIR . '/sys/SelfRegistrationForms/SelfRegistrationFormValues.php';
 require_once ROOT_DIR . '/sys/SelfRegistrationForms/SelfRegistrationTerms.php';
+require_once ROOT_DIR . '/sys/SelfRegistrationForms/SierraSelfRegistrationMunicipalityValues.php';
 
 class SierraSelfRegistrationForm extends DataObject {
 	public $__table = 'self_registration_form_sierra';
@@ -28,6 +29,7 @@ class SierraSelfRegistrationForm extends DataObject {
 
 	private $_fields;
 	private $_libraries;
+	private $_municipalities;
 
 	static function getObjectStructure($context = ''): array {
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
@@ -41,6 +43,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		}
 
 		$fieldValuesStructure = SelfRegistrationFormValues::getObjectStructure($context);
+		$sierraSelfRegistrationMunicipalityValuesStructure = SierraSelfRegistrationMunicipalityValues::getObjectStructure($context);
 		unset($fieldValuesStructure['weight']);
 		unset($fieldValuesStructure['selfRegistrationFormId']);
 
@@ -219,6 +222,23 @@ class SierraSelfRegistrationForm extends DataObject {
 				'hideInLists' => true,
 				'default' => 0,
 			],
+			'municipalities' => [
+				'property' => 'municipalities',
+				'type' => 'oneToMany',
+				'label' => 'Municipality Settings',
+				'description' => 'Default settings for specific municipalities',
+				'keyThis' => 'id',
+				'keyOther' => 'selfRegistrationFormId',
+				'subObjectType' => 'SierraSelfRegistrationMunicipalityValues',
+				'structure' => $sierraSelfRegistrationMunicipalityValuesStructure,
+				'sortable' => false,
+				'storeDb' => true,
+				'allowEdit' => true,
+				'canEdit' => false,
+				'canAddNew' => true,
+				'canDelete' => true,
+				'hideInLists' => true,
+			],
 			'libraries' => [
 				'property' => 'libraries',
 				'type' => 'multiSelect',
@@ -235,6 +255,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		if ($ret !== FALSE) {
 			$this->saveFields();
 			$this->saveLibraries();
+			$this->saveMunicipalities();
 		}
 		return $ret;
 	}
@@ -244,6 +265,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		if ($ret !== FALSE) {
 			$this->saveFields();
 			$this->saveLibraries();
+			$this->saveMunicipalities();
 		}
 		return $ret;
 	}
@@ -253,6 +275,8 @@ class SierraSelfRegistrationForm extends DataObject {
 			return $this->getFields();
 		} if ($name == 'libraries') {
 			return $this->getLibraries();
+		} if ($name == 'municipalities') {
+			return $this->getMunicipalities();
 		}else {
 			return parent::__get($name);
 		}
@@ -261,8 +285,12 @@ class SierraSelfRegistrationForm extends DataObject {
 	public function __set($name, $value) {
 		if ($name == 'fields') {
 			$this->_fields = $value;
-		} if ($name == "libraries") {
+		}
+		if ($name == "libraries") {
 			$this->_libraries = $value;
+		}
+		if ($name == "municipalities") {
+			$this->_municipalities = $value;
 		} else {
 			parent::__set($name, $value);
 		}
@@ -283,6 +311,20 @@ class SierraSelfRegistrationForm extends DataObject {
 		return $this->_fields;
 	}
 
+	public function getMunicipalities(): ?array {
+		if (!isset($this->_municipalities) && $this->id) {
+			$this->_municipalities = [];
+			$municipality = new SierraSelfRegistrationMunicipalityValues();
+			$municipality->selfRegistrationFormId = $this->id;
+			$municipality->orderBy('municipality');
+			$municipality->find();
+			while ($municipality->fetch()) {
+				$this->_municipalities[$municipality->id] = clone($municipality);
+			}
+		}
+		return $this->_municipalities;
+	}
+
 	public function clearFields() {
 		$this->clearOneToManyOptions('SelfRegistrationFormValues', 'selfRegistrationFormId');
 		/** @noinspection PhpUndefinedFieldInspection */
@@ -295,6 +337,13 @@ class SierraSelfRegistrationForm extends DataObject {
 			unset($this->fields);
 		}
 	}
+	public function saveMunicipalities() {
+		if (isset ($this->_municipalities) && is_array($this->_municipalities)) {
+			$this->saveOneToManyOptions($this->_municipalities, 'selfRegistrationFormId');
+			unset($this->_municipalities);
+		}
+	}
+
 
 	public function getLibraries() {
 		if (!isset($this->_libraries) && $this->id) {

@@ -2065,6 +2065,26 @@ class Sierra extends Millennium {
 		}
 	}
 
+	public function getPatronMetadataOptions($field) {
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$params = [
+			'fields' => $field,
+		];
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/metadata?";
+		$sierraUrl .= http_build_query($params);
+		$metadataResponse = $this->_callUrl('sierra.getPatronMetadata', $sierraUrl);
+		if ($metadataResponse && is_array($metadataResponse) && property_exists($metadataResponse[0], 'values')) {
+			$options = [];
+			foreach ($metadataResponse[0]->values as $option) {
+				$code = $option->code;
+				$options[$option->code] = $option->code . " - " . $option->desc;
+			}
+			return $options;
+		} else {
+			return [];
+		}
+	}
+
 	public function getFines($patron = null, $includeMessages = false): array {
 		$fines = [];
 
