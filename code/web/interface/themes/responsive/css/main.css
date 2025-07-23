@@ -1,4 +1,5 @@
 @import "lib/fa6/fontawesome.min.css";
+@import "lib/fontawesome.min.css";
 @import "lib/fa6/brands.min.css";
 @import "lib/fontawesome-solid.min.css";
 @import "lib/rome.min.css";
@@ -9866,17 +9867,11 @@ a.browse-thumbnail.active {
 #preferences-accordion .panel-heading {
   padding: 5px 15px;
 }
-#preferences-accordion .panel-title {
-  font-size: 13px;
-}
 #preferences-accordion .panel-title h2 {
-  font-size: 13px;
   margin: unset;
-  font-weight: unset;
   display: unset;
 }
 #preferences-accordion .panel-body {
-  font-size: 12px;
   color: #333333;
   background-color: #fcfcfc;
   border-color: #c5c5c5;
