@@ -1886,22 +1886,10 @@
         "tags": ["Reading History"],
         "summary": "Get patron reading history",
         "description": "Gets the reading history for a patron.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "language",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "example": "es",
-            "description": "If applicable translates the response to the provided language."
-          }
-        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
-        "parameters": [
+        "parameters": {
           {
             "in": "query",
             "name": "page",
@@ -1922,6 +1910,16 @@
             "schema": {
               "type": "string"
             }
+          },
+    {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
