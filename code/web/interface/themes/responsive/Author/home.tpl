@@ -1,16 +1,16 @@
 {strip}
 <div>
-	<h1>{$authorName}</h1>
-	<div class="row">
-		<div id="wikipedia_placeholder" class="col-xs-12">
-		</div>
-	</div>
-
 	{if !empty($topRecommendations)}
 		{foreach from=$topRecommendations item="recommendations"}
 			{include file=$recommendations}
 		{/foreach}
 	{/if}
+
+	<h1>{$authorName}</h1>
+	<div class="row">
+		<div id="wikipedia_placeholder" class="col-xs-12">
+		</div>
+	</div>
 
 	{* Information about the search *}
 	<div class="result-head">
