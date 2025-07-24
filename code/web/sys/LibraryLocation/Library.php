@@ -219,6 +219,7 @@ class Library extends DataObject {
 	public $enableMaterialsRequest;
 	public $displayMaterialsRequestToPublic;
 	public $allowDeletingILSRequests;
+	public $allowMaterialRequestsBranchChoice;
 	public $externalMaterialsRequestUrl;
 	public /** @noinspection PhpUnused */
 		$eContentLinkRules;
@@ -3385,6 +3386,14 @@ class Library extends DataObject {
 						'hideInLists' => true,
 						'onchange' => 'return AspenDiscovery.Admin.updateMaterialsRequestFields();',
 						'default' => 1,
+					],
+					'allowMaterialRequestsBranchChoice' => [
+						'property' => 'allowMaterialRequestsBranchChoice',
+						'type' => 'checkbox',
+						'label' => 'Allow Material Requests Branch Choice',
+						'description' => 'Whether or not patrons can choose a branch for their Materials Request.',
+						'hideInLists' => true,
+						'default' => 0,
 					],
 					'externalMaterialsRequestUrl' => [
 						'property' => 'externalMaterialsRequestUrl',
