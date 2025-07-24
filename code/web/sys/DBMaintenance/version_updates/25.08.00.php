@@ -29,8 +29,10 @@ function getUpdates25_08_00(): array {
 					`municipalityType` varchar(10),
 					`selfRegAllowed` tinyint(1) NOT NULL DEFAULT '1',
 					`sierraPType` int(11) DEFAULT NULL,
-					`sierraResidence` varchar(50) DEFAULT NULL,
-					`sierraLibOfReg` varchar(50) DEFAULT NULL,
+					`sierraPCode1` varchar(25) DEFAULT NULL,
+					`sierraPCode2` varchar(25) DEFAULT NULL,
+					`sierraPCode3` int DEFAULT NULL,
+					`sierraPCode4` int DEFAULT NULL,					
 					`expirationLength` tinyint,
 					`expirationPeriod` varchar(10) DEFAULT 'day'
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
