@@ -1889,7 +1889,7 @@
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
-        "parameters": {
+        "parameters": [
           {
             "in": "query",
             "name": "page",
@@ -1911,7 +1911,7 @@
               "type": "string"
             }
           },
-    {
+          {
             "in": "query",
             "name": "language",
             "required": false,
