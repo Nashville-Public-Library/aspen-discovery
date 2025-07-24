@@ -2129,18 +2129,6 @@
         "tags": ["Reading History"],
         "summary": "Delete selected reading history",
         "description": "Removes one or more titles from the user's reading history.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "language",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "example": "es",
-            "description": "If applicable translates the response to the provided language."
-          }
-        ],
         "requestBody": {
           "$ref": "#/components/parameters/BasicUserAuth"
         },
@@ -2154,6 +2142,16 @@
                 "type": "string"
               }
             }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "es",
+            "description": "If applicable translates the response to the provided language."
           }
         ],
         "responses": {
