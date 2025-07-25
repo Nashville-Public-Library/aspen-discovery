@@ -1069,7 +1069,8 @@ abstract class DataObject implements JsonSerializable {
 						$history->actionType = 2;
 						$history->objectId = $this->$primaryKey;
 						$history->oldValue = $oldValue;
-						$history->propertyName = $propertyName;
+						require_once ROOT_DIR . '/sys/DataObjectUtil.php';
+						$history->propertyName = DataObjectUtil::getHistoryPropertyName($this, $propertyName);
 						$history->newValue = $newValue;
 						$history->changedBy = UserAccount::getActiveUserId();
 						$history->changeDate = time();
