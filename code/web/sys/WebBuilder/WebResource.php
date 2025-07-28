@@ -26,7 +26,7 @@ class WebResource extends DB_LibraryLinkedObject {
 	public $lastUpdate;
 	public $generatePlacard;
 
-	private $_allowAccessByLibrary;
+	protected $_allowAccessByLibrary;
 
 	protected $_audiences;
 	protected $_categories;
@@ -45,7 +45,7 @@ class WebResource extends DB_LibraryLinkedObject {
 	}
 
 	static function getObjectStructure($context = ''): array {
-		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Web Resources'));
+		$libraryList = Library::getLibraryListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Web Resources'));
 		$audiencesList = WebBuilderAudience::getAudiences();
 		$categoriesList = WebBuilderCategory::getCategories();
 		return [
@@ -524,7 +524,7 @@ class WebResource extends DB_LibraryLinkedObject {
 		$placard->sourceType = 'web_resource';
 		$placard->sourceId = $this->id;
 		if (!$placard->find(true)){//if placard exists don't update (user will be prompted separately)
-			$fileType = substr($this->logo, 0, -3);
+			$fileType = substr($this->logo, -3);
 			$fileType = match ($fileType) {
 				'gif' => ".gif",
 				'png' => ".png",

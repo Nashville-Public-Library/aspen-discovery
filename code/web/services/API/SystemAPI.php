@@ -370,9 +370,9 @@ class SystemAPI extends AbstractAPI {
 	/** @noinspection PhpUnused */
 	public function getCurrentVersion(): array {
 		global $interface;
-		$gitBranch = $interface->getVariable('gitBranchWithCommit');
+		$aspenVersion = $interface->getVariable('aspenVersion');
 		return [
-			'version' => $gitBranch,
+			'version' => $aspenVersion,
 		];
 	}
 
@@ -541,6 +541,14 @@ class SystemAPI extends AbstractAPI {
 				'message' => $numFailed . " of " . $numRun . " updates ran successfully<br/>" . $errors,
 			];
 		}
+	}
+
+	public function updateCssForAllThemes() : array {
+		Theme::updateCssForAllThemes();
+		return [
+			'success' => true,
+			'message' => "Updated CSS for All Themes",
+		];
 	}
 
 	public function checkWhichUpdatesHaveRun($availableUpdates) {

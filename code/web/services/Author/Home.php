@@ -6,9 +6,11 @@ require_once ROOT_DIR . '/sys/Pager.php';
 require_once ROOT_DIR . '/sys/NovelistFactory.php';
 
 class Author_Home extends ResultsAction {
-	function launch() {
+	function launch(): void {
 		global $interface;
 		global $library;
+
+		$interface->assign('ipDebugEnabled', IPAddress::showDebuggingInformation());
 
 		if (!isset($_GET['author'])) {
 			$this->display('invalidAuthor.tpl', 'Unknown Author', 'Author/sidebar.tpl');
@@ -212,6 +214,8 @@ class Author_Home extends ResultsAction {
 		$interface->assign('sortList', $searchObject->getSortList());
 		$interface->assign('viewList', $searchObject->getViewList());
 		$interface->assign('rssLink', $searchObject->getRSSUrl());
+
+		$interface->assign('page', $searchObject->getPage());
 
 		// Set Show in Search Results Main Details Section options for template
 		// (needs to be set before moreDetailsOptions)

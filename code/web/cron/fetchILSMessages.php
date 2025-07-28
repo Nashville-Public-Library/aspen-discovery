@@ -13,13 +13,13 @@ foreach ($accountProfiles as $accountProfileInfo) {
 	$accountProfile = $accountProfileInfo['accountProfile'];
 	if ($accountProfile->enableFetchingIlsMessages) {
 		$ilsNotificationSetting = new ILSNotificationSetting();
-		$ilsNotificationSetting->accountProfileId =  $accountProfileInfo->accountProfileId;
+		$ilsNotificationSetting->accountProfileId =  $accountProfile->id;
 		if ($ilsNotificationSetting->find(true)) {
 			$catalogDriver = trim($accountProfile->driver);
 			if (!empty($catalogDriver)) {
 				$catalog = CatalogFactory::getCatalogConnectionInstance($catalogDriver, $accountProfile);
 				try {
-					$catalog->updateAccountNotifications();
+					$catalog->updateAccountNotifications($ilsNotificationSetting);
 				} catch (PDOException $e) {
 					echo("Could not update message queue for library $library->libraryId.");
 				}
