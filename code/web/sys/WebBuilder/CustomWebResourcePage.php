@@ -187,10 +187,9 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false): int
-	{
+	public function delete($useWhere = false): int {
 		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+		if ($ret && $useWhere && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearAudiences();
 			$this->clearCategories();
@@ -530,5 +529,9 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		$this->getCategories();
 		$this->getAudiences();
 		$this->getAccess();
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

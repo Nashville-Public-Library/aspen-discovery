@@ -257,7 +257,7 @@ class WebResource extends DB_LibraryLinkedObject {
 
 	public function delete($useWhere = false) : int {
 		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+		if ($ret && $useWhere && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearAudiences();
 			$this->clearCategories();
@@ -540,5 +540,9 @@ class WebResource extends DB_LibraryLinkedObject {
 			$placard->generatedFromSource = 'web_resource:' . $this->id;
 			$placard->insert();
 		}
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

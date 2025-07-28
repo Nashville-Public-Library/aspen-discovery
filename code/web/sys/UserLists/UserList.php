@@ -152,19 +152,12 @@ class UserList extends DataObject {
 	}
 
 	function delete($useWhere = false) : int {
-		if (!$useWhere && $this->id >= 1) {
-			$this->deleted = 1;
-			$this->dateUpdated = time();
-			$ret = parent::update();
-
+		$ret = parent::delete($useWhere);
+		if ($ret && $useWhere && !empty($this->id) && $this->id >= 1) {
 			require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
 			$listEntry = new UserListEntry();
 			$listEntry->listId = $this->id;
 			$listEntry->delete(true);
-
-			$ret = true;
-		} else {
-			$ret = parent::delete($useWhere);
 		}
 
 		global $memCache;
@@ -1522,5 +1515,9 @@ class UserList extends DataObject {
 			global $logger;
 			$logger->log("Unable to create RIS file " . $e, Logger::LOG_ERROR);
 		}
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

@@ -192,4 +192,59 @@ class FileUpload extends DataObject {
 	public function okToExport(array $selectedFilters): bool {
 		return true;
 	}
+
+	/**
+	 * When doing a hard delete ($useWhere = true),
+	 * remove the physical file and thumbnail before deleting the DB row.
+	 *
+	 * @param bool $useWhere
+	 * @return int
+	 */
+	public function delete($useWhere = false) : int {
+		if ($useWhere) {
+			if (!empty($this->fullPath) && file_exists($this->fullPath)) {
+				@unlink($this->fullPath);
+			}
+			if (!empty($this->thumbFullPath) && file_exists($this->thumbFullPath)) {
+				@unlink($this->thumbFullPath);
+			}
+		}
+		return parent::delete($useWhere);
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
+	}
+
+	/**
+	 * Purge expired soft-deleted files: delete disk files then DB rows.
+	 *
+	 * @param int $olderThanSecs
+	 * @return int
+	 */
+	public static function purgeExpired(int $olderThanSecs = 2592000): int {
+		$cutOff = time() - $olderThanSecs;
+		$expiredIds = [];
+		$fetchObj = new static();
+		$fetchObj->deleted = 1;
+		// dateDeleted > 0 = Leave files older than the Object Restorations implementation alone for now.
+		$fetchObj->whereAdd("dateDeleted > 0 AND dateDeleted < $cutOff");
+		$fetchObj->find();
+		while ($fetchObj->fetch()) {
+			// Remove file and thumbnail from disk.
+			if (!empty($fetchObj->fullPath) && file_exists($fetchObj->fullPath)) {
+				@unlink($fetchObj->fullPath);
+			}
+			if (!empty($fetchObj->thumbFullPath) && file_exists($fetchObj->thumbFullPath)) {
+				@unlink($fetchObj->thumbFullPath);
+			}
+			$expiredIds[] = $fetchObj->id;
+		}
+		if (empty($expiredIds)) {
+			return 0;
+		}
+		$deleteObj = new static();
+		$deleteObj->whereAddIn($deleteObj->getPrimaryKey(), $expiredIds, false);
+		return $deleteObj->delete(true);
+	}
 }

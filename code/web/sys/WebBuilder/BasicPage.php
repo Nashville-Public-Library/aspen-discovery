@@ -212,7 +212,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 
 	public function delete($useWhere = false) : int {
 		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+		if ($ret && $useWhere && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearAudiences();
 			$this->clearCategories();
@@ -589,5 +589,9 @@ class BasicPage extends DB_LibraryLinkedObject {
 		$this->getAudiences();
 		$this->getAllowableHomeLocations();
 		$this->getAccess();
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

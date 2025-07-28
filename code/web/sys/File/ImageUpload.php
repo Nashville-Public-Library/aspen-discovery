@@ -350,4 +350,71 @@ class ImageUpload extends DataObject {
 	public function okToExport(array $selectedFilters): bool {
 		return true;
 	}
+
+	/**
+	 * When doing a hard delete ($useWhere = true),
+	 * remove all image variants from disk before deleting the DB row.
+	 *
+	 * @param bool $useWhere
+	 * @return int
+	 */
+	public function delete($useWhere = false) : int {
+		global $serverName;
+		if ($useWhere) {
+			$baseDir = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image';
+			$variants = [
+				'full' => $this->fullSizePath,
+				'x-large' => $this->xLargeSizePath,
+				'large' => $this->largeSizePath,
+				'medium' => $this->mediumSizePath,
+				'small' => $this->smallSizePath,
+			];
+			foreach ($variants as $size => $filename) {
+				if (!empty($filename)) {
+					$path = $baseDir . '/' . $size . '/' . $filename;
+					if (file_exists($path)) {
+						@unlink($path);
+					}
+				}
+			}
+		}
+		return parent::delete($useWhere);
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
+	}
+
+	/**
+	 * Purge expired soft-deleted images: delete disk files then DB rows.
+	 *
+	 * @param int $olderThanSecs
+	 * @return int
+	 */
+	public static function purgeExpired(int $olderThanSecs = 2592000): int {
+		$cutOff = time() - $olderThanSecs;
+		$expiredIds = [];
+		$fetchObj = new static();
+		$fetchObj->deleted = 1;
+		// dateDeleted > 0 = Leave images older than the Object Restorations implementation alone for now.
+		$fetchObj->whereAdd("dateDeleted > 0 AND dateDeleted < $cutOff");
+		$fetchObj->find();
+		while ($fetchObj->fetch()) {
+			// Remove each size variant from disk.
+			foreach ([$fetchObj->fullSizePath, $fetchObj->xLargeSizePath, $fetchObj->largeSizePath,
+						 $fetchObj->mediumSizePath, $fetchObj->smallSizePath] as $path) {
+				if (!empty($path) && file_exists($path)) {
+					@unlink($path);
+				}
+			}
+			$expiredIds[] = $fetchObj->id;
+		}
+		if (empty($expiredIds)) {
+			return 0;
+		}
+
+		$deleteObj = new static();
+		$deleteObj->whereAddIn($deleteObj->getPrimaryKey(), $expiredIds, false);
+		return $deleteObj->delete(true);
+	}
 }

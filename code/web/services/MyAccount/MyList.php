@@ -113,6 +113,11 @@ class MyAccount_MyList extends MyAccount {
 
 					header("Location: /MyAccount/Lists");
 					die();
+				} elseif ($actionToPerform == 'deleteListHard') {
+					$list->delete(true);
+
+					header("Location: /MyAccount/Lists");
+					die();
 				} elseif ($actionToPerform == 'bulkAddTitles') {
 					$notes = $this->bulkAddTitles($list);
 					$this->reloadCover();

@@ -160,7 +160,7 @@ class CustomForm extends DB_LibraryLinkedObject {
 
 	public function delete($useWhere = false) : int {
 		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+		if ($ret && $useWhere && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearFormFields();
 		}
@@ -333,5 +333,9 @@ class CustomForm extends DB_LibraryLinkedObject {
 		}
 
 		return $result;
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

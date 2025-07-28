@@ -233,15 +233,13 @@ class PortalPage extends DB_LibraryLinkedObject {
 
 	public function delete($useWhere = false) : int {
 		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+		if ($ret && $useWhere && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearAudiences();
 			$this->clearCategories();
 			$this->clearAccess();
-			if ($useWhere == false) {
-				foreach ($this->getRows() as $row) {
-					$row->delete();
-				}
+			foreach ($this->getRows() as $row) {
+				$row->delete();
 			}
 		}
 		return $ret;
@@ -620,5 +618,9 @@ class PortalPage extends DB_LibraryLinkedObject {
 			}
 		}
 		parent::finishCopy($sourceId);
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

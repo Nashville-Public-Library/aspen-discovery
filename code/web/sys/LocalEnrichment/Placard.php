@@ -289,7 +289,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 
 	public function delete($useWhere = false) : int {
 		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+		if ($ret && $useWhere && !empty($this->id)) {
 			$triggers = new PlacardTrigger();
 			$triggers->placardId = $this->id;
 			$triggers->delete(true);
@@ -562,5 +562,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 				}
 			}
 		}
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }
