@@ -9,8 +9,8 @@
 		<thead>
 			<tr>
 				<th>{translate text="Property Name" isAdminFacing=true}</th>
-				<th>{translate text="Value 1" isAdminFacing=true} <a href="{$object1EditUrl}" class="btn btn-sm btn-default">{translate text="Edit" isAdminFacing=true}</a></th>
-				<th>{translate text="Value 2" isAdminFacing=true}  <a href="{$object2EditUrl}" class="btn btn-sm btn-default">{translate text="Edit" isAdminFacing=true}</a></th>
+				<th>{translate text="Value 1" isAdminFacing=true} {if !empty($showEditButtons) && !empty($object1EditUrl)}<a href="{$object1EditUrl}" class="btn btn-sm btn-default">{translate text="Edit" isAdminFacing=true}</a>{/if}</th>
+				<th>{translate text="Value 2" isAdminFacing=true} {if !empty($showEditButtons) && !empty($object2EditUrl)}<a href="{$object2EditUrl}" class="btn btn-sm btn-default">{translate text="Edit" isAdminFacing=true}</a>{/if}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -25,8 +25,8 @@
 		<tfoot>
 			<tr>
 				<th></th>
-				<th><a href="{$object1EditUrl}" class="btn btn-sm btn-default">{translate text="Edit" isAdminFacing=true}</a></th>
-				<th><a href="{$object2EditUrl}" class="btn btn-sm btn-default">{translate text="Edit" isAdminFacing=true}</a></th>
+				<th>{if !empty($showEditButtons) && !empty($object1EditUrl)}<a href="{$object1EditUrl}" class="btn btn-sm btn-default">{translate text="Edit" isAdminFacing=true}</a>{/if}</th>
+				<th>{if !empty($showEditButtons) && !empty($object2EditUrl)}<a href="{$object2EditUrl}" class="btn btn-sm btn-default">{translate text="Edit" isAdminFacing=true}</a>{/if}</th>
 			</tr>
 		</tfoot>
 	</table>

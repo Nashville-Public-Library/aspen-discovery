@@ -14,7 +14,7 @@
 </div>
 
 {if !empty($updateMessage)}
-	<div class="alert {if !empty($updateMessageIsError)}alert-danger{else}alert-info{/if}">
+	<div class="alert {if !empty($updateMessageIsError)}alert-danger{else}alert-success{/if}">
 		{$updateMessage}
 	</div>
 {/if}
@@ -265,7 +265,7 @@
 		<div class="row" style="padding-top: 1em">
 			<div class="btn-group col-sm-12">
 				{foreach from=$customListActions item=customAction}
-					<button type='submit' value='{$customAction.action}' class="btn btn-default" onclick="$('#objectAction').val('{$customAction.action}'){if !empty($customAction.onclick)};{$customAction.onclick}{/if}">{translate text=$customAction.label isAdminFacing=true}</button>
+					<button type='submit' value='{$customAction.action}' class='btn{if !empty($customAction.class)} {$customAction.class}{else} btn-default{/if}'{if !empty($customAction.onclick)} onclick="$('#objectAction').val('{$customAction.action}');{$customAction.onclick nofilter}"{/if}>{translate text=$customAction.label isAdminFacing=true}</button>
 				{/foreach}
 			</div>
 		</div>
