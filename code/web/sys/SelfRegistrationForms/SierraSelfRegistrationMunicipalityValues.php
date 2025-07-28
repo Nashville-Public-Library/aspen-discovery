@@ -131,9 +131,9 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 				'type' => 'enum',
 				'label' => 'Expiration Period',
 				'values' => [
-					'days' => 'Days',
-					'months' => 'Months',
-					'years' => 'Years',
+					'D' => 'Days',
+					'M' => 'Months',
+					'Y' => 'Years',
 				],
 				'description' => 'The type of municipality',
 				'default' => '0',

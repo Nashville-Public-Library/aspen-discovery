@@ -1887,11 +1887,13 @@ class Sierra extends Millennium {
 
 		$selfRegistrationForm = null;
 		$formFields = null;
+		$municipalities = null;
 		if ($library->selfRegistrationFormId > 0){
 			$selfRegistrationForm = new SierraSelfRegistrationForm();
 			$selfRegistrationForm->id = $library->selfRegistrationFormId;
 			if ($selfRegistrationForm->find(true)) {
 				$formFields = $selfRegistrationForm->getFields();
+				$municipalities = $selfRegistrationForm->getMunicipalities();
 			}else {
 				$selfRegistrationForm = null;
 			}
@@ -2002,6 +2004,100 @@ class Sierra extends Millennium {
 					'value' => $selfRegistrationForm->selfRegAgency
 				];
 			}
+
+			// Override with any municipality-specific settings
+			if (!empty($municipalities)) {
+				// Use Google Geocoding API to get patron's municipality
+				if (!empty($params['addresses'])) {
+					$address = implode(", ", $params['addresses'][0]->lines);
+					$address = str_replace("\r\n", ",", $address);
+					$address = str_replace(" ", "+", $address);
+					$address = str_replace("#", "", $address);
+
+					require_once ROOT_DIR . '/sys/Enrichment/GoogleApiSetting.php';
+					$googleSettings = new GoogleApiSetting();
+					if ($googleSettings->find(true)) {
+						if (!empty($googleSettings->googleMapsKey)) {
+							$apiKey = $googleSettings->googleMapsKey;
+							$url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' . $address . '&key=' . $apiKey;
+
+							// fetch google geocode data
+							$curl = new CurlWrapper();
+							$response = $curl->curlGetPage($url);
+							$data = json_decode($response);
+							$curl->close_curl();
+
+							if ($data->status == 'OK') {
+								$components = $data->results[0]->address_components;
+
+								$city = '';
+								$county = '';
+								$state = '';
+								foreach ($components as $component) {
+									if ($component->types[0] == 'locality') {
+										$city = $component->short_name;
+									}
+									else if ($component->types[0] == 'administrative_area_level_2') {
+										$county = $component->short_name;
+									}
+									else if ($component->types[0] == 'administrative_area_level_1') {
+										$state = $component->short_name;
+									}
+								}
+								$matchId = null;
+								if ($city != '') {
+									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType($city, 'city');
+								}
+								if (!$matchId && $county != '') {
+									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType($county, 'county');
+								}
+								if (!$matchId && $state != '') {
+									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType($state, 'state');
+								}
+								if ($matchId) {
+									// Abort if self-registration is not allowed
+									if (!$municipalities[$matchId]->selfRegAllowed) {
+										return [
+											'success' => false,
+											'message' => translate([
+												'text' => "Your address is not within the library’s service area. Please contact the library for more information.",
+												'isPublicFacing' => true
+											])
+										];
+									}
+									// Override PType and PCode Settings according to match settings
+									if (!empty($municipalities[$matchId]->expirationLength)) {
+										$expirationDays = $municipalities[$matchId]->expirationLength;
+										$expirationDate = new DateTime();
+										if (!empty($municipalities[$matchId]->expirationPeriod)) {
+											$expirationPeriod = $municipalities[$matchId]->expirationPeriod;
+										} else {
+											$expirationPeriod = "D";
+										}
+										$expirationDate->add(new DateInterval('P' . $expirationDays . $expirationPeriod));
+										$params['expirationDate'] = $expirationDate->format('Y-m-d');
+									}
+									if (!empty($municipalities[$matchId]->sierraPType) && $municipalities[$matchId]->sierraPType != -1) {
+										$params['patronType'] = (int)$municipalities[$matchId]->sierraPType;
+									}
+									if (!empty($municipalities[$matchId]->sierraPCode1)) {
+										$params['patronCodes']['pcode1'] = $municipalities[$matchId]->sierraPCode1;
+									}
+									if (!empty($municipalities[$matchId]->sierraPCode2)) {
+										$params['patronCodes']['pcode2'] = $municipalities[$matchId]->sierraPCode2;
+									}
+									if (!empty($municipalities[$matchId]->sierraPCode3 && $municipalities[$matchId]->sierraPCode3 != -1)) {
+										$params['patronCodes']['pcode3'] = (int)$municipalities[$matchId]->sierraPCode3;
+									}
+									if (!empty($municipalities[$matchId]->sierraPCode1) && $municipalities[$matchId]->sierraPCode4 != -1) {
+										$params['patronCodes']['pcode4'] = (int)$municipalities[$matchId]->sierraPCode4;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 		if (!$selfRegistrationForm->selfRegNoDuplicateCheck) {
 			if ($this->checkForDuplicateUsers($_REQUEST['lastName'], $_REQUEST['firstName'], $params['birthDate'])) {
@@ -2073,13 +2169,15 @@ class Sierra extends Millennium {
 		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/metadata?";
 		$sierraUrl .= http_build_query($params);
 		$metadataResponse = $this->_callUrl('sierra.getPatronMetadata', $sierraUrl);
-		if ($metadataResponse && is_array($metadataResponse) && property_exists($metadataResponse[0], 'values')) {
-			$options = [];
-			foreach ($metadataResponse[0]->values as $option) {
-				$code = $option->code;
-				$options[$option->code] = $option->code . " - " . $option->desc;
+		if ($metadataResponse && is_array($metadataResponse)) {
+			$metadataOptions = [];
+			foreach ($metadataResponse as $metadata) {
+				foreach ($metadata->values as $option) {
+					$code = $option->code;
+					$metadataOptions[$metadata->field][$code] = $code . " - " . $option->desc;
+				}
 			}
-			return $options;
+			return $metadataOptions;
 		} else {
 			return [];
 		}

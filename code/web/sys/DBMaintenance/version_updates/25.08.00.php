@@ -34,7 +34,7 @@ function getUpdates25_08_00(): array {
 					`sierraPCode3` int DEFAULT NULL,
 					`sierraPCode4` int DEFAULT NULL,					
 					`expirationLength` tinyint,
-					`expirationPeriod` varchar(10) DEFAULT 'day'
+					`expirationPeriod` char DEFAULT 'd'
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 			]
 		], //sierra_self_reg_enhancements

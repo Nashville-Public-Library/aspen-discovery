@@ -330,6 +330,17 @@ class SierraSelfRegistrationForm extends DataObject {
 		return $this->_municipalities;
 	}
 
+	public function getMunicipalitySettingsByNameAndType($name, $type) {
+		$municipalities = new SierraSelfRegistrationMunicipalityValues();
+		$municipalities->selfRegistrationFormId = $this->id;
+		$municipalities->municipality = $name;
+		$municipalities->municipalityType = $type;
+		if ($municipalities->find(true)) {
+			return $municipalities->id;
+		}
+		return null;
+	}
+
 	public function clearFields() {
 		$this->clearOneToManyOptions('SelfRegistrationFormValues', 'selfRegistrationFormId');
 		/** @noinspection PhpUndefinedFieldInspection */
