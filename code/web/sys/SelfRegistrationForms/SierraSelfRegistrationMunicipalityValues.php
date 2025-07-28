@@ -32,19 +32,19 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 		$pCode4Options[''] = "None";
 		$metadataOptions = self::getMetadataOptions('patronType,pcode1,pcode2,pcode3,pcode4');
 		if (!empty($metadataOptions['patronType'])) {
-			$sierraPTypes = array_merge($sierraPTypes, $metadataOptions['patronType']);
+			$sierraPTypes = $sierraPTypes + $metadataOptions['patronType'];
 		}
 		if (!empty($metadataOptions['pcode1'])) {
-			$pCode1Options = array_merge($pCode1Options, $metadataOptions['pcode1']);
+			$pCode1Options = $pCode1Options + $metadataOptions['pcode1'];
 		}
 		if (!empty($metadataOptions['pcode2'])) {
-			$pCode2Options = array_merge($pCode2Options, $metadataOptions['pcode2']);
+			$pCode2Options = $pCode2Options + $metadataOptions['pcode2'];
 		}
 		if (!empty($metadataOptions['pcode3'])) {
-			$pCode3Options = array_merge($pCode3Options, $metadataOptions['pcode3']);
+			$pCode3Options = $pCode3Options + $metadataOptions['pcode3'];
 		}
 		if (!empty($metadataOptions['pcode4'])) {
-			$pCode4Options = array_merge($pCode4Options, $metadataOptions['pcode4']);
+			$pCode4Options = $pCode4Options + $metadataOptions['pcode4'];
 		}
 		return [
 			'id' => [
