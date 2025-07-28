@@ -415,7 +415,7 @@ class UserListIndexer {
 
 	/**
 	 * Clean up Solr index entries for permanently deleted UserLists.
-     */
+	 */
 	private void cleanupDeletedLists(ListIndexingLogEntry logEntry) {
 		try {
 			PreparedStatement getDeletedListsStmt = dbConn.prepareStatement("SELECT listId FROM user_list_deleted_index_cleanup ORDER BY dateDeleted ASC");
