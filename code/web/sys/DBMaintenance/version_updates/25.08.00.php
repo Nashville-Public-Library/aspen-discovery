@@ -70,6 +70,20 @@ function getUpdates25_08_00(): array {
 				"ALTER TABLE placards ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
 			],
 		],// add_soft_delete_columns
+		'user_list_deleted_index_cleanup' => [
+			'title' => 'User List Deleted Index Cleanup Table',
+			'description' => 'Create table to track permanently deleted user lists for Solr index cleanup.',
+			'continueOnError' => true,
+			'sql' => [
+				"CREATE TABLE user_list_deleted_index_cleanup (
+					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					listId BIGINT NOT NULL,
+					dateDeleted INT(11) NOT NULL,
+					INDEX listId (listId),
+					INDEX dateDeleted (dateDeleted)
+				) ENGINE = InnoDB"
+			]
+		], //user_list_deleted_index_cleanup
 
 		// Laura Escamilla - ByWater Solutions
 

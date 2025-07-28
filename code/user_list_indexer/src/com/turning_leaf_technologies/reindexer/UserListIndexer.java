@@ -164,21 +164,22 @@ class UserListIndexer {
 	Long processPublicUserLists(boolean fullReindex, long lastReindexTime, ListIndexingLogEntry logEntry) {
 		long numListsProcessed = 0L;
 		long numListsIndexed = 0;
-		try{
+		try {
 			PreparedStatement listsStmt;
 			PreparedStatement numListsStmt;
 			if (fullReindex){
-				//Delete all lists from the index
 				updateServer.deleteByQuery("recordtype:list");
-				//Get a list of all public lists
-				numListsStmt = dbConn.prepareStatement("select count(id) as numLists from user_list WHERE deleted = 0 AND public = 1 and searchable = 1");
-				listsStmt = dbConn.prepareStatement("SELECT user_list.id as id, deleted, public, searchable, title, description, user_list.created, dateUpdated, username, firstname, lastname, IF(user_list.displayListAuthor=0, 'Library Staff', displayName) AS displayName, homeLocationId, user_id from user_list INNER JOIN user on user_id = user.id WHERE public = 1 AND searchable = 1 AND deleted = 0");
-			}else{
-				//Get a list of all lists that were changed since the last update
-				//Have to process all lists because one could have been deleted, made private, or made non-searchable.
-				numListsStmt = dbConn.prepareStatement("select count(id) as numLists from user_list WHERE dateUpdated >= ?");
+				updateServer.commit(false, false, true);
+				clearDeletedListsTrackingTable(logEntry);
+				// Get a list of all public lists.
+				numListsStmt = dbConn.prepareStatement("SELECT COUNT(id) AS numLists FROM user_list WHERE public = 1 AND searchable = 1");
+				listsStmt = dbConn.prepareStatement("SELECT user_list.id AS id, deleted, public, searchable, title, description, user_list.created, dateUpdated, username, firstname, lastname, IF(user_list.displayListAuthor=0, 'Library Staff', displayName) AS displayName, homeLocationId, user_id FROM user_list INNER JOIN user on user_id = user.id WHERE public = 1 AND searchable = 1 AND deleted = 0");
+			} else {
+				cleanupDeletedLists(logEntry);
+				// Get a list of all lists that were changed since the last update.
+				numListsStmt = dbConn.prepareStatement("SELECT COUNT(id) AS numLists FROM user_list WHERE dateUpdated >= ?");
 				numListsStmt.setLong(1, lastReindexTime);
-				listsStmt = dbConn.prepareStatement("SELECT user_list.id as id, deleted, public, searchable, title, description, user_list.created, dateUpdated, username, firstname, lastname, IF(user_list.displayListAuthor=0, 'Library Staff', displayName) AS displayName, homeLocationId, user_id from user_list INNER JOIN user on user_id = user.id WHERE dateUpdated >= ?");
+				listsStmt = dbConn.prepareStatement("SELECT user_list.id AS id, deleted, public, searchable, title, description, user_list.created, dateUpdated, username, firstname, lastname, IF(user_list.displayListAuthor=0, 'Library Staff', displayName) AS displayName, homeLocationId, user_id from user_list INNER JOIN user on user_id = user.id WHERE dateUpdated >= ?");
 				listsStmt.setLong(1, lastReindexTime);
 			}
 
@@ -242,6 +243,7 @@ class UserListIndexer {
 		long userId = allPublicListsRS.getLong("user_id");
 		boolean indexed = false;
 		if (!fullReindex && (deleted == 1 || isPublic == 0 || isSearchable == 0)) {
+			// List was soft-deleted, became private, or became non-searchable, so remove from index.
 			updateServer.deleteByQuery("id:" + listId);
 			logEntry.incDeleted();
 		} else {
@@ -409,5 +411,70 @@ class UserListIndexer {
 	}
 	TreeSet<Scope> getScopes() {
 		return this.scopes;
+	}
+
+	/**
+	 * Clean up Solr index entries for permanently deleted UserLists.
+     */
+	private void cleanupDeletedLists(ListIndexingLogEntry logEntry) {
+		try {
+			PreparedStatement getDeletedListsStmt = dbConn.prepareStatement("SELECT listId FROM user_list_deleted_index_cleanup ORDER BY dateDeleted ASC");
+			ResultSet deletedListsRS = getDeletedListsStmt.executeQuery();
+			
+			int cleanedUpCount = 0;
+			while (deletedListsRS.next()) {
+				long listId = deletedListsRS.getLong("listId");
+				try {
+					updateServer.deleteByQuery("id:" + listId);
+					cleanedUpCount++;
+					logEntry.incDeleted();
+
+					PreparedStatement removeTrackingStmt = dbConn.prepareStatement("DELETE FROM user_list_deleted_index_cleanup WHERE listId = ?");
+					removeTrackingStmt.setLong(1, listId);
+					removeTrackingStmt.executeUpdate();
+					removeTrackingStmt.close();
+					
+				} catch (Exception e) {
+					logEntry.incErrors("Error cleaning up deleted list " + listId + " from Solr index: ", e);
+				}
+			}
+			
+			deletedListsRS.close();
+			getDeletedListsStmt.close();
+			
+			if (cleanedUpCount > 0) {
+				logEntry.addNote("Cleaned up " + cleanedUpCount + " permanently deleted list(s) from Solr index.");
+				updateServer.commit(false, false, true);
+			}
+			
+		} catch (Exception e) {
+			logEntry.incErrors("Error during deleted lists cleanup: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Clean up the tracking table during full reindexes.
+	 */
+	private void clearDeletedListsTrackingTable(ListIndexingLogEntry logEntry) {
+		try {
+			PreparedStatement countStmt = dbConn.prepareStatement("SELECT COUNT(*) FROM user_list_deleted_index_cleanup");
+			ResultSet countRS = countStmt.executeQuery();
+			int trackingRecords = 0;
+			if (countRS.next()) {
+				trackingRecords = countRS.getInt(1);
+			}
+			countRS.close();
+			countStmt.close();
+
+			if (trackingRecords > 0) {
+				PreparedStatement clearStmt = dbConn.prepareStatement("DELETE FROM user_list_deleted_index_cleanup");
+				clearStmt.executeUpdate();
+				clearStmt.close();
+
+				logEntry.addNote("Cleared " + trackingRecords + " deleted list tracking records during full reindex.");
+			}
+		} catch (Exception e) {
+			logEntry.incErrors("Error clearing deleted lists tracking table: " + e.getMessage());
+		}
 	}
 }
