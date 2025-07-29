@@ -84,10 +84,14 @@ class ObjectRestoration extends DataObject {
 		$basePath = '/Admin/ObjectRestorations';
 		$composite = $this->compositeId;
 
+		$restoreUrl = "$basePath?objectAction=restore&id=$composite";
+		$escapedRestoreUrl = htmlspecialchars($restoreUrl, ENT_QUOTES);
+		$restoreJs = "const btn = \$(this); btn.html('&lt;i class=&quot;fas fa-spinner fa-spin&quot;&gt;&lt;/i&gt; Restoring...').addClass('disabled').prop('disabled', true); window.location.href = &quot;" . $escapedRestoreUrl . "&quot;";
 		$actions[] = [
 			'text' => 'Restore',
-			'url' => "$basePath?objectAction=restore&id=$composite",
+			'url' => $restoreUrl,
 			'class' => 'btn-primary',
+			'onclick' => "$restoreJs; return false;",
 		];
 		$actions[] = [
 			'text' => 'History',

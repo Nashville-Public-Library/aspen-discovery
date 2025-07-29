@@ -13,7 +13,8 @@ require_once ROOT_DIR . '/sys/ObjectRestoration.php';
  * 1. Ensure the target DataObject implements `supportsSoftDelete()` returning
  *    `true` and that its table contains `deleted` (TINYINT(1)), `dateDeleted` (INT),
  *    and `deletedBy` (INT(11)) columns.  The base `DataObject` already handles
- *    the logic.
+ *    the logic. Note that UserList is a special case with `deleteFromIndex` (TINYINT(1))
+ *	  because lists must be deleted from Solr before deleting them from the DB.
  * 2. Append an entry to `self::$managedClasses` below:
  *        `'NewClass' => [
  *            'titleColumn' => 'title',
@@ -128,12 +129,17 @@ class Admin_ObjectRestorations extends ObjectEditor {
 			$sample->selectAdd('deletedBy');
 			if ($class === 'UserList') {
 				$sample->selectAdd('user_id');
+				$sample->selectAdd('deleteFromIndex');
 			}
 			if (!method_exists($sample, 'supportsSoftDelete') || !$sample->supportsSoftDelete()) continue;
 
 			$sample->_includeDeleted = true;
 			$sample->deleted = 1;
 			$sample->whereAdd('dateDeleted > 0');
+			if ($class === 'UserList') {
+				// Exclude lists marked for deletion from index.
+				$sample->whereAdd('(deleteFromIndex IS NULL OR deleteFromIndex = 0)');
+			}
 			$sample->find();
 			while ($sample->fetch()) {
 				$rows[$class . '_' . $sample->getPrimaryKeyValue()] = $this->createRestorationItem($sample, $class, $info['titleColumn']);

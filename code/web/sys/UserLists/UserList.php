@@ -15,6 +15,7 @@ class UserList extends DataObject {
 	public $displayListAuthor;
 	public $deleted;
 	public $dateUpdated;
+	public $deleteFromIndex;
 	public $defaultSort;
 	public $importedFrom;
 	public $nytListModified;
@@ -48,6 +49,7 @@ class UserList extends DataObject {
 			'deleted',
 			'searchable',
 			'displayListAuthor',
+			'deleteFromIndex',
 		];
 	}
 
@@ -152,13 +154,18 @@ class UserList extends DataObject {
 	}
 
 	function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
-		if ($ret && $useWhere && !empty($this->id) && $this->id >= 1) {
-			self::trackDeletedUserListForSolrCleanup($this->id);
-			require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
-			$listEntry = new UserListEntry();
-			$listEntry->listId = $this->id;
-			$listEntry->delete(true);
+		if ($useWhere && !empty($this->id) && $this->id >= 1) {
+			// Hard delete by marking for index cleanup.
+			$this->deleteFromIndex = 1;
+			$ret = $this->update();
+			if ($ret) {
+				require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
+				$listEntry = new UserListEntry();
+				$listEntry->listId = $this->id;
+				$listEntry->delete(true);
+			}
+		} else {
+			$ret = parent::delete($useWhere);
 		}
 
 		global $memCache;
@@ -1520,57 +1527,5 @@ class UserList extends DataObject {
 
 	public function supportsSoftDelete(): bool {
 		return true;
-	}
-
-	/**
-	 * Track permanently deleted UserList for Solr index cleanup.
-	 *
-	 * @param int|string $listId
-	 */
-	private static function trackDeletedUserListForSolrCleanup(int|string $listId): void {
-		try {
-			global $aspen_db;
-			if ($aspen_db) {
-				$dateDeleted = time();
-				$stmt = $aspen_db->prepare("INSERT INTO user_list_deleted_index_cleanup (listId, dateDeleted) VALUES (?, ?)");
-				$stmt->execute([$listId, $dateDeleted]);
-			}
-		} catch (Exception $e) {
-			global $logger;
-			$logger->error("Failed to track deleted UserList $listId for index cleanup: " . $e->getMessage());
-		}
-	}
-
-	/**
-	 * Track deleted UserLists for Solr index cleanup.
-	 *
-	 * @param int $olderThanSecs
-	 * @return int
-	 */
-	public static function purgeExpired(int $olderThanSecs = 2592000): int {
-		$obj = new static();
-		if (!$obj->supportsSoftDelete()) return 0;
-
-		$obj->deleted = 1;
-		$cutOff = time() - $olderThanSecs;
-		$obj->whereAdd("dateDeleted > 0 AND dateDeleted < $cutOff");
-		$obj->find();
-		
-		$deletedCount = 0;
-		while ($obj->fetch()) {
-			$listId = $obj->id;
-			self::trackDeletedUserListForSolrCleanup($listId);
-
-			$deleteObj = new UserList();
-			$deleteObj->id = $listId;
-			$deleteObj->_includeDeleted = true;
-			if ($deleteObj->find(true)) {
-				if ($deleteObj->delete(true)) {
-					$deletedCount++;
-				}
-			}
-		}
-		
-		return $deletedCount;
 	}
 }
