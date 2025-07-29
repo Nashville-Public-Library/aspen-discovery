@@ -31,7 +31,7 @@
 					</div>
 				</div>
 			</div>
-			{if $highlightOpenToEnrollCampaigns}
+			{if $highlightOpenToEnrollCampaigns && !empty($campaignsToEnroll)}
 				<h3 class="card-title text-primary">
 					{translate text="Enroll Now: " isPublicFacing=true}
 				</h3>
