@@ -26,6 +26,7 @@ class SierraSelfRegistrationForm extends DataObject {
 	public $selfRegNoDuplicateCheck;
 	public $selfRegUseAgency;
 	public $selfRegUsePatronIdBarcode;
+	public $selfRegNoticePrefOptions;
 
 
 	private $_fields;
@@ -194,7 +195,15 @@ class SierraSelfRegistrationForm extends DataObject {
 					'p' => 'Phone',
 					't' => 'Text'
 				],
-				'default' => '-'
+				'default' => '-',
+				'note' => 'Use to set default notice preference when you do not have a Notice Preference field.'
+			],
+			'selfRegNoticePrefOptions' => [
+				'property' => 'selfRegNoticePrefOptions',
+				'type' => 'textarea',
+				'label' => 'Notice Preference Options',
+				'description' => 'A list of allowed options for notices',
+				'note' => 'Format as code, description. Each option should be on a new line. Requires the Notice Preference field.',
 			],
 			'selfRegUseAgency' => [
 				'property' => 'selfRegUseAgency',

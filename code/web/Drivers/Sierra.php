@@ -1857,6 +1857,23 @@ class Sierra extends Millennium {
 						'label' => 'Confirm PIN',
 						'required' => true
 					];
+				} else if ($customField->ilsName == 'noticePreference') {
+					$noticePrefValues = [];
+					if (!empty($selfRegistrationForm->selfRegNoticePrefOptions)) {
+						$options = explode("\n", $selfRegistrationForm->selfRegNoticePrefOptions);
+						foreach ($options as $option) {
+							$pair = explode(',', $option);
+							$noticePrefValues[trim($pair[0])] = trim($pair[1]);
+						}
+					}
+					$fields[$customField->section]['properties'][] = [
+						'property' => $customField->ilsName,
+						'type' => 'enum',
+						'values' => $noticePrefValues,
+						'label' => $customField->displayName,
+						'required' => $customField->required,
+						'note' => $customField->note
+					];
 				} else {
 					$fields[$customField->section]['properties'][] = [
 						'property' => $customField->ilsName,
@@ -1996,12 +2013,21 @@ class Sierra extends Millennium {
 				'pcode4' => (int)$selfRegistrationForm->selfRegPcode4
 			];
 			$params['pMessage'] = $selfRegistrationForm->selfRegPatronMessage;
-			$params['fixedFields'] = [
-				'268' => [
-					'label' => 'Notice Preference',
-					'value' => $selfRegistrationForm->selfRegNoticePref
-				],
-			];
+			if (!empty($_REQUEST['noticePreference'])) {
+				$params['fixedFields'] = [
+					'268' => [
+						'label' => 'Notice Preference',
+						'value' => $_REQUEST['noticePreference']
+					],
+				];
+			} else {
+				$params['fixedFields'] = [
+					'268' => [
+						'label' => 'Notice Preference',
+						'value' => $selfRegistrationForm->selfRegNoticePref
+					],
+				];
+			}
 			if ($selfRegistrationForm->selfRegUseAgency) {
 				$params['fixedFields']['158'] = [
 					'label' => 'Patron Agency',
