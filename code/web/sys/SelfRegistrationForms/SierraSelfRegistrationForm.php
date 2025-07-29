@@ -25,6 +25,7 @@ class SierraSelfRegistrationForm extends DataObject {
 	public $selfRegEmailBarcode;
 	public $selfRegNoDuplicateCheck;
 	public $selfRegUseAgency;
+	public $selfRegUsePatronIdBarcode;
 
 
 	private $_fields;
@@ -92,6 +93,14 @@ class SierraSelfRegistrationForm extends DataObject {
 				'description' => 'The ILS template to use during self registration',
 				'hideInLists' => true,
 				'default' => 'default',
+			],
+			'selfRegUsePatronIdBarcode' => [
+				'property' => 'selfRegUsePatronIdBarcode',
+				'type' => 'checkbox',
+				'label' => 'Use Patron ID as Barcode',
+				'description' => "Use Patron ID as a temporary barcode",
+				'default' => 0,
+				'note' => "If checked, other barcode settings will be ignored."
 			],
 			'selfRegBarcodePrefix' => [
 				'property' => 'selfRegBarcodePrefix',

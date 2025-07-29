@@ -22,6 +22,7 @@ function getUpdates25_08_00(): array {
 			'sql' => [
 				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegNoDuplicateCheck TINYINT(1) DEFAULT 0',
 				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegUseAgency TINYINT(1) DEFAULT 0',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegUsePatronIdBarcode TINYINT(1) DEFAULT 0',
 				"CREATE TABLE IF NOT EXISTS sierra_self_reg_municipality_values (
 					`id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
 					`selfRegistrationFormId` int(11) NOT NULL,

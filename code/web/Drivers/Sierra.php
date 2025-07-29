@@ -1957,21 +1957,25 @@ class Sierra extends Millennium {
 			$barcodePrefix = '';
 			// set barcode suffix length to 7 if not set
 			$barcodeSuffixLength = 7;
-			if (!empty($selfRegistrationForm->selfRegBarcodePrefix)) {
-				$barcodePrefix = $selfRegistrationForm->selfRegBarcodePrefix;
-			}
-			if (!empty($selfRegistrationForm->selfRegBarcodeSuffixLength)) {
-				$barcodeSuffixLength = $selfRegistrationForm->selfRegBarcodeSuffixLength;
-			}
-			$barcode = $this->generateBarcode($barcodePrefix, $barcodeSuffixLength);
+			if (!$selfRegistrationForm->selfRegUsePatronIdBarcode) {
+				if (!empty($selfRegistrationForm->selfRegBarcodePrefix)) {
+					$barcodePrefix = $selfRegistrationForm->selfRegBarcodePrefix;
+				}
+				if (!empty($selfRegistrationForm->selfRegBarcodeSuffixLength)) {
+					$barcodeSuffixLength = $selfRegistrationForm->selfRegBarcodeSuffixLength;
+				}
+				$barcode = $this->generateBarcode($barcodePrefix, $barcodeSuffixLength);
 
-			if ($barcode) {
-				$params['barcodes'] = [$barcode];
+				if ($barcode) {
+					$params['barcodes'] = [$barcode];
+				} else {
+					return [
+						'success' => false,
+						'message' => 'Could not generate a valid library card number. Please try again later.'
+					];
+				}
 			} else {
-				return [
-					'success' => false,
-					'message' => 'Could not generate a valid library card number. Please try again later.'
-				];
+				$params['barcodes'] = [''];
 			}
 
 			if (!empty($selfRegistrationForm->selfRegExpirationDays)) {
@@ -2112,14 +2116,35 @@ class Sierra extends Millennium {
 		}
 
 		$sierraUrl = $this->accountProfile->vendorOpacUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/";
-		$this->_postPage('sierra.createPatron', $sierraUrl, json_encode($params));
+		$createPatronResult = $this->_postPage('sierra.createPatron', $sierraUrl, json_encode($params));
 
 		if ($this->lastResponseCode == 200) {
-			$selfRegResult = [
-				'success' => true,
-				'barcode' => $params['barcodes'][0]
-			];
-			$newUser = $this->findNewUser($barcode, null);
+			if ($selfRegistrationForm->selfRegUsePatronIdBarcode) {
+				$patronId = str_replace($sierraUrl, '', $createPatronResult->link);
+				$updateBarcodeResult = $this->updateBarcode($patronId, $patronId);
+				if ($updateBarcodeResult) {
+					$selfRegResult = [
+						'success' => true,
+						'barcode' => $patronId
+					];
+					$barcode = $patronId;
+					$newUser = $this->findNewUser($barcode, null);
+				} else {
+					$selfRegResult = [
+						'success' => false,
+						'message' => translate([
+							'text' => 'Unable to assign barcode.',
+							'isPublicFacing' => true,
+						]),
+					];
+				}
+			} else {
+				$selfRegResult = [
+					'success' => true,
+					'barcode' => $params['barcodes'][0]
+				];
+				$newUser = $this->findNewUser($barcode, null);
+			}
 			if ($newUser != null) {
 				$selfRegResult['newUser'] = $newUser;
 				$selfRegResult['sendWelcomeMessage'] = true;
@@ -2151,13 +2176,26 @@ class Sierra extends Millennium {
 		$getDuplicatePatronsStmt = "SELECT prf.last_name, prf.first_name, pr.birth_date_gmt FROM sierra_view.patron_record_fullname AS prf LEFT JOIN sierra_view.patron_record AS pr ON prf.patron_record_id = pr.id WHERE UPPER(prf.last_name) = $1 AND UPPER(prf.first_name) = $2 AND pr.birth_date_gmt = $3";
 
 		$getPatronsRS = pg_query_params($sierraDnaConnection, $getDuplicatePatronsStmt, [strtoupper(trim($lastName)), strtoupper(trim($firstName)), $birthDate]);
-		//$getPatronsRS = pg_query_params($sierraDnaConnection, $getDuplicatePatronsStmt, []);
 		if ($getPatronsRS === false || pg_num_rows($getPatronsRS) === 0) {
 			// No duplicate patrons
 			return false;
 		} else {
 			// Found one or more duplicates
 			return true;
+		}
+	}
+
+	private function updateBarcode($barcode, $patronId) {
+		$params = [
+			'barcodes' => [$barcode]
+		];
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId;
+		$updatePatronResponse = $this->_sendPage('sierra.updatePatron', 'PUT', $sierraUrl, json_encode($params));
+		if ($this->lastResponseCode == 204) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 
