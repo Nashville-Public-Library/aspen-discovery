@@ -7,8 +7,11 @@ git config --global --add safe.directory /usr/local/aspen-discovery
 apt-get update
 apt-get -y install cron wget rsyslog gpg openjdk-17-jre-headless apache2 certbot python3-certbot-apache mariadb-server apt-transport-https lsb-release ca-certificates zip
 
-# modify version as needed
+# Modify version as needed
 ./debian_install_php.sh 8.4
+
+# Rebuild GD with RAQM support for enhanced placeholder cover image support.
+./rebuild_gd_raqm.sh --php-version 8.4 --gd-version gd-2.3.3
 
 # MariaDB overrides
 cp 60-aspen.cnf /etc/mysql/mariadb.conf.d/
