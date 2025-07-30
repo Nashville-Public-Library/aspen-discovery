@@ -381,6 +381,7 @@
 
 		<!-- Edition -->
 		<field name="edition_info" type="unchanged_string" indexed="true" stored="false" multiValued="true" docValues="false"/>
+		<field name="suggestions_context_filter" type="unchanged_string" indexed="true" stored="true" multiValued="true" docValues="true"/>
 
 		<!-- Boosts -->
 		<dynamicField name="lib_boost_*" type="integer" indexed="true" stored="false"/>
@@ -397,6 +398,8 @@
 	<copyField source="subject_facet" dest="subject_suggestions"/>
 	<copyField source="personal_name_facet" dest="subject_suggestions"/>
 	<copyField source="corporate_name_facet" dest="subject_suggestions"/>
+	<copyField source="edition_info" dest="suggestions_context_filter"/>
+	<copyField source="language" dest="suggestions_context_filter"/>
 
 	<copyField source="title" dest="spelling"/>
 	<copyField source="author" dest="spelling"/>
