@@ -19,6 +19,8 @@ class UserList extends DataObject {
 	public $defaultSort;
 	public $importedFrom;
 	public $nytListModified;
+	public $dateDeleted;
+	public $deletedBy;
 
 	public function getUniquenessFields(): array {
 		return ['id'];

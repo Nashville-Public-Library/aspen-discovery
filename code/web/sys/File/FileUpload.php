@@ -10,6 +10,9 @@ class FileUpload extends DataObject {
 	public $owningLibrary;
 	public $sharing;
 	public $sharedWithLibrary;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	public function getUniquenessFields(): array {
 		return ['id'];

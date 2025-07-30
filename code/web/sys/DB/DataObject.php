@@ -37,9 +37,6 @@ abstract class DataObject implements JsonSerializable {
 
 	public $_deleteOnSave;
 
-	public $deleted;
-	public $dateDeleted;
-	public $deletedBy;
 	public bool $_includeDeleted = false; // When true, find()/count() will include deleted rows.
 
 	function objectHistoryEnabled() : bool {

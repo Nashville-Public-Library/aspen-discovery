@@ -13,6 +13,9 @@ class CustomForm extends DB_LibraryLinkedObject {
 	public $requireLogin;
 	public $introText;
 	public $submissionResultText;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	private $_libraries;
 	/** @var CustomFormField[] */

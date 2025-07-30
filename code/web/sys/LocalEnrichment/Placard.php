@@ -24,6 +24,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	public $sourceId;
 	public $generatedFromSource;
 	public $isCustomized;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	/** @var PlacardTrigger[] */
 	protected $_triggers;

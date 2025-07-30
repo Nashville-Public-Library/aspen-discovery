@@ -25,12 +25,13 @@ class WebResource extends DB_LibraryLinkedObject {
 	public $description;
 	public $lastUpdate;
 	public $generatePlacard;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	protected $_allowAccessByLibrary;
-
 	protected $_audiences;
 	protected $_categories;
-
 	protected $_libraries;
 
 	public function getNumericColumnNames(): array {

@@ -18,6 +18,9 @@ class ImageUpload extends DataObject {
 	public $owningLibrary;
 	public $sharing;
 	public $sharedWithLibrary;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	static $xLargeSize = 1100;
 	static $largeSize = 600;

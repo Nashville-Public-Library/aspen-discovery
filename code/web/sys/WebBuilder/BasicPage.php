@@ -18,6 +18,9 @@ class BasicPage extends DB_LibraryLinkedObject {
 	public $teaser;
 	public $contents;
 	public $lastUpdate;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	private $_libraries;
 	private $_audiences;

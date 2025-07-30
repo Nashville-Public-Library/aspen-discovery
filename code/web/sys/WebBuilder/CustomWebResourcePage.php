@@ -15,6 +15,9 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 	public $requireLogin;
 	public $requireLoginUnlessInLibrary;
 	public $lastUpdate;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	private $_libraries;
 	private $_audiences;

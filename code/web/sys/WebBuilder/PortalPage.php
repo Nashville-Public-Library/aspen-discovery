@@ -16,6 +16,9 @@ class PortalPage extends DB_LibraryLinkedObject {
 	public $requireLogin;
 	public $requireLoginUnlessInLibrary;
 	public $lastUpdate;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	/** @var PortalRow[] */
 	protected $_rows;
