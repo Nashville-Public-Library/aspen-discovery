@@ -179,7 +179,14 @@
 				</tbody>
 			</table>
 		{/if}
-			{if $hasLinkedUsers}
+			{assign var="hasLinkedCampaigns" value=false}
+			{foreach from=$linkedCampaigns item="linkedUser"}
+				{if $linkedUser.campaigns|@count > 0}
+					{assign var="hasLinkedCampaigns" value=true}
+					{break}
+				{/if}
+			{/foreach}
+			{if $hasLinkedCampaigns}
 				<h2>{translate text="Linked Account Campaigns" isPublicFacing=true}</h2>
 				{foreach from=$linkedCampaigns item="linkedUser"}
 					<h3>{$linkedUser.linkedUserName}</h3>
