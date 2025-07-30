@@ -101,8 +101,6 @@ class DefaultCoverImageBuilder {
 
 	public function getCover($title, $author, $filename, $image = null): void {
 		$script = $this->detectScript($title . $author);
-		//global $logger;
-		//$logger->log("Detected script: '$script' for text: '$title $author'", Logger::LOG_ERROR);
 		$this->selectFontForScript($script);
 
 		$this->setForegroundAndBackgroundColors($title, $author);
@@ -567,8 +565,8 @@ class DefaultCoverImageBuilder {
 	/**
 	 * Select fonts tailored to the detected script if they exist.
 	 * Fonts primarily from Google Fonts (https://fonts.google.com/).
+	 *
 	 * @param string $script
-	 * @return void
 	 */
 	private function selectFontForScript(string $script): void {
 		$fontMap = [
@@ -601,8 +599,6 @@ class DefaultCoverImageBuilder {
 			if (file_exists($boldPath) && file_exists($regularPath)) {
 				$this->titleFont = realpath($boldPath);
 				$this->authorFont = realpath($regularPath);
-				//global $logger;
-				//$logger->log("Font for cover with $script: " . $this->titleFont . ", " . $this->authorFont, Logger::LOG_ERROR);
 				return;
 			}
 		}
@@ -616,7 +612,6 @@ class DefaultCoverImageBuilder {
 	/**
 	 * Fallback font selection if specific script fonts are missing.
 	 *
-	 * @return void
 	 */
 	private function selectUnicodeFallbackFonts(): void {
 		$fontCandidates = [
