@@ -1378,7 +1378,7 @@ class Library extends DataObject {
 						'property' => 'showMessagingSettings',
 						'type' => 'checkbox',
 						'label' => 'Show Messaging Settings',
-						'note' => 'Applies to Koha and Symphony Only',
+						'note' => 'Applies to Koha, Symphony, and Sierra Only',
 						'description' => 'Whether or not the user should be able to view their messaging settings.',
 
 						'hideInLists' => true,

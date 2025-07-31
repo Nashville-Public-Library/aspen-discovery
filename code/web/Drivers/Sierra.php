@@ -2211,9 +2211,92 @@ class Sierra extends Millennium {
 		}
 	}
 
+	private function getValidNotificationOptions($patron = null) {
+		$sierraDnaConnection = $this->connectToSierraDNA();
+		$patronId = $patron->unique_ils_id;
+		$getNotificationOptionsStmt = "SELECT nm.code, nm.name, (pv.notification_medium_code IS NOT NULL) AS selected 
+			FROM sierra_view.notification_medium_property_myuser AS nm
+    		LEFT JOIN sierra_view.patron_view AS pv ON pv.notification_medium_code = nm.code AND pv.record_num = $1 ORDER BY display_order;";
+
+		$getNotificationOptionsRS = pg_query_params($sierraDnaConnection, $getNotificationOptionsStmt, [$patronId]);
+		if ($getNotificationOptionsRS === false) {
+			return [];
+		} else {
+			$options = [];
+			while ($curRow = pg_fetch_array($getNotificationOptionsRS, NULL, PGSQL_ASSOC)) {
+				$options[$curRow['code']]['name'] = $curRow['name'];
+				$options[$curRow['code']]['selected'] = $curRow['selected'] == 't';
+			}
+			return $options;
+		}
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function showMessagingSettings(): bool {
+		return true;
+	}
+
+	/**
+	 * @param User $patron
+	 * @return string
+	 */
+	public function getMessagingSettingsTemplate(User $patron): ?string {
+		global $interface;
+		$library = $patron->getHomeLibrary();
+		$notificationOptions = $this->getValidNotificationOptions($patron);
+		$interface->assign('notificationOptions', $notificationOptions);
+		if ($library->allowProfileUpdates) {
+			$interface->assign('canSave', true);
+		} else {
+			$interface->assign('canSave', false);
+		}
+
+		return 'sierraMessagingSettings.tpl';
+	}
+
+	public function processMessagingSettingsForm(User $patron): array {
+		/** @noinspection PhpArrayIndexImmediatelyRewrittenInspection */
+		$result = [
+			'success' => false,
+			'message' => 'Unknown error processing messaging settings.',
+		];
+		$noticeCode = $_REQUEST['noticePreference'];
+		$updateAccountInfoResponse = $this->updateNoticePreference($noticeCode, $patron->unique_ils_id);
+		if (!$updateAccountInfoResponse) {
+			if (strlen($result['message']) == 0) {
+				$result['message'] = 'Error processing messaging settings.';
+			}
+		} else {
+			$result['success'] = true;
+			$result['message'] = 'Your account was updated successfully.';
+		}
+		return $result;
+	}
+
 	private function updateBarcode($barcode, $patronId) {
 		$params = [
 			'barcodes' => [$barcode]
+		];
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId;
+		$updatePatronResponse = $this->_sendPage('sierra.updatePatron', 'PUT', $sierraUrl, json_encode($params));
+		if ($this->lastResponseCode == 204) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	private function updateNoticePreference($preferenceCode, $patronId) {
+		$params = [
+			'fixedFields' => [
+				'268' => [
+					'label' => 'Notice Preference',
+					'value' => $preferenceCode
+				],
+			]
 		];
 		$sierraUrl = $this->accountProfile->vendorOpacUrl;
 		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId;
