@@ -3861,7 +3861,8 @@ class UserAPI extends AbstractAPI {
 				$page = $_REQUEST['page'] ?? 1;
 				$pageSize = $_REQUEST['pageSize'] ?? 25;
 				$sort = $_REQUEST['sort_by'] ?? 'checkedOut';
-				$readingHistory = $user->getReadingHistory($page, $pageSize, $sort);
+				$filter = $_REQUEST['filter'] ?? '';
+				$readingHistory = $user->getReadingHistory($page, $pageSize, $sort, $filter);
 
 				$options = [
 					'totalItems' => $readingHistory['numTitles'],
