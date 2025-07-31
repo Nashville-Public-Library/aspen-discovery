@@ -370,9 +370,13 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return null;
 	}
 
-    public function getWeedingReportData($location) {
-        return null;
-    }
+   	public function getWeedingReportData($location) {
+		return null;
+	}
+	
+	public function getLibrarianFacebookData() {
+		return null;
+	}
 
 	/**
 	 * Loads any contact information that is not stored by Aspen Discovery from the ILS. Updates the user object.

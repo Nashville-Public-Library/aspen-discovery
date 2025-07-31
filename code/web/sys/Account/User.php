@@ -4516,6 +4516,9 @@ class User extends DataObject {
 				'View Location Holds Reports',
 				'View All Holds Reports',
 			]);
+			$sections['circulation_reports']->addAction(new AdminAction('Librarian Facebook', 'View images and basic information about MNPS School Librarians', '/Report/LibrarianFacebook'), [
+				'View Librarian Facebook',
+			]);
 			$sections['circulation_reports']->addAction(new AdminAction('Student Barcodes', 'View/print a report of all barcodes for a class.', '/Report/StudentBarcodes'), [
 				'View Location Student Reports',
 				'View All Student Reports',

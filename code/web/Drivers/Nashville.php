@@ -1115,6 +1115,36 @@ EOT;
 		}
 		return $data;
 	}
+	public function getLibrarianFacebookData(): ?array {
+		$this->initDatabaseConnection();
+		/** @noinspection SqlResolve */
+		$sql = <<<EOT
+			select 
+			    b.branchcode
+			     ,b.branchname
+			     ,p.patronid
+			     ,p.lastname
+			     ,p.firstname
+			     ,p.middlename
+			     ,p.suffixname
+			     ,'https://nashville.carlconnect.com/Circulation/profile/'||p.patronguid||'.png' as carlConnectImage 
+				 ,'/images/mnps/' || p.patronid || '.jpg' as catalogImage
+			from patron_v2 p 
+			left join branch_v2 b on p.defaultbranch=b.branchnumber 
+			where p.bty = '40' -- bty 40 is MNPS Librarian
+			order by b.branchname, p.lastname
+EOT;
+		$stid = oci_parse($this->dbConnection, $sql);
+		// consider using oci_set_prefetch to improve performance
+		// oci_set_prefetch($stid, 1000);
+		oci_execute($stid);
+		$data = [];
+		while (($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
+			$data[] = $row;
+		}
+		oci_free_statement($stid);
+		return $data;
+	}
 	public function getWeedingReportData($location): array {
 //        set_time_limit(0);
 		ini_set('memory_limit', '6G');
