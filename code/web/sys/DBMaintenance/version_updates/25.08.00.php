@@ -23,7 +23,7 @@ function getUpdates25_08_00(): array {
 				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegNoDuplicateCheck TINYINT(1) DEFAULT 0;',
 				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegUseAgency TINYINT(1) DEFAULT 0;',
 				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegUsePatronIdBarcode TINYINT(1) DEFAULT 0;',
-				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegNoticePrefOptions TEXT DEFAULT "z, Email\na, Mail\np, Phone;"',
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegNoticePrefOptions VARCHAR(255) DEFAULT "";',
 				"CREATE TABLE IF NOT EXISTS sierra_self_reg_municipality_values (
 					`id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
 					`selfRegistrationFormId` int(11) NOT NULL,

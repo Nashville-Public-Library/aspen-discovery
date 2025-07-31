@@ -1858,12 +1858,13 @@ class Sierra extends Millennium {
 						'required' => true
 					];
 				} else if ($customField->ilsName == 'noticePreference') {
-					$noticePrefValues = [];
 					if (!empty($selfRegistrationForm->selfRegNoticePrefOptions)) {
-						$options = explode("\n", $selfRegistrationForm->selfRegNoticePrefOptions);
-						foreach ($options as $option) {
-							$pair = explode(',', $option);
-							$noticePrefValues[trim($pair[0])] = trim($pair[1]);
+						$noticePrefValues = json_decode($selfRegistrationForm->selfRegNoticePrefOptions);
+					} else {
+						$noticePrefValues = $this->getValidNotificationOptions();
+						if (!empty($selfRegistrationForm)) {
+							$selfRegistrationForm->selfRegNoticePrefOptions = json_encode($noticePrefValues);
+							$selfRegistrationForm->update();
 						}
 					}
 					$fields[$customField->section]['properties'][] = [
@@ -2213,19 +2214,27 @@ class Sierra extends Millennium {
 
 	private function getValidNotificationOptions($patron = null) {
 		$sierraDnaConnection = $this->connectToSierraDNA();
-		$patronId = $patron->unique_ils_id;
-		$getNotificationOptionsStmt = "SELECT nm.code, nm.name, (pv.notification_medium_code IS NOT NULL) AS selected 
+		if ($patron != null) {
+			$patronId = $patron->unique_ils_id;
+			$getNotificationOptionsStmt = "SELECT nm.code, nm.name, (pv.notification_medium_code IS NOT NULL) AS selected 
 			FROM sierra_view.notification_medium_property_myuser AS nm
-    		LEFT JOIN sierra_view.patron_view AS pv ON pv.notification_medium_code = nm.code AND pv.record_num = $1 ORDER BY display_order;";
-
-		$getNotificationOptionsRS = pg_query_params($sierraDnaConnection, $getNotificationOptionsStmt, [$patronId]);
+    		LEFT JOIN sierra_view.patron_view AS pv ON pv.notification_medium_code = nm.code AND pv.record_num = $1 ORDER BY nm.display_order;";
+			$getNotificationOptionsRS = pg_query_params($sierraDnaConnection, $getNotificationOptionsStmt, [$patronId]);
+		} else {
+			$getNotificationOptionsStmt = "SELECT code, name FROM sierra_view.notification_medium_property_myuser ORDER BY display_order;";
+			$getNotificationOptionsRS = pg_query($sierraDnaConnection, $getNotificationOptionsStmt);
+		}
 		if ($getNotificationOptionsRS === false) {
 			return [];
 		} else {
 			$options = [];
 			while ($curRow = pg_fetch_array($getNotificationOptionsRS, NULL, PGSQL_ASSOC)) {
-				$options[$curRow['code']]['name'] = $curRow['name'];
-				$options[$curRow['code']]['selected'] = $curRow['selected'] == 't';
+				if ($patron != null) {
+					$options[$curRow['code']]['name'] = $curRow['name'];
+					$options[$curRow['code']]['selected'] = $curRow['selected'] == 't';
+				} else {
+					$options[$curRow['code']] = $curRow['name'];
+				}
 			}
 			return $options;
 		}
