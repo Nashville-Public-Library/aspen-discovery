@@ -3563,19 +3563,34 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 	}
 
-	function getWhileYouWait() {
+	function getWhileYouWait() : array {
 		global $library;
+		global $interface;
 		if (!$library->showWhileYouWait) {
 			return [];
 		}
 		//Load Similar titles (from Solr)
 		global $configArray;
+		global $interface;
 		require_once ROOT_DIR . '/sys/SolrConnector/GroupedWorksSolrConnector.php';
 		/** @var SearchObject_AbstractGroupedWorkSearcher $db */
 		$searchObject = SearchObjectFactory::initSearchObject();
 		$searchObject->init();
-		$searchObject->disableScoping();
-		$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, false, 3);
+		if ($library->showWhileYouWait == 1) {
+			$searchObject->init();
+			$searchObject->disableScoping();
+			$interface->assign('activeSearchSource', 'global');
+		} else {
+			$searchObject->init('local');
+			$interface->assign('activeSearchSource', 'local');
+		}
+		if ($library->showWhileYouWait == 2 && !empty($_REQUEST['activeFormat'])) {
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, true, 3, $_REQUEST['activeFormat']);
+			$interface->assign('activeFormat', $_REQUEST['activeFormat']);
+		} else{
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, false, 3);
+		}
+
 		// Send the similar items to the template; if there is only one, we need
 		// to force it to be an array or things will not display correctly.
 		if (isset($similar) && !empty($similar['response']['docs'])) {
@@ -3601,6 +3616,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 						}
 					}
 				}
+
 				$whileYouWaitTitles[] = [
 					'driver' => $similarTitleDriver,
 					'id' => $similarTitleDriver->getId(),
