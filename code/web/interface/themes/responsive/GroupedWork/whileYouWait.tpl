@@ -5,7 +5,7 @@
 	<div class="row">
 		{foreach from=$whileYouWaitTitles item=whileYouWaitTitle}
 			<div class="col-tn-12 col-sm-4 text-center">
-				<a href="{$whileYouWaitTitle.url}?activeSearchSorce={$activeSearchSource}&activeFormat={$activeFormat}">
+				<a href="{$whileYouWaitTitle.url}">
 					<img src="{$whileYouWaitTitle.coverUrl}" class="listResultImage img-thumbnail {$coverStyle}" alt="{$whileYouWaitTitle.title|escape}">
 				</a>
 				{if !empty($showRatings)}
