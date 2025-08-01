@@ -1121,14 +1121,14 @@ EOT;
 		$sql = <<<EOT
 			select 
 			    b.branchcode
-			     ,b.branchname
-			     ,p.patronid
-			     ,p.lastname
-			     ,p.firstname
-			     ,p.middlename
-			     ,p.suffixname
-			     ,'https://nashville.carlconnect.com/Circulation/profile/'||p.patronguid||'.png' as carlConnectImage 
-				 ,'/images/mnps/' || p.patronid || '.jpg' as catalogImage
+			    ,b.branchname
+			    ,p.patronid
+			    ,p.lastname
+			    ,p.firstname
+			    ,p.middlename
+			    ,p.suffixname
+			    ,'https://nashville.carlconnect.com/Circulation/profile/'||p.patronguid||'.png' as carlConnectImage 
+				,'/images/mnps/' || p.patronid || '.jpg' as catalogImage
 			from patron_v2 p 
 			left join branch_v2 b on p.defaultbranch=b.branchnumber 
 			where p.bty = '40' -- bty 40 is MNPS Librarian
