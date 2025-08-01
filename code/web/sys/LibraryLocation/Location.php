@@ -3200,14 +3200,16 @@ class Location extends DataObject {
 						}
 					}
 				}
-				//Local ILL is not available, check to see if VDX is available.
-				require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
-				require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
-				$vdxSettings = new VdxSetting();
-				if ($vdxSettings->find(true)) {
-					//Get configuration for the form.
-					if ($this->vdxFormId != -1) {
-						$this->_interlibraryLoanType = 'vdx';
+				if ($this->_interlibraryLoanType == 'none') {
+					//Local ILL is not available, check to see if VDX is available.
+					require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
+					require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
+					$vdxSettings = new VdxSetting();
+					if ($vdxSettings->find(true)) {
+						//Get configuration for the form.
+						if ($this->vdxFormId != -1) {
+							$this->_interlibraryLoanType = 'vdx';
+						}
 					}
 				}
 			} catch (Exception $e) {
