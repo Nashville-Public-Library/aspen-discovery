@@ -236,7 +236,7 @@ class ImageUpload extends DataObject {
 				}
 				$xLargeFile = $xLargeFilePath . $this->fullSizePath;
 				if (!empty($_FILES['fullSizePath']['full_path'])) {
-					$prevUpload = $xLargeFilePath . $_FILES['fullSizePath']['full_path'];
+					$prevUpload = $xLargeFilePath . "Temp_" . $_FILES['fullSizePath']['full_path'];
 					if (file_exists($prevUpload)) {
 						unlink($prevUpload);
 					}
@@ -252,7 +252,7 @@ class ImageUpload extends DataObject {
 				}
 				$largeFile = $largeFilePath . $this->fullSizePath;
 				if (!empty($_FILES['fullSizePath']['full_path'])) {
-					$prevUpload = $largeFilePath . $_FILES['fullSizePath']['full_path'];
+					$prevUpload = $largeFilePath . "Temp_" . $_FILES['fullSizePath']['full_path'];
 					if (file_exists($prevUpload)) {
 						unlink($prevUpload);
 					}
@@ -268,7 +268,7 @@ class ImageUpload extends DataObject {
 				}
 				$mediumFile = $mediumFilePath . $this->fullSizePath;
 				if (!empty($_FILES['fullSizePath']['full_path'])) {
-					$prevUpload = $mediumFilePath . $_FILES['fullSizePath']['full_path'];
+					$prevUpload = $mediumFilePath . "Temp_" . $_FILES['fullSizePath']['full_path'];
 					if (file_exists($prevUpload)) {
 						unlink($prevUpload);
 					}
@@ -284,7 +284,7 @@ class ImageUpload extends DataObject {
 				}
 				$smallFile = $smallFilePath . $this->fullSizePath;
 				if (!empty($_FILES['fullSizePath']['full_path'])) {
-					$prevUpload = $smallFilePath . $_FILES['fullSizePath']['full_path'];
+					$prevUpload = $smallFilePath . "Temp_" . $_FILES['fullSizePath']['full_path'];
 					if (file_exists($prevUpload)) {
 						unlink($prevUpload);
 					}
@@ -330,11 +330,11 @@ class ImageUpload extends DataObject {
 				$this->_isReadOnly = false;
 			}elseif (UserAccount::userHasPermission( 'Administer Web Content for Home Library')){
 				$allowableLibraries = Library::getLibraryList(true);
-				if (array_key_exists($this->owningLibrary, $allowableLibraries)) {
+				if (array_key_exists($this->owningLibrary, $allowableLibraries) || array_key_exists($this->sharedWithLibrary, $allowableLibraries)) {
 					$this->_isReadOnly = false;
 				}else{
 					//Ok if shared by everyone
-					if ($this->sharing == 2) {
+					if ($this->sharing == 2 || $this->owningLibrary == -1) {
 						$this->_isReadOnly = false;
 					}else{
 						$this->_isReadOnly = true;
