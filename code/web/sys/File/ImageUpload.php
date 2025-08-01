@@ -330,11 +330,11 @@ class ImageUpload extends DataObject {
 				$this->_isReadOnly = false;
 			}elseif (UserAccount::userHasPermission( 'Administer Web Content for Home Library')){
 				$allowableLibraries = Library::getLibraryList(true);
-				if (array_key_exists($this->owningLibrary, $allowableLibraries)) {
+				if (array_key_exists($this->owningLibrary, $allowableLibraries) || array_key_exists($this->sharedWithLibrary, $allowableLibraries)) {
 					$this->_isReadOnly = false;
 				}else{
 					//Ok if shared by everyone
-					if ($this->sharing == 2) {
+					if ($this->sharing == 2 || $this->owningLibrary == -1) {
 						$this->_isReadOnly = false;
 					}else{
 						$this->_isReadOnly = true;
