@@ -428,6 +428,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 	function defaultColumnsToShow() : array {
 		return [
 			'id' => 'Id',
+			'source' => 'Source',
 			'title' => 'Title',
 			'author' => 'Author',
 			'format' => 'Format',
