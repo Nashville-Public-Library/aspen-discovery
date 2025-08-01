@@ -234,6 +234,7 @@ class Library extends DataObject {
 	public /** @noinspection PhpUnused */
 		$showGoDeeper;
 	public $defaultNotNeededAfterDays;
+	public $maxHoldCancellationDate;
 
 	public /** @noinspection PhpUnused */
 		$publicListsToInclude;
@@ -2038,10 +2039,29 @@ class Library extends DataObject {
 							'showHoldCancelDate' => [
 								'property' => 'showHoldCancelDate',
 								'type' => 'checkbox',
-								'label' => 'Show Cancellation Date',
-								'description' => 'Whether or not the patron should be able to set a cancellation date (not needed after date) when placing holds.',
+								'label' => 'Show Hold Cancellation Date',
+								'description' => 'Whether or not patrons should be able to set a cancellation date (i.e., not needed after date) when placing holds on this catalog.',
 								'hideInLists' => true,
 								'default' => 1,
+								'onchange' => 'return AspenDiscovery.Admin.updateHoldCancellationDateFields();',
+							],
+							'defaultNotNeededAfterDays' => [
+								'property' => 'defaultNotNeededAfterDays',
+								'type' => 'integer',
+								'label' => 'Default Hold Cancellation Date',
+								'description' => 'Number of days to use for not needed after date by default. Use -1 for no default.',
+								'hideInLists' => true,
+								'default' => -1,
+								'permissions' => ['Library ILS Connection'],
+							],
+							'maxHoldCancellationDate' => [
+								'property' => 'maxHoldCancellationDate',
+								'type' => 'integer',
+								'label' => 'Maximum Hold Cancellation Date',
+								'description' => 'Maximum number of days patrons can set for hold cancellation date on this catalog. Use -1 for no limit.',
+								'hideInLists' => true,
+								'default' => -1,
+								'permissions' => ['Library ILS Connection'],
 							],
 							'showHoldPosition' => [
 								'property' => 'showHoldPosition',
@@ -2123,14 +2143,6 @@ class Library extends DataObject {
 								'description' => 'Number of days that a user can suspend a hold for. Use -1 for no limit.',
 								'hideInLists' => true,
 								'default' => 365,
-								'permissions' => ['Library ILS Connection'],
-							],
-							'defaultNotNeededAfterDays' => [
-								'property' => 'defaultNotNeededAfterDays',
-								'type' => 'integer',
-								'label' => 'Default Not Needed After Days',
-								'description' => 'Number of days to use for not needed after date by default. Use -1 for no default.',
-								'hideInLists' => true,
 								'permissions' => ['Library ILS Connection'],
 							],
 							'inSystemPickupsOnly' => [
