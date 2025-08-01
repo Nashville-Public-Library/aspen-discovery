@@ -358,7 +358,9 @@ class GroupedWork_AJAX extends JSON_Action {
 				$interface->assign('activeSearchSource', 'local');
 			}
 			UserAccount::getActiveUserObj();
-			if ($library->showYouMightAlsoLike == 3) {
+			if ($library->showYouMightAlsoLike == 3 && !empty($_REQUEST['activeFormat'])) {
+				$format = $_REQUEST['activeFormat'];
+				$interface->assign('activeFormat', $format);
 				$similar = $searchObject->getMoreLikeThis($id, false, true, 3, $format);
 			} else{
 				$similar = $searchObject->getMoreLikeThis($id, false, false, 3);

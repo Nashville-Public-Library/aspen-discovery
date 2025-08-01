@@ -3563,7 +3563,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 	}
 
-	function getWhileYouWait() {
+	function getWhileYouWait() : array {
 		global $library;
 		global $interface;
 		if (!$library->showWhileYouWait) {
@@ -3571,6 +3571,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 		//Load Similar titles (from Solr)
 		global $configArray;
+		global $interface;
 		require_once ROOT_DIR . '/sys/SolrConnector/GroupedWorksSolrConnector.php';
 		/** @var SearchObject_AbstractGroupedWorkSearcher $db */
 		$searchObject = SearchObjectFactory::initSearchObject();
@@ -3583,7 +3584,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 			$searchObject->init('local');
 			$interface->assign('activeSearchSource', 'local');
 		}
-		if ($library->showWhileYouWait == 2) {
+		if ($library->showWhileYouWait == 2 && !empty($_REQUEST['activeFormat'])) {
 			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, true, 3, $_REQUEST['activeFormat']);
 			$interface->assign('activeFormat', $_REQUEST['activeFormat']);
 		} else{
