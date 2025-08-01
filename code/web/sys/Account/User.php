@@ -6099,6 +6099,75 @@ class User extends DataObject {
 		}
 	}
 
+	public function submitLocalIllRequestEmail() : array {
+		$title = $_REQUEST['title'] ?? '';
+		$author = $_REQUEST['author'] ?? '';
+		$volume = $_REQUEST['volume'] ?? '';
+		$recordId = $_REQUEST['recordId'] ?? '';
+		$note = $_REQUEST['note'] ?? '';
+		$activeLibrary = $this->getHomeLibrary();
+		if (empty($activeLibrary->localIllEmail)) {
+			$results = [
+				'title' => translate([
+					'text' => 'Error placing request',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => "Unable to place your request, the settings are not configured correctly. Please contact the library directly to place your request.",
+					'isPublicFacing' => true,
+				]),
+				'success' => false,
+			];
+		}else if (empty($recordId)) {
+			$results = [
+				'title' => translate([
+					'text' => 'Error placing request',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => "Unable to place your request, the title to request is missing.",
+					'isPublicFacing' => true,
+				]),
+				'success' => false,
+			];
+		}else{
+			require_once ROOT_DIR . '/sys/Email/Mailer.php';
+			$mail = new Mailer();
+			$replyToAddress = $this->email;
+			$subject = "Ill Request Placed";
+			$body = "Request for ILL placed by $this->firstname $this->lastname ($this->ils_barcode) for \nTitle: $title\nAuthor: $author\nVolume: $volume\nRecord ID: $recordId";
+			$body .= "\n\nNote: " . strip_tags($note);
+			$mailSent = $mail->send($activeLibrary->localIllEmail, $subject, $body, $replyToAddress);
+			global $activeLanguage;
+			$successMessage = $activeLibrary->getTextBlockTranslation('localIllEmailSuccessMessage', $activeLanguage->code);
+			if ($mailSent) {
+				$results = [
+					'title' => translate([
+						'text' => 'Request Placed Successfully',
+						'isPublicFacing' => true,
+					]),
+					'message' => $successMessage,
+					'success' => true,
+				];
+			}else{
+				$results = [
+					'title' => translate([
+						'text' => 'Error placing request',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => "Unable to place your request, the request could not be sent. Please try again later or contact the library directly to place your request.",
+						'isPublicFacing' => true,
+					]),
+					'success' => false,
+				];
+			}
+			$results['api']['title'] = strip_tags($results['title']);
+			$results['api']['message'] = strip_tags($results['message']);
+		}
+		return $results;
+	}
+
 	private function loadYearInReviewInfo(): void {
 		if ($this->_hasYearInReview == null) {
 			$this->_hasYearInReview = false;

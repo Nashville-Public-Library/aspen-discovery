@@ -381,6 +381,8 @@ class Library extends DataObject {
 	public $showGroupedHoldCopiesCount;
 	public $localIllRequestType;
 	public $maximumLocalIllRequests;
+	public $localIllEmail;
+	public $_localIllEmailSuccessMessage;
 	public $ILLSystem;
 	public $interLibraryLoanName;
 	public $interLibraryLoanUrl;
@@ -3597,6 +3599,22 @@ class Library extends DataObject {
 						'hideInLists' => true,
 						'default' => 0,
 					],
+					'localIllEmail' => [
+						'property' => 'localIllEmail',
+						'type' => 'email',
+						'label' => 'Email to send local ILL requests that cannot be placed automatically',
+						'description' => 'The email address to send local ILL requests that cannot be placed automatically',
+						'maxLength' => 255,
+						'default' => ''
+					],
+					'localIllEmailSuccessMessage' => [
+						'property' => 'localIllEmailSuccessMessage',
+						'type' => 'translatableTextBlock',
+						'label' => 'Local ILL Email Success Message',
+						'description' => 'The success message to display when a local ILL request is successfully sent via email',
+						'defaultTextFile' => 'Library_localIllEmailSuccessMessage.MD',
+						'hideInLists' => true,
+					],
 					'maximumLocalIllRequests' => [
 						'property' => 'maximumLocalIllRequests',
 						'type' => 'integer',
@@ -4713,6 +4731,7 @@ class Library extends DataObject {
 			$this->saveTextBlockTranslations('paymentHistoryExplanation');
 			$this->saveTextBlockTranslations('costSavingsExplanationEnabled');
 			$this->saveTextBlockTranslations('costSavingsExplanationDisabled');
+			$this->saveTextBlockTranslations('localIllEmailSuccessMessage');
 			if (!empty($this->_changedFields) && in_array('cookieStorageConsent', $this->_changedFields)) {
 				$this->updateLocalAnalyticsPreferences();
 			}
@@ -4786,6 +4805,7 @@ class Library extends DataObject {
 			$this->saveTextBlockTranslations('paymentHistoryExplanation');
 			$this->saveTextBlockTranslations('costSavingsExplanationEnabled');
 			$this->saveTextBlockTranslations('costSavingsExplanationDisabled');
+			$this->saveTextBlockTranslations('localIllEmailSuccessMessage');
 		}
 		return $ret;
 	}
@@ -5370,8 +5390,8 @@ class Library extends DataObject {
 		return '/Admin/Libraries?objectAction=edit&id=' . $this->libraryId;
 	}
 
-	private static $_filteredList = null;
-	private static $_fullList = null;
+	private static $_filteredList = [];
+	private static $_fullList = [];
 
 	/**
 	 * @param boolean $restrictByHomeLibrary whether only the patron's home library should be returned
@@ -5379,12 +5399,10 @@ class Library extends DataObject {
 	 * @return array
 	 */
 	static function getLibraryList(bool $restrictByHomeLibrary, int $accountProfileId = -1): array {
-		if ($accountProfileId == -1) {
-			if ($restrictByHomeLibrary && !is_null(Library::$_filteredList)) {
-				return Library::$_filteredList;
-			}elseif (!is_null(Library::$_fullList)){
-				return Library::$_fullList;
-			}
+		if ($restrictByHomeLibrary && array_key_exists($accountProfileId, Library::$_filteredList)) {
+			return Library::$_filteredList[$accountProfileId];
+		}elseif (!$restrictByHomeLibrary && array_key_exists($accountProfileId, Library::$_fullList)){
+			return Library::$_fullList[$accountProfileId];
 		}
 		$library = new Library();
 		$library->orderBy('displayName');
@@ -5416,12 +5434,10 @@ class Library extends DataObject {
 		while ($library->fetch()) {
 			$libraryList[$library->libraryId] = $library->displayName;
 		}
-		if ($accountProfileId == -1) {
-			if ($restrictByHomeLibrary) {
-				return Library::$_filteredList = $libraryList;
-			}else{
-				return Library::$_fullList = $libraryList;
-			}
+		if ($restrictByHomeLibrary) {
+			return Library::$_filteredList[$accountProfileId] = $libraryList;
+		}else{
+			return Library::$_fullList[$accountProfileId] = $libraryList;
 		}
 		return $libraryList;
 	}
