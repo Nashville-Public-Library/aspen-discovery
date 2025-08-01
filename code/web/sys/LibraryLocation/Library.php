@@ -4294,8 +4294,8 @@ class Library extends DataObject {
 					'allowUpdatingHolidaysFromILS' => [
 						'property' => 'allowUpdatingHolidaysFromILS',
 						'type' => 'checkbox',
-						'label' => 'Automatically update holidays from the ILS',
-						'description' => 'Whether holidays should be automatically updated (Koha Only).',
+						'label' => 'Automatically Update Holidays from the ILS',
+						'description' => 'Whether holidays should be automatically updated from the ILS.',
 						'hideInLists' => true,
 						'default' => 1,
 						'permissions' => ['Library ILS Connection'],
@@ -4464,6 +4464,7 @@ class Library extends DataObject {
 			unset($structure['ilsSection']['properties']['selfRegistrationSection']['properties']['selfRegistrationTemplate']);
 		} else {
 			unset($structure['ilsSection']['properties']['selfRegistrationSection']['properties']['bypassReviewQueueWhenUpdatingProfile']);
+			unset($structure['holidaysSection']['properties']['allowUpdatingHolidaysFromILS']);
 		}
 		//TODO: This will eventually need to be enabled/disabled by the library, it is currently off for everyone
 		if (true) {

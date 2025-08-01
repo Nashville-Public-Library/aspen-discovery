@@ -47,6 +47,14 @@ function getUpdates25_08_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'add_updating_contact_info_from_ils' => [
+			'title' => 'Add the Option to "Automatically Update Contact Information from the ILS"',
+			'description' => 'Add the Option to "Automatically Update Contact Information from the ILS" ',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE location ADD COLUMN allowUpdatingContactInfoFromILS TINYINT(1) DEFAULT 0",
+			],
+		], // add_updating_contact_info_from_ils
 		'add_max_hold_cancellation_date_field' => [
 			'title' => 'Add Max Hold Cancellation Date Field',
 			'description' => 'Add the Max Hold Cancellation Date field for when hold cancellations are enabled.',
