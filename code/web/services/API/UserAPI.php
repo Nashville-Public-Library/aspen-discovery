@@ -72,6 +72,7 @@ class UserAPI extends AbstractAPI {
 					'submitVdxRequest',
 					'cancelVdxRequest',
 					'submitLocalIllRequest',
+					'submitLocalIllRequestEmail',
 					'getNotificationPreference',
 					'setNotificationPreference',
 					'getNotificationPreferences',
@@ -3778,6 +3779,19 @@ class UserAPI extends AbstractAPI {
 		$user = $this->getUserForApiCall();
 		if ($user && !($user instanceof AspenError)) {
 			return $user->submitLocalIllRequest();
+		} else {
+			return [
+				'success' => false,
+				'message' => translate(['text'=>'Login unsuccessful', 'isPublicFacing'=>true]),
+				'title' => translate(['text'=>'Error', 'isPublicFacing'=>true])
+			];
+		}
+	}
+
+	function submitLocalIllRequestEmail() : array {
+		$user = $this->getUserForApiCall();
+		if ($user && !($user instanceof AspenError)) {
+			return $user->submitLocalIllRequestEmail();
 		} else {
 			return [
 				'success' => false,

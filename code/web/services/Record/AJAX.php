@@ -2128,5 +2128,112 @@ class Record_AJAX extends Action {
 		$libKeyDriver = new LibKeyDriver();
 		return $libKeyDriver->getLibKeyResult($uniqueIdentifierList)["data"]["bestIntegratorLink"]["bestLink"];
 	}
+
+	/** @noinspection PhpUnused */
+	public function getLocalIllEmailForm() : array {
+		global $interface;
+		if (UserAccount::isLoggedIn()) {
+			$id = $_REQUEST['id'];
+			if (strpos($id, ':') > 0) {
+				[
+					,
+					$id,
+				] = explode(':', $id);
+			}
+			$recordSource = $_REQUEST['recordSource'];
+			$interface->assign('recordSource', $recordSource);
+			$marcRecord = new MarcRecordDriver($id);
+			$volume = $_REQUEST['volume'] ?? '';
+
+			if (empty($volume)) {
+				//Get the list of requestable volumes?
+			}
+
+			$structure = [
+				'title' => [
+					'property' => 'title',
+					'type' => 'text',
+					'label' => 'Title',
+					'readOnly' => false,
+					'default' => $marcRecord->getTitle(),
+				],
+				'author' => [
+					'property' => 'author',
+					'type' => 'text',
+					'label' => 'Author',
+					'readOnly' => false,
+					'default' => $marcRecord->getAuthor(),
+				],
+				'volume' => [
+					'property' => 'volume',
+					'type' => 'text',
+					'label' => 'Volume To Request',
+					'readOnly' => false,
+					'default' => $volume,
+				],
+				'note' => [
+					'property' => 'note',
+					'type' => 'textarea',
+					'label' => 'Note',
+					'readOnly' => false,
+					'default' => '',
+				],
+				'recordId' => [
+					'property' => 'recordId',
+					'type' => 'hidden',
+					'label' => 'Record ID',
+					'default' => $marcRecord->getUniqueID(),
+				],
+			];
+
+			$interface->assign('structure', $structure);
+			$interface->assign('canSave', false);
+			$formFields = $interface->fetch('DataObjectUtil/objectEditForm.tpl');
+			$interface->assign('formFields', $formFields);
+			$interface->assign('message', $interface->fetch('Record/local-ill-email-form.tpl'));
+			$results = [
+				'success' => true,
+				'title' => translate([
+					'text' => 'Request Title',
+					'isPublicFacing' => true,
+				]),
+				'modalBody' => $interface->fetch('Record/local-ill-email-form.tpl'),
+				'modalButtons' => "<button type='submit' name='submit' id='requestTitleButton' class='btn btn-primary' onclick='return AspenDiscovery.Record.submitLocalIllEmailForm();'><i class='fas fa-spinner fa-spin hidden' role='status' aria-hidden='true'></i>&nbsp;" . translate(['text' => "Submit Request", 'isPublicFacing' => true]) . "</button>",
+			];
+		} else {
+			$results = [
+				'title' => translate([
+					'text' => 'Please login',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => "You must be logged in.  Please close this dialog and login before placing your request.",
+					'isPublicFacing' => true,
+				]),
+				'success' => false,
+			];
+		}
+		return $results;
+	}
+
+	public function submitLocalIllEmailForm() : array {
+		if (UserAccount::isLoggedIn()) {
+			$user = UserAccount::getLoggedInUser();
+			return $user->submitLocalIllRequestEmail();
+		} else {
+			$results = [
+				'title' => translate([
+					'text' => 'Please login',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => "You must be logged in.  Please close this dialog and login before placing your request.",
+					'isPublicFacing' => true,
+				]),
+				'success' => false,
+			];
+		}
+		return $results;
+	}
 }
 

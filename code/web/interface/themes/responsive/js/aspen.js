@@ -14799,6 +14799,13 @@ AspenDiscovery.MaterialsRequest = (function(){
 				return false;
 			}
 			return true;
+		},
+
+		showRedirectToMaterialsRequestForm: function(title, message, buttonText, url){
+			var buttons = "<button type='button' class='btn btn-primary' onclick='window.location.href=\"" + url + "\"'>" + buttonText + "</button>";
+
+			AspenDiscovery.showMessageWithButtons(title, message, buttons);
+			return false;
 		}
 	};
 }(AspenDiscovery.MaterialsRequest || {}));
@@ -16353,6 +16360,49 @@ AspenDiscovery.Record = (function () {
 					selectPlaceholder.innerHTML = '';
 				}
 			});
+			return false;
+		},
+
+		showLocalIllEmailForm: function (module, source, id, volume) {
+			if (Globals.loggedIn) {
+				document.body.style.cursor = "wait";
+				if (volume === undefined) {
+					volume = '';
+				}
+				var url = Globals.path + "/" + module + "/" + id + "/AJAX?method=getLocalIllEmailForm&recordSource=" + source + "&volume=" + volume;
+				$.getJSON(url, function (data) {
+					document.body.style.cursor = "default";
+					if (data.success) {
+						AspenDiscovery.showMessageWithButtons(data.title, data.modalBody, data.modalButtons);
+					} else {
+						AspenDiscovery.showMessage(data.title, data.message);
+					}
+				}).fail(AspenDiscovery.ajaxFail);
+			} else {
+				AspenDiscovery.Account.ajaxLogin(null, function () {
+					AspenDiscovery.Record.showLocalIllEmailForm(module, source, id, volume);
+				}, false);
+			}
+			return false;
+		},
+
+		submitLocalIllEmailForm: function () {
+			document.body.style.cursor = "wait";
+			var id = $('#recordId').val();
+			var url = Globals.path + "/Record/" + id + "/AJAX";
+			var params = {
+				method: 'submitLocalIllEmailForm',
+				title: $("#title").val(),
+				author: $("#author").val(),
+				volume: $("#volume").val(),
+				recordId: $("#recordId").val(),
+				note: $("#note").val(),
+				context: 'placeHold'
+			};
+			$.getJSON(url, params, function (data) {
+				document.body.style.cursor = "default";
+				AspenDiscovery.showMessage(data.title, data.message);
+			}).fail(AspenDiscovery.ajaxFail);
 			return false;
 		}
 	};
