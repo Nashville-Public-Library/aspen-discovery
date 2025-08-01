@@ -72,6 +72,7 @@ class UserAPI extends AbstractAPI {
 					'submitVdxRequest',
 					'cancelVdxRequest',
 					'submitLocalIllRequest',
+					'submitLocalIllRequestEmail',
 					'getNotificationPreference',
 					'setNotificationPreference',
 					'getNotificationPreferences',
@@ -3787,6 +3788,19 @@ class UserAPI extends AbstractAPI {
 		}
 	}
 
+	function submitLocalIllRequestEmail() : array {
+		$user = $this->getUserForApiCall();
+		if ($user && !($user instanceof AspenError)) {
+			return $user->submitLocalIllRequestEmail();
+		} else {
+			return [
+				'success' => false,
+				'message' => translate(['text'=>'Login unsuccessful', 'isPublicFacing'=>true]),
+				'title' => translate(['text'=>'Error', 'isPublicFacing'=>true])
+			];
+		}
+	}
+
 	/**
 	 * Loads the reading history for the user.  Includes print, eContent, and OverDrive titles.
 	 * Note: The return of this method can be quite lengthy if the patron has a large number of items in their reading history.
@@ -3861,7 +3875,8 @@ class UserAPI extends AbstractAPI {
 				$page = $_REQUEST['page'] ?? 1;
 				$pageSize = $_REQUEST['pageSize'] ?? 25;
 				$sort = $_REQUEST['sort_by'] ?? 'checkedOut';
-				$readingHistory = $user->getReadingHistory($page, $pageSize, $sort);
+				$filter = $_REQUEST['filter'] ?? '';
+				$readingHistory = $user->getReadingHistory($page, $pageSize, $sort, $filter);
 
 				$options = [
 					'totalItems' => $readingHistory['numTitles'],
@@ -6753,15 +6768,17 @@ class UserAPI extends AbstractAPI {
 	 */
 	function updateHoldPickupPreferences(): array {
 		$user = $this->getUserForApiCall();
+		global $logger;
 		if ($user && !($user instanceof AspenError)) {
-			global $library;
+			$library = $user->getHomeLibrary();
 
 			$message = '';
 			$errMessage = '';
 			$errCount = 0;
 
 			if (isset($_REQUEST['rememberHoldPickupLocation']) && $library->allowRememberPickupLocation) {
-				$user->setRememberHoldPickupLocation($_REQUEST['rememberHoldPickupLocation']);
+				$rememberHoldPickupLocationValue = (int) filter_var($_REQUEST['rememberHoldPickupLocation'], FILTER_VALIDATE_BOOLEAN);
+				$user->setRememberHoldPickupLocation($rememberHoldPickupLocationValue);
 			}
 
 			if ($library->allowPickupLocationUpdates) {
@@ -6804,8 +6821,8 @@ class UserAPI extends AbstractAPI {
 					$pickupLocation = new Location();
 					$pickupLocation->code = $_REQUEST['myLocation1Id'];
 					if ($pickupLocation->find(true)) {
-						if ($pickupLocation->locationId != $user->pickupLocationId) {
-							$user->myLocation1Id = $pickupLocation->locationId;
+						if ($pickupLocation->locationId != $user->myLocation1Id) {
+							$user->setMyLocation1Id($pickupLocation->locationId);
 						}
 					} else {
 						$errCount++;
@@ -6820,8 +6837,8 @@ class UserAPI extends AbstractAPI {
 					$pickupLocation = new Location();
 					$pickupLocation->code = $_REQUEST['myLocation2Id'];
 					if ($pickupLocation->find(true)) {
-						if ($pickupLocation->locationId != $user->pickupLocationId) {
-							$user->myLocation2Id = $pickupLocation->locationId;
+						if ($pickupLocation->locationId != $user->myLocation2Id) {
+							$user->setMyLocation2Id($pickupLocation->locationId);
 						}
 					} else {
 						$errCount++;
