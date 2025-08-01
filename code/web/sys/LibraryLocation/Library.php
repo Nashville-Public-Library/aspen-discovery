@@ -322,6 +322,7 @@ class Library extends DataObject {
 	public /** @noinspection PhpUnused */
 		$includeDplaResults;
 	public $showWhileYouWait;
+	public $showYouMightAlsoLike;
 
 	public $useAllCapsWhenSubmittingSelfRegistration;
 	public $validSelfRegistrationStates;
@@ -1367,8 +1368,28 @@ class Library extends DataObject {
 					],
 					'showWhileYouWait' => [
 						'property' => 'showWhileYouWait',
-						'type' => 'checkbox',
+						'type' => 'enum',
+						'values' => [
+							'0' => 'No',
+							'1' => 'Yes, include materials available in any format.',
+							'2' => 'Yes, include materials available from this library in the same format only.'
+						],
 						'label' => 'Show While You Wait',
+						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
+						'hideInLists' => true,
+						'default' => 1,
+						'permissions' => ['Library ILS Options'],
+					],
+					'showYouMightAlsoLike' => [
+						'property' => 'showYouMightAlsoLike',
+						'type' => 'enum',
+						'values' => [
+							'0' => 'No',
+							'1' => 'Yes, include materials available in any format.',
+							'2' => 'Yes, include materials owned by this library in any format.',
+							'3' => 'Yes, include materials owned by this library in the same format only.'
+						],
+						'label' => 'Show You Might Also Like',
 						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
 						'hideInLists' => true,
 						'default' => 1,

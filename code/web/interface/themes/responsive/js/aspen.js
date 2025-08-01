@@ -14057,8 +14057,8 @@ AspenDiscovery.GroupedWork = (function(){
 			});
 		},
 
-		getWhileYouWait: function (id) {
-			var url = Globals.path + "/GroupedWork/" + id + "/AJAX?method=getWhileYouWait";
+		getWhileYouWait: function (id, format) {
+			var url = Globals.path + "/GroupedWork/" + id + "/AJAX?method=getWhileYouWait&activeFormat=" + format;
 			$.getJSON(url, function (data){
 				if (!data.success){
 					AspenDiscovery.showMessage('Error', data.message);
@@ -14069,8 +14069,8 @@ AspenDiscovery.GroupedWork = (function(){
 			return false;
 		},
 
-		getYouMightAlsoLike: function(id) {
-			var url = Globals.path + "/GroupedWork/" + id + "/AJAX?method=getYouMightAlsoLike";
+		getYouMightAlsoLike: function(id, format) {
+			var url = Globals.path + "/GroupedWork/" + id + "/AJAX?method=getYouMightAlsoLike&activeFormat=" + format;
 			$.getJSON(url, function (data){
 				if (!data.success){
 					AspenDiscovery.showMessage('Error', data.message);
