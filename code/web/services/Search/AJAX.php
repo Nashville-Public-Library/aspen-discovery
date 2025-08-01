@@ -656,7 +656,7 @@ class AJAX extends Action {
 					$appliedFacetValues = [];
 					if (array_key_exists($facetTitle, $appliedFacets)) {
 						$appliedFacetValues = $appliedFacets[$facetTitle];
-						asort($appliedFacetValues);
+						ksort($appliedFacetValues);
 					}
 					$interface->assign('appliedFacetValues', $appliedFacetValues);
 
@@ -760,14 +760,14 @@ class AJAX extends Action {
 					$appliedFacetValues = [];
 					if (array_key_exists($facetTitle, $appliedFacets)) {
 						$appliedFacetValues = $appliedFacets[$facetTitle];
-						asort($appliedFacetValues);
+						ksort($appliedFacetValues, SORT_NATURAL | SORT_FLAG_CASE);
 					}
 					$interface->assign('appliedFacetValues', $appliedFacetValues);
 
 					$allFacets = $newSearch->getFacetList();
 					if (isset($allFacets[$facetName])) {
 						$facetSearchResults = $allFacets[$facetName];
-						asort($facetSearchResults['list']);
+						ksort($facetSearchResults['list'], SORT_NATURAL | SORT_FLAG_CASE);
 						$interface->assign('facetSearchResults', $facetSearchResults['list']);
 						return [
 							'success' => true,

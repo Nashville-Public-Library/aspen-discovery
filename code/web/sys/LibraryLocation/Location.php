@@ -185,7 +185,7 @@ class Location extends DataObject {
 
 	static $_objectStructure = [];
 	static function getObjectStructure($context = ''): array {
-		if (self::$_objectStructure[$context] !== null) {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
 			return self::$_objectStructure[$context];
 		}
 		//Load Libraries for lookup values
@@ -3200,14 +3200,16 @@ class Location extends DataObject {
 						}
 					}
 				}
-				//Local ILL is not available, check to see if VDX is available.
-				require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
-				require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
-				$vdxSettings = new VdxSetting();
-				if ($vdxSettings->find(true)) {
-					//Get configuration for the form.
-					if ($this->vdxFormId != -1) {
-						$this->_interlibraryLoanType = 'vdx';
+				if ($this->_interlibraryLoanType == 'none') {
+					//Local ILL is not available, check to see if VDX is available.
+					require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
+					require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
+					$vdxSettings = new VdxSetting();
+					if ($vdxSettings->find(true)) {
+						//Get configuration for the form.
+						if ($this->vdxFormId != -1) {
+							$this->_interlibraryLoanType = 'vdx';
+						}
 					}
 				}
 			} catch (Exception $e) {
