@@ -33,11 +33,12 @@ foreach ($notifications as $notification) {
 							'channelId' => 'accountAlert',
 						];
 
-						if(str_contains($ilsMessage->type, 'HOLD')) {
+						$typeUpper = strtoupper($ilsMessage->type);
+						if(str_contains($typeUpper, 'HOLD')) {
 							$body['data'] = [
 								'url' => urlencode(LocationSetting::getDeepLinkByName('user/holds', '')),
 							];
-						} elseif(str_contains($ilsMessage->type, 'CHECKOUT')) {
+						} elseif(str_contains($typeUpper, 'CHECKOUT') || str_contains($typeUpper,'OVERDUE') || str_contains($typeUpper,'BILLED')) {
 							$body['data'] = [
 								'url' => urlencode(LocationSetting::getDeepLinkByName('user/checkouts', '')),
 							];
@@ -60,7 +61,7 @@ foreach ($notifications as $notification) {
 global $aspen_db;
 $aspen_db = null;
 
-function console_log($message, $prefix = '') {
+function console_log($message, $prefix = '') : void {
 	$STDERR = fopen('php://stderr', 'w');
 	fwrite($STDERR, $prefix . $message . "\n");
 	fclose($STDERR);

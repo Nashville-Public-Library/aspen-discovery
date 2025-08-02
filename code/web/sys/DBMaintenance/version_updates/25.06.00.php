@@ -89,6 +89,14 @@ function getUpdates25_06_00(): array {
 				'ALTER TABLE languages ADD INDEX languageLookup(weight, displayName)',
 			]
 		], //improve_location_lookup_performance
+		'expand_sideload_column_lengths' => [
+			'title' => 'Expand Sideload Column Lengths',
+			'description' => 'Expand Sideload Column Lengths to accommodate automatic fill',
+			'sql' => [
+				"ALTER TABLE sideloads CHANGE column recordUrlComponent recordUrlComponent VARCHAR(76) NOT NULL DEFAULT 'DefineThis'",
+				"ALTER TABLE sideloads CHANGE column marcPath marcPath VARCHAR(200) NOT NULL"
+			]
+		], //expand_sideload_column_lengths
 
 		//katherine - Grove
 		'add_lida_barcode_entry_keyboard_type_setting' => [
@@ -215,13 +223,14 @@ function getUpdates25_06_00(): array {
 				'ALTER TABLE curbside_pickup_settings MODIFY COLUMN timeAllowedBeforeCheckIn int(11) DEFAULT -1'
 			]
 		], //curbside_pickups_overhaul_05_2025
-		'add_ignore_on_order_records_for_title_selection' => [
-			'title' => 'Add ignoreOnOrderRecordsForTitleSelection to indexing profiles',
-			'description' => 'Adds a setting to skip on-order records when selecting titles for display in grouped works (Koha-specific)',
+		'add_prioritize_available_records_for_title_selection' => [
+			'title' => 'Add prioritizeAvailableRecordsForTitleSelection to the Indexing Profile',
+			'description' => 'Adds a setting to prioritize available records when selecting titles for display in grouped works (Koha only).',
 			'sql' => [
-				"ALTER TABLE indexing_profiles ADD COLUMN IF NOT EXISTS ignoreOnOrderRecordsForTitleSelection TINYINT(1) DEFAULT 0"
+				"ALTER TABLE indexing_profiles DROP COLUMN IF EXISTS ignoreOnOrderRecordsForTitleSelection",
+				"ALTER TABLE indexing_profiles ADD COLUMN IF NOT EXISTS prioritizeAvailableRecordsForTitleSelection TINYINT(1) DEFAULT 0"
 			],
-		], // add_ignore_on_order_records_for_title_selection
+		], // add_prioritize_available_records_for_title_selection
 
 		// Laura Escamilla - ByWater Solutions
 

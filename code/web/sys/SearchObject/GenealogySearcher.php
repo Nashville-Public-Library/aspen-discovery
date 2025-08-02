@@ -219,7 +219,7 @@ class SearchObject_GenealogySearcher extends SearchObject_SolrSearcher {
 	 * @access  public
 	 * @return  array    Sort value => description array.
 	 */
-	protected function getSortOptions() {
+	public function getSortOptions() {
 		// Everywhere else -- use normal default behavior
 		return parent::getSortOptions();
 	}

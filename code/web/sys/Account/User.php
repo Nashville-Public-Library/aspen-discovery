@@ -153,6 +153,38 @@ class User extends DataObject {
 	public $holdSortUnavailable;
 	public $checkoutSort;
 
+	public static $lidaToAspenCheckoutSortMapping = [
+		'sortTitle' => 'title',
+		'author' => 'author',
+		'dueAsc' => 'dueDate',
+		'dueDesc' => 'dueDateDesc',
+		'format' => 'format',
+		'libraryAccount' => 'libraryAccount',
+		'timesRenewed' => 'renewed'
+	];
+
+	public static $lidaToAspenAvailableHoldSortMapping = [
+		'sortTitle' => 'title',
+		'author' => 'author',
+		'format' => 'format',
+		'libraryAccount' => 'libraryAccount',
+		'placed' => 'placed',
+		'location' => 'location',
+		'expire' => 'expire'
+	];
+
+	public static $lidaToAspenUnavailableHoldSortMapping = [
+		'sortTitle' => 'title',
+		'author' => 'author',
+		'format' => 'format',
+		'status' => 'status',
+		'libraryAccount' => 'libraryAccount',
+		'location' => 'location',
+		'position' => 'position',
+		'placed' => 'placed',
+		'cancelDate' => 'cancelDate'
+	];
+
 	function getNumericColumnNames(): array {
 		return [
 			'id',
@@ -913,34 +945,38 @@ class User extends DataObject {
 		return $overDriveSettings;
 	}
 
+	private $_hasInterlibraryLoan = null;
 	function hasInterlibraryLoan(): bool {
-		try {
-			$homeLocation = Location::getDefaultLocationForUser();
-			if ($homeLocation != null) {
-				//Check to see if local ILL is available
-				$parentLibrary = $homeLocation->getParentLibrary();
-				if ($parentLibrary != null) {
-					if ($parentLibrary->localIllRequestType != 0) {
-						if ($homeLocation->localIllFormId > 0) {
-							return true;
+		if ($this->_hasInterlibraryLoan == null) {
+			$this->_hasInterlibraryLoan = false;
+			try {
+				$homeLocation = Location::getDefaultLocationForUser();
+				if ($homeLocation != null) {
+					//Check to see if local ILL is available
+					$parentLibrary = $homeLocation->getParentLibrary();
+					if ($parentLibrary != null) {
+						if ($parentLibrary->localIllRequestType != 0) {
+							if ($homeLocation->localIllFormId > 0) {
+								return true;
+							}
+						}
+					}
+					//Local ILL is not available, check to see if VDX is available.
+					require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
+					require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
+					$vdxSettings = new VdxSetting();
+					if ($vdxSettings->find(true)) {
+						//Get configuration for the form.
+						if ($homeLocation->vdxFormId != -1) {
+							$this->_hasInterlibraryLoan = true;
 						}
 					}
 				}
-				//Local ILL is not available, check to see if VDX is available.
-				require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
-				require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
-				$vdxSettings = new VdxSetting();
-				if ($vdxSettings->find(true)) {
-					//Get configuration for the form.
-					if ($homeLocation->vdxFormId != -1) {
-						return true;
-					}
-				}
+			} catch (Exception $e) {
+				//This happens if the tables aren't setup, ignore
 			}
-		} catch (Exception $e) {
-			//This happens if the tables aren't setup, ignore
 		}
-		return false;
+		return $this->_hasInterlibraryLoan;
 	}
 
 	function getInterlibraryLoanType(): string {
@@ -1316,6 +1352,7 @@ class User extends DataObject {
 			$structure['password']['maxLength'] = 50;
 			$structure['password']['note'] = translate(['text'=>'A strong password from 12 to 50 characters including at least one uppercase, lowercase, number, and special character (-_~!@#$%^&*.+).', 'isAdminFacing' => true]);
 			$structure['password']['serverValidation'] = 'validateStrongPassword';
+			$structure['password']['requireStrongPassword'] = true;
 
 			unset($structure['homeLibraryName']);
 			unset($structure['homeLocation']);
@@ -2101,27 +2138,14 @@ class User extends DataObject {
 			uasort($holdsToReturn['available'], $holdSort);
 		}
 		if (!empty($holdsToReturn['unavailable'])) {
-			switch ($unavailableSort) {
-				case 'author' :
-				case 'position' :
-				case 'status' :
-				case 'format' :
-					//This is used in the sort function
-					$indexToSortBy = $unavailableSort;
-					break;
-				case 'placed' :
-					$indexToSortBy = 'createDate';
-					break;
-				case 'libraryAccount' :
-					$indexToSortBy = 'user';
-					break;
-				case 'location' :
-					$indexToSortBy = 'pickupLocationName';
-					break;
-				case 'title' :
-				default :
-					$indexToSortBy = 'sortTitle';
-			}
+			$indexToSortBy = match ($unavailableSort) {
+				'author', 'position', 'status', 'format' => $unavailableSort,
+				'placed' => 'createDate',
+				'cancelDate' => 'automaticCancellationDate',
+				'libraryAccount' => 'user',
+				'location' => 'pickupLocationName',
+				default => 'sortTitle',
+			};
 			uasort($holdsToReturn['unavailable'], $holdSort);
 		}
 
@@ -3158,13 +3182,13 @@ class User extends DataObject {
 
 	/**
 	 * Get the user's age based on their date of birth.
-	 * 
+	 *
 	 * @return int|null The user's age or null if date of birth is not set.
-	*/
+	 */
 	public function getAge(): ?int {
-		
+
 		$this->loadContactInformation();
-		
+
 		$dob = new DateTime($this->_dateOfBirth);
 		$today = new DateTime();
 
@@ -3263,6 +3287,7 @@ class User extends DataObject {
 		if ($result['success']) {
 			if ($this->hasIlsConnection()) {
 				$this->__set('cat_password', $newPin);
+				$this->__set('ils_password', $newPin);
 			}
 			$this->__set('password', $newPin);
 			$this->update();
@@ -3342,8 +3367,16 @@ class User extends DataObject {
 		$this->__set('pickupSublocationId', $pickupSublocationId);
 	}
 
+	public function setMyLocation1Id(int $myLocation1Id) : void {
+		$this->__set('myLocation1Id', $myLocation1Id);
+	}
+
+	public function setMyLocation2Id(int $myLocation2Id) : void {
+		$this->__set('myLocation2Id', $myLocation2Id);
+	}
+
 	public function setRememberHoldPickupLocation(bool $rememberPickupLocation) {
-		$this->__set('rememberHoldPickupLocation', $rememberPickupLocation);
+		$this->__set('rememberHoldPickupLocation', $rememberPickupLocation ? 1 : 0);
 	}
 
 	function setNumMaterialsRequests($val) {
@@ -4244,8 +4277,8 @@ class User extends DataObject {
 				'Administer All Staff Members',
 				'Administer Library Staff Members',
 			]);
-			$sections['web_builder']->addAction(new AdminAction('Images', 'Add images to Aspen Discovery.', '/WebBuilder/Images'), ['Administer All Web Content']);
-			$sections['web_builder']->addAction(new AdminAction('PDFs', 'Add PDFs to Aspen Discovery.', '/WebBuilder/PDFs'), ['Administer All Web Content']);
+			$sections['web_builder']->addAction(new AdminAction('Images', 'Add images to Aspen Discovery.', '/WebBuilder/Images'), ['Administer All Web Content', 'Administer Web Content for Home Library']);
+			$sections['web_builder']->addAction(new AdminAction('PDFs', 'Add PDFs to Aspen Discovery.', '/WebBuilder/PDFs'), ['Administer All Web Content', 'Administer Web Content for Home Library']);
 			//$sections['web_builder']->addAction(new AdminAction('Videos', 'Add Videos to Aspen Discovery.', '/WebBuilder/Videos'), ['Administer All Web Content']);
 			$sections['web_builder']->addAction(new AdminAction('Audiences', 'Define Audiences to categorize content within Aspen Discovery.', '/WebBuilder/Audiences'), ['Administer All Web Categories']);
 			$sections['web_builder']->addAction(new AdminAction('Categories', 'Define Categories to categorize content within Aspen Discovery.', '/WebBuilder/Categories'), ['Administer All Web Categories']);
@@ -4310,7 +4343,12 @@ class User extends DataObject {
 			'Administer Library Browse Categories',
 			'Administer Selected Browse Category Groups'
 		]);
-		$sections['local_enrichment']->addAction(new AdminAction('Collection Spotlights', 'Define spotlights that can be embedded within Aspen custom pages or other websites.', '/Admin/CollectionSpotlights'), [
+		$collectionSpotlightsAction = new AdminAction('Collection Spotlights', 'Define spotlights that can be embedded within Aspen custom pages or other websites.', '/Admin/CollectionSpotlights');
+		$sections['local_enrichment']->addAction($collectionSpotlightsAction, [
+			'Administer All Collection Spotlights',
+			'Administer Library Collection Spotlights',
+		]);
+		$collectionSpotlightsAction->addSubAction(new AdminAction('Collection Spotlight Lists', 'Define lists within each spotlight.', '/Admin/CollectionSpotlightLists'), [
 			'Administer All Collection Spotlights',
 			'Administer Library Collection Spotlights',
 		]);
@@ -4376,7 +4414,7 @@ class User extends DataObject {
 		//PROPAY $sections['ecommerce']->addAction(new AdminAction('ProPay Settings', 'Define Settings for ProPay.', '/Admin/ProPaySettings'), 'Administer ProPay');
 		$sections['ecommerce']->addAction(new AdminAction('Xpress-pay Settings', 'Define Settings for Xpress-pay.', '/Admin/XpressPaySettings'), 'Administer Xpress-pay');
 		$sections['ecommerce']->addAction(new AdminAction('ACI Speedpay Settings', 'Define Settings for ACI Speedpay.', '/Admin/ACISpeedpaySettings'), 'Administer ACI Speedpay');
-		$sections['ecommerce']->addAction(new AdminAction('HeyCentric Settings', 'Define Settings for HeyCentric.', '/Admin/HeyCentricSettings'), 'Administer HeyCentric Settings');
+		$sections['ecommerce']->addAction(new AdminAction('HeyCentric Settings', 'Define Settings for HeyCentric.', '/Admin/HeyCentricSettings'), 'Administer HeyCentric');
 		$sections['ecommerce']->addAction(new AdminAction('InvoiceCloud Settings', 'Define Settings for InvoiceCloud.', '/Admin/InvoiceCloudSettings'), 'Administer InvoiceCloud');
 		$sections['ecommerce']->addAction(new AdminAction('Certified Payments by Deluxe Settings', 'Define Settings for Certified Payments by Deluxe.', '/Admin/CertifiedPaymentsByDeluxeSettings'), 'Administer Certified Payments by Deluxe');
 		$sections['ecommerce']->addAction(new AdminAction('PayPal Payflow Settings', 'Define Settings for PayPal Payflow.', '/Admin/PayPalPayflowSettings'), 'Administer PayPal Payflow');
@@ -4411,9 +4449,11 @@ class User extends DataObject {
 		foreach (UserAccount::getAccountProfiles() as $accountProfileInfo) {
 			/** @var AccountProfile $accountProfile */
 			$accountProfile = $accountProfileInfo['accountProfile'];
+			if ($accountProfile->ils == 'koha' || $accountProfile->ils == 'sierra') {
+				$allowILSMessaging = true;
+			}
 			if ($accountProfile->ils == 'koha') {
 				$hasCurbside = true;
-				$allowILSMessaging = true;
 			}
 			if ($accountProfile->ils == 'symphony' || $accountProfile->ils == 'carlx' || $accountProfile->ils == 'sierra') {
 				$customSelfRegForms = true;
@@ -4621,10 +4661,10 @@ class User extends DataObject {
 			$sections['side_loads'] = new AdminSection('Side Loads');
 			$sideLoadsSettingsAction = new AdminAction('Settings', 'Define connection information between Side Loads and Aspen Discovery.', '/SideLoads/SideLoads');
 			$sideLoadsScopesAction = new AdminAction('Scopes', 'Define which records are loaded for each library and location.', '/SideLoads/Scopes');
-			if ($sections['side_loads']->addAction($sideLoadsSettingsAction, ['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library'])) {
-				$sideLoadsSettingsAction->addSubAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library']);
+			if ($sections['side_loads']->addAction($sideLoadsSettingsAction, ['Administer All Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library'])) {
+				$sideLoadsSettingsAction->addSubAction($sideLoadsScopesAction, ['Administer All Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library']);
 			} else {
-				$sections['side_loads']->addAction($sideLoadsScopesAction, ['Administer Side Loads', 'Administer Side Load Scopes for Home Library']);
+				$sections['side_loads']->addAction($sideLoadsScopesAction, ['Administer All Side Loads', 'Administer Side Load Scopes for Home Library']);
 			}
 			$sections['side_loads']->addAction(new AdminAction('Indexing Log', 'View the indexing log for Side Loads.', '/SideLoads/IndexingLog'), [
 				'View System Reports',
@@ -4657,9 +4697,9 @@ class User extends DataObject {
 			$sections['events'] = new AdminSection('Events');
 			$aspenEventsAction = new AdminAction('Aspen Events - Manage Events', 'Add and manage Aspen Events.', '/Events/Events');
 			if ($sections['events']->addAction($aspenEventsAction, [
-				'Administer Events for All Locations',
-				'Administer Events for Home Library Locations',
-				'Administer Events for Home Location']
+					'Administer Events for All Locations',
+					'Administer Events for Home Library Locations',
+					'Administer Events for Home Location']
 			)) {
 				$aspenEventsAction->addSubAction(new AdminAction('Configure Event Fields', 'Define event fields for Aspen Events.', '/Events/EventFields'), 'Administer Field Sets');
 				$aspenEventsAction->addSubAction(new AdminAction('Configure Event Field Sets', 'Define sets of event fields to use for Aspen Events.', '/Events/EventFieldSets'), 'Administer Field Sets');
@@ -4668,7 +4708,7 @@ class User extends DataObject {
 				$aspenEventsAction->addSubAction(new AdminAction('Event Reports', 'Aspen Events Reporting.', '/Events/EventGraphs'), [
 					'View Event Reports for All Libraries',
 					'View Event Reports for Home Library'
-					]);
+				]);
 			}
 			$sections['events']->addAction(new AdminAction('Assabet - Interactive Settings', 'Define collections to be loaded into Aspen Discovery.', '/Events/AssabetSettings'), 'Administer Assabet Settings');
 			$sections['events']->addAction(new AdminAction('Communico - Attend Settings', 'Define collections to be loaded into Aspen Discovery.', '/Events/CommunicoSettings'), 'Administer Communico Settings');
@@ -4734,8 +4774,7 @@ class User extends DataObject {
 			} else {
 				$sections['aspen_lida']->addAction($notificationReportAction, 'View Notifications Reports');
 			}
-			if (false /* $allowILSMessaging*/) {
-				/** @noinspection PhpUnreachableStatementInspection */
+			if ($allowILSMessaging) {
 				$sections['aspen_lida']->addAction(new AdminAction('ILS Notification Settings', 'Define settings for ILS notifications in Aspen LiDA.', '/AspenLiDA/ILSNotificationSettings'), 'Administer Aspen LiDA Settings');
 			}
 			$sections['aspen_lida']->addAction(new AdminAction('LiDA Notifications', 'LiDA Notifications allow you to send custom alerts to your patrons via the app.', '/Admin/LiDANotifications'), [
@@ -4846,6 +4885,8 @@ class User extends DataObject {
 				} elseif ($permissionName == 'Administer Home Library Locations' && (in_array('Administer All Locations', $guidingUserPermissions))) {
 					$validPermissions[] = $permissionName;
 				} elseif ($permissionName == 'Administer Home Library' && (in_array('Administer All Libraries', $guidingUserPermissions))) {
+					$validPermissions[] = $permissionName;
+				} elseif (($permissionName == 'Administer Side Loads for Home Library' || 'Administer Side Load Scopes for Home Library') && (in_array('Administer All Side Loads', $guidingUserPermissions))) {
 					$validPermissions[] = $permissionName;
 				}
 			}
@@ -5469,24 +5510,19 @@ class User extends DataObject {
 
 	public function canReceiveILSNotification($code): bool {
 		if ($this->isNotificationHistoryEnabled()) { // check if ils notifications are enabled for the ils
-			$userHomeLocation = $this->homeLocationId;
-			$userLocation = new Location();
-			$userLocation->locationId = $this->homeLocationId;
-			if ($userLocation->find(true)) {
-				$userLibrary = $userLocation->getParentLibrary();
-				if ($userLibrary) {
-					require_once ROOT_DIR . '/sys/AspenLiDA/NotificationSetting.php';
-					$settings = new NotificationSetting();
-					$settings->id = $userLibrary->lidaNotificationSettingId;
-					if ($settings->find(true)) {
-						require_once ROOT_DIR . '/sys/AspenLiDA/ILSMessageType.php';
-						$ilsMessageTypes = new ILSMessageType();
-						$ilsMessageTypes->ilsNotificationSettingId = $settings->ilsNotificationSettingId;
-						$ilsMessageTypes->code = $code;
-						$ilsMessageTypes->isEnabled = 1;
-						if ($ilsMessageTypes->find(true)) {
-							return true;
-						}
+			$userLibrary = $this->getHomeLibrary();
+			if ($userLibrary) {
+				require_once ROOT_DIR . '/sys/AspenLiDA/NotificationSetting.php';
+				$settings = new NotificationSetting();
+				$settings->id = $userLibrary->lidaNotificationSettingId;
+				if ($settings->find(true)) {
+					require_once ROOT_DIR . '/sys/AspenLiDA/ILSMessageType.php';
+					$ilsMessageTypes = new ILSMessageType();
+					$ilsMessageTypes->ilsNotificationSettingId = $settings->ilsNotificationSettingId;
+					$ilsMessageTypes->code = $code;
+					$ilsMessageTypes->isEnabled = 1;
+					if ($ilsMessageTypes->find(true)) {
+						return true;
 					}
 				}
 			}
@@ -5536,7 +5572,7 @@ class User extends DataObject {
 		return $preferences;
 	}
 
-	public function getNotificationPreferencesByUser() {
+	public function getNotificationPreferencesByUser() : array {
 		$preferences = [];
 		require_once ROOT_DIR . '/sys/Account/UserNotificationToken.php';
 		$obj = new UserNotificationToken();
@@ -5854,10 +5890,13 @@ class User extends DataObject {
 		return $showRenewalLink;
 	}
 
-	public function isNotificationHistoryEnabled() {
-		$catalogDriver = $this->getCatalogDriver();
-		if ($catalogDriver) {
-			return $catalogDriver->hasIlsInbox();
+	public function isNotificationHistoryEnabled() : bool {
+		$accountProfile = $this->getAccountProfile();
+		if (!empty($accountProfile) && $accountProfile->enableFetchingIlsMessages) {
+			$catalogDriver = $this->getCatalogDriver();
+			if ($catalogDriver) {
+				return $catalogDriver->supportAccountNotifications();
+			}
 		}
 		return false;
 	}
@@ -6048,6 +6087,75 @@ class User extends DataObject {
 		}
 	}
 
+	public function submitLocalIllRequestEmail() : array {
+		$title = $_REQUEST['title'] ?? '';
+		$author = $_REQUEST['author'] ?? '';
+		$volume = $_REQUEST['volume'] ?? '';
+		$recordId = $_REQUEST['recordId'] ?? '';
+		$note = $_REQUEST['note'] ?? '';
+		$activeLibrary = $this->getHomeLibrary();
+		if (empty($activeLibrary->localIllEmail)) {
+			$results = [
+				'title' => translate([
+					'text' => 'Error placing request',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => "Unable to place your request, the settings are not configured correctly. Please contact the library directly to place your request.",
+					'isPublicFacing' => true,
+				]),
+				'success' => false,
+			];
+		}else if (empty($recordId)) {
+			$results = [
+				'title' => translate([
+					'text' => 'Error placing request',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => "Unable to place your request, the title to request is missing.",
+					'isPublicFacing' => true,
+				]),
+				'success' => false,
+			];
+		}else{
+			require_once ROOT_DIR . '/sys/Email/Mailer.php';
+			$mail = new Mailer();
+			$replyToAddress = $this->email;
+			$subject = "Ill Request Placed";
+			$body = "Request for ILL placed by $this->firstname $this->lastname ($this->ils_barcode) for \nTitle: $title\nAuthor: $author\nVolume: $volume\nRecord ID: $recordId";
+			$body .= "\n\nNote: " . strip_tags($note);
+			$mailSent = $mail->send($activeLibrary->localIllEmail, $subject, $body, $replyToAddress);
+			global $activeLanguage;
+			$successMessage = $activeLibrary->getTextBlockTranslation('localIllEmailSuccessMessage', $activeLanguage->code);
+			if ($mailSent) {
+				$results = [
+					'title' => translate([
+						'text' => 'Request Placed Successfully',
+						'isPublicFacing' => true,
+					]),
+					'message' => $successMessage,
+					'success' => true,
+				];
+			}else{
+				$results = [
+					'title' => translate([
+						'text' => 'Error placing request',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => "Unable to place your request, the request could not be sent. Please try again later or contact the library directly to place your request.",
+						'isPublicFacing' => true,
+					]),
+					'success' => false,
+				];
+			}
+			$results['api']['title'] = strip_tags($results['title']);
+			$results['api']['message'] = strip_tags($results['message']);
+		}
+		return $results;
+	}
+
 	private function loadYearInReviewInfo(): void {
 		if ($this->_hasYearInReview == null) {
 			$this->_hasYearInReview = false;
@@ -6193,18 +6301,37 @@ class User extends DataObject {
 		if (isset($_REQUEST['availableHoldSort'])) {
 			if ($this->holdSortAvailable !== $_REQUEST['availableHoldSort']) {
 				$this->holdSortAvailable = $_REQUEST['availableHoldSort'];
+				//We will always store this using the Aspen terminology
+				if (array_key_exists($_REQUEST['availableHoldSort'], User::$lidaToAspenAvailableHoldSortMapping)) {
+					$this->holdSortAvailable = User::$lidaToAspenAvailableHoldSortMapping[$_REQUEST['availableHoldSort']];
+					//Validate that the sort is valid
+				}elseif (in_array($_REQUEST['availableHoldSort'], User::$lidaToAspenAvailableHoldSortMapping)) {
+					$this->holdSortAvailable = $_REQUEST['availableHoldSort'];
+				}
 			}
 		}
 
 		if (isset($_REQUEST['unavailableHoldSort'])) {
 			if ($this->holdSortUnavailable !== $_REQUEST['unavailableHoldSort']) {
-				$this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
+				//We will always store this using the Aspen terminology
+				if (array_key_exists($_REQUEST['unavailableHoldSort'], User::$lidaToAspenUnavailableHoldSortMapping)) {
+					$this->holdSortUnavailable = User::$lidaToAspenUnavailableHoldSortMapping[$_REQUEST['unavailableHoldSort']];
+					//Validate that the sort is valid
+				}elseif (in_array($_REQUEST['unavailableHoldSort'], User::$lidaToAspenUnavailableHoldSortMapping)) {
+					$this->holdSortUnavailable = $_REQUEST['unavailableHoldSort'];
+				}
 			}
 		}
 
 		if (isset($_REQUEST['sort'])) {
 			if ($this->checkoutSort !== $_REQUEST['sort']) {
-				$this->checkoutSort = $_REQUEST['sort'];
+				//We will always store this using the Aspen terminology
+				if (array_key_exists($_REQUEST['sort'], User::$lidaToAspenCheckoutSortMapping)) {
+					$this->checkoutSort = User::$lidaToAspenCheckoutSortMapping[$_REQUEST['sort']];
+				//Validate that the sort is valid
+				}elseif (in_array($_REQUEST['sort'], User::$lidaToAspenCheckoutSortMapping)) {
+					$this->checkoutSort = $_REQUEST['sort'];
+				}
 			}
 		}
 

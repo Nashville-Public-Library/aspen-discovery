@@ -16,6 +16,16 @@ class CourseReserves_Results extends ResultsAction {
 		require_once ROOT_DIR . '/sys/SolrConnector/Solr.php';
 		$timer->logTime('Include search engine');
 
+		//Set default sort by setting the request variable so the init grabs it
+		if (!array_key_exists('sort', $_REQUEST) && UserAccount::isLoggedIn()) {
+			$userId = UserAccount::getActiveUserId();
+			require_once ROOT_DIR . '/sys/User/PageDefaults.php';
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($userId, 'CourseReserves', 'Results', null);
+			if ($pageDefaults != null) {
+				$_REQUEST['sort'] = $pageDefaults->pageSort;
+			}
+		}
+
 		// Initialise from the current search globals
 		/** @var SearchObject_ListsSearcher $searchObject */
 		$searchObject = SearchObjectFactory::initSearchObject('CourseReserves');

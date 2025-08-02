@@ -123,6 +123,31 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	}
 
 	/**
+	 * overriding getLinkUrl from RecordInterface to check
+	 * the conditions which cause us to load the invalidRecord.tpl
+	 * template when viewing a record. 
+	 * 
+	 * @param bool $absolutePath if true prepend site url from config to the result
+	 * @return string url for the record or an empty string 
+	 */
+	public function getLinkUrl($absolutePath = false) {
+		if(!$this->isValid())
+		{
+			return "";
+		}
+		$groupedWork = $this->getGroupedWorkDriver();
+		if(empty($groupedWork) || !$groupedWork->isValid())
+		{
+			$parentRecords = $this->getParentRecords();
+			if(count($parentRecords) == 0)
+			{
+				return "";
+			}
+		}
+		return parent::getLinkUrl($absolutePath);
+	}
+
+	/**
 	 * Return the unique identifier of this record within the Solr index;
 	 * useful for retrieving additional information (like tags and user
 	 * comments) from the external MySQL database.
@@ -360,7 +385,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	 * @access  private
 	 * @return  array
 	 */
-	private function getFieldArray($field, $subfields = null, $concat = true) {
+	private function getFieldArray(string $field, ?array $subfields = null, bool $concat = true) : array {
 		// Default to subfield a if nothing is specified.
 		if (!is_array($subfields)) {
 			$subfields = ['a'];
@@ -371,7 +396,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 
 		if ($this->isValid()) {
 			$marcRecord = $this->getMarcRecord();
-			if ($marcRecord != false) {
+			if ($marcRecord !== false) {
 				// Try to look up the specified field, return empty array if it doesn't exist.
 				$fields = $marcRecord->getFields($field);
 				if (!is_array($fields)) {
@@ -386,6 +411,22 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 			}
 		}
 
+		return $matches;
+	}
+
+	/**
+	 * @param string $field
+	 * @return File_MARC_Data_Field[]
+	 */
+	private function getFields(string $field, bool $useRegularExpression = false) : array {
+		$matches = [];
+
+		if ($this->isValid()) {
+			$marcRecord = $this->getMarcRecord();
+			if ($marcRecord !== false) {
+				$matches = $marcRecord->getFields($field, $useRegularExpression);
+			}
+		}
 		return $matches;
 	}
 
@@ -603,6 +644,128 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		]);
 	}
 
+	private $_alternateGraphicRepresentations = null;
+
+	/** @noinspection PhpUnused */
+	public function get880Title() : string {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['title'];
+	}
+
+	/** @noinspection PhpUnused */
+	public function get880Authors() : array {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['authors'];
+	}
+
+	/** @noinspection PhpUnused */
+	public function get880Description() : string {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['description'];
+	}
+
+	public function get880Contributors() : array {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['contributors'];
+	}
+
+	public function get880Subjects() : array {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['subjects'];
+	}
+
+	public function get880Notes() : array {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['notes'];
+	}
+
+	public function get880PublicationDetails() : array {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['publicationDetails'];
+	}
+
+	public function get880PhysicalDescriptions() : array {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['physicalDescriptions'];
+	}
+
+	public function loadAlternateGraphicRepresentations() : void{
+		if ($this->_alternateGraphicRepresentations === null) {
+			$this->_alternateGraphicRepresentations = [
+				'title' => '',
+				'authors' => [],
+				'contributors' => [],
+				'publicationDetails' => [],
+				'physicalDescriptions' => [],
+				'description' => '',
+				'subjects' => [],
+				'notes' => []
+			];
+			$fields880 = $this->getFields(880);
+			foreach ($fields880 as $field880) {
+				$subfield6 = $field880->getSubfield('6');
+				if ($subfield6 !== false) {
+					$subfield6Data = $subfield6->getData();
+					if (str_starts_with($subfield6Data, '245-')) {
+						$this->_alternateGraphicRepresentations['title'] = $this->getSubfieldArray($field880, ['a', 'b', 'f', 'g', 'n', 'p'], true)[0];
+					}elseif (str_starts_with($subfield6Data, '100-')) {
+						$this->_alternateGraphicRepresentations['authors'][] = $this->getSubfieldArray($field880, ['a', 'c', 'd', 'q'], true)[0];
+					}elseif (str_starts_with($subfield6Data, '110-')) {
+						$this->_alternateGraphicRepresentations['authors'][] = $this->getSubfieldArray($field880, ['a', 'b'], true)[0];
+					}elseif (str_starts_with($subfield6Data, '264-')) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$this->_alternateGraphicRepresentations['publicationDetails'][] = [
+							'index' => $index,
+							'value' => $this->getSubfieldArray($field880, ['a', 'b', 'c'], true)[0]
+						];
+					}elseif (str_starts_with($subfield6Data, '300-')) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$this->_alternateGraphicRepresentations['physicalDescriptions'][] = [
+							'index' => $index,
+							'value' => $this->getSubfieldArray($field880, ['a', 'b', 'c', 'e', 'f', 'g'], true)[0]
+						];
+					}elseif (str_starts_with($subfield6Data, '530-')) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$this->_alternateGraphicRepresentations['physicalDescriptions'][] = [
+							'index' => $index,
+							'value' => $this->getSubfieldArray($field880, ['a', 'b', 'c', 'd'], true)[0]
+						];
+					}elseif (str_starts_with($subfield6Data, '700-') || str_starts_with($subfield6Data, '710-')) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$name = $this->getSubfieldArray($field880, ['a', 'c', 'd', 'q'], true);
+						$title = $this->getSubfieldArray($field880, ['t', 'm', 'n', 'r'], true);
+						$role = $this->getSubfieldArray($field880, ['e'], true);
+						$contributorInfo = [
+							'name' => empty($name) ? '' : $name[0],
+							'title' => empty($title) ? '' : $title[0],
+							'roles' => array(empty($role) ? '' : $role[0]),
+							'index' => $index,
+							'isAgr' => true,
+						];
+						$this->_alternateGraphicRepresentations['contributors'][] = $contributorInfo;
+					}elseif (str_starts_with($subfield6Data, '520-')) {
+						$this->_alternateGraphicRepresentations['description'] = $this->getSubfieldArray($field880, ['a', 'c'], true)[0];
+					}elseif (preg_match('/(600|610|611|630|650|651|655|690)-/', $subfield6Data)) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						[$type, $search, $title] = $this->getSubjectInfoFromField($field880);
+						$this->_alternateGraphicRepresentations['subjects'][] = ['index' => $index, 'type' => $type, 'search' => $search, 'title' => $title];
+					}elseif (preg_match('/(310|321|351|362|5\d\d)-/', $subfield6Data)) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$noteText = [];
+						foreach ($field880->getSubFields() as $subfield) {
+							if ($subfield->getCode() != '6') {
+								/** @var File_MARC_Subfield $subfield */
+								$noteText[] = $subfield->getData();
+							}
+						}
+						$note = implode(' ', $noteText);
+						$this->_alternateGraphicRepresentations['notes'][] = ['index' => $index, 'note' => $note];
+					}
+				}
+			}
+		}
+	}
+
 	/**
 	 * Get the uniform title of the record.
 	 *
@@ -728,6 +891,8 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	public function getDetailedContributors() {
 		if ($this->detailedContributors == null) {
 			$this->detailedContributors = [];
+			//Get alternate graphic representations
+			$agrContributors = $this->get880Contributors();
 			/** @var File_MARC_Data_Field[] $sevenHundredFields */
 			$sevenHundredFields = $this->getMarcRecord()->getFields('700|710', true);
 			foreach ($sevenHundredFields as $field) {
@@ -747,6 +912,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 					'name' => reset($nameSubfieldArray),
 					'title' => reset($titleSubfieldArray),
 					'roles' => [],
+					'isAgr' => false
 				];
 				if ($field->getSubfield('4') != null) {
 					$contributorRole = $field->getSubfield('4')->getData();
@@ -755,9 +921,22 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 				} elseif ($field->getSubfield('e') != null) {
 					$curContributor['roles'][] = $field->getSubfield('e')->getData();
 				}
+				//Try to match to an AGR Contributor
+				if ($field->getSubfield('6') != null) {
+					$subfield6Data = $field->getSubfield('6')->getData();
+					$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+					foreach ($agrContributors as $contributorIndex => $contributor) {
+						if ($contributor['index'] == $index) {
+							$curContributor['agr'] = $contributor;
+							unset($agrContributors[$contributorIndex]);
+							break;
+						}
+					}
+				}
 				ksort($curContributor['roles']);
 				$this->detailedContributors[] = $curContributor;
 			}
+			$this->detailedContributors = array_merge($this->detailedContributors);
 		}
 		return $this->detailedContributors;
 	}
@@ -1171,13 +1350,13 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 						}
 						if ($allVolumesRequireIll) {
 							if (count($itemsWithoutVolumes) > 0) {
-								//Check to see if a title level request is possible and if so show a request or hold button as appropriate
+								//Check to see if a title level request is possible, and if so show a request or hold button as appropriate
 								if ($itemsWithoutVolumesNeedIllRequest) {
 									if ($interLibraryLoanType == 'vdx') {
 										//VDX does not support volumes, we'll just prompt for a regular VDX
 										$this->_actions[$variationId][] = getVdxRequestAction($this->getModule(), $source, $id);
 									} elseif ($interLibraryLoanType == 'localIll') {
-										$this->_actions[$variationId][] = getMultiVolumeRequestAction($this->getModule(), $source, $id);
+										$this->_actions[$variationId][] = getMultiVolumeRequestAction($this->getModule(), $source, $id, $this);
 									}
 								}else{
 									$this->_actions[$variationId][] = getUntitledVolumeHoldAction($this->getModule(), $source, $id, $variationId);
@@ -1200,7 +1379,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 									//VDX does not support volumes, we'll just prompt for a regular VDX
 									$this->_actions[$variationId][] = getVdxRequestAction($this->getModule(), $source, $id);
 								}elseif ($interLibraryLoanType == 'localIll') {
-									$this->_actions[$variationId][] = getSpecificVolumeLocalIllRequestAction($this->getModule(), $source, $id, $volumeInfo);
+									$this->_actions[$variationId][] = getSpecificVolumeLocalIllRequestAction($this->getModule(), $source, $id, $volumeInfo, $this);
 								}
 							}else{
 								$this->_actions[$variationId][] = getSpecificVolumeHoldAction($this->getModule(), $source, $id, $volumeInfo);
@@ -1208,7 +1387,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 						}
 					}
 				}else{
-					//No volumes, just get the proper action based on interlibrary loan type required
+					//No volumes, just get the proper action based on the interlibrary loan type required
 					if ($treatHoldAsInterLibraryLoanRequest) {
 						if ($interLibraryLoanType == 'vdx') {
 							$this->_actions[$variationId][] = getVdxRequestAction($this->getModule(), $source, $id);
@@ -1435,6 +1614,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		return $this->catalogDriver->driver;
 	}
 
+	private $_physicalDescriptions = null;
 	/**
 	 * Get an array of physical descriptions of the item.
 	 *
@@ -1443,21 +1623,32 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	 */
 	/** @noinspection PhpUnused */
 	public function getPhysicalDescriptions() {
-		$physicalDescription1 = $this->getFieldArray("300", [
-			'a',
-			'b',
-			'c',
-			'e',
-			'f',
-			'g',
-		]);
-		$physicalDescription2 = $this->getFieldArray("530", [
-			'a',
-			'b',
-			'c',
-			'd',
-		]);
-		return array_merge($physicalDescription1, $physicalDescription2);
+		if ($this->_physicalDescriptions == null) {
+			$this->_physicalDescriptions = [];
+			$physicalDescriptionFields = $this->getFields('300|530', true);
+			foreach ($physicalDescriptionFields as $field) {
+				if ($field == '300') {
+					$info = $this->getSubfieldArray($field, ['a', 'b', 'c', 'e', 'f', 'g'], true);
+				}else{
+					$info = $this->getSubfieldArray($field, ['a', 'b', 'c', 'd'], true);
+				}
+				if (count($info) > 0) {
+					$physicalDescriptionInfo = $info[0];
+					if ($field->getSubfield('6') != null) {
+						$subfield6Data = $field->getSubfield('6')->getData();
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$agrPhysicalDescriptions = $this->get880PhysicalDescriptions();
+						foreach ($agrPhysicalDescriptions as $agrPhysicalDescription) {
+							if ($agrPhysicalDescription['index'] == $index) {
+								$physicalDescriptionInfo .= " ({$agrPhysicalDescription['value']})";
+							}
+						}
+					}
+					$this->_physicalDescriptions[] = $physicalDescriptionInfo;
+				}
+			}
+		}
+		return $this->_physicalDescriptions;
 	}
 
 	/**
@@ -1486,6 +1677,40 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		}
 
 		return $publicationDates;
+	}
+
+	private $_publicationDetails = null;
+	public function getPublicationDetails() : array {
+		if ($this->_publicationDetails == null) {
+			$this->_publicationDetails = [];
+			if ($this->isValid()) {
+				$publicationFields = $this->getFields('260|264', true);
+				foreach ($publicationFields as $field) {
+					if ($field->getTag() == 264) {
+						if (!($field->getIndicator(2) == 1 || $field->getIndicator(2) == ' ')) {
+							//Not a valid publication field
+							continue;
+						}
+					}
+					$publisherData = $this->getSubfieldArray($field, ['a', 'b', 'c'], true);
+					if (count($publisherData) > 0) {
+						$publisherDetails = $publisherData[0];
+						if ($field->getSubfield('6') != null) {
+							$subfield6Data = $field->getSubfield('6')->getData();
+							$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+							$agrPublishers = $this->get880PublicationDetails();
+							foreach ($agrPublishers as $agrPublisher) {
+								if ($agrPublisher['index'] == $index) {
+									$publisherDetails .= " ({$agrPublisher['value']})";
+								}
+							}
+						}
+						$this->_publicationDetails[] = $publisherDetails;
+					}
+				}
+			}
+		}
+		return $this->_publicationDetails;
 	}
 
 	/**
@@ -1630,6 +1855,19 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 
 		//Load more details options
 		$moreDetailsOptions = $this->getBaseMoreDetailsOptions($isbn);
+
+		//Override the description if we have a description form the 880
+		if (!empty($this->get880Description())) {
+			$moreDetailsOptions['description'] = [
+				'label' => 'Description',
+				'body' => '<div><div id="descriptionPlaceholder">' . translate([
+						'text' => 'Loading Description...',
+						'isPublicFacing' => true,
+					]) . '</div><div id="agrDescription">' . $this->get880Description() . '</div></div>',
+				'hideByDefault' => false,
+				'openByDefault' => true,
+			];
+		}
 
 		//Get copies for the record
 		$this->assignCopiesInformation();
@@ -1874,6 +2112,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		$bisacSubjects = [];
 		$oclcFastSubjects = [];
 		$localSubjects = [];
+		$agrSubjects = $this->get880Subjects();
 		if ($marcRecord) {
 			$subjectFields = [
 				600,
@@ -1886,70 +2125,37 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 				690,
 			];
 
-			$lcSubjectTagNumbers = [
-				600,
-				610,
-				611,
-				630,
-				650,
-				651,
-				655,
-			];
 			foreach ($subjectFields as $subjectField) {
 				/** @var File_MARC_Data_Field[] $marcFields */
 				$marcFields = $marcRecord->getFields($subjectField);
 				if ($marcFields) {
 					foreach ($marcFields as $marcField) {
 						$subject = [];
-						//Determine the type of the subject
-						$type = 'other';
-						if (in_array($subjectField, $lcSubjectTagNumbers)) {
-							if ($marcField->getIndicator(2) == 0) {
-								$type = 'lc';
-							}
-						}
-						$subjectSource = $marcField->getSubfield('2');
-						if ($subjectSource != null) {
-							if ($subjectSource->getData() == 'lcgft') {
-								$type = 'lc';
-							} elseif (preg_match('/bisac/i', $subjectSource->getData())) {
-								$type = 'bisac';
-							} elseif (preg_match('/fast/i', $subjectSource->getData())) {
-								$type = 'fast';
-							}
-						}
-						if ($marcField->getTag() == '690') {
-							$type = 'local';
-						}
 
-						$search = '';
-						$title = '';
-						foreach ($marcField->getSubFields() as $subField) {
-							/** @var File_MARC_Subfield $subField */
-							$subfieldCode = $subField->getCode();
-							if (!in_array($subfieldCode, ['0', '1', '2', '9'])) {
-								$subFieldData = $subField->getData();
-								if ($type == 'bisac' && $subField->getCode() == 'a') {
-									$subFieldData = ucwords(strtolower($subFieldData));
-								}
-								$search .= " " . $subFieldData;
-								if (strlen($title) > 0) {
-									if (in_array($subfieldCode, ['v', 'x', 'y', 'z'])) {
-										$title .= ' -- ';
-									}else{
-										$title .= ' ';
-									}
-								}
-								$title .= $subFieldData;
-							}
-						}
-						$search = trim($search);
+						[$type, $search, $title] = $this->getSubjectInfoFromField($marcField);
+
 						if (strlen($search) == 0) {
 							continue;
 						}
+						//Check to see if there is an alternate graphic representation
+						$subfield6 = $marcField->getSubfield('6');
+						$agr = null;
+						if ($subfield6 !== false) {
+							$subfield6Data = $subfield6->getData();
+							$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+							foreach ($agrSubjects as $subjectIndex => $agrSubject) {
+								if ($agrSubject['index'] == $index) {
+									$agr = $agrSubject;
+									unset($agrSubjects[$subjectIndex]);
+									break;
+								}
+							}
+						}
+
 						$subject[$title] = [
 							'search' => trim($search),
 							'title' => $title,
+							'agr' => $agr
 						];
 						switch ($type) {
 							case 'fast' :
@@ -2006,6 +2212,80 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		}
 	}
 
+	static array $lcSubjectTagNumbers = [
+		600,
+		610,
+		611,
+		630,
+		650,
+		651,
+		655,
+	];
+
+	private function getSubjectTypeFromField(File_MARC_Data_Field $field) : string {
+		//Determine the type of the subject
+		$type = 'other';
+		$subjectTag = $field->getTag();
+		if ($field->getTag() == '880') {
+			$subfield6 = $field->getSubfield('6');
+			if ($subfield6 !== false) {
+				$subfield6Data = $subfield6->getData();
+				$subjectTag = substr($subfield6Data, 0, 3);
+			}else{
+				return 'other';
+			}
+		}
+		if (in_array($subjectTag, self::$lcSubjectTagNumbers)) {
+			if ($field->getIndicator(2) == 0) {
+				$type = 'lc';
+			}
+		}
+		$subjectSource = $field->getSubfield('2');
+		if ($subjectSource != null) {
+			if ($subjectSource->getData() == 'lcgft') {
+				$type = 'lc';
+			} elseif (preg_match('/bisac/i', $subjectSource->getData())) {
+				$type = 'bisac';
+			} elseif (preg_match('/fast/i', $subjectSource->getData())) {
+				$type = 'fast';
+			}
+		}
+		if ($field->getTag() == '690') {
+			$type = 'local';
+		}
+		return $type;
+	}
+
+	private function getSubjectInfoFromField($field) : array {
+		$type = $this->getSubjectTypeFromField($field);
+		$search = '';
+		$title = '';
+
+		foreach ($field->getSubFields() as $subField) {
+			/** @var File_MARC_Subfield $subField */
+			$subfieldCode = $subField->getCode();
+			if (!in_array($subfieldCode, ['0', '1', '2', '6', '9'])) {
+				$subFieldData = $subField->getData();
+				if ($type == 'bisac' && $subField->getCode() == 'a') {
+					$subFieldData = ucwords(strtolower($subFieldData));
+				}
+				$search .= " " . $subFieldData;
+				if (strlen($title) > 0) {
+					if (in_array($subfieldCode, ['v', 'x', 'y', 'z'])) {
+						$title .= ' -- ';
+					}else{
+						$title .= ' ';
+					}
+				}
+				$title .= $subFieldData;
+			}
+
+		}
+		$search = trim($search);
+
+		return [$type, $search, $title];
+	}
+
 	public function getRecordType() {
 		if ($this->profileType) {
 			return $this->profileType;
@@ -2017,7 +2297,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	/**
 	 * @return File_MARC_Record
 	 */
-	public function getMarcRecord() {
+	public function getMarcRecord() :File_MARC_Record|false {
 		if ($this->marcRecord == null) {
 			disableErrorHandler();
 			try {
@@ -2139,73 +2419,90 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		return $holdInfo;
 	}
 
-	function getNotes() {
-		$additionalNotesFields = [
-			'310' => 'Current Publication Frequency',
-			'321' => 'Former Publication Frequency',
-			'351' => 'Organization & arrangement of materials',
-			'362' => 'Dates of publication and/or sequential designation',
-			'500' => 'General Note',
-			'501' => '"With"',
-			'502' => 'Dissertation',
-			'504' => 'Bibliography',
-			'506' => 'Restrictions on Access',
-			'507' => 'Scale for Graphic Material',
-			'508' => 'Creation/Production Credits',
-			'510' => 'Citation/References',
-			'511' => 'Participants/Performers',
-			'513' => 'Type of Report an Period Covered',
-			'515' => 'Numbering Peculiarities',
-			'518' => 'Date/Time and Place of Event',
-			'520' => 'Description',
-			'521' => 'Target Audience',
-			'522' => 'Geographic Coverage',
-			'524' => 'Preferred Citation of Described Materials',
-			'525' => 'Supplement',
-			'526' => 'Study Program Information',
-			'530' => 'Additional Physical Form',
-			'532' => 'Accessibility Note',
-			'533' => 'Reproduction',
-			'534' => 'Original Version',
-			'535' => 'Location of Originals/Duplicates',
-			'536' => 'Funding Information',
-			'538' => 'System Details',
-			'540' => 'Terms Governing Use and Reproduction',
-			'541' => 'Immediate Source of Acquisition',
-			'544' => 'Location of Other Archival Materials',
-			'545' => 'Biographical or Historical Data',
-			'546' => 'Language',
-			'547' => 'Former Title Complexity',
-			'550' => 'Issuing Body',
-			'555' => 'Cumulative Index/Finding Aids',
-			'556' => 'Information About Documentation',
-			'561' => 'Ownership and Custodial History',
-			'563' => 'Binding Information',
-			'580' => 'Linking Entry Complexity',
-			'581' => 'Publications About Described Materials',
-			'583' => 'Action',
-			'584' => 'Accumulation and Frequency of Use',
-			'585' => 'Exhibitions',
-			'586' => 'Awards',
-			'590' => 'Local note',
-			'599' => 'Differentiable Local note',
-		];
+	static array $additionalNotesFields = [
+		'310' => 'Current Publication Frequency',
+		'321' => 'Former Publication Frequency',
+		'351' => 'Organization & arrangement of materials',
+		'362' => 'Dates of publication and/or sequential designation',
+		'500' => 'General Note',
+		'501' => '"With"',
+		'502' => 'Dissertation',
+		'504' => 'Bibliography',
+		'506' => 'Restrictions on Access',
+		'507' => 'Scale for Graphic Material',
+		'508' => 'Creation/Production Credits',
+		'510' => 'Citation/References',
+		'511' => 'Participants/Performers',
+		'513' => 'Type of Report an Period Covered',
+		'515' => 'Numbering Peculiarities',
+		'518' => 'Date/Time and Place of Event',
+		'520' => 'Description',
+		'521' => 'Target Audience',
+		'522' => 'Geographic Coverage',
+		'524' => 'Preferred Citation of Described Materials',
+		'525' => 'Supplement',
+		'526' => 'Study Program Information',
+		'530' => 'Additional Physical Form',
+		'532' => 'Accessibility Note',
+		'533' => 'Reproduction',
+		'534' => 'Original Version',
+		'535' => 'Location of Originals/Duplicates',
+		'536' => 'Funding Information',
+		'538' => 'System Details',
+		'540' => 'Terms Governing Use and Reproduction',
+		'541' => 'Immediate Source of Acquisition',
+		'544' => 'Location of Other Archival Materials',
+		'545' => 'Biographical or Historical Data',
+		'546' => 'Language',
+		'547' => 'Former Title Complexity',
+		'550' => 'Issuing Body',
+		'555' => 'Cumulative Index/Finding Aids',
+		'556' => 'Information About Documentation',
+		'561' => 'Ownership and Custodial History',
+		'563' => 'Binding Information',
+		'580' => 'Linking Entry Complexity',
+		'581' => 'Publications About Described Materials',
+		'583' => 'Action',
+		'584' => 'Accumulation and Frequency of Use',
+		'585' => 'Exhibitions',
+		'586' => 'Awards',
+		'590' => 'Local note',
+		'599' => 'Differentiable Local note',
+	];
 
+	function getNotes() {
+		$agrNotes = $this->get880Notes();
 		$notes = [];
-		foreach ($additionalNotesFields as $tag => $label) {
+		foreach (self::$additionalNotesFields as $tag => $label) {
 			/** @var File_MARC_Data_Field[] $marcFields */
 			$marcFields = $this->getMarcRecord()->getFields($tag);
 			foreach ($marcFields as $marcField) {
 				$noteText = [];
 				foreach ($marcField->getSubFields() as $subfield) {
-					/** @var File_MARC_Subfield $subfield */
-					$noteText[] = $subfield->getData();
+					if ($subfield->getCode() != '6') {
+						/** @var File_MARC_Subfield $subfield */
+						$noteText[] = $subfield->getData();
+					}
 				}
 				$note = implode(' ', $noteText);
 				if (strlen($note) > 0) {
+					$agr = null;
+					$subfield6 = $marcField->getSubfield('6');
+					if ($subfield6 !== false) {
+						$subfield6Data = $subfield6->getData();
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						foreach ($agrNotes as $noteIndex => $agrNote) {
+							if ($agrNote['index'] == $index) {
+								$agr = $agrNote['note'];
+								unset($agrNotes[$noteIndex]);
+								break;
+							}
+						}
+					}
 					$notes[] = [
 						'label' => $label,
 						'note' => $note,
+						'agr' => $agr
 					];
 				}
 			}
@@ -2615,7 +2912,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		return true;
 	}
 
-	private function loadUploadedFileInfo() {
+	private function loadUploadedFileInfo(): void {
 		global $timer;
 		$this->_uploadedPDFs = [];
 		$this->_uploadedSupplementalFiles = [];
@@ -2629,10 +2926,13 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 				$fileUpload = new FileUpload();
 				$fileUpload->id = $recordFile->fileId;
 				if ($fileUpload->find(true)) {
-					if ($fileUpload->type == 'RecordPDF') {
-						$this->_uploadedPDFs[] = $fileUpload;
-					} elseif ($fileUpload->type == 'RecordSupplementalFile') {
-						$this->_uploadedSupplementalFiles[] = $fileUpload;
+					if (file_exists($fileUpload->fullPath)) {
+						if ($fileUpload->type == 'RecordPDF') {
+							$this->_uploadedPDFs[] = $fileUpload;
+						} elseif ($fileUpload->type == 'RecordSupplementalFile') {
+
+							$this->_uploadedSupplementalFiles[] = $fileUpload;
+						}
 					}
 				}
 			}
@@ -3016,7 +3316,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	 * @return array
 	 */
 	public function getInterLibraryLoanIntegrationInformation(?Grouping_Record $relatedRecord, $variationId): array {
-//See if we have InterLibrary Loan integration. If so, we will either be placing a hold or requesting depending on if there is a copy local to the hold group (whether available or not)
+		//See if we have InterLibrary Loan integration. If so, we will either be placing a hold or requesting depending on if there is a copy local to the hold group (whether available or not)
 		$interLibraryLoanType = 'none';
 		$treatHoldAsInterLibraryLoanRequest = false;
 		$homeLocation = null;

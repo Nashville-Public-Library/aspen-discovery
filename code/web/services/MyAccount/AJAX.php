@@ -11,6 +11,11 @@ class MyAccount_AJAX extends JSON_Action {
 			case 'renewItem':
 				$method = 'renewCheckout';
 				break;
+			case 'getUserCheckouts':
+				$method = 'getUserCheckouts';
+				break;
+			case 'getUserHolds':
+				$method = 'getUserHolds';
 		}
 		if (method_exists($this, $method)) {
 			parent::launch($method);
@@ -504,7 +509,7 @@ class MyAccount_AJAX extends JSON_Action {
 				'isPublicFacing' => true,
 			]),
 			'modalBody' => $interface->fetch('MyAccount/bulkAddToListPopup.tpl'),
-			'modalButtons' => "<button type='button' class='tool btn btn-primary' onclick='AspenDiscovery.Lists.processBulkAddForm(); return false;'>" . translate([
+			'modalButtons' => "<button type='button' id='doBulkAddToListBtn' class='tool btn btn-primary' onclick=\"$('#doBulkAddToListBtn').prop('disabled', true).addClass('disabled');$('#doBulkAddToListBtn .fa-spinner').removeClass('hidden');AspenDiscovery.Lists.processBulkAddForm(); return false;\"><i class='fas fa-spinner fa-spin hidden'></i> " . translate([
 					'text' => "Add To List",
 					'isPublicFacing' => true,
 				]) . "</button>",
@@ -3241,7 +3246,7 @@ class MyAccount_AJAX extends JSON_Action {
 		$source = $_REQUEST['source'];
 		$user = UserAccount::getActiveUserObj();
 		$allCheckedOut = $user->getCheckouts(true, $source);
-		$selectedSortOption = $this->setSort('sort', 'checkout');
+		$selectedSortOption = $this->setSortByUserObj('sort', 'checkout', $user);
 		if ($selectedSortOption == null) {
 			$selectedSortOption = 'dueDate';
 		}
@@ -3388,8 +3393,8 @@ class MyAccount_AJAX extends JSON_Action {
 
 		$showPosition = $user->showHoldPosition();
 		$showExpireTime = $user->showHoldExpirationTime();
-		$selectedAvailableSortOption = $this->setSort('availableHoldSort', 'availableHold');
-		$selectedUnavailableSortOption = $this->setSort('unavailableHoldSort', 'unavailableHold');
+		$selectedAvailableSortOption = $this->setSortByUserObj('availableHoldSort', 'availableHold', $user);
+		$selectedUnavailableSortOption = $this->setSortByUserObj('unavailableHoldSort', 'unavailableHold', $user);
 		if ($selectedAvailableSortOption == null) {
 			$selectedAvailableSortOption = 'expire';
 		}
@@ -3849,22 +3854,58 @@ class MyAccount_AJAX extends JSON_Action {
 				}
 
 				$interface->assign('renewableCheckouts', $renewableCheckouts);
-				$selectedSortOption = $this->setSort('sort', 'checkout');
+				$selectedSortOption = $this->setSortByUserObj('sort', 'checkout', $user);
 
-				$user->updateSortPreferences();
-
-				if ($selectedSortOption == null || !array_key_exists($selectedSortOption, $sortOptions)) {
+				//Map LiDA Sort Options to Aspen
+				if ($selectedSortOption == null) {
 					$selectedSortOption = 'dueDate';
+				}elseif (!array_key_exists($selectedSortOption, $sortOptions)) {
+					if (array_key_exists($selectedSortOption, User::$lidaToAspenCheckoutSortMapping)) {
+						$selectedSortOption = User::$lidaToAspenCheckoutSortMapping[$selectedSortOption];
+					}else{
+						$selectedSortOption = 'dueDate';
+					}
 				}
-
-				if (array_key_exists($user->checkoutSort, $sortOptions)) {
-					$selectedSortOption = $user->checkoutSort;
+				if (isset($_REQUEST['sort'])) {
+					$user->updateSortPreferences();
 				}
 
 				$interface->assign('defaultSortOption', $selectedSortOption);
 				$allCheckedOut = $this->sortCheckouts($selectedSortOption, $allCheckedOut);
 
-				$interface->assign('transList', $allCheckedOut);
+				$page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 1;
+				$recordsPerPage = 100; // Could be made configurable in the future if requested.
+				$totalCheckouts = count($allCheckedOut);
+				global $logger;
+				$logger->log("Total checkouts: $totalCheckouts", Logger::LOG_ERROR);
+				if ($recordsPerPage != -1) {
+					$interface->assign('page', $page);
+					$link = $_SERVER['REQUEST_URI'];
+					if (preg_match('/[&?]page=/', $link)) {
+						$link = preg_replace('/page=\d+/', 'page=%d', $link);
+					} else {
+						$link .= (str_contains($link, '?') ? '&' : '?') . 'page=%d';
+					}
+					$options = [
+						'totalItems' => $totalCheckouts,
+						'fileName' => $link,
+						'perPage' => $recordsPerPage,
+						'append' => false,
+						'linkRenderingObject' => $this,
+						'linkRenderingFunction' => 'renderCheckoutPaginationLink',
+						'source' => $source,
+						'sort' => $selectedSortOption,
+						'selectedUser' => $selectedUser,
+					];
+					$pager = new Pager($options);
+					$interface->assign('pageLinks', $pager->getLinks());
+					$interface->assign('recordsPerPage', $recordsPerPage);
+					$interface->assign('startIndex', ($page - 1) * $recordsPerPage);
+					$displayedCheckouts = array_slice($allCheckedOut, ($page - 1) * $recordsPerPage, $recordsPerPage);
+				} else {
+					$displayedCheckouts = $allCheckedOut;
+				}
+				$interface->assign('transList', $displayedCheckouts);
 
 				$result['success'] = true;
 				$result['message'] = "";
@@ -4090,8 +4131,6 @@ class MyAccount_AJAX extends JSON_Action {
 			$source = $_REQUEST['source'];
 			$interface->assign('source', $source);
 			$this->setShowCovers();
-			$selectedAvailableSortOption = $this->setSort('availableHoldSort', 'availableHold');
-			$selectedUnavailableSortOption = $this->setSort('unavailableHoldSort', 'unavailableHold');
 
 			$user = UserAccount::getActiveUserObj();
 			if (UserAccount::isLoggedIn() == false || empty($user)) {
@@ -4101,7 +4140,7 @@ class MyAccount_AJAX extends JSON_Action {
 				]);
 			} else {
 				$selectedUser = $this->setFilterLinkedUser();
-				$user->updateSortPreferences();
+
 				if ($user->getHomeLibrary() != null) {
 					$allowSelectingHoldsToExport = $user->getHomeLibrary()->allowSelectingHoldsToExport;
 				} else {
@@ -4154,6 +4193,9 @@ class MyAccount_AJAX extends JSON_Action {
 				if ($showPlacedColumn) {
 					$unavailableHoldSortOptions['placed'] = 'Date Placed';
 				}
+				if ($library->showHoldCancelDate) {
+					$unavailableHoldSortOptions['cancelDate'] = 'Hold Cancellation Date';
+				}
 
 				$availableHoldSortOptions = [
 					'title' => 'Title',
@@ -4176,20 +4218,29 @@ class MyAccount_AJAX extends JSON_Action {
 					'unavailable' => $unavailableHoldSortOptions,
 				]);
 
-				if ($selectedAvailableSortOption == null || !array_key_exists($selectedAvailableSortOption, $availableHoldSortOptions)) {
+				$selectedAvailableSortOption = $this->setSortByUserObj('availableHoldSort', 'availableHold', $user);
+				$selectedUnavailableSortOption = $this->setSortByUserObj('unavailableHoldSort', 'unavailableHold', $user);
+
+				if ($selectedAvailableSortOption == null) {
 					$selectedAvailableSortOption = 'expire';
+				}elseif (!array_key_exists($selectedAvailableSortOption, $availableHoldSortOptions)) {
+					if (array_key_exists($selectedAvailableSortOption, User::$lidaToAspenAvailableHoldSortMapping)) {
+						$selectedAvailableSortOption = User::$lidaToAspenAvailableHoldSortMapping[$selectedAvailableSortOption];
+					}else{
+						$selectedAvailableSortOption = 'expire';
+					}
 				}
-				if ($selectedUnavailableSortOption == null || !array_key_exists($selectedUnavailableSortOption, $unavailableHoldSortOptions)) {
-					$selectedUnavailableSortOption = ($showPosition ? 'position' : 'title');
+				if ($selectedUnavailableSortOption == null) {
+					$selectedAvailableSortOption = ($showPosition ? 'position' : 'title');
+				}elseif (!array_key_exists($selectedUnavailableSortOption, $unavailableHoldSortOptions)) {
+					if (array_key_exists($selectedUnavailableSortOption, User::$lidaToAspenUnavailableHoldSortMapping)) {
+						$selectedUnavailableSortOption = User::$lidaToAspenUnavailableHoldSortMapping[$selectedUnavailableSortOption];
+					}else{
+						$selectedUnavailableSortOption = ($showPosition ? 'position' : 'title');
+					}
 				}
 
-				if (array_key_exists($user->holdSortAvailable, $availableHoldSortOptions)) {
-					$selectedAvailableSortOption = $user->holdSortAvailable;
-				}
-
-				if (array_key_exists($user->holdSortUnavailable, $unavailableHoldSortOptions)) {
-					$selectedUnavailableSortOption = $user->holdSortUnavailable;
-				}
+				$user->updateSortPreferences();
 
 				$interface->assign('defaultSortOption', [
 					'available' => $selectedAvailableSortOption,
@@ -4453,8 +4504,18 @@ class MyAccount_AJAX extends JSON_Action {
 		return $result;
 	}
 
-	function renderReadingHistoryPaginationLink($page, $options) {
-		return "<a class='page-link btn btn-default btn-sm' onclick='AspenDiscovery.Account.loadReadingHistory(\"{$options['patronId']}\", \"{$options['sort']}\", \"{$page}\", undefined, \"{$options['filter']}\");AspenDiscovery.goToAnchor(\"topOfList\")'>";
+	/** @noinspection PhpUnused */
+	function renderReadingHistoryPaginationLink(int $page, array $options): string {
+		$currentPage = isset($_REQUEST['page']) && is_numeric($_REQUEST['page']) ? $_REQUEST['page'] : 1;
+		$activeClass = ($currentPage == $page) ? ' active' : '';
+		return "<a class='page-link btn btn-default btn-sm $activeClass' onclick='AspenDiscovery.Account.loadReadingHistory(\"{$options['patronId']}\", \"{$options['sort']}\", \"{$page}\", undefined, \"{$options['filter']}\")'>";
+	}
+
+	/** @noinspection PhpUnused */
+	function renderCheckoutPaginationLink(int $page, array $options): string {
+		$currentPage = isset($_REQUEST['page']) && is_numeric($_REQUEST['page']) ? $_REQUEST['page'] : 1;
+		$activeClass = ($currentPage == $page) ? ' active' : '';
+		return "<a class='page-link btn btn-default btn-sm $activeClass' onclick='AspenDiscovery.Account.loadCheckouts(\"{$options['source']}\", \"{$options['sort']}\", undefined, \"{$options['selectedUser']}\", \"{$page}\")'>";
 	}
 
 	private function isValidTimeStamp($timestamp) {
@@ -4479,8 +4540,6 @@ class MyAccount_AJAX extends JSON_Action {
 	}
 
 	function setSort($requestParameter, $sortType) {
-		// Hide Covers when the user has set that setting on a Search Results Page
-		// this is the same setting as used by the MyAccount Pages for now.
 		$sort = null;
 		if (isset($_REQUEST[$requestParameter])) {
 			$sort = $_REQUEST[$requestParameter];
@@ -4489,6 +4548,22 @@ class MyAccount_AJAX extends JSON_Action {
 			}
 		} elseif (isset($_SESSION['sort_' . $sortType])) {
 			$sort = $_SESSION['sort_' . $sortType];
+		}
+		return $sort;
+	}
+
+	function setSortByUserObj(string $requestParameter, string $sortType, User $user) : ?string {
+		$sort = null;
+		if (isset($_REQUEST[$requestParameter])) {
+			$sort = $_REQUEST[$requestParameter];
+		} else {
+			if ($sortType == 'checkout') {
+				$sort = $user->checkoutSort;
+			}elseif ($sortType == 'availableHold') {
+				$sort = $user->holdSortAvailable;
+			}elseif ($sortType == 'unavailableHold') {
+				$sort = $user->holdSortUnavailable;
+			}
 		}
 		return $sort;
 	}
@@ -6035,8 +6110,13 @@ class MyAccount_AJAX extends JSON_Action {
 			$compriseSettings->id = $paymentLibrary->compriseSettingId;
 			if ($compriseSettings->find(true)) {
 				$paymentRequestUrl = 'https://smartpayapi2.comprisesmartterminal.com/smartpayapi/websmartpay.dll?GetCreditForm';
-				$paymentRequestUrl .= "&LocationID=" . $compriseSettings->customerName;
-				$paymentRequestUrl .= "&CustomerID=" . $compriseSettings->customerId;
+				if ($transactionType == 'donation' && !empty($compriseSettings->customerNameForDonation) && !empty($compriseSettings->customerIdForDonation)) {
+					$paymentRequestUrl .= "&LocationID=" . $compriseSettings->customerNameForDonation;
+					$paymentRequestUrl .= "&CustomerID=" . $compriseSettings->customerIdForDonation;
+				} else {
+					$paymentRequestUrl .= "&LocationID=" . $compriseSettings->customerName;
+					$paymentRequestUrl .= "&CustomerID=" . $compriseSettings->customerId;
+				}
 				if ($transactionType == 'donation') {
 					$paymentRequestUrl .= "&PatronID=Guest";
 				} else {
@@ -6848,10 +6928,10 @@ class MyAccount_AJAX extends JSON_Action {
 			$params = implode('&', $paramList);
 
 			$tokenResults = $payflowTokenRequest->curlSendPage($tokenRequestUrl, 'POST', $params);
+			ExternalRequestLogEntry::logRequest('fine_payment.getPayflowToken', 'POST', $tokenRequestUrl, $payflowTokenRequest->getHeaders(), $params, $payflowTokenRequest->getResponseCode(), $tokenResults, []);
 			$tokenResults = PayPalPayflowSetting::parsePayflowString($tokenResults);
 
 			if ($tokenResults['RESULT'] != 0) {
-				ExternalRequestLogEntry::logRequest('fine_payment.getPayflowToken', 'POST', $tokenRequestUrl, $payflowTokenRequest->getHeaders(), $params, $payflowTokenRequest->getResponseCode(), $tokenResults, []);
 				return [
 					'success' => false,
 					'message' => 'Unable to authenticate with Payflow, please try again in a few minutes.',
@@ -7118,7 +7198,7 @@ class MyAccount_AJAX extends JSON_Action {
 				$paymentResponse = $paymentRequest->curlPostBodyData($url, $postParams);
 				$decodedPaymentResponse = json_decode($paymentResponse);
 
-				ExternalRequestLogEntry::logRequest('fine_payment.createInvoiceCloudOrder','POST', $url, $paymentRequest->getHeaders(),json_encode($postParams), $paymentRequest->getResponseCode(), $paymentRegitsponse, []);
+				ExternalRequestLogEntry::logRequest('fine_payment.createInvoiceCloudOrder','POST', $url, $paymentRequest->getHeaders(),json_encode($postParams), $paymentRequest->getResponseCode(), $paymentResponse, []);
 
 				if ($decodedPaymentResponse->Message != 'SUCCESS') {
 					return [
@@ -8429,6 +8509,13 @@ class MyAccount_AJAX extends JSON_Action {
 									$title = $recordDriver->getTitle();
 									$userListEntry->title = mb_substr($title, 0, 50);
 								}
+							} elseif (preg_match('`^aspenEvent_`', $userListEntry->sourceId)) {
+								require_once ROOT_DIR . '/RecordDrivers/AspenEventRecordDriver.php';
+								$recordDriver = new AspenEventRecordDriver($userListEntry->sourceId);
+								if ($recordDriver->isValid()) {
+									$title = $recordDriver->getTitle();
+									$userListEntry->title = mb_substr($title, 0, 50);
+								}
 							}
 						} elseif ($userListEntry->source == 'OpenArchives') {
 							require_once ROOT_DIR . '/RecordDrivers/OpenArchivesRecordDriver.php';
@@ -9705,7 +9792,6 @@ class MyAccount_AJAX extends JSON_Action {
 		$campaignId = $_GET['campaignId'] ?? null;
 		$userId = $_GET['userId'] ?? null;
 
-
 		if (!$campaignId || !$userId) {
 			return[
 				'success' => false,
@@ -10183,4 +10269,85 @@ class MyAccount_AJAX extends JSON_Action {
 			'selectHtml' => $html
 		];
 	}
+
+	public function getUserCheckouts(): array {
+
+		$userId = $_REQUEST['userId'] ?? null;
+		if (empty($userId)) {
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'No User Id',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user = new User();
+		$user->id = $userId;
+		if (!$user->find(true)){
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'User not found',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user->checkoutInfoLastLoaded = 0;
+		$user->update();
+
+		$user->getCheckouts(true, 'all');
+
+		return [
+			'success' => true,
+		];
+	}
+
+	public function getUserHolds(): array {
+		$userId = $_REQUEST['userId'] ?? null;
+		if (empty($userId)) {
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'No User Id',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user = new User();
+		$user->id = $userId;
+		if (!$user->find(true)){
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'User not found',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user->holdInfoLastLoaded = 0;
+		$user->update();
+		$user->getHolds(true, 'sortTitle', 'expire', 'all');
+
+		return [
+			'success' => true,
+		];
+	}
+
 }

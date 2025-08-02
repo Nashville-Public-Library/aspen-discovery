@@ -1389,12 +1389,10 @@ class GroupedWorkDriver extends IndexRecordDriver {
 	 * user's favorites list.
 	 *
 	 * @access  public
-	 * @param int $listId ID of list containing desired tags/notes (or
-	 *                              null to show tags/notes from all user's lists).
+	 * @param int $seriesId ID of the series that this work is contained on
 	 * @return  string              Name of Smarty template file to display.
 	 */
-	public function getSeriesEntry($listId = null) {
-		global $configArray;
+	public function getSeriesEntry(?int $seriesId = null) {
 		global $interface;
 		global $timer;
 
@@ -1444,7 +1442,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$timer->logTime('Finished Loading Description');
 		if ($this->hasCachedSeries()) {
 			$interface->assign('ajaxSeries', false);
-			$interface->assign('summSeries', $this->getSeries(false));
+			$interface->assign('summSeries', $this->getSeries(false, $seriesId));
 		} else {
 			$interface->assign('ajaxSeries', true);
 			$interface->assign('summSeries', '');
@@ -2224,7 +2222,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 
 	private $seriesData;
 
-	public function getSeries($allowReload = true) : ?array {
+	public function getSeries($allowReload = true, ?int $seriesId = null) : ?array {
 		require_once ROOT_DIR . '/sys/Grouping/GroupedWorkDisplayInfo.php';
 
 		if (empty($this->seriesData)) {
@@ -2237,8 +2235,12 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 				$seriesMember = new SeriesMember();
 				$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
+				if (!empty($seriesId)) {
+					$seriesMember->seriesId = $seriesId;
+				}
 				$seriesMember->excluded = 0;
 				$seriesInfo = null;
+				$seriesMember->orderBy('priorityScore DESC');
 				$seriesMember->find();
 				$first = true;
 				while ($seriesMember->fetch()) {
@@ -2265,14 +2267,14 @@ class GroupedWorkDriver extends IndexRecordDriver {
 					}
 				}
 				$this->seriesData = $seriesInfo;
-			}else{
+			} else {
 				//Get a list of isbns from the record and existing display info if any
 				$relatedIsbns = $this->getISBNs();
 
 				if (SystemVariables::getSystemVariables()->enableNovelistSeriesIntegration) {
 					$novelist = NovelistFactory::getNovelist();
 					$novelistData = $novelist->loadBasicEnrichment($this->getPermanentId(), $relatedIsbns, $allowReload);
-				}else{
+				} else {
 					$novelistData = null;
 				}
 				$existingDisplayInfo = new GroupedWorkDisplayInfo();
@@ -2303,7 +2305,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 							'fromSeriesIndex' => false
 						];
 					}
-				} else if ($novelistData != null && !empty($novelistData->seriesTitle)) {
+				} else if ($novelistData != null && !empty($novelistData->seriesTitle) && !$this->isSeriesHidden($novelistData->seriesTitle)) {
 					$this->seriesData = [
 						'seriesTitle' => $novelistData->seriesTitle,
 						'volume' => $novelistData->volume,
@@ -2316,7 +2318,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 						$firstSeries = $seriesFromIndex[0];
 						$this->seriesData = [
 							'seriesTitle' => $firstSeries['seriesTitle'],
-							'volume' => isset($firstSeries['volume']) ? $firstSeries['volume'] : '',
+							'volume' => $firstSeries['volume'] ?? '',
 							'fromNovelist' => false,
 							'fromSeriesIndex' => false
 						];
@@ -2327,6 +2329,27 @@ class GroupedWorkDriver extends IndexRecordDriver {
 			}
 		}
 		return $this->seriesData;
+	}
+
+	/**
+	 * Check if a series title should be hidden based on the Hidden Series list.
+	 * @param string $seriesTitle The series title to check.
+	 * @return bool True if the series should be hidden, false otherwise.
+	 */
+	private function isSeriesHidden(string $seriesTitle): bool {
+		// TODO: Should this logic also apply to Grouped Work Display Info and Indexed Series above?
+		// 		It already applies to the Series module during indexing.
+		if (empty($seriesTitle)) {
+			return false;
+		}
+		
+		require_once ROOT_DIR . '/sys/Grouping/HideSeries.php';
+		$hideSeries = new HideSeries();
+		$normalizedSeriesTitle = $hideSeries->normalizeSeries($seriesTitle);
+		
+		$hideSeries = new HideSeries();
+		$hideSeries->seriesNormalized = $normalizedSeriesTitle;
+		return $hideSeries->find(true);
 	}
 
 	public function getShortTitle($useHighlighting = false) {
@@ -3561,19 +3584,34 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 	}
 
-	function getWhileYouWait() {
+	function getWhileYouWait() : array {
 		global $library;
+		global $interface;
 		if (!$library->showWhileYouWait) {
 			return [];
 		}
 		//Load Similar titles (from Solr)
 		global $configArray;
+		global $interface;
 		require_once ROOT_DIR . '/sys/SolrConnector/GroupedWorksSolrConnector.php';
 		/** @var SearchObject_AbstractGroupedWorkSearcher $db */
 		$searchObject = SearchObjectFactory::initSearchObject();
 		$searchObject->init();
-		$searchObject->disableScoping();
-		$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, false, 3);
+		if ($library->showWhileYouWait == 1) {
+			$searchObject->init();
+			$searchObject->disableScoping();
+			$interface->assign('activeSearchSource', 'global');
+		} else {
+			$searchObject->init('local');
+			$interface->assign('activeSearchSource', 'local');
+		}
+		if ($library->showWhileYouWait == 2 && !empty($_REQUEST['activeFormat'])) {
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, true, 3, $_REQUEST['activeFormat']);
+			$interface->assign('activeFormat', $_REQUEST['activeFormat']);
+		} else{
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, false, 3);
+		}
+
 		// Send the similar items to the template; if there is only one, we need
 		// to force it to be an array or things will not display correctly.
 		if (isset($similar) && !empty($similar['response']['docs'])) {
@@ -3599,6 +3637,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 						}
 					}
 				}
+
 				$whileYouWaitTitles[] = [
 					'driver' => $similarTitleDriver,
 					'id' => $similarTitleDriver->getId(),

@@ -4,14 +4,14 @@ require_once ROOT_DIR . '/services/MyAccount/MyAccount.php';
 require_once ROOT_DIR . '/sys/Account/UserILSMessage.php';
 
 class MyAccount_NotificationHistory extends MyAccount {
-	function launch() {
+	function launch() : void {
 		global $interface;
 
 		$userMessages = new UserILSMessage();
 		$userMessages->userId = UserAccount::getActiveUserId();
 		$userMessages->status = 'sent';
 
-		$page = isset($_REQUEST['page']) ? $_REQUEST['page'] : 1;
+		$page = $_REQUEST['page'] ?? 1;
 		$interface->assign('page', $page);
 
 		$messagesPerPage = 20;

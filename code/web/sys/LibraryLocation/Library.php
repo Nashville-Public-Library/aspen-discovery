@@ -234,6 +234,7 @@ class Library extends DataObject {
 	public /** @noinspection PhpUnused */
 		$showGoDeeper;
 	public $defaultNotNeededAfterDays;
+	public $maxHoldCancellationDate;
 
 	public /** @noinspection PhpUnused */
 		$publicListsToInclude;
@@ -322,6 +323,7 @@ class Library extends DataObject {
 	public /** @noinspection PhpUnused */
 		$includeDplaResults;
 	public $showWhileYouWait;
+	public $showYouMightAlsoLike;
 
 	public $useAllCapsWhenSubmittingSelfRegistration;
 	public $validSelfRegistrationStates;
@@ -380,6 +382,8 @@ class Library extends DataObject {
 	public $showGroupedHoldCopiesCount;
 	public $localIllRequestType;
 	public $maximumLocalIllRequests;
+	public $localIllEmail;
+	public $_localIllEmailSuccessMessage;
 	public $ILLSystem;
 	public $interLibraryLoanName;
 	public $interLibraryLoanUrl;
@@ -460,6 +464,9 @@ class Library extends DataObject {
 	public $sendStaffEmailOnCampaignCompletion;
 	public $campaignCompletionNewEmail;
 	public $displayCampaignLeaderboard;
+	public $communityEngagementAdminUserSelect;
+	public $displayOnlyUsersForLocationInUserAdmin;
+	public $allowAdminToEnrollUsersInAdminView;
 
 	//SHAREit
 	public $repeatInShareIt;
@@ -1183,8 +1190,8 @@ class Library extends DataObject {
 					'twitterLink' => [
 						'property' => 'twitterLink',
 						'type' => 'text',
-						'label' => 'Twitter Link URL',
-						'description' => 'The URL to Twitter (leave blank if the library does not have a Twitter account)',
+						'label' => 'X (Twitter) Link URL',
+						'description' => 'The URL to X (leave blank if the library does not have an X account)',
 						'size' => '40',
 						'maxLength' => 255,
 						'hideInLists' => true,
@@ -1367,8 +1374,28 @@ class Library extends DataObject {
 					],
 					'showWhileYouWait' => [
 						'property' => 'showWhileYouWait',
-						'type' => 'checkbox',
+						'type' => 'enum',
+						'values' => [
+							'0' => 'No',
+							'1' => 'Yes, include materials available in any format.',
+							'2' => 'Yes, include materials available from this library in the same format only.'
+						],
 						'label' => 'Show While You Wait',
+						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
+						'hideInLists' => true,
+						'default' => 1,
+						'permissions' => ['Library ILS Options'],
+					],
+					'showYouMightAlsoLike' => [
+						'property' => 'showYouMightAlsoLike',
+						'type' => 'enum',
+						'values' => [
+							'0' => 'No',
+							'1' => 'Yes, include materials available in any format.',
+							'2' => 'Yes, include materials owned by this library in any format.',
+							'3' => 'Yes, include materials owned by this library in the same format only.'
+						],
+						'label' => 'Show You Might Also Like',
 						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
 						'hideInLists' => true,
 						'default' => 1,
@@ -2015,10 +2042,29 @@ class Library extends DataObject {
 							'showHoldCancelDate' => [
 								'property' => 'showHoldCancelDate',
 								'type' => 'checkbox',
-								'label' => 'Show Cancellation Date',
-								'description' => 'Whether or not the patron should be able to set a cancellation date (not needed after date) when placing holds.',
+								'label' => 'Show Hold Cancellation Date',
+								'description' => 'Whether or not patrons should be able to set a cancellation date (i.e., not needed after date) when placing holds on this catalog.',
 								'hideInLists' => true,
 								'default' => 1,
+								'onchange' => 'return AspenDiscovery.Admin.updateHoldCancellationDateFields();',
+							],
+							'defaultNotNeededAfterDays' => [
+								'property' => 'defaultNotNeededAfterDays',
+								'type' => 'integer',
+								'label' => 'Default Hold Cancellation Date',
+								'description' => 'Number of days to use for not needed after date by default. Use -1 for no default.',
+								'hideInLists' => true,
+								'default' => -1,
+								'permissions' => ['Library ILS Connection'],
+							],
+							'maxHoldCancellationDate' => [
+								'property' => 'maxHoldCancellationDate',
+								'type' => 'integer',
+								'label' => 'Maximum Hold Cancellation Date',
+								'description' => 'Maximum number of days patrons can set for hold cancellation date on this catalog. Use -1 for no limit.',
+								'hideInLists' => true,
+								'default' => -1,
+								'permissions' => ['Library ILS Connection'],
 							],
 							'showHoldPosition' => [
 								'property' => 'showHoldPosition',
@@ -2100,14 +2146,6 @@ class Library extends DataObject {
 								'description' => 'Number of days that a user can suspend a hold for. Use -1 for no limit.',
 								'hideInLists' => true,
 								'default' => 365,
-								'permissions' => ['Library ILS Connection'],
-							],
-							'defaultNotNeededAfterDays' => [
-								'property' => 'defaultNotNeededAfterDays',
-								'type' => 'integer',
-								'label' => 'Default Not Needed After Days',
-								'description' => 'Number of days to use for not needed after date by default. Use -1 for no default.',
-								'hideInLists' => true,
 								'permissions' => ['Library ILS Connection'],
 							],
 							'inSystemPickupsOnly' => [
@@ -3358,26 +3396,23 @@ class Library extends DataObject {
 					'materialsRequestSendStaffEmailOnNew' => [
 						'property' => 'materialsRequestSendStaffEmailOnNew',
 						'type' => 'checkbox',
-						'label' => 'Send email to library when Materials Requests are created',
+						'label' => 'Notify Library Staff on New Request',
 						'description' => 'Whether or not an email should be sent out when a new Materials Request has been created.',
-						'note' => 'Applies to Aspen Request System Only',
 						'hideInLists' => true,
 					],
 					'materialsRequestNewEmail' => [
 						'property' => 'materialsRequestNewEmail',
 						'type' => 'text',
-						'label' => 'Email to receive notifications for new Materials Requests',
+						'label' => 'Notification Email for New Requests',
 						'description' => 'The email address that will receive emails when a patron creates a new Materials Request.',
-						'note' => 'Applies to Aspen Request System Only',
 						'maxLength' => 125,
 						'hideInLists' => true,
 					],
 					'materialsRequestSendStaffEmailOnAssign' => [
 						'property' => 'materialsRequestSendStaffEmailOnAssign',
 						'type' => 'checkbox',
-						'label' => 'Send an email to staff when they are assigned a Materials Request',
-						'description' => 'Whether or not staff are notified when assigned a Materials Request',
-						'note' => 'Applies to Aspen Request System Only',
+						'label' => 'Notify Staff on Request Assignment',
+						'description' => 'Whether or not staff are notified when assigned a Materials Request.',
 						'hideInLists' => true,
 					],
 					'allowDeletingILSRequests' => [
@@ -3579,6 +3614,22 @@ class Library extends DataObject {
 						'hideInLists' => true,
 						'default' => 0,
 					],
+					'localIllEmail' => [
+						'property' => 'localIllEmail',
+						'type' => 'email',
+						'label' => 'Email to send local ILL requests that cannot be placed automatically',
+						'description' => 'The email address to send local ILL requests that cannot be placed automatically',
+						'maxLength' => 255,
+						'default' => ''
+					],
+					'localIllEmailSuccessMessage' => [
+						'property' => 'localIllEmailSuccessMessage',
+						'type' => 'translatableTextBlock',
+						'label' => 'Local ILL Email Success Message',
+						'description' => 'The success message to display when a local ILL request is successfully sent via email',
+						'defaultTextFile' => 'Library_localIllEmailSuccessMessage.MD',
+						'hideInLists' => true,
+					],
 					'maximumLocalIllRequests' => [
 						'property' => 'maximumLocalIllRequests',
 						'type' => 'integer',
@@ -3711,6 +3762,7 @@ class Library extends DataObject {
 								'label' => 'SHAREit Password',
 								'description' => 'The Password for SHAREit authentication.',
 								'hideInLists' => true,
+								'autocomplete' => 'new-password',
 							],
 						],
 					],
@@ -3805,6 +3857,33 @@ class Library extends DataObject {
 							'displayUser' => 'Display User',
 						],
 						'default' => 'displayBranch',
+					],
+					'allowAdminToEnrollUsersInAdminView' => [
+						'property' => 'allowAdminToEnrollUsersInAdminView',
+						'type' => 'checkbox',
+						'label' => 'Allow Admin to Enroll Users in Admin View',
+						'description' => 'Allow admin to enroll users via the admin view page',
+						'default' => 0,
+						'hideInLists'=> true,
+					],
+					'communityEngagementAdminUserSelect' => [
+						'property' => 'communityEngagementAdminUserSelect',
+						'type' => 'enum',
+						'label' => 'Admin View User Select',
+						'description' => 'Whether to use a dropdown or a search bar to select users in the Community Engagement Admin View section',
+						'values' => [
+							'dropdown' => 'Dropdown',
+							'searchbar' => 'Search bar',
+						],
+						'default' => 'dropdown',
+					],
+					'displayOnlyUsersForLocationInUserAdmin' => [
+						'property' => 'displayOnlyUsersForLocationInUserAdmin',
+						'type' => 'checkbox',
+						'label' => 'Display only users for current library location in user admin view.',
+						'description' => 'Whether to display only the users who have their home location set to the current library when searching bu user in the admin view',
+						'default' => 0,
+						'hideInLists' => true,
 					],
 					'sendStaffEmailOnCampaignCompletion' => [
 						'property' => 'sendStaffEmailOnCampaignCompletion',
@@ -4059,8 +4138,9 @@ class Library extends DataObject {
 					'enableWebBuilder' => [
 						'property' => 'enableWebBuilder',
 						'type' => 'checkbox',
-						'label' => 'Allow searching locally created web content',
-						'description' => 'Whether or not information from indexed local web content is shown.',
+						'label' => 'Index Local Web Builder Content',
+						'description' => 'Include content created with the local Web Builder in the catalog search results. This setting must be enabled for Web Builder pages (e.g., Basic Pages, Custom Pages, etc.) to be indexed and appear in &quot;Library Website&quot; search results.',
+						'note' => 'When disabled, this library will show as "(Indexing Disabled)" in Web Builder library selection lists, and its locations will show as "(Library Indexing Disabled)" in location selection lists.',
 						'hideInLists' => true,
 						'default' => 0,
 					],
@@ -4134,7 +4214,7 @@ class Library extends DataObject {
 						'property' => 'enableTalpaSearch',
 						'type' => 'checkbox',
 						'label' => 'Enable Talpa as a search mode. ',
-						'description' => 'Talpa is a magical, natural-language search tool. Patrons can use this to find materials, but also to ask open-ended questions, like "Mystery book with a red cover?".',
+						'description' => 'Talpa is a magical, natural-language search tool. Patrons can use this to find materials, but also to ask open-ended questions, like &quot;Mystery book with a red cover?&quot;.',
 						'hideInLists' => true,
 						'default' => 0,
 					],
@@ -4214,8 +4294,8 @@ class Library extends DataObject {
 					'allowUpdatingHolidaysFromILS' => [
 						'property' => 'allowUpdatingHolidaysFromILS',
 						'type' => 'checkbox',
-						'label' => 'Automatically update holidays from the ILS',
-						'description' => 'Whether holidays should be automatically updated (Koha Only).',
+						'label' => 'Automatically Update Holidays from the ILS',
+						'description' => 'Whether holidays should be automatically updated from the ILS.',
 						'hideInLists' => true,
 						'default' => 1,
 						'permissions' => ['Library ILS Connection'],
@@ -4384,6 +4464,7 @@ class Library extends DataObject {
 			unset($structure['ilsSection']['properties']['selfRegistrationSection']['properties']['selfRegistrationTemplate']);
 		} else {
 			unset($structure['ilsSection']['properties']['selfRegistrationSection']['properties']['bypassReviewQueueWhenUpdatingProfile']);
+			unset($structure['holidaysSection']['properties']['allowUpdatingHolidaysFromILS']);
 		}
 		//TODO: This will eventually need to be enabled/disabled by the library, it is currently off for everyone
 		if (true) {
@@ -4693,6 +4774,7 @@ class Library extends DataObject {
 			$this->saveTextBlockTranslations('paymentHistoryExplanation');
 			$this->saveTextBlockTranslations('costSavingsExplanationEnabled');
 			$this->saveTextBlockTranslations('costSavingsExplanationDisabled');
+			$this->saveTextBlockTranslations('localIllEmailSuccessMessage');
 			if (!empty($this->_changedFields) && in_array('cookieStorageConsent', $this->_changedFields)) {
 				$this->updateLocalAnalyticsPreferences();
 			}
@@ -4766,6 +4848,7 @@ class Library extends DataObject {
 			$this->saveTextBlockTranslations('paymentHistoryExplanation');
 			$this->saveTextBlockTranslations('costSavingsExplanationEnabled');
 			$this->saveTextBlockTranslations('costSavingsExplanationDisabled');
+			$this->saveTextBlockTranslations('localIllEmailSuccessMessage');
 		}
 		return $ret;
 	}
@@ -4971,7 +5054,7 @@ class Library extends DataObject {
 		if ($allThemes !== false && !empty($allThemes)) {
 			return reset($allThemes);
 		}else{
-			return null;
+			return $this->getOrSetDefaultLibraryTheme();
 		}
 	}
 
@@ -4993,6 +5076,22 @@ class Library extends DataObject {
 			}
 		}
 		return $this->_themes;
+	}
+	
+	/**
+	 * Find or create a default theme for use in cases where a library or location has no LibraryTheme or LocationTheme
+	 */
+	public function getOrSetDefaultLibraryTheme(): LibraryTheme {
+		require_once ROOT_DIR . '/sys/Theming/Theme.php';
+		$defaultTheme = new Theme;
+		$defaultLibraryTheme = new LibraryTheme;
+
+		$defaultLibraryTheme->themeId = $defaultTheme->getDefaultTheme()->id;
+		$defaultLibraryTheme->libraryId = $this->libraryId;
+		if(!$defaultLibraryTheme->find()) {
+			$defaultLibraryTheme->insert();
+		}
+		return $defaultLibraryTheme;
 	}
 
 	/**
@@ -5334,19 +5433,19 @@ class Library extends DataObject {
 		return '/Admin/Libraries?objectAction=edit&id=' . $this->libraryId;
 	}
 
-	private static $_filteredList = null;
-	private static $_fullList = null;
+	private static $_filteredList = [];
+	private static $_fullList = [];
+
 	/**
 	 * @param boolean $restrictByHomeLibrary whether only the patron's home library should be returned
+	 * @param int $accountProfileId
 	 * @return array
 	 */
-	static function getLibraryList(bool $restrictByHomeLibrary, $accountProfileId = -1): array {
-		if ($accountProfileId == -1) {
-			if ($restrictByHomeLibrary && !is_null(Library::$_filteredList)) {
-				return Library::$_filteredList;
-			}elseif (!is_null(Library::$_fullList)){
-				return Library::$_fullList;
-			}
+	static function getLibraryList(bool $restrictByHomeLibrary, int $accountProfileId = -1): array {
+		if ($restrictByHomeLibrary && array_key_exists($accountProfileId, Library::$_filteredList)) {
+			return Library::$_filteredList[$accountProfileId];
+		}elseif (!$restrictByHomeLibrary && array_key_exists($accountProfileId, Library::$_fullList)){
+			return Library::$_fullList[$accountProfileId];
 		}
 		$library = new Library();
 		$library->orderBy('displayName');
@@ -5378,12 +5477,10 @@ class Library extends DataObject {
 		while ($library->fetch()) {
 			$libraryList[$library->libraryId] = $library->displayName;
 		}
-		if ($accountProfileId == -1) {
-			if ($restrictByHomeLibrary) {
-				return Library::$_filteredList = $libraryList;
-			}else{
-				return Library::$_fullList = $libraryList;
-			}
+		if ($restrictByHomeLibrary) {
+			return Library::$_filteredList[$accountProfileId] = $libraryList;
+		}else{
+			return Library::$_fullList[$accountProfileId] = $libraryList;
 		}
 		return $libraryList;
 	}
@@ -5425,6 +5522,24 @@ class Library extends DataObject {
 			}
 		}
 		return Library::$libraryListAsObjects;
+	}
+
+	/**
+	 * Get library list with Web Builder indexing status indicators.
+	 * @param boolean $restrictByHomeLibrary Whether only the patron's home library should be returned.
+	 * @return array An associative array with libraryId => "Library Name [status]".
+	 */
+	static function getLibraryListWithWebBuilderStatus(bool $restrictByHomeLibrary): array {
+		$libraryObjects = Library::getLibraryListAsObjects($restrictByHomeLibrary);
+		$libraryList = [];
+		foreach ($libraryObjects as $libraryId => $library) {
+			$displayName = $library->displayName;
+			if ($library->enableWebBuilder == 0) {
+				$displayName .= ' (Indexing Disabled)';
+			}
+			$libraryList[$libraryId] = $displayName;
+		}
+		return $libraryList;
 	}
 
 	/** @var OverDriveScope[] */
@@ -5621,15 +5736,15 @@ class Library extends DataObject {
 	}
 
 	/**
-	 * @return array|null
+	 * @return array
 	 */
-	public function getLiDANotifications() {
+	public function getLiDANotifications() : array {
 		$lidaNotifications = [];
 
 		$notificationSettings = new NotificationSetting();
 		$notificationSettings->id = $this->lidaNotificationSettingId;
 		if ($notificationSettings->find(true)) {
-			$lidaNotifications = clone $notificationSettings;
+			$lidaNotifications = $notificationSettings->toArray(false);
 		}
 
 		return $lidaNotifications;
@@ -5684,7 +5799,7 @@ class Library extends DataObject {
 			'enableForgotPasswordLink' => $this->enableForgotPasswordLink,
 			'enableForgotBarcode' => $this->enableForgotBarcode,
 			'showShareOnExternalSites' => $this->showShareOnExternalSites,
-			'discoveryVersion' => $interface->getVariable('gitBranchWithCommit'),
+			'discoveryVersion' => $interface->getVariable('aspenVersion'),
 			'usernameLabel' => $this->loginFormUsernameLabel ?? 'Library Card Number',
 			'passwordLabel' => $this->loginFormPasswordLabel ?? 'PIN or Password',
 			'code' => $this->ilsCode,
@@ -5696,6 +5811,8 @@ class Library extends DataObject {
 			'selfRegistrationFormMessage' => $this->selfRegistrationFormMessage,
 			'selfRegistrationSuccessMessage' => $this->selfRegistrationSuccessMessage,
 			'promptForBirthDateInSelfReg' => $this->promptForBirthDateInSelfReg,
+			'allowRememberPickupLocation' => $this->allowRememberPickupLocation,
+			'allowPickupLocationUpdates' => $this->allowPickupLocationUpdates,
 		];
 		if (empty($this->baseUrl)) {
 			$apiInfo['baseUrl'] = $configArray['Site']['url'];
@@ -5706,7 +5823,8 @@ class Library extends DataObject {
 			$apiInfo['barcodeStyle'] = null;
 		}
 		$apiInfo['quickSearches'] = [];
-		$apiInfo['notifications'] = $this->getLiDANotifications();
+		$notifications = $this->getLiDANotifications();
+		$apiInfo['notifications'] = $notifications;
 		$allThemes = $this->getThemes();
 		if (count($allThemes) > 0) {
 			$libraryTheme = reset($allThemes);
@@ -5757,10 +5875,11 @@ class Library extends DataObject {
 		$pinValidationRules = null;
 		$forgotPasswordType = 'none';
 		$ils = 'unknown';
-		$hasIlsInbox = false;
+		$supportAccountNotifications = false;
 		$catalogRegistrationCapabilities = [];
 		$suspendRequiresReactivationDate = false;
 		$showDateWhenSuspending = true;
+		$catalogHasAccountNotifications = false;
 
 		$catalog = CatalogFactory::getCatalogConnectionInstance();
 		if ($catalog != null) {
@@ -5768,7 +5887,9 @@ class Library extends DataObject {
 				$forgotPasswordType = $catalog->getForgotPasswordType();
 			}
 			$pinValidationRules = $catalog->getPasswordPinValidationRules();
-			$hasIlsInbox = $catalog->hasIlsInbox();
+			$accountNotificationsEnabled = array_key_exists('notifyAccount', $notifications) && !empty($notifications['notifyAccount']);
+
+			$supportAccountNotifications = $catalog->supportAccountNotifications() && $accountNotificationsEnabled;
 			$catalogRegistrationCapabilities = $catalog->getRegistrationCapabilities();
 			$suspendRequiresReactivationDate = $catalog->suspendRequiresReactivationDate();
 			$showDateWhenSuspending = $catalog->showDateWhenSuspending();
@@ -5782,7 +5903,8 @@ class Library extends DataObject {
 		$apiInfo['pinValidationRules'] = $pinValidationRules;
 		$apiInfo['forgotPasswordType'] = $forgotPasswordType;
 		$apiInfo['ils'] = $ils;
-		$apiInfo['displayIlsInbox'] = $hasIlsInbox;
+		$apiInfo['displayIlsInbox'] = $supportAccountNotifications;
+		$apiInfo['supportAccountNotifications'] = $supportAccountNotifications;
 		$apiInfo['catalogRegistrationCapabilities'] = $catalogRegistrationCapabilities;
 		$apiInfo['suspendRequiresReactivationDate'] = $suspendRequiresReactivationDate;
 		$apiInfo['showDateWhenSuspending'] = $showDateWhenSuspending;

@@ -81,8 +81,8 @@ public abstract class AbstractGroupedWorkSolr {
 	protected HashSet<String> placesOfPublication = new HashSet<>();
 	protected float rating = -1f;
 	protected HashMap<String, String> series = new HashMap<>();
-	protected HashMap<String, String> series2 = new HashMap<>();
 	protected HashMap<String, String> seriesWithVolume = new HashMap<>();
+	protected Map<String, Integer> seriesWithVolumePriority = new HashMap<>();
 	protected String subTitle;
 	protected HashSet<String> targetAudienceFull = new HashSet<>();
 	protected TreeSet<String> targetAudience = new TreeSet<>();
@@ -92,6 +92,7 @@ public abstract class AbstractGroupedWorkSolr {
 	protected HashSet<String> titleNew = new HashSet<>();
 	protected String titleSort;
 	protected String titleFormat = "";
+	private boolean hasNotForLoanRecord = false;
 	protected HashSet<String> topics = new HashSet<>();
 	protected HashSet<String> topicFacets = new HashSet<>();
 	protected HashSet<String> subjects = new HashSet<>();
@@ -202,8 +203,6 @@ public abstract class AbstractGroupedWorkSolr {
 		clonedWork.placesOfPublication = (HashSet<String>)placesOfPublication.clone();
 		// noinspection unchecked
 		clonedWork.series = (HashMap<String, String>) series.clone();
-		// noinspection unchecked
-		clonedWork.series2 = (HashMap<String, String>) series2.clone();
 		// noinspection unchecked
 		clonedWork.seriesWithVolume = (HashMap<String, String>) seriesWithVolume.clone();
 		// noinspection unchecked
@@ -435,6 +434,7 @@ public abstract class AbstractGroupedWorkSolr {
 			boolean updateTitle = false;
 			if (this.title == null) {
 				updateTitle = true;
+				if (recordInfo != null && recordInfo.hasNotForLoanStatus()) hasNotForLoanRecord = true;
 			} else {
 				// Skip unavailable records for title selection if we have any other title.
 				if (recordInfo == null || !recordInfo.hasNotForLoanStatus()) {
@@ -443,8 +443,11 @@ public abstract class AbstractGroupedWorkSolr {
 						// We have a book, update if we didn't have a book before.
 						if (!formatCategory.equals(titleFormat)) {
 							updateTitle = true;
-							// Or update if we had a book before and this title is longer.
+							// Or, update if we had a book before and this title is longer.
 						} else if (shortTitle.length() > this.title.length()) {
+							updateTitle = true;
+						} else if (hasNotForLoanRecord) {
+							// Not for loan record was processed first, and it updated the title, so make sure to override it.
 							updateTitle = true;
 						}
 					} else if (formatCategory.equals("eBook")) {
@@ -742,11 +745,10 @@ public abstract class AbstractGroupedWorkSolr {
 
 	void clearSeries(){
 		this.seriesWithVolume.clear();
-		this.series2.putAll(this.series);
 		this.series.clear();
 	}
 
-	void addSeriesWithVolume(String seriesName, String volume) {
+	void addSeriesWithVolume(String seriesName, String volume, int priority) {
 		if (seriesName != null && !seriesName.isEmpty()) {
 			String seriesInfo = getNormalizedSeries(seriesName);
 			if (seriesInfo.isEmpty()) {
@@ -762,7 +764,11 @@ public abstract class AbstractGroupedWorkSolr {
 			String volumeLower = volume.toLowerCase();
 			String seriesInfoWithVolume = seriesInfo + "|" + (!volume.isEmpty() ? volume : "");
 			String normalizedSeriesInfoWithVolume = seriesInfoWithVolume.toLowerCase();
-
+			if (seriesWithVolumePriority.containsKey(normalizedSeriesInfoWithVolume)) {
+				seriesWithVolumePriority.put(normalizedSeriesInfoWithVolume, seriesWithVolumePriority.get(normalizedSeriesInfoWithVolume) + priority);
+			} else {
+				seriesWithVolumePriority.put(normalizedSeriesInfoWithVolume, priority);
+			}
 			if (!this.seriesWithVolume.containsKey(normalizedSeriesInfoWithVolume)) {
 				boolean okToAdd = true;
 				for (String existingSeries2 : this.seriesWithVolume.keySet()) {
@@ -805,18 +811,6 @@ public abstract class AbstractGroupedWorkSolr {
 					this.seriesWithVolume.put(normalizedSeriesInfoWithVolume, seriesInfoWithVolume);
 				}
 			}
-		}
-	}
-
-	void addSeries2(Set<String> fieldList) {
-		for (String curField : fieldList) {
-			this.addSeries2(curField);
-		}
-	}
-
-	private void addSeries2(String series2) {
-		if (series != null) {
-			addSeriesInfoToField(series2, this.series2);
 		}
 	}
 
@@ -870,9 +864,6 @@ public abstract class AbstractGroupedWorkSolr {
 	private String getNormalizedSeries(String series) {
 		series = AspenStringUtils.trimTrailingPunctuation(series);
 		series = series.replaceAll("[#|]\\s*\\d+$", "");
-
-		//Remove anything in parentheses since it's normally just the format
-		// series = series.replaceAll("\\s+\\(+.*?\\)+", "");
 		series = series.replaceAll(" & ", " and ");
 		series = series.replaceAll("--", " ");
 		series = series.replaceAll(",\\s+(the|an)$", "");

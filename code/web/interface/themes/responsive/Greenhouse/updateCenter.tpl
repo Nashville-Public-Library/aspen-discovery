@@ -5,13 +5,6 @@
 		</div>
 	</div>
 
-	{*<p class="alert alert-info">
-		{translate text="Quick Update to current version" isAdminFacing=true}
-		<pre>
-			cd /usr/local/aspen-discovery; sudo git pull origin {$gitBranch}
-		</pre>
-	</p>*}
-
 	<form class="form well" id="updateCenterFilters" style="padding-bottom:1em">
 		<div class="row align-middle">
 			<div class="col-xs-12 col-md-3">
@@ -113,7 +106,7 @@
 						</td>
 						<td>
 							{$site->version}<br>
-							<a class="btn btn-xs btn-warning" onclick="return AspenDiscovery.Admin.showScheduleUpdateForm('{$site->id}');"><i class="far fa-clock"></i> {translate text="Schedule Update" isAdminFacing=true}</a>
+							<a class="btn btn-xs btn-warning" onclick="return AspenDiscovery.Admin.showScheduleUpdateForm('{$site->id}');"><i class="fas fa-clock"></i> {translate text="Schedule Update" isAdminFacing=true}</a>
 						</td>
 						<td>
 							{translate text=$site->getSiteTypeName() isAdminFacing=true}

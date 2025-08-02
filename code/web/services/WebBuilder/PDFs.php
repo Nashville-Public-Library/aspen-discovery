@@ -20,11 +20,21 @@ class WebBuilder_PDFs extends ObjectEditor {
 	}
 
 	function getAllObjects($page, $recordsPerPage): array {
+		$user = UserAccount::getLoggedInUser();
 		$object = new FileUpload();
 		$object->type = 'web_builder_pdf';
 		$object->orderBy($this->getSort());
 		$this->applyFilters($object);
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
+		if (!UserAccount::userHasPermission('Administer All Web Content') && (UserAccount::userHasPermission('Administer Web Content for Home Library'))) {
+			$libraryList = Library::getLibraryList(true);
+			$object->whereAddIn("owningLibrary", array_keys($libraryList), false, "OR");
+			$object->whereAdd("owningLibrary = -1", "OR");
+			$object->whereAdd("sharing = 2 OR sharing = 3", "OR");
+			if (Library::getLibraryList(true)){
+				$object->whereAdd("sharing = 1 AND sharedWithLibrary IN (" . implode(array_keys($libraryList)) . ")", "OR");
+			}
+		}
 		$object->find();
 		$objectList = [];
 		while ($object->fetch()) {
@@ -98,10 +108,14 @@ class WebBuilder_PDFs extends ObjectEditor {
 	}
 
 	function canView(): bool {
-		return UserAccount::userHasPermission(['Administer All Web Content']);
+		return UserAccount::userHasPermission(['Administer All Web Content', 'Administer Web Content for Home Library']);
 	}
 
 	function getActiveAdminSection(): string {
 		return 'web_builder';
+	}
+
+	function getInitializationJs(): string {
+		return 'AspenDiscovery.Admin.toggleLibrarySharingOptions();';
 	}
 }

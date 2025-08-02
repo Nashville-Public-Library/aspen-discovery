@@ -428,7 +428,7 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 	 * @access  public
 	 * @return  array    Sort value => description array.
 	 */
-	protected function getSortOptions() {
+	public function getSortOptions() {
 		// Author/Search screen
 		if ($this->searchType == 'author' && $this->searchSubType == 'search') {
 			// It's important to remember here we are talking about on-screen
@@ -932,8 +932,8 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 		return $this->facetConfig;
 	}
 
-	function getMoreLikeThis($id, $availableOnly = false, $limitFormat = true, $limit = null) {
-		return $this->indexEngine->getMoreLikeThis($id, $availableOnly, $limitFormat, $limit, $this->getFieldsToReturn());
+	function getMoreLikeThis($id, $availableOnly = false, $limitFormat = true, $limit = null, $format = null) {
+		return $this->indexEngine->getMoreLikeThis($id, $availableOnly, $limitFormat, $limit, $format, $this->getFieldsToReturn());
 	}
 
 	public function getEngineName() {

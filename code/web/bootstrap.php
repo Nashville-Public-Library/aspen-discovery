@@ -119,64 +119,71 @@ if (isset($_SERVER['HTTP_USER_AGENT'])) {
 	$userAgentString = $_SERVER['HTTP_USER_AGENT'];
 }
 try {
-	$userAgent = new UserAgent();
-	if (strlen($userAgentString) > 512) {
-		$userAgentString = substr($userAgentString, 0, 512);
-	}
-	if (isSpammyUserAgent($userAgentString)) {
-		http_response_code(404);
-		echo("<html><head><title>Page Not Found</title></head><body><h1>404</h1> <p>We're sorry, but the page you are looking for can't be found.</p></body></html>");
-		die();
-	}
-	$userAgent->userAgent = $userAgentString;
-	if ($userAgent->find(true)) {
-		$userAgentId = $userAgent->id;
-	}else{
-		if (!$userAgent->insert()) {
-			$logger->log("Could not insert user agent $userAgentString", Logger::LOG_ERROR);
-			$logger->log($userAgent->getLastError(), Logger::LOG_ERROR);
-		}
-		$userAgentId = $userAgent->id;
-	}
-	require_once ROOT_DIR . '/sys/SystemLogging/UsageByUserAgent.php';
-	$usageByUserAgent = new UsageByUserAgent();
-	$usageByUserAgent->userAgentId = $userAgentId;
-	$usageByUserAgent->year = date('Y');
-	$usageByUserAgent->month = date('n');
-	global $aspenUsage;
-	$usageByUserAgent->instance = $aspenUsage->getInstance();
-	// Attempts to load an existing row from usage_by_user_agent that matches the index userAgentId.
-	$foundExisting = $usageByUserAgent->find(true);
+	// Check if user agent tracking is disabled
+	$systemVariables = new SystemVariables();
+	$trackingEnabled = !($systemVariables->find(true) && $systemVariables->disable_user_agent_logging);
 
-	if ($userAgent->blockAccess) {
-		if ($foundExisting) {
-			$updateResult = $usageByUserAgent->incrementNumBlockedRequests();
-			if ($updateResult === false) {
-				$logger->log("Could not update blocked user agent usage", Logger::LOG_ERROR);
-				$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
-			}
-		} else {
-			$usageByUserAgent->numBlockedRequests = 1;
-			if (!$usageByUserAgent->insert()) {
-				$logger->log("Could not insert blocked user agent usage", Logger::LOG_ERROR);
-				$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
-			}
+	if ($trackingEnabled) {
+		$userAgent = new UserAgent();
+		if (strlen($userAgentString) > 512) {
+			$userAgentString = substr($userAgentString, 0, 512);
 		}
-		http_response_code(403);
-		echo("<h1>Forbidden</h1><p><strong>We are unable to handle your request.</strong></p>");
-		die();
-	}else{
-		if ($foundExisting) {
-			$updateResult = $usageByUserAgent->incrementNumRequests();
-			if ($updateResult === false) {
-				$logger->log("Could not update user agent usage", Logger::LOG_ERROR);
-				$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+		if (isSpammyUserAgent($userAgentString)) {
+			http_response_code(404);
+			echo("<html><head><title>Page Not Found</title></head><body><h1>404</h1> <p>We're sorry, but the page you are looking for can't be found.</p></body></html>");
+			die();
+		}
+
+		$userAgent->userAgent = $userAgentString;
+		if ($userAgent->find(true)) {
+			$userAgentId = $userAgent->id;
+		}else{
+			if (!$userAgent->insert()) {
+				$logger->log("Could not insert user agent $userAgentString", Logger::LOG_ERROR);
+				$logger->log($userAgent->getLastError(), Logger::LOG_ERROR);
 			}
-		} else {
-			$usageByUserAgent->numRequests = 1;
-			if (!$usageByUserAgent->insert()) {
-				$logger->log("Could not insert user agent usage", Logger::LOG_ERROR);
-				$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+			$userAgentId = $userAgent->id;
+		}
+		require_once ROOT_DIR . '/sys/SystemLogging/UsageByUserAgent.php';
+		$usageByUserAgent = new UsageByUserAgent();
+		$usageByUserAgent->userAgentId = $userAgentId;
+		$usageByUserAgent->year = date('Y');
+		$usageByUserAgent->month = date('n');
+		global $aspenUsage;
+		$usageByUserAgent->instance = $aspenUsage->getInstance();
+		// Attempts to load an existing row from usage_by_user_agent that matches the index userAgentId.
+		$foundExisting = $usageByUserAgent->find(true);
+
+		if ($userAgent->blockAccess) {
+			if ($foundExisting) {
+				$updateResult = $usageByUserAgent->incrementNumBlockedRequests();
+				if ($updateResult === false) {
+					$logger->log("Could not update blocked user agent usage", Logger::LOG_ERROR);
+					$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+				}
+			}else{
+				$usageByUserAgent->numBlockedRequests = 1;
+				if (!$usageByUserAgent->insert()) {
+					$logger->log("Could not insert blocked user agent usage", Logger::LOG_ERROR);
+					$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+				}
+			}
+			http_response_code(403);
+			echo("<h1>Forbidden</h1><p><strong>We are unable to handle your request.</strong></p>");
+			die();
+		}else{
+			if ($foundExisting) {
+				$updateResult = $usageByUserAgent->incrementNumRequests();
+				if ($updateResult === false) {
+					$logger->log("Could not update user agent usage", Logger::LOG_ERROR);
+					$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+				}
+			}else{
+				$usageByUserAgent->numRequests = 1;
+				if (!$usageByUserAgent->insert()) {
+					$logger->log("Could not insert user agent usage", Logger::LOG_ERROR);
+					$logger->log($usageByUserAgent->getLastError(), Logger::LOG_ERROR);
+				}
 			}
 		}
 	}
@@ -428,29 +435,17 @@ function getValidServerNames(): array {
 	return $validServerNames;
 }
 
-function getGitBranch() {
+function getAspenVersion() {
 	global $interface;
 
-	$files = [];
-	foreach (glob(ROOT_DIR . '/release_notes/*.MD') as $filename) {
-		if (preg_match('/\d{2}\.\d{2}\.\d{2}\.MD/', $filename)) {
-			$tmp = str_replace('.MD', '', $filename);
-			/** @noinspection RegExpRedundantEscape */
-			$tmp = preg_replace('~.*release_notes[\\/]~', '', $tmp);
-			$files[] = $tmp;
-		}
-	}
-	asort($files);
-
-	$branchName = end($files);
-	$branchNameWithCommit = end($files);
+	$versionData = json_decode(file_get_contents(ROOT_DIR . '/version.json'));
+	$aspenVersion = trim($versionData->version . ' ' . $versionData->stage);
 
 	if (!empty($interface)) {
-		$interface->assign('gitBranch', $branchName);
-		$interface->assign('gitBranchWithCommit', $branchNameWithCommit);
+		$interface->assign('aspenVersion', $aspenVersion);
 	}
 
-	return $branchName;
+	return $aspenVersion;
 }
 
 //Look for spammy user agents and kill them

@@ -2,6 +2,7 @@
 
 require_once ROOT_DIR . '/services/MyAccount/MyAccount.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
+require_once ROOT_DIR . '/sys/User/PageDefaults.php';
 
 class MyAccount_MyPreferences extends MyAccount {
 	function launch() : void {
@@ -97,6 +98,95 @@ class MyAccount_MyPreferences extends MyAccount {
 			}
 			$interface->assign('usersCampaigns', $usersCampaigns);
 
+			require_once(ROOT_DIR . '/Drivers/marmot_inc/SearchSources.php');
+			$searchSources = new SearchSources();
+			$validSearchSources = $searchSources->getSearchSources();
+			$catalogSearchObject = SearchSources::getSearcherForSource('catalog');
+			$validCatalogSorts = $catalogSearchObject->getSortOptions();
+			$interface->assign('validCatalogSorts', $validCatalogSorts);
+			$catalogPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'Search', 'Results', null);
+			$interface->assign('defaultCatalogSort', $catalogPageDefaults == null ? '' : $catalogPageDefaults->pageSort);
+
+			if (array_key_exists('ebsco_eds', $validSearchSources)){
+				$edsSearchObject = SearchSources::getSearcherForSource('ebsco_eds');
+				$validEdsSorts = $edsSearchObject->getSortOptions();
+				$interface->assign('validEdsSorts', $validEdsSorts);
+				$ebscoEDSPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'EBSCO', 'Results', null);
+				$interface->assign('defaultEbscoEDSSort', $ebscoEDSPageDefaults == null ? '' : $ebscoEDSPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('ebscohost', $validSearchSources)){
+				$ebscohostSearchObject = SearchSources::getSearcherForSource('ebscohost');
+				$validEbscohostSorts = $ebscohostSearchObject->getSortOptions();
+				$interface->assign('validEbscohostSorts', $validEbscohostSorts);
+				$ebscoHostPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'EBSCOhost', 'Results', null);
+				$interface->assign('defaultEbscoHostSort', $ebscoHostPageDefaults == null ? '' : $ebscoHostPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('summon', $validSearchSources)){
+				$summonSearchObject = SearchSources::getSearcherForSource('summon');
+				$validSummonSorts = $summonSearchObject->getSortOptions();
+				$interface->assign('validSummonSorts', $validSummonSorts);
+				$summonPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'Summon', 'Results', null);
+				$interface->assign('defaultSummonSort', $summonPageDefaults == null ? '' : $summonPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('course_reserves', $validSearchSources)){
+				$courseReservesSearchObject = SearchSources::getSearcherForSource('course_reserves');
+				$validCourseReservesSorts = $courseReservesSearchObject->getSortOptions();
+				$interface->assign('validCourseReservesSorts', $validCourseReservesSorts);
+				$courseReservesPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'CourseReserves', 'Results', null);
+				$interface->assign('defaultCourseReservesSort', $courseReservesPageDefaults == null ? '' : $courseReservesPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('events', $validSearchSources)){
+				$eventsSearchObject = SearchSources::getSearcherForSource('events');
+				$validEventsSorts = $eventsSearchObject->getSortOptions();
+				$interface->assign('validEventsSorts', $validEventsSorts);
+				$eventsPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'Events', 'Results', null);
+				$interface->assign('defaultEventsSort', $eventsPageDefaults == null ? '' : $eventsPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('genealogy', $validSearchSources)){
+				$genealogySearchObject = SearchSources::getSearcherForSource('genealogy');
+				$validGenealogySorts = $genealogySearchObject->getSortOptions();
+				$interface->assign('validGenealogySorts', $validGenealogySorts);
+				$genealogyPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'Genealogy', 'Results', null);
+				$interface->assign('defaultGenealogySort', $genealogyPageDefaults == null ? '' : $genealogyPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('lists', $validSearchSources)){
+				$listsSearchObject = SearchSources::getSearcherForSource('lists');
+				$validListsSorts = $listsSearchObject->getSortOptions();
+				$interface->assign('validListsSorts', $validListsSorts);
+				$listsPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'Lists', 'Results', null);
+				$interface->assign('defaultListsSort', $listsPageDefaults == null ? '' : $listsPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('series', $validSearchSources)){
+				$seriesSearchObject = SearchSources::getSearcherForSource('series');
+				$validSeriesSorts = $seriesSearchObject->getSortOptions();
+				$interface->assign('validSeriesSorts', $validSeriesSorts);
+				$seriesPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'Series', 'Results', null);
+				$interface->assign('defaultSeriesSort', $seriesPageDefaults == null ? '' : $seriesPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('open_archives', $validSearchSources)){
+				$openArchivesSearchObject = SearchSources::getSearcherForSource('open_archives');
+				$validOpenArchivesSorts = $openArchivesSearchObject->getSortOptions();
+				$interface->assign('validOpenArchivesSorts', $validOpenArchivesSorts);
+				$openArchivesPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'OpenArchives', 'Results', null);
+				$interface->assign('defaultOpenArchivesSort', $openArchivesPageDefaults == null ? '' : $openArchivesPageDefaults->pageSort);
+			}
+
+			if (array_key_exists('websites', $validSearchSources)){
+				$websitesSearchObject = SearchSources::getSearcherForSource('websites');
+				$validWebsitesSorts = $websitesSearchObject->getSortOptions();
+				$interface->assign('validWebsitesSorts', $validWebsitesSorts);
+				$websitesPageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'Websites', 'Results', null);
+				$interface->assign('defaultWebsitesSort', $websitesPageDefaults == null ? '' : $websitesPageDefaults->pageSort);
+			}
+
 			// Save/Update Actions
 			global $offlineMode;
 			if (isset($_POST['updateScope']) && !$offlineMode) {
@@ -123,6 +213,82 @@ class MyAccount_MyPreferences extends MyAccount {
 								$user->updateMessage .=$result2['messages'];
 							}
 							$user->updateMessageIsError = $user->updateMessageIsError && !$result2['success'];
+						}
+					}
+
+					if (!empty($_REQUEST['defaultCatalogSort']) && array_key_exists($_REQUEST['defaultCatalogSort'], $validCatalogSorts)) {
+						PageDefaults::updatePageDefaultsForUser($user->id, 'Search', 'Results', null, null, $_REQUEST['defaultCatalogSort']);
+					}else{
+						PageDefaults::updatePageDefaultsForUser($user->id, 'Search', 'Results', null, null, '');
+					}
+					if (!empty($validEdsSorts)) {
+						if (!empty($_REQUEST['defaultEdsSort']) && array_key_exists($_REQUEST['defaultEdsSort'], $validEdsSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'EBSCO', 'Results', null, null, $_REQUEST['defaultEdsSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'EBSCO', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validEbscoHostSorts)) {
+						if (!empty($_REQUEST['defaultEbscohostSort']) && array_key_exists($_REQUEST['defaultEbscohostSort'], $validEbscoHostSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'EBSCOhost', 'Results', null, null, $_REQUEST['defaultEbscohostSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'EBSCOhost', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validSummonSorts)) {
+						if (!empty($_REQUEST['defaultSummonSort']) && array_key_exists($_REQUEST['defaultSummonSort'], $validSummonSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Summon', 'Results', null, null, $_REQUEST['defaultSummonSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Summon', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validCourseReservesSorts)) {
+						if (!empty($_REQUEST['defaultCourseReservesSort']) && array_key_exists($_REQUEST['defaultCourseReservesSort'], $validCourseReservesSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'CourseReserves', 'Results', null, null, $_REQUEST['defaultCourseReservesSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'CourseReserves', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validEventsSorts)) {
+						if (!empty($_REQUEST['defaultEventsSort']) && array_key_exists($_REQUEST['defaultEventsSort'], $validEventsSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Events', 'Results', null, null, $_REQUEST['defaultEventsSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Events', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validGenealogySorts)) {
+						if (!empty($_REQUEST['defaultGenealogySort']) && array_key_exists($_REQUEST['defaultGenealogySort'], $validGenealogySorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Genealogy', 'Results', null, null, $_REQUEST['defaultGenealogySort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Genealogy', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validOpenArchivesSorts)) {
+						if (!empty($_REQUEST['defaultOpenArchivesSort']) && array_key_exists($_REQUEST['defaultOpenArchivesSort'], $validOpenArchivesSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'OpenArchives', 'Results', null, null, $_REQUEST['defaultOpenArchivesSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'OpenArchives', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validListsSorts)) {
+						if (!empty($_REQUEST['defaultListsSort']) && array_key_exists($_REQUEST['defaultListsSort'], $validListsSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Lists', 'Results', null, null, $_REQUEST['defaultListsSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Lists', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validSeriesSorts)) {
+						if (!empty($_REQUEST['defaultSeriesSort']) && array_key_exists($_REQUEST['defaultSeriesSort'], $validSeriesSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Series', 'Results', null, null, $_REQUEST['defaultSeriesSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Series', 'Results', null, null, '');
+						}
+					}
+					if (!empty($validWebsitesSorts)) {
+						if (!empty($_REQUEST['defaultWebsitesSort']) && array_key_exists($_REQUEST['defaultWebsitesSort'], $validWebsitesSorts)) {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Websites', 'Results', null, null, $_REQUEST['defaultWebsitesSort']);
+						} else {
+							PageDefaults::updatePageDefaultsForUser($user->id, 'Websites', 'Results', null, null, '');
 						}
 					}
 				} else {
@@ -184,7 +350,7 @@ class MyAccount_MyPreferences extends MyAccount {
 			}
 		}
 
-		$this->display('myPreferences.tpl', 'My Preferences');
+		$this->display('myPreferences.tpl', 'Preferences');
 	}
 
 	function getBreadcrumbs(): array {

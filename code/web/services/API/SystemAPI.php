@@ -20,9 +20,17 @@ class SystemAPI extends AbstractAPI {
 			}
 		}
 
-		if ($method === "getLogoFile") {
+		if ($method === 'getLogoFile') {
 			return $this->$method();
-		};
+		}else if ($method === 'getTranslation' || $method === 'getTranslationWithValues' || $method === 'getBulkTranslations') {
+			//These methods don't need additional authentication, just return the data.
+			$result = [
+				'result' => $this->$method(),
+			];
+			$output = json_encode($result);
+			echo $output;
+			die();
+		}
 
 		if (isset($_SERVER['PHP_AUTH_USER'])) {
 			if ($this->grantTokenAccess()) {
@@ -32,9 +40,6 @@ class SystemAPI extends AbstractAPI {
 					'getThemeInfo',
 					'getAppSettings',
 					'getLocationAppSettings',
-					'getTranslation',
-					'getTranslationWithValues',
-					'getBulkTranslations',
 					'getLanguages',
 					'getVdxForm',
 					'getLocalIllForm',
@@ -365,9 +370,9 @@ class SystemAPI extends AbstractAPI {
 	/** @noinspection PhpUnused */
 	public function getCurrentVersion(): array {
 		global $interface;
-		$gitBranch = $interface->getVariable('gitBranchWithCommit');
+		$aspenVersion = $interface->getVariable('aspenVersion');
 		return [
-			'version' => $gitBranch,
+			'version' => $aspenVersion,
 		];
 	}
 
@@ -538,6 +543,14 @@ class SystemAPI extends AbstractAPI {
 		}
 	}
 
+	public function updateCssForAllThemes() : array {
+		Theme::updateCssForAllThemes();
+		return [
+			'success' => true,
+			'message' => "Updated CSS for All Themes",
+		];
+	}
+
 	public function checkWhichUpdatesHaveRun($availableUpdates) {
 		global $aspen_db;
 		foreach ($availableUpdates as $key => $update) {
@@ -690,7 +703,7 @@ class SystemAPI extends AbstractAPI {
 		} else {
 			return [
 				'success' => false,
-				'message' => 'Please provide the term to translate into.',
+				'message' => 'Please provide the language to translate the term into.',
 			];
 		}
 
@@ -792,9 +805,14 @@ class SystemAPI extends AbstractAPI {
 					'message' => 'Invalid language code provided.',
 				];
 			}
-			if (file_get_contents('php://input')) {
-				$data = file_get_contents('php://input');
-				$terms = json_decode($data, true);
+			if (isset($_REQUEST['terms']) || file_get_contents('php://input')) {
+				if (isset($_REQUEST['terms'])) {
+					$terms['terms'] = $_REQUEST['terms'];
+				}else{
+					$data = file_get_contents('php://input');
+					$terms = json_decode($data, true);
+				}
+
 				$logger->log("Preparing to translate " . count($terms['terms']), Logger::LOG_DEBUG);
 				$translatedTerms = [];
 				/** @var Translator $translator */ global $translator;

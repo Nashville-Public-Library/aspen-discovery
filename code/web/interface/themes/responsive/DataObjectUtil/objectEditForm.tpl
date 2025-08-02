@@ -41,7 +41,9 @@
 		{/if}
 
 		{foreach from=$structure item=property}
-			{include file="DataObjectUtil/property.tpl"}
+			{if is_array($property) && isset($property.property) && isset($property.type)}
+				{include file="DataObjectUtil/property.tpl"}
+			{/if}
 		{/foreach}
 
 		{if (!isset($canSave) || ($canSave == true))}
@@ -141,7 +143,6 @@
 				{include file="DataObjectUtil/validationRule.tpl"}
 			{/foreach}
 			objectEditorObject.data('serialize',objectEditorObject.serialize()); // On load save form current state
-			AspenDiscovery.FormFields.initializeCharacterCounters(objectEditorObject);
 			{if !empty($initializationJs)}
 				{$initializationJs}
 			{/if}

@@ -221,10 +221,9 @@ AspenDiscovery.Account = (function () {
 			return false;
 		},
 
-		loadCheckouts: function (source, sort, showCovers, selectedUser) {
-
+		loadCheckouts(source, sort, showCovers, selectedUser, page) {
 			AspenDiscovery.Account.currentCheckoutsSource = source;
-			var url = Globals.path + "/MyAccount/AJAX?method=getCheckouts&source=" + source;
+			let url = Globals.path + "/MyAccount/AJAX?method=getCheckouts&source=" + source;
 			if (selectedUser || selectedUser == "") {
 				url += "&selectedUserCheckouts=" + selectedUser;
 			}
@@ -235,16 +234,23 @@ AspenDiscovery.Account = (function () {
 			if (showCovers !== undefined) {
 				url += "&showCovers=" + showCovers;
 			}
-			var stateObj = {
+			if (page !== undefined) {
+				url += "&page=" + page;
+			}
+			const stateObj = {
 				page: 'Checkouts',
 				source: source,
 				sort: sort,
 				showCovers: showCovers,
-				selectedUserCheckouts: selectedUser
+				selectedUserCheckouts: selectedUser,
+				pageNumber: page
 			};
-			var newUrl = AspenDiscovery.buildUrl(document.location.origin + document.location.pathname, 'source', source);
+			let newUrl = AspenDiscovery.buildUrl(document.location.origin + document.location.pathname, 'source', source);
+			if (page !== undefined) {
+				newUrl = AspenDiscovery.buildUrl(newUrl, 'page', page);
+			}
 			if (document.location.href) {
-				var label = 'Checkouts';
+				let label = 'Checkouts';
 				if (source === 'ils') {
 					label = 'Physical Checkouts';
 				} else if (source === 'overdrive') {
@@ -275,6 +281,7 @@ AspenDiscovery.Account = (function () {
 						$("#costSavingsPlaceholder").html(data.costSavingsMessage);
 					}
 					AspenDiscovery.Account.loadMenuData();
+					AspenDiscovery.goToAnchor("topOfList");
 				} else {
 					$("#" + source + "CheckoutsPlaceholder").html(data.message);
 				}
@@ -407,6 +414,7 @@ AspenDiscovery.Account = (function () {
 						// noinspection JSUnresolvedReference
 						$("#costSavingsPlaceholder").html(data.costSavingsMessage);
 					}
+					AspenDiscovery.goToAnchor("topOfList");
 				} else {
 					$("#readingHistoryListPlaceholder").html(data.message);
 				}
@@ -682,9 +690,11 @@ AspenDiscovery.Account = (function () {
 					} else if (response.result.success === false && response.result.has2FA === true) {
 						AspenDiscovery.showMessageWithButtons(response.result.title, response.result.body, response.result.buttons);
 					} else {
+						loadingElem.hide();
 						loginErrorElem.html(response.result.message).show();
 					}
 				}, 'json').fail(function () {
+					loadingElem.hide();
 					loginErrorElem.text("There was an error processing your login, please try again.").show();
 				})
 			}
@@ -2380,25 +2390,34 @@ AspenDiscovery.Account = (function () {
 			}
 			return false;
 		},
-		deleteAll: function (id) {
-			if (confirm("Are you sure you want to delete all items in this list?")) {
-				var url = Globals.path + '/MyAccount/AJAX?method=deleteListItems&id=' + id;
-				$.getJSON(url, function () {
-					location.reload();
-				});
+		deleteAllListTitles: function (id) {
+			AspenDiscovery.confirm("Delete All Titles?", "Are you sure you want to delete all items from this list? The titles will be permanently deleted.","Yes", "No", true, "AspenDiscovery.Account.doDeleteAllListTitles(" + id + ");", "btn-danger");
+			return false;
+		},
+		doDeleteAllListTitles: function (id) {
+			var url = Globals.path + '/MyAccount/AJAX?method=deleteListItems&id=' + id;
+			$('#confirmOkBtn').prop('disabled', true).addClass('disabled');
+			$('#confirmOkBtn .fa-spinner').removeClass('hidden');
+			$.getJSON(url, function () {
+				location.reload();
+			});
+		},
+		deleteSelectedListTitles: function (id) {
+			var selectedTitles = AspenDiscovery.getSelectedTitles(false);
+			if (selectedTitles) {
+				AspenDiscovery.confirm("Delete Selected Titles?", "Are you sure you want to delete the selected items from this list? The titles will be permanently deleted.","Yes", "No", true, "AspenDiscovery.Account.doDeleteSelectedListTitles(" + id + ");", "btn-danger");
+			}else{
+				AspenDiscovery.confirm("Delete Selected Titles?", "No titles are selected, would you like to delete all titles on this page? The titles will be permanently deleted.","Yes", "No", true, "AspenDiscovery.selectAllTitles();AspenDiscovery.Account.doDeleteSelectedListTitles(" + id + ");", "btn-danger");
 			}
 			return false;
 		},
-		deleteSelected: function (id) {
-			var selectedTitles = AspenDiscovery.getSelectedTitles();
-			if (selectedTitles) {
-				if (confirm("Are you sure you want to delete the selected items from this list?")) {
-					$.getJSON(Globals.path + '/MyAccount/AJAX?method=deleteListItems&id=' + id + '&' + selectedTitles, function () {
-						location.reload();
-					});
-				}
-			}
-			return false;
+		doDeleteSelectedListTitles: function(id) {
+			var selectedTitles = AspenDiscovery.getSelectedTitles(false);
+			$('#confirmOkBtn').prop('disabled', true).addClass('disabled');
+			$('#confirmOkBtn .fa-spinner').removeClass('hidden');
+			$.getJSON(Globals.path + '/MyAccount/AJAX?method=deleteListItems&id=' + id + '&' + selectedTitles, function () {
+				location.reload();
+			});
 		},
 		deleteSelectedLists: function () {
 			var selectedLists = AspenDiscovery.getSelectedLists();

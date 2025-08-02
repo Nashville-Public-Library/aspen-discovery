@@ -33,7 +33,10 @@ if (count($updatesToRun) == 0) {
 			$scheduledUpdate->update();
 
 			$versionToUpdateTo = $scheduledUpdate->updateToVersion;
-			$currentVersion = getGitBranch();
+			$currentVersion = getAspenVersion();
+			if (str_contains($currentVersion, ' ')) {
+				$currentVersion  = substr($currentVersion, 0, strpos($currentVersion, ' '));
+			}
 
 			if (!preg_match('/\d{2}\.\d{2}\.\d{2}/', $versionToUpdateTo)) {
 				$scheduledUpdate->notes = "FAILED: Bad version to update to $versionToUpdateTo \n";
@@ -193,6 +196,7 @@ die();
 function doPatchUpgrade($operatingSystem, $versionToUpdateTo, ScheduledUpdate $scheduledUpdate, ?CompanionSystem $companionSystem = null): void{
 	if($companionSystem) {
 		runDatabaseMaintenance($versionToUpdateTo, $scheduledUpdate, $companionSystem);
+		updateCssForAllThemes($scheduledUpdate, $companionSystem);
 	} else {
 		updateGitAndRunDatabaseUpdates($operatingSystem, $versionToUpdateTo, $scheduledUpdate);
 	}
@@ -221,6 +225,36 @@ function updateGitAndRunDatabaseUpdates($operatingSystem, $versionToUpdateTo, Sc
 
 	if (!hasErrors($scheduledUpdate->notes)) {
 		runDatabaseMaintenance($versionToUpdateTo, $scheduledUpdate);
+		updateCssForAllThemes($scheduledUpdate);
+	}
+}
+
+function updateCssForAllThemes($scheduledUpdate, ?CompanionSystem $companionSystem = null) : void {
+	//Make sure we have an interface available to do the updates
+	global $interface;
+	$interface = new UInterface();
+
+	$scheduledUpdate->notes .= "Updating CSS for all Themes\n";
+
+	require_once ROOT_DIR . '/services/API/SystemAPI.php';
+	$systemAPI = new SystemAPI();
+	$systemAPI->updateCssForAllThemes();
+
+	// run external db maintenance if needed
+	if($companionSystem != null) {
+		require_once ROOT_DIR . '/sys/CurlWrapper.php';
+		$curl = new CurlWrapper();
+		console_log('Updating CSS for all Themes for companion system ' . $companionSystem->getServerUrl() . '/API/SystemAPI?method=updateCssForAllThemes');
+		$response = json_decode($curl->curlGetPage($companionSystem->getServerUrl() . '/API/SystemAPI?method=updateCssForAllThemes'));
+		if(!isset($response->success) || $response->success == false) {
+			$scheduledUpdate->status = 'failed';
+			$scheduledUpdate->notes .= 'Updating CSS for all Themes failed for ' . $companionSystem->getServerName();
+		}
+
+		if(isset($response->message)) {
+			$message = $response->message ?? '';
+			$scheduledUpdate->notes .= $message . "\n";
+		}
 	}
 }
 
@@ -270,6 +304,7 @@ function doFullUpgrade($operatingSystem, $linuxDistribution, $serverName, $versi
 	if($companionSystem != null) {
 		//Update the companion system
 		runDatabaseMaintenance($versionToUpdateTo, $scheduledUpdate, $companionSystem);
+		updateCssForAllThemes($scheduledUpdate, $companionSystem);
 	} else {
 		//Update the system
 		updateGitAndRunDatabaseUpdates($operatingSystem, $versionToUpdateTo, $scheduledUpdate);

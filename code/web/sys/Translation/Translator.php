@@ -55,6 +55,7 @@ class Translator {
 
 	//Cache any translations that have already been loaded.
 	private $cachedTranslations = [];
+	private ?PDOStatement $dbPhraseStmt = null;
 
 	private $communityContentCurlWrapper = null;
 
@@ -74,7 +75,7 @@ class Translator {
 	 * @return string The translated phrase.
 	 */
 	function translate(
-		string $phrase, string $defaultText = '', array $replacementValues = [],
+		?string $phrase, string $defaultText = '', array $replacementValues = [],
 		bool $inAttribute = false, bool $isPublicFacing = false, bool $isAdminFacing = false,
 		bool $isMetadata = false, bool $isAdminEnteredData = false,
 		bool $translateParameters = false, bool $escape = false
@@ -93,7 +94,7 @@ class Translator {
 			if (!empty($activeLanguage)) {
 				$translationKey = $activeLanguage->id . '_' . ($translationMode ? 1 : 0) . '_' . $phrase;
 				$existingTranslation = array_key_exists($translationKey, $this->cachedTranslations) ? $this->cachedTranslations[$translationKey] : false;
-				if (!$existingTranslation || isset($_REQUEST['reload'])) {
+				if (!$existingTranslation || isset($_REQUEST['reload']) || !empty($replacementValues)) {
 					//Search for the term
 					$translationTerm = new TranslationTerm();
 					$translationTerm->term = $phrase;
@@ -184,7 +185,20 @@ class Translator {
 						}
 					}
 					else {
-						$returnString = !empty($defaultText) ? $defaultText : $phrase;
+						// Non-translation mode: check DB override first, then .ini defaults.
+						if (empty($this->words)) {
+							$this->loadTranslationsFromIniFile();
+						}
+						$dbTranslation = $this->loadDbOverride($phrase);
+						if ($dbTranslation !== null) {
+							$returnString = $dbTranslation;
+						} elseif (isset($this->words[$phrase])) {
+							$returnString = $this->words[$phrase];
+						} elseif (!empty($defaultText)) {
+							$returnString = $defaultText;
+						} else {
+							$returnString = $phrase;
+						}
 						if (count($replacementValues) > 0) {
 							foreach ($replacementValues as $index => $replacementValue) {
 								if ($translateParameters) {
@@ -192,6 +206,9 @@ class Translator {
 								}
 								$returnString = str_replace('%' . $index . '%', $replacementValue, $returnString);
 							}
+						}
+						if ($escape) {
+							$returnString = htmlentities($returnString);
 						}
 						$this->cachedTranslations[$translationKey] = $returnString;
 						return $returnString;
@@ -448,5 +465,20 @@ class Translator {
 			$translation = ucfirst($translation);
 		}
 		return trim($translation);
+	}
+
+	private function loadDbOverride(string $phrase): ?string {
+		global $aspen_db, $activeLanguage;
+		if ($this->dbPhraseStmt === null) {
+			$this->dbPhraseStmt = $aspen_db->prepare(
+				"SELECT tr.translation
+				 FROM translations AS tr
+				 JOIN translation_terms AS tt ON tr.termId = tt.id
+				 WHERE tt.term = ? AND tr.languageId = ?"
+			);
+		}
+		$this->dbPhraseStmt->execute([$phrase, $activeLanguage->id]);
+		$row = $this->dbPhraseStmt->fetch(PDO::FETCH_ASSOC);
+		return $row !== false ? $row['translation'] : null;
 	}
 }

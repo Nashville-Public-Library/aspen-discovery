@@ -126,6 +126,8 @@ class Location extends DataObject {
 
 	/** @noinspection PhpUnused */
 	public $allowUpdatingHoursFromILS;
+	/** @noinspection PhpUnused */
+	public $allowUpdatingContactInfoFromILS;
 
 	protected $_hours;
 	private $_moreDetailsOptions;
@@ -183,7 +185,11 @@ class Location extends DataObject {
 		];
 	}
 
+	static $_objectStructure = [];
 	static function getObjectStructure($context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		//Load Libraries for lookup values
 		$library = new Library();
 		$library->orderBy('displayName');
@@ -443,6 +449,15 @@ class Location extends DataObject {
 				'default' => true,
 				'editPermissions' => ['Location Address and Hours Settings'],
 				'affectsLiDA' => true,
+			],
+			'allowUpdatingContactInfoFromILS' => [
+				'property' => 'allowUpdatingContactInfoFromILS',
+				'type' => 'checkbox',
+				'label' => 'Automatically Update Contact Information from the ILS',
+				'description' => 'Whether address, phone number, and email should be automatically updated from the ILS.',
+				'hideInLists' => true,
+				'default' => 0,
+				'permissions' => ['Location ILS Connection'],
 			],
 			'address' => [
 				'property' => 'address',
@@ -718,6 +733,46 @@ class Location extends DataObject {
 						'hideInLists' => true,
 						'default' => '*',
 						'permissions' => ['Location ILS Connection'],
+					],
+				],
+			],
+
+			'hoursSection' => [
+				'property' => 'hoursSection',
+				'type' => 'section',
+				'label' => 'Library Hours',
+				'hideInLists' => true,
+				'renderAsHeading' => false,
+				'permissions' => [
+					'Location ILS Connection',
+					'Location Address and Hours Settings'
+				],
+				'properties' => [
+					'allowUpdatingHoursFromILS' => [
+						'property' => 'allowUpdatingHoursFromILS',
+						'type' => 'checkbox',
+						'label' => 'Automatically Update with Library Hours and Closures from the ILS',
+						'description' => 'Whether library hours and closures should be automatically updated from the ILS.',
+						'hideInLists' => true,
+						'default' => 1,
+						'permissions' => ['Location ILS Connection'],
+					],
+
+					'hours' => [
+						'property' => 'hours',
+						'type' => 'oneToMany',
+						'keyThis' => 'locationId',
+						'keyOther' => 'locationId',
+						'subObjectType' => 'LocationHours',
+						'structure' => $hoursStructure,
+						'label' => 'Hours',
+						'renderAsHeading' => true,
+						'description' => 'Library Hours',
+						'sortable' => false,
+						'storeDb' => true,
+						'permissions' => ['Location Address and Hours Settings'],
+						'canAddNew' => true,
+						'canDelete' => true,
 					],
 				],
 			],
@@ -1283,46 +1338,6 @@ class Location extends DataObject {
 			];
 		}
 
-		$structure['hoursSection'] = [
-			'property' => 'hoursSection',
-			'type' => 'section',
-			'label' => 'Library Hours',
-			'hideInLists' => true,
-			'renderAsHeading' => false,
-			'permissions' => [
-				'Location ILS Connection',
-				'Location Address and Hours Settings'
-			],
-			'properties' => [
-				'allowUpdatingHoursFromILS' => [
-					'property' => 'allowUpdatingHoursFromILS',
-					'type' => 'checkbox',
-					'label' => 'Automatically update hours from the ILS',
-					'description' => 'Whether closures should be automatically updated (Koha Only).',
-					'hideInLists' => true,
-					'default' => 1,
-					'permissions' => ['Location ILS Connection'],
-				],
-
-				'hours' => [
-					'property' => 'hours',
-					'type' => 'oneToMany',
-					'keyThis' => 'locationId',
-					'keyOther' => 'locationId',
-					'subObjectType' => 'LocationHours',
-					'structure' => $hoursStructure,
-					'label' => 'Hours',
-					'renderAsHeading' => true,
-					'description' => 'Library Hours',
-					'sortable' => false,
-					'storeDb' => true,
-					'permissions' => ['Location Address and Hours Settings'],
-					'canAddNew' => true,
-					'canDelete' => true,
-				],
-			],
-		];
-
 		$structure['recordsToInclude'] = [
 			'property' => 'recordsToInclude',
 			'type' => 'oneToMany',
@@ -1466,7 +1481,9 @@ class Location extends DataObject {
 			unset($structure['interLibraryLoanSection']['properties']['vdxFormId']);
 			unset($structure['interLibraryLoanSection']['properties']['vdxLocation']);
 		}
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+
+		return self::$_objectStructure[$context];
 	}
 
 	private $_pickupUsers;
@@ -1930,14 +1947,14 @@ class Location extends DataObject {
 	 * The location we are in based solely on IP address.
 	 * @var Location|string
 	 */
-	private $_ipLocation = 'unset';
+	private static $_ipLocation = 'unset';
 
 	/**
 	 * @return Location|null
 	 */
 	function getIPLocation(): ?Location {
-		if ($this->_ipLocation != 'unset') {
-			return $this->_ipLocation;
+		if (self::$_ipLocation !== 'unset') {
+			return self::$_ipLocation;
 		}
 		global $timer;
 		//Check the current IP address to see if we are in a branch
@@ -1946,20 +1963,20 @@ class Location extends DataObject {
 		$timer->logTime('Starting getIPLocation');
 		//echo("Active IP is $activeIp");
 		require_once ROOT_DIR . '/sys/IP/IPAddress.php';
-		$this->_ipLocation = null;
+		self::$_ipLocation = null;
 		$subnet = IPAddress::getIPAddressForIP($activeIp);
 		if ($subnet !== false) {
 			$matchedLocation = new Location();
 			$matchedLocation->locationId = $subnet->locationid;
 			if ($matchedLocation->find(true)) {
 				//Only use the physical location regardless of where we are
-				$this->_ipLocation = clone($matchedLocation);
+				self::$_ipLocation = clone($matchedLocation);
 			}
 		}
 
 		$timer->logTime('Finished getIPLocation');
 
-		return $this->_ipLocation;
+		return self::$_ipLocation;
 	}
 
 
@@ -2785,12 +2802,26 @@ class Location extends DataObject {
 		$this->groupedWorkDisplaySettingId = $newGroupedWorkDisplaySettings->id;
 	}
 
+	static $_locationList = [];
 	/**
 	 * @param boolean $restrictByHomeLibrary whether only locations for the patron's home library should be returned
 	 * @param boolean $valueIsCode whether the value returned is the location code or location id (default)
 	 * @return array
 	 */
 	static function getLocationList(bool $restrictByHomeLibrary, bool $valueIsCode = false): array {
+		if ($restrictByHomeLibrary && !$valueIsCode) {
+			$locationListKey = 0;
+		}elseif ($restrictByHomeLibrary && $valueIsCode) {
+			$locationListKey = 1;
+		}elseif (!$restrictByHomeLibrary && !$valueIsCode) {
+			$locationListKey = 2;
+		}else {
+			$locationListKey = 3;
+		}
+
+		if (array_key_exists($locationListKey, self::$_locationList)) {
+			return self::$_locationList[$locationListKey];
+		}
 		$location = new Location();
 		$location->selectAdd();
 		$location->selectAdd('code');
@@ -2819,7 +2850,8 @@ class Location extends DataObject {
 		while ($location->fetch()) {
 			$locationList[$location->$selectValue] = $location->displayName;
 		}
-		return $locationList;
+		self::$_locationList[$locationListKey] = $locationList;
+		return self::$_locationList[$locationListKey];
 	}
 
 	static $locationListAsObjects = null;
@@ -2852,6 +2884,27 @@ class Location extends DataObject {
 			}
 		}
 		return Location::$locationListAsObjects;
+	}
+
+	/**
+	 * Get location list with Web Builder indexing status indicators from parent library.
+	 * @param boolean $restrictByHomeLibrary Whether locations for the patron's home library should be returned.
+	 * @param bool $valueIsCode Whether to use location code as the key instead of locationId.
+	 * @return array An associative array with locationId/code => "Location Name [status]".
+	 */
+	static function getLocationListWithWebBuilderStatus(bool $restrictByHomeLibrary, bool $valueIsCode = false): array {
+		$locationObjects = Location::getLocationListAsObjects($restrictByHomeLibrary);
+		$locationList = [];
+		foreach ($locationObjects as $locationId => $location) {
+			$displayName = $location->displayName;
+			$parentLibrary = $location->getParentLibrary();
+			if ($parentLibrary && $parentLibrary->enableWebBuilder == 0) {
+				$displayName .= ' (Library Indexing Disabled)';
+			}
+			$key = $valueIsCode ? $location->code : $locationId;
+			$locationList[$key] = $displayName;
+		}
+		return $locationList;
 	}
 
 	protected $_browseCategoryGroup = null;
@@ -3144,31 +3197,37 @@ class Location extends DataObject {
 		}
 	}
 
+	private $_interlibraryLoanType = null;
 	function getInterlibraryLoanType(): string {
-		try {
-			//Check to see if local ILL is available
-			$parentLibrary = $this->getParentLibrary();
-			if ($parentLibrary != null) {
-				if ($parentLibrary->localIllRequestType != 0) {
-					if ($this->localIllFormId > 0) {
-						return 'localIll';
+		if ($this->_interlibraryLoanType == null){
+			$this->_interlibraryLoanType = 'none';
+			try {
+				//Check to see if local ILL is available
+				$parentLibrary = $this->getParentLibrary();
+				if ($parentLibrary != null) {
+					if ($parentLibrary->localIllRequestType != 0) {
+						if ($this->localIllFormId > 0) {
+							$this->_interlibraryLoanType = 'localIll';
+						}
 					}
 				}
-			}
-			//Local ILL is not available, check to see if VDX is available.
-			require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
-			require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
-			$vdxSettings = new VdxSetting();
-			if ($vdxSettings->find(true)) {
-				//Get configuration for the form.
-				if ($this->vdxFormId != -1) {
-					return 'vdx';
+				if ($this->_interlibraryLoanType == 'none') {
+					//Local ILL is not available, check to see if VDX is available.
+					require_once ROOT_DIR . '/sys/VDX/VdxSetting.php';
+					require_once ROOT_DIR . '/sys/VDX/VdxForm.php';
+					$vdxSettings = new VdxSetting();
+					if ($vdxSettings->find(true)) {
+						//Get configuration for the form.
+						if ($this->vdxFormId != -1) {
+							$this->_interlibraryLoanType = 'vdx';
+						}
+					}
 				}
+			} catch (Exception $e) {
+				//This happens if the tables aren't setup, ignore
 			}
-		} catch (Exception $e) {
-			//This happens if the tables aren't setup, ignore
 		}
-		return 'none';
+		return $this->_interlibraryLoanType;
 	}
 
 	/**
@@ -3201,6 +3260,8 @@ class Location extends DataObject {
 	 * Dynamically adjust object structure when editing an existing Location.
 	 * - Remove curbsidePickupInstructionsSetting if the ILS is not Koha.
 	 * - Disable and change the note of curbsidePickupInstructionsSetting if allowCheckIn is enabled.
+	 * - Remove allowUpdatingHoursFromILS if the ILS is not Koha.
+	 * - Remove allowUpdatingContactInfoFromILS if the ILS is not Koha.
 	 *
 	 * @param array $structure
 	 * @return array
@@ -3210,9 +3271,10 @@ class Location extends DataObject {
 		if ($parentLibrary) {
 			$accountProfile = $parentLibrary->getAccountProfile();
 			$ils = $accountProfile ? $accountProfile->ils : '';
-			// Currently, only Koha curbside pickups are implemented in Aspen.
 			if ($ils !== 'koha') {
 				unset($structure['ilsSection']['properties']['curbsidePickupInstructionsSetting']);
+				unset($structure['hoursSection']['properties']['allowUpdatingHoursFromILS']);
+				unset($structure['hoursSection']['properties']['allowUpdatingContactInfoFromILS']);
 			} else {
 				// Check if "Mark Arrived" is enabled in the CurbsidePickupSetting.
 				require_once ROOT_DIR . '/sys/CurbsidePickups/CurbsidePickupSetting.php';

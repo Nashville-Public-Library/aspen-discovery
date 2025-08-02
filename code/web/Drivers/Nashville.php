@@ -209,6 +209,17 @@ class Nashville extends CarlX {
 			$level = Logger::LOG_ERROR;
 		}
 		$logger->log($message, $level);
+		//send email if error
+		if ($level == Logger::LOG_ERROR) {
+			global $serverName;
+			require_once ROOT_DIR . '/sys/Email/Mailer.php';
+			$mailer = new Mailer();
+			require_once ROOT_DIR . '/sys/SystemVariables.php';
+			$systemVariables = SystemVariables::getSystemVariables();
+			if (!empty($systemVariables->errorEmail)) {
+				$mailer->send($systemVariables->errorEmail, "$serverName Error with Non Resident Patron Update", $message);
+			}
+		}
 		return [
 			'success' => $success,
 			'message' => $message,
@@ -281,7 +292,7 @@ class Nashville extends CarlX {
 	protected function feePaidViaSIP($SIP2FeeType = '01', $pmtType = '02', $pmtAmount, $curType = 'USD', $feeId = '', $transId = '', $patronId = ''): array {
 		$mySip = $this->initSIPConnection();
 		if (!is_null($mySip)) {
-			$in = $mySip->msgFeePaid($SIP2FeeType, $pmtType, $pmtAmount, $curType, $feeId, $transId, $patronId);
+			$in = $mySip->msgFeePaid($pmtAmount, $SIP2FeeType, $pmtType, $curType, $feeId, $transId, $patronId);
 			$msg_result = $mySip->get_message($in);
 			ExternalRequestLogEntry::logRequest('carlx.feePaid', 'SIP2', $mySip->hostname . ':' . $mySip->port, [], $in, 0, $msg_result, []);
 			if (preg_match("/^38/", $msg_result)) {

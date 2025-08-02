@@ -90,14 +90,19 @@ class SirsiDynixROA extends HorizonAPI {
 		}
 	}
 
+	public function supportsLoginWithUsername() : bool {
+		return true;
+	}
+
 	function findNewUser($patronBarcode, $patronUsername): User|bool {
-		// Creates a new user like patronLogin but looks up user by barcode.
+		// Creates a new user like patronLogin and looks up user by barcode or username.
 		// Note: The user pin is not supplied in the Account Info Lookup call.
 		$sessionToken = $this->getStaffSessionToken();
 		if (!empty($sessionToken)) {
 			$webServiceURL = $this->getWebServiceURL();
 			$includeFields = urlEncode("firstName,lastName,privilegeExpiresDate,preferredAddress,preferredName,address1,address2,address3,library,primaryPhone,profile,pin,blockList{owed}");
-			$lookupMyAccountInfoResponse = $this->getWebServiceResponse('findNewUser', $webServiceURL . '/user/patron/search?q=ID:' . $patronBarcode . '&rw=1&ct=1&includeFields=' . $includeFields, null, $sessionToken);
+			$searchString = $patronBarcode != null ? 'ID:' . $patronBarcode : 'ALT_ID:' . $patronUsername;
+			$lookupMyAccountInfoResponse = $this->getWebServiceResponse('findNewUser', $webServiceURL . '/user/patron/search?q=' . $searchString . '&rw=1&ct=1&includeFields=' . $includeFields, null, $sessionToken);
 			if (!empty($lookupMyAccountInfoResponse->result) && $lookupMyAccountInfoResponse->totalResults == 1) {
 				$userID = $lookupMyAccountInfoResponse->result[0]->key;
 				$lookupMyAccountInfoResponse = $lookupMyAccountInfoResponse->result[0];
@@ -3878,6 +3883,27 @@ class SirsiDynixROA extends HorizonAPI {
 			}
 		}
 
+		//For patrons that have fines, but that are not at the fine threshold, we need to add an override.
+		$totalFines = $patron->getTotalFines(false);
+		if ($totalFines > 0) {
+			$userProfileResponse = $this->getWebServiceResponse('getUserProfile', $webServiceURL . '/policy/userProfile/key/' . $patron->patronType, null, $sessionToken);
+			if ($userProfileResponse) {
+				if ($totalFines < $userProfileResponse->fields->billThreshold->amount) {
+					$addOverrideCode = true;
+				}else{
+					$result['message'] = translate([
+						'text' => 'Your account has too many fines to check out this title.',
+						'isPublicFacing' => true,
+					]);
+					$result['api']['message'] = translate([
+						'text' => 'Your account has too many fines to check out this title.',
+						'isPublicFacing' => true,
+					]);
+					$doCheckout = false;
+				}
+			}
+		}
+
 		if ($doCheckout) {
 			$checkOutParams = [
 				'itemBarcode' => $barcode,
@@ -3887,6 +3913,7 @@ class SirsiDynixROA extends HorizonAPI {
 			$additionalHeaders = [
 				'SD-Preferred-Role: STAFF'
 			];
+
 			//For titles that are on hold, we need to add an override.
 			if ($addOverrideCode && !empty($this->accountProfile->overrideCode)) {
 				$additionalHeaders[] = 'SD-Prompt-Return: CKOBLOCKS/' . $this->accountProfile->overrideCode;

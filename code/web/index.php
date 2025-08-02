@@ -46,9 +46,9 @@ if ($activeSessionObject != null) {
 }
 
 global $locationSingleton;
-getGitBranch();
+getAspenVersion();
 //Set a counter for CSS and JavaScript so we can have browsers clear their cache automatically
-$interface->assign('cssJsCacheCounter', 46);
+$interface->assign('cssJsCacheCounter', 47);
 
 // Setup Translator
 global $language;
@@ -295,9 +295,10 @@ if (!empty($library) && !empty($library->cookieStorageConsent)) {
 }
 
 //system variable for supporting company name
-$interface->assign('supportingCompany', 'ByWater Solutions');
 if (!empty($systemVariables) && !empty($systemVariables->supportingCompany)) {
 	$interface->assign('supportingCompany', $systemVariables->supportingCompany);
+}else{
+	$interface->assign('supportingCompany', '');
 }
 
 $deviceName = get_device_name();
@@ -433,6 +434,17 @@ foreach ($_REQUEST as $parameter => $value) {
 			}
 		}
 	}
+}
+
+if (!empty($library->getLayoutSettings()->homeLinkText)) {
+	$interface->assign('homeLinkText', $library->getLayoutSettings()->homeLinkText);
+} else {
+	$interface->assign('homeLinkText', 'Home');
+}
+if (!empty($library->getLayoutSettings()->browseLinkText)) {
+	$interface->assign('browseLinkText', $library->getLayoutSettings()->browseLinkText);
+} else {
+	$interface->assign('browseLinkText', 'Browse');
 }
 
 $interface->assign('canLoginSSO', IPAddress::allowSSOAccessForClientIP());
@@ -794,17 +806,6 @@ if ($action == "AJAX" || $action == "JSON" || $module == 'API') {
 		} else {
 			$interface->assign('homeBreadcrumbLink', '/');
 		}
-	}
-
-	if (!empty($library->getLayoutSettings()->homeLinkText)) {
-		$interface->assign('homeLinkText', $library->getLayoutSettings()->homeLinkText);
-	} else {
-		$interface->assign('homeLinkText', 'Home');
-	}
-	if (!empty($library->getLayoutSettings()->browseLinkText)) {
-		$interface->assign('browseLinkText', $library->getLayoutSettings()->browseLinkText);
-	} else {
-		$interface->assign('browseLinkText', 'Browse');
 	}
 }
 
