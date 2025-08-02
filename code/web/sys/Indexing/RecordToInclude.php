@@ -57,7 +57,7 @@ class RecordToInclude extends DataObject {
 
 	static function getObjectStructure($context = ''): array {
 		require_once ROOT_DIR . '/sys/Indexing/IndexingProfile.php';
-		$indexingProfiles = IndexingProfile::getAllIndexingProfiles();
+		$indexingProfiles = IndexingProfile::getAllIndexingProfilesById();
 
 		return [
 			'id' => [
