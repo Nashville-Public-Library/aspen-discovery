@@ -4002,8 +4002,8 @@ class Library extends DataObject {
 						'type' => 'integer',
 						'label' => 'Hoopla Library ID',
 						'description' => 'The ID Number Hoopla uses for this library',
+						'note' => 'Set to 0 to replace the "Check Out" and "Place Hold" buttons with the "Access Online" button.',
 						'hideInLists' => true,
-						'forcesReindex' => true,
 					],
 					'hooplaScopeId' => [
 						'property' => 'hooplaScopeId',

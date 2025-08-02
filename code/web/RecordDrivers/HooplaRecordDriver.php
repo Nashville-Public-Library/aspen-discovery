@@ -284,6 +284,8 @@ class HooplaRecordDriver extends GroupedWorkSubDriver {
 							'type' => 'hoopla_checkout',
 						];
 					}
+				} else {
+					$this->_actions[] = $this->getAccessLink();
 				}
 			}
 		}
