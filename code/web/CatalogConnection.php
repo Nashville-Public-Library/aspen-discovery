@@ -1680,6 +1680,10 @@ class CatalogConnection {
 	public function getWeedingReportData($location) {
 		return $this->driver->getWeedingReportData($location);
 	}
+	
+	public function getLibrarianFacebookData() {
+		return $this->driver->getLibrarianFacebookData();
+	}
 
 	/**
 	 * Loads any contact information that is not stored by Aspen Discovery from the ILS. Updates the user object.
