@@ -2089,6 +2089,7 @@ class IndexingProfile extends DataObject {
 	}
 
 	static $_indexingProfiles = null;
+	static $_indexingProfilesById = null;
 
 	/**
 	 * Return all indexing profiles with caching to make sure we don't look them up multiple times.
@@ -2106,6 +2107,24 @@ class IndexingProfile extends DataObject {
 			}
 		}
 		return self::$_indexingProfiles;
+	}
+
+	/**
+	 * Return all indexing profiles with caching to make sure we don't look them up multiple times.
+	 *
+	 * @return IndexingProfile[]
+	 */
+	public static function getAllIndexingProfilesById() : array {
+		if (self::$_indexingProfilesById === null) {
+			self::$_indexingProfilesById = [];
+			$indexingProfile = new IndexingProfile();
+			$indexingProfile->orderBy('name');
+			$indexingProfile->find();
+			while ($indexingProfile->fetch()) {
+				self::$_indexingProfilesById[$indexingProfile->id] = clone($indexingProfile);
+			}
+		}
+		return self::$_indexingProfilesById;
 	}
 }
 
