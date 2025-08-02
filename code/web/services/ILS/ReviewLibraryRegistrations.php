@@ -32,6 +32,7 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 		while ($object->fetch()) {
 			$list[$object->id] = clone $object;
 		}
+		$list = self::getPatronData($list);
 
 		return $list;
 	}
@@ -103,6 +104,26 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 				'field' => $filterFields['sierraPCode3'],
 			],
 		];
+	}
+
+	function getPatronData($list) {
+		global $library;
+		$accountProfile = $library->getAccountProfile();
+		$catalogDriverName = trim($accountProfile->driver);
+		$catalogDriver = null;
+		if (!empty($catalogDriverName)) {
+			$catalogDriver = CatalogFactory::getCatalogConnectionInstance($catalogDriverName, $accountProfile);
+		}
+		if ($catalogDriver->driver instanceof Sierra) {
+			$ids = array_column($list, 'patronId');
+			$patrons = $catalogDriver->driver->getPatronsByIdList($ids);
+			foreach ($patrons->entries as $i => $patron) {
+				$list[$i + 1]->_sierraData = $patron;
+			}
+			return $list;
+		} else {
+			return [];
+		}
 	}
 
 }

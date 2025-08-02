@@ -1369,6 +1369,29 @@ class Sierra extends Millennium {
 		}
 	}
 
+	public function getPatronsByIdList($ids) {
+		$params = [
+			'id' => implode(",", $ids),
+			'fields' => 'id,names,deleted,suppressed,addresses,phones,emails,expirationDate,homeLibraryCode,moneyOwed,patronType,patronCodes,blockInfo,message,pMessage,langPref,fixedFields,varFields,updatedDate,createdDate,birthDate',
+		];
+
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl .= "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/?";
+		$sierraUrl .= http_build_query($params);
+
+		$response = $this->_callUrl('sierra.findPatronByBarcode', $sierraUrl);
+		if (!$response) {
+			return false;
+		} else {
+			if (!empty($response->deleted) || !empty($response->suppressed) || (!empty($response->httpStatus) && $response->httpStatus == 404)) {
+				return false;
+			} else {
+				return $response;
+			}
+		}
+	}
+
+
 	public function findNewUser($patronBarcode, $patronUsername) {
 		global $library;
 		if (!empty($patronBarcode)) {
@@ -2146,8 +2169,8 @@ class Sierra extends Millennium {
 		$createPatronResult = $this->_postPage('sierra.createPatron', $sierraUrl, json_encode($params));
 
 		if ($this->lastResponseCode == 200) {
+			$patronId = str_replace($sierraUrl, '', $createPatronResult->link);
 			if ($selfRegistrationForm->selfRegUsePatronIdBarcode) {
-				$patronId = str_replace($sierraUrl, '', $createPatronResult->link);
 				$updateBarcodeResult = $this->updateBarcode($patronId, $patronId);
 				if ($updateBarcodeResult) {
 					$selfRegResult = [
@@ -2180,6 +2203,7 @@ class Sierra extends Millennium {
 			require_once ROOT_DIR . '/sys/SelfRegistrationForms/SierraRegistration.php';
 			$registration = new SierraRegistration();
 			$registration->barcode = $barcode;
+			$registration->patronId = $patronId;
 			if (!empty($params['patronType'])) {
 				$registration->sierraPType = $params['patronType'];
 			}

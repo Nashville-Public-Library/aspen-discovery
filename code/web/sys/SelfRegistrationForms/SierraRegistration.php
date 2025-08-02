@@ -2,6 +2,7 @@
 class SierraRegistration extends DataObject {
 	public $__table = 'self_registration_sierra';
 	public $id;
+	public $patronId;
 	public $_name;
 	public $_address;
 	public $_phone;
@@ -311,8 +312,13 @@ class SierraRegistration extends DataObject {
 		if (!empty($catalogDriverName)) {
 			$catalogDriver = CatalogFactory::getCatalogConnectionInstance($catalogDriverName, $accountProfile);
 		}
-		if ($catalogDriver->driver instanceof Sierra && !empty($this->barcode)) {
-			$this->_sierraData = $catalogDriver->driver->getPatronInfoByBarcode($this->barcode);
+		if ($catalogDriver->driver instanceof Sierra && !empty($this->patronId)) {
+			$data = $catalogDriver->driver->getPatronsByIdList([$this->patronId]);
+			if ($data) {
+				$this->_sierraData = $data->entries[0];
+			} else {
+				$this->_sierraData = [];
+			}
 		} else {
 			$this->_sierraData = [];
 		}
