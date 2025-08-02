@@ -212,14 +212,16 @@
 							</div>
 							<div class="overdueRecordTable row">
 								<div class="overdueRecordTableMessage col-md-12">
+									{capture name="multiLineText"}
 									The items below are
 									{if $showOverdueOnly == "overdue"}&nbsp;overdue
 									{elseif $showOverdueOnly == "checkedOut"}&nbsp;checked out
-									{elseif $showOverdueOnly == "fees"}&nbsp;billed{/if}
-									.&nbsp;
-									Return them to your library. This notice was created {$reportDateTime}<br>
-									Check your account online at https://school.library.nashville.org/<br>
-									Read off your fees in October and February! Learn more at https://limitlesslibraries.org/programs
+									{elseif $showOverdueOnly == "fees"}&nbsp;billed{/if}.
+									{/capture}
+									{translate text=$smarty.capture.multiLineText isPublicFacing=true}
+									{translate text="Return them to your library." isPublicFacing=true} {translate text="This notice was created" isPublicFacing=true} {$reportDateTime}<br>
+									{translate text="Check your account online at https://school.library.nashville.org/" isPublicFacing=true}<br>
+									{translate text="Read off your fees in October and February! Learn more at https://limitlesslibraries.org/programs" isPublicFacing=true}
 								</div>
 							</div>
 							<div class="overdueRecord row d-flex flex-wrap">
@@ -230,7 +232,7 @@
 											<div class="BOOK_COVER col-md-3"><img class="img-fluid" src="{$dataRow.coverUrl}"></div>
 											<div class="overdueRecordContentDetails col-md-9">
 												<div class="TITLE">{$dataRow.TITLE|regex_replace:"/ *\/ *$/":""}</div>
-												<div class="DUE_DATE_AND_PRICE">DUE: {$dataRow.DUE_DATE} {if $showOverdueOnly == "overdue" || $showOverdueOnly == "checkedOut"}PRICE{elseif $showOverdueOnly == "fees"}OWED{/if}: {$dataRow.OWED|regex_replace:"/^ *0\.00$/":"10.00"}</div>
+												<div class="DUE_DATE_AND_PRICE">{translate text="DUE" isPublicFacing=true}: {$dataRow.DUE_DATE} {if $showOverdueOnly == "overdue" || $showOverdueOnly == "checkedOut"}{translate text="PRICE" isPublicFacing=true}{elseif $showOverdueOnly == "fees"}{translate text="OWED" isPublicFacing=true}{/if}: {$dataRow.OWED|regex_replace:"/^ *0\.00$/":"10.00"}</div>
 												<div class="SYSTEM_AND_ITEM_ID">{$dataRow.SYSTEM} {$dataRow.ITEM}</div>
 												<div class="CALL_NUMBER">{$dataRow.CALL_NUMBER}</div>
 											</div>
