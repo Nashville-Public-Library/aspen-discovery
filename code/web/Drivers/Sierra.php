@@ -2058,6 +2058,14 @@ class Sierra extends Millennium {
 					'value' => $selfRegistrationForm->selfRegAgency
 				];
 			}
+			$params['varFields'][] = [
+				'fieldTag' => 'x',
+				'content' => translate([
+					'text' => 'Patron self-registered on %1%.',
+					1 => date('m/d/Y'),
+					'isPublicFacing' => 'false'
+				]),
+			];
 
 			// Override with any municipality-specific settings
 			if (!empty($municipalities)) {

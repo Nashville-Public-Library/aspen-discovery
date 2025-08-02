@@ -265,8 +265,15 @@ class SierraRegistration extends DataObject {
 						break;
 					}
 				}
-				$now = date('Y-m-d \a\t g:i a');
-				$note .= "Patron verified by {authenticated staff users name} at {location name} on $now.";
+				global $library;
+				$user = UserAccount::getLoggedInUser();
+				$note .= translate([
+					'text' => "Patron verified by %1% at %2% on %3%.",
+					1 => $user->displayName,
+					2 => $library->displayName,
+					3 => date('m/d/Y \a\t g:i a'),
+					'isAdminFacing' => true,
+				]);
 				$this->_note = $note;
 				return $note;
 			} else {
