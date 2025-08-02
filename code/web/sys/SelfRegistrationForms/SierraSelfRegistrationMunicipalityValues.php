@@ -3,7 +3,7 @@ require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/Drivers/Sierra.php';
 
 class SierraSelfRegistrationMunicipalityValues extends DataObject {
-	public $__table = 'sierra_self_reg_municipality_values';
+	public $__table = 'self_reg_municipality_values_sierra';
 	public $id;
 	public $selfRegistrationFormId;
 	public $municipality;
@@ -170,7 +170,6 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 
 	public static function getMetadataOptions($field) {
 		global $library;
-		$user = UserAccount::getActiveUserObj();
 		$accountProfile = $library->getAccountProfile();
 		$catalogDriverName = trim($accountProfile->driver);
 		$catalogDriver = null;
