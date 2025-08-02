@@ -1325,7 +1325,7 @@ class Sierra extends Millennium {
 		$params = [
 			'varFieldTag' => 'b',
 			'varFieldContent' => $barcode,
-			'fields' => 'id,names,deleted,suppressed,addresses,phones,emails,expirationDate,homeLibraryCode,moneyOwed,patronType,patronCodes,blockInfo,message,pMessage,langPref,fixedFields,varFields,updatedDate,createdDate',
+			'fields' => 'id,names,deleted,suppressed,addresses,phones,emails,expirationDate,homeLibraryCode,moneyOwed,patronType,patronCodes,blockInfo,message,pMessage,langPref,fixedFields,varFields,updatedDate,createdDate,birthDate',
 		];
 
 		$sierraUrl = $this->accountProfile->vendorOpacUrl;
@@ -2176,6 +2176,34 @@ class Sierra extends Millennium {
 				$selfRegResult['newUser'] = $newUser;
 				$selfRegResult['sendWelcomeMessage'] = true;
 			}
+			// Add to registration table
+			require_once ROOT_DIR . '/sys/SelfRegistrationForms/SierraRegistration.php';
+			$registration = new SierraRegistration();
+			$registration->barcode = $barcode;
+			if (!empty($params['patronType'])) {
+				$registration->sierraPType = $params['patronType'];
+			}
+			if (!empty($params['patronCodes']['pcode1'])) {
+				$registration->sierraPCode1 = $params['patronCodes']['pcode1'];
+			}
+			if (!empty($params['patronCodes']['pcode2'])) {
+				$registration->sierraPCode2 = $params['patronCodes']['pcode2'];
+			}
+			if (!empty($params['patronCodes']['pcode3'])) {
+				$registration->sierraPCode3 = $params['patronCodes']['pcode3'];
+			}
+			if (!empty($params['patronCodes']['pcode4'])) {
+				$registration->sierraPCode4 = $params['patronCodes']['pcode4'];
+			}
+			global $locationSingleton;
+			$activeLocation = $locationSingleton->getActiveLocation();
+			if (!empty($activeLocation)) {
+				$registration->locationId = $activeLocation->id;
+			}
+			if (!empty($library->libraryId)) {
+				$registration->libraryId = $library->libraryId;
+			}
+			$registration->insert();
 		}
 
 		return $selfRegResult;
@@ -2310,6 +2338,17 @@ class Sierra extends Millennium {
 		$sierraUrl = $this->accountProfile->vendorOpacUrl;
 		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId;
 		$updatePatronResponse = $this->_sendPage('sierra.updatePatron', 'PUT', $sierraUrl, json_encode($params));
+		if ($this->lastResponseCode == 204) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public function updatePatronRegistration($patronObject, $patronId) {
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId;
+		$updatePatronResponse = $this->_sendPage('sierra.updatePatron', 'PUT', $sierraUrl, json_encode($patronObject));
 		if ($this->lastResponseCode == 204) {
 			return true;
 		} else {

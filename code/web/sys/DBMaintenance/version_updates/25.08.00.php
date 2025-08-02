@@ -38,6 +38,19 @@ function getUpdates25_08_00(): array {
 					`expirationLength` tinyint,
 					`expirationPeriod` char DEFAULT 'd'
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+				"CREATE TABLE IF NOT EXISTS self_registration_sierra (
+					`id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					`dateRegistered` datetime NOT NULL DEFAULT current_timestamp,
+					`barcode` varchar(255) NOT NULL,
+					`sierraPType` int(11) DEFAULT NULL,
+					`sierraPCode1` varchar(25) DEFAULT NULL,
+					`sierraPCode2` varchar(25) DEFAULT NULL,
+					`sierraPCode3` int DEFAULT NULL,
+					`sierraPCode4` int DEFAULT NULL,
+					`libraryId` int(11) DEFAULT NULL,			
+					`locationId` int(11) DEFAULT NULL,
+					`approved` tinyint(1) NOT NULL DEFAULT '0',
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 			]
 		], //sierra_self_reg_enhancements
 
