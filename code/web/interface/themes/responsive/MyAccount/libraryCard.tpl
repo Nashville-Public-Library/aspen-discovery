@@ -113,7 +113,7 @@
 						<div>{translate text="Patron Type" isPublicFacing=true} - {if !empty($linkedCard.patronType)}{$linkedCard.patronType|escape}{else}{translate text="None" isPublicFacing=true}{/if}</div>
 					{/if}
 					{if !empty($showCardExpirationDate) && !empty($linkedCard.expirationDate)}
-						{translate text="Expires %1%" 1=$linkedCard.expirationDate|date_format:"%D" isPublicFacing=true}
+						{translate text="Expires %1%" 1=$linkedCard.expirationDate|date_format:"%b %d, %Y" isPublicFacing=true}
 					{/if}
 				</div>
 			</div>
