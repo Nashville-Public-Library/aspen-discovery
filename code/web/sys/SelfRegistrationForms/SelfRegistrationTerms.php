@@ -4,6 +4,7 @@ class SelfRegistrationTerms extends DataObject {
 	public $id;
 	public $name;
 	public $terms;
+	public $showTOSFirst;
 	public $redirect;
 
 	static function getObjectStructure($context = ''): array {
@@ -30,6 +31,13 @@ class SelfRegistrationTerms extends DataObject {
 				'allowableTags' => '<p><em><i><strong><b><a><ul><ol><li><h1><h2><h3><h4><h5><h6><h7><pre><code><hr><table><tbody><tr><th><td><caption><img><br><div><span><sub><sup>',
 				'hideInLists' => true,
 			],
+			'showTOSFirst' => [
+				'property' => 'showTOSFirst',
+				'type' => 'checkbox',
+				'label' => 'Show TOS First',
+				'description' => 'If checked, show TOS before showing registration form',
+				'default' => false,
+			]
 /*			'redirect' => [
 				'property' => 'redirect',
 				'type' => 'html',

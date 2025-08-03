@@ -167,6 +167,7 @@ class SelfReg extends Action {
 				if ($selfRegTerms != null){
 					$interface->assign('tos', true);
 					$interface->assign("selfRegTermsID", $selfRegTerms->id);
+					$interface->assign('showTOSFirst', $selfRegTerms->showTOSFirst);
 					$tosAccept = false;
 					if (!empty($_REQUEST['tosAccept'])){
 						$tosAccept = $_REQUEST['tosAccept'];
