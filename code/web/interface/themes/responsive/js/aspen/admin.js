@@ -2629,6 +2629,24 @@ AspenDiscovery.Admin = (function () {
 					</div>
 				`);
 			}
-		}
+		},
+
+		getNotificationDevicesForUser: function () {
+			const barcode = $("#testPatronBarcode").val();
+			if (barcode) {
+				$.getJSON(Globals.path + "/Admin/AJAX?method=getNotificationDevicesForUser&user=" + barcode, function (data) {
+					if (data.success) {
+						$("#error").html(data.message).hide();
+						$("#patronDevices").html(data.message).show();
+						$("#notificationSetup").show();
+					} else {
+						$("#patronDevices").html(data.message).hide();
+						$("#error").html(data.message).show();
+					}
+					return data;
+				});
+			}
+			return false;
+		},
 	};
 }(AspenDiscovery.Admin || {}));
