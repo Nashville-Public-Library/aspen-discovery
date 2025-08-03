@@ -131,6 +131,7 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 		];
 		unset($fields['libraryName']);
 		unset($fields['locationName']);
+		unset($fields['name']);
 		foreach ($fields as $prop => $field) {
 			if (!empty($field['hideInLists'])) {
 				unset($fields[$prop]);
@@ -167,9 +168,10 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 		if ($catalogDriver->driver instanceof Sierra) {
 			$patronIds = array_column($list, 'patronId');
 			$regIds = array_column($list, 'id');
+			$lookupIdTable = array_combine($patronIds, $regIds);
 			$patrons = $catalogDriver->driver->getPatronsByIdList($patronIds);
-			foreach ($patrons->entries as $i => $patron) {
-				$list[$regIds[$i]]->_sierraData = $patron;
+			foreach ($patrons->entries as $patron) {
+				$list[$lookupIdTable[$patron->id]]->_sierraData = $patron;
 			}
 			return $list;
 		} else {
