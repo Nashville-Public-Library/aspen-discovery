@@ -202,6 +202,27 @@ class SierraRegistration extends DataObject {
 		return $ret;
 	}
 
+	public function delete($useWhere = false) : int {
+		// Delete from Sierra first
+		global $library;
+		$accountProfile = $library->getAccountProfile();
+		$catalogDriverName = trim($accountProfile->driver);
+		$catalogDriver = null;
+		if (!empty($catalogDriverName)) {
+			$catalogDriver = CatalogFactory::getCatalogConnectionInstance($catalogDriverName, $accountProfile);
+		}
+		if ($catalogDriver->driver instanceof Sierra && !empty($this->patronId)) {
+			$result = $catalogDriver->driver->deletePatronById($this->patronId);
+			if ($result) {
+				return parent::delete($useWhere);
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+
 	public function __set($name, $value) {
 		if ($name == "note") {
 			$this->_note = $value;

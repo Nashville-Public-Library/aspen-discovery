@@ -1379,15 +1379,27 @@ class Sierra extends Millennium {
 		$sierraUrl .= "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/?";
 		$sierraUrl .= http_build_query($params);
 
-		$response = $this->_callUrl('sierra.findPatronByBarcode', $sierraUrl);
+		$response = $this->_callUrl('sierra.findPatronsByIdList', $sierraUrl);
 		if (!$response) {
 			return false;
 		} else {
-			if (!empty($response->deleted) || !empty($response->suppressed) || (!empty($response->httpStatus) && $response->httpStatus == 404)) {
+			if (!empty($response->httpStatus) && $response->httpStatus == 404) {
 				return false;
 			} else {
 				return $response;
 			}
+		}
+	}
+
+	public function deletePatronById($id) {
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl .= "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $id;
+
+		$response = $this->_sendPage('sierra.deletePatron', 'DELETE', $sierraUrl);
+		if ($this->lastResponseCode == 204) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 
