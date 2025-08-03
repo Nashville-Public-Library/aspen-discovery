@@ -95,14 +95,6 @@ class SierraSelfRegistrationForm extends DataObject {
 				'hideInLists' => true,
 				'default' => 'default',
 			],
-			'selfRegUsePatronIdBarcode' => [
-				'property' => 'selfRegUsePatronIdBarcode',
-				'type' => 'checkbox',
-				'label' => 'Use Patron ID as Barcode',
-				'description' => "Use Patron ID as a temporary barcode",
-				'default' => 0,
-				'note' => "If checked, other barcode settings will be ignored."
-			],
 			'selfRegBarcodePrefix' => [
 				'property' => 'selfRegBarcodePrefix',
 				'type' => 'text',
@@ -198,14 +190,6 @@ class SierraSelfRegistrationForm extends DataObject {
 				'default' => '-',
 				'note' => 'Use to set default notice preference when you do not have a Notice Preference field.'
 			],
-			'selfRegNoticePrefOptions' => [
-				'property' => 'selfRegNoticePrefOptions',
-				'type' => 'textarea',
-				'label' => 'Notice Preference Options',
-				'description' => 'A list of allowed options for notices',
-				'hideInLists' => true,
-				'note' => 'Format as code, description. Each option should be on a new line. Requires the Notice Preference field.',
-			],
 			'selfRegUseAgency' => [
 				'property' => 'selfRegUseAgency',
 				'type' => 'checkbox',
@@ -237,6 +221,15 @@ class SierraSelfRegistrationForm extends DataObject {
 				'description' => "Use user's email for their barcode",
 				'hideInLists' => true,
 				'default' => 0,
+			],
+			'selfRegUsePatronIdBarcode' => [
+				'property' => 'selfRegUsePatronIdBarcode',
+				'type' => 'checkbox',
+				'label' => 'Use Patron ID as Barcode',
+				'description' => "Use Patron ID as a temporary barcode",
+				'hideInLists' => true,
+				'default' => 0,
+				'note' => "If checked, other barcode settings will be ignored."
 			],
 			'selfRegNoDuplicateCheck' => [
 				'property' => 'selfRegNoDuplicateCheck',
