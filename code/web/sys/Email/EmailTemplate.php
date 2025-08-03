@@ -298,6 +298,7 @@ class EmailTemplate extends DataObject {
 
 		$text = str_replace('%library.displayName%', $library->displayName ?? '', $text);
 		$text = str_replace('%library.baseUrl%', $baseUrl, $text);
+		$text = str_ireplace('%library.messagingSettingsUrl%', $baseUrl . "/MyAccount/MessagingSettings", $text);
 		$text = str_replace('%library.email%', $library->contactEmail ?? '', $text);
 		$text = str_ireplace('%user.firstname%', $user->firstname ?? '', $text);
 		$text = str_ireplace('%user.lastname%', $user->lastname ?? '', $text);
