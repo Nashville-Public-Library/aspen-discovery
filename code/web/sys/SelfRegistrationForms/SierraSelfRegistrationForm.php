@@ -203,6 +203,7 @@ class SierraSelfRegistrationForm extends DataObject {
 				'type' => 'textarea',
 				'label' => 'Notice Preference Options',
 				'description' => 'A list of allowed options for notices',
+				'hideInLists' => true,
 				'note' => 'Format as code, description. Each option should be on a new line. Requires the Notice Preference field.',
 			],
 			'selfRegUseAgency' => [
@@ -261,6 +262,7 @@ class SierraSelfRegistrationForm extends DataObject {
 				'canAddNew' => true,
 				'canDelete' => true,
 				'hideInLists' => true,
+				'permissions' => ['Manage Self Registration Municipalities'],
 			],
 			'libraries' => [
 				'property' => 'libraries',

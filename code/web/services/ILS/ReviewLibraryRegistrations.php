@@ -22,6 +22,13 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 
 	function getAllObjects($page, $recordsPerPage): array {
 		$object = new SierraRegistration();
+		$user = UserAccount::getLoggedInUser();
+		if (!UserAccount::userHasPermission('Review Self Registrations for All Libraries')) {
+			$includedLocations = Library::getLibraryList(true);
+			$additionalAdministrationLocations = $user->getAdditionalAdministrationLocations();
+			$includedLocations = $includedLocations + $additionalAdministrationLocations;
+			$object->whereAddIn("libraryId", array_keys($includedLocations), false, 'AND');
+		}
 
 		$list = [];
 		$object->approved = 0;
@@ -68,7 +75,7 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 	}
 
 	function canView(): bool {
-		return UserAccount::userHasPermission('Administer Self Registration Forms');
+		return UserAccount::userHasPermission('Review Self Registrations for All Libraries') || UserAccount::userHasPermission('Review Self Registrations for Home Library Only');
 	}
 
 	function canAddNew(): bool {
@@ -87,8 +94,8 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 
 	public function getSortableFields($structure): array {
 		$fields = parent::getSortableFields($structure);
-		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
-		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Review Self Registrations for All Libraries'));
+		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Review Self Registrations for All Libraries') || UserAccount::userHasPermission('Review Self Registrations for Home Library Only'));
 		$fields['libraryId'] = [
 			'type' => 'enum',
 			'values' => $libraryList,
@@ -115,8 +122,8 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 	public function getFilterFields($structure): array {
 		$fields = parent::getFilterFields($structure);
 		$allValues = ['all_values' => 'All Values'];
-		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
-		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Review Self Registrations for All Libraries'));
+		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Review Self Registrations for All Libraries') || UserAccount::userHasPermission('Review Self Registrations for Home Library Only'));
 		$fields['libraryId'] = [
 			'type' => 'enum',
 			'values' => $allValues + $libraryList,
