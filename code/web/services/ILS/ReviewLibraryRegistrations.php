@@ -85,31 +85,73 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 		parent::viewIndividualObject($structure);
 	}
 
+	public function getSortableFields($structure): array {
+		$fields = parent::getSortableFields($structure);
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
+		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
+		$fields['libraryId'] = [
+			'type' => 'enum',
+			'values' => $libraryList,
+			'property' => 'libraryId',
+			'label' => 'Library'
+		];
+		$fields['locationId'] = [
+			'type' => 'enum',
+			'values' => $locationList,
+			'property' => 'locationId',
+			'label' => 'Location'
+		];
+		unset($fields['Library']);
+		unset($fields['Location']);
+		unset($fields['Name']);
+		foreach ($fields as $label => $field) {
+			if (!empty($field['hideInLists'])) {
+				unset($fields[$label]);
+			}
+		}
+		return $fields;
+	}
+
+	public function getFilterFields($structure): array {
+		$fields = parent::getFilterFields($structure);
+		$allValues = ['all_values' => 'All Values'];
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
+		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
+		$fields['libraryId'] = [
+			'type' => 'enum',
+			'values' => $allValues + $libraryList,
+			'property' => 'libraryId',
+			'label' => 'Library'
+		];
+		$fields['locationId'] = [
+			'type' => 'enum',
+			'values' => $allValues + $locationList,
+			'property' => 'locationId',
+			'label' => 'Location'
+		];
+		unset($fields['libraryName']);
+		unset($fields['locationName']);
+		foreach ($fields as $prop => $field) {
+			if (!empty($field['hideInLists'])) {
+				unset($fields[$prop]);
+			}
+		}
+		return $fields;
+	}
+
 	function getDefaultFilters(array $filterFields): array {
 		return [
-			'_name' => [
-				'fieldName' => '_name',
-				'filterType' => 'text',
-				'filterValue' => '',
-				'field' => $filterFields['name'],
+			'libraryId' => [
+				'fieldName' => 'libraryId',
+				'filterType' => 'enum',
+				'filterValue' => 'all_values',
+				'field' => $filterFields['libraryId'],
 			],
-			'sierraPType' => [
-				'fieldName' => 'sierraPType',
-				'filterType' => 'text',
-				'filterValue' => '',
-				'field' => $filterFields['sierraPType'],
-			],
-			'sierraPCode1' => [
-				'fieldName' => 'sierraPCode1',
-				'filterType' => 'text',
-				'filterValue' => '',
-				'field' => $filterFields['sierraPCode1'],
-			],
-			'sierraPCode3' => [
-				'fieldName' => 'sierraPCode3',
-				'filterType' => 'text',
-				'filterValue' => '',
-				'field' => $filterFields['sierraPCode3'],
+			'locationId' => [
+				'fieldName' => 'locationId',
+				'filterType' => 'enum',
+				'filterValue' => 'all_values',
+				'field' => $filterFields['locationId'],
 			],
 		];
 	}
