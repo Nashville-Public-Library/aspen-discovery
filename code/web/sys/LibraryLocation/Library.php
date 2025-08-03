@@ -199,6 +199,7 @@ class Library extends DataObject {
 	public $selfRegistrationUrl;
 	public $selfRegistrationLocationRestrictions;
 	public $institutionCode;
+	public $logSelfRegistrations;
 
 	public $enableCardRenewal;
 	public $showCardRenewalWhenExpirationIsClose;
@@ -2491,6 +2492,13 @@ class Library extends DataObject {
 								'description' => 'The institution code for self registration (Carl.X Only).',
 								'hideInLists' => true,
 								'default' => '',
+							],
+							'logSelfRegistrations' => [
+								'property' => 'logSelfRegistrations',
+								'type' => 'checkbox',
+								'label' => 'Log Self Registrations',
+								'description' => 'Whether or not to log self registrations (to approve in Review Library Registrations) (Sierra only)',
+								'default' => false,
 							],
 						],
 					],

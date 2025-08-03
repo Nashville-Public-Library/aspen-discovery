@@ -25,6 +25,7 @@ function getUpdates25_08_00(): array {
 				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegUsePatronIdBarcode TINYINT(1) DEFAULT 0;',
 				'ALTER TABLE self_registration_form_sierra ADD COLUMN selfRegNoticePrefOptions VARCHAR(255) DEFAULT "";',
 				'ALTER TABLE self_registration_tos ADD COLUMN showTOSFirst TINYINT(1) DEFAULT 0;',
+				'ALTER TABLE library ADD COLUMN logSelfRegistrations TINYINT(1) DEFAULT 0;',
 				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES
 					('Cataloging & eContent', 'Manage Self Registration Municipalities', '', 23, 'Allows the user to alter self registration form municipality settings for all libraries');",
 				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES
