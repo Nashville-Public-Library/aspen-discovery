@@ -24,7 +24,7 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 		$object = new SierraRegistration();
 
 		$list = [];
-
+		$object->approved = 0;
 		$object->orderBy($this->getSort());
 		$this->applyFilters($object);
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
@@ -32,7 +32,9 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 		while ($object->fetch()) {
 			$list[$object->id] = clone $object;
 		}
-		$list = self::getPatronData($list);
+		if (!empty($list)) {
+			$list = self::getPatronData($list);
+		}
 
 		return $list;
 	}
@@ -77,10 +79,16 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 		return false;
 	}
 
+	function viewIndividualObject($structure) {
+		global $interface;
+		$interface->assign('saveButtonText', translate(['text' => 'Approve Registration', 'isAdminFacing' => true]));
+		parent::viewIndividualObject($structure);
+	}
+
 	function getDefaultFilters(array $filterFields): array {
 		return [
-			'name' => [
-				'fieldName' => 'name',
+			'_name' => [
+				'fieldName' => '_name',
 				'filterType' => 'text',
 				'filterValue' => '',
 				'field' => $filterFields['name'],
@@ -115,10 +123,11 @@ class ILS_ReviewLibraryRegistrations extends ObjectEditor {
 			$catalogDriver = CatalogFactory::getCatalogConnectionInstance($catalogDriverName, $accountProfile);
 		}
 		if ($catalogDriver->driver instanceof Sierra) {
-			$ids = array_column($list, 'patronId');
-			$patrons = $catalogDriver->driver->getPatronsByIdList($ids);
+			$patronIds = array_column($list, 'patronId');
+			$regIds = array_column($list, 'id');
+			$patrons = $catalogDriver->driver->getPatronsByIdList($patronIds);
 			foreach ($patrons->entries as $i => $patron) {
-				$list[$i + 1]->_sierraData = $patron;
+				$list[$regIds[$i]]->_sierraData = $patron;
 			}
 			return $list;
 		} else {

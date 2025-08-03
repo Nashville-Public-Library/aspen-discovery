@@ -17,6 +17,7 @@ class SierraRegistration extends DataObject {
 	public $sierraPCode4;
 	public $locationId;
 	public $libraryId;
+	public $approved;
 	public $_note;
 	protected $_sierraData;
 	protected $_sierraUpdate = [];
@@ -162,11 +163,21 @@ class SierraRegistration extends DataObject {
 				'label' => 'Note',
 				'description' => 'Patron account note',
 				'hideInLists' => true,
+			],
+			'approved' => [
+				'property' => 'approved',
+				'type' => 'checkbox',
+				'label' => 'Approved',
+				'default' => 1,
+				'hideInLists' => true,
+				'hiddenByDefault' => true,
 			]
 		];
 	}
 
 	public function update($context = '') {
+		$this->approved = 1;
+		$this->_changedFields[] = 'approved';
 		if ($this->sierraPType == '') {
 			$this->sierraPType = -1;
 		}
