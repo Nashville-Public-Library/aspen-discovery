@@ -92,7 +92,8 @@ class EmailTemplate extends DataObject {
 				'type' => 'label',
 				'label' => 'Instructions',
 				'hideInLists' => true,
-				'descriptions' => 'Instructions for the template including variables that can be added.'
+				'descriptions' => 'Instructions for the template including variables that can be added.',
+				'doNotEscape' => true,
 			],
 			'plainTextBody' => [
 				'property' => 'plainTextBody',
