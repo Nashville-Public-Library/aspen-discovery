@@ -256,6 +256,7 @@ class SierraSelfRegistrationForm extends DataObject {
 				'canDelete' => true,
 				'hideInLists' => true,
 				'permissions' => ['Manage Self Registration Municipalities'],
+				'note' => "Add 'Other' to define settings when there is no match."
 			],
 			'libraries' => [
 				'property' => 'libraries',
@@ -343,11 +344,13 @@ class SierraSelfRegistrationForm extends DataObject {
 		return $this->_municipalities;
 	}
 
-	public function getMunicipalitySettingsByNameAndType($name, $type) {
+	public function getMunicipalitySettingsByNameAndType($name, $type = null) {
 		$municipalities = new SierraSelfRegistrationMunicipalityValues();
 		$municipalities->selfRegistrationFormId = $this->id;
 		$municipalities->municipality = $name;
-		$municipalities->municipalityType = $type;
+		if ($type) {
+			$municipalities->municipalityType = $type;
+		}
 		if ($municipalities->find(true)) {
 			return $municipalities->id;
 		}

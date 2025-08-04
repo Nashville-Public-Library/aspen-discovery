@@ -163,13 +163,33 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 		if ($this->sierraPType == '') {
 			$this->sierraPType = -1;
 		}
+		if ($this->sierraPTypeApproved == '') {
+			$this->sierraPTypeApproved = -1;
+		}
 		if ($this->sierraPCode3 == '') {
 			$this->sierraPCode3 = -1;
 		}
 		if ($this->sierraPCode4 == '') {
 			$this->sierraPCode4 = -1;
 		}
-		$ret = parent::update();
+		$ret = parent::update($context);
+		return $ret;
+	}
+
+	public function insert($context = '') {
+		if ($this->sierraPType == '') {
+			$this->sierraPType = -1;
+		}
+		if ($this->sierraPTypeApproved == '') {
+			$this->sierraPTypeApproved = -1;
+		}
+		if ($this->sierraPCode3 == '') {
+			$this->sierraPCode3 = -1;
+		}
+		if ($this->sierraPCode4 == '') {
+			$this->sierraPCode4 = -1;
+		}
+		$ret = parent::insert($context);
 		return $ret;
 	}
 

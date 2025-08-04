@@ -2128,6 +2128,9 @@ class Sierra extends Millennium {
 								if (!$matchId && $state != '') {
 									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType($state, 'state');
 								}
+								if (!$matchId) {
+									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType('other');
+								}
 								if ($matchId) {
 									// Abort if self-registration is not allowed
 									if (!$municipalities[$matchId]->selfRegAllowed) {
