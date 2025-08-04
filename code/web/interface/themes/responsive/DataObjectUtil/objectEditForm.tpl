@@ -116,6 +116,9 @@
 					target.disabled = true;
 				}
 			}
+			{if !empty($showTOSFirst)}
+				AspenDiscovery.Account.selfRegistrationTermsModal('{$selfRegTermsID}');
+			{/if}
 		</script>
 	{/if}
 

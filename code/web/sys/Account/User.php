@@ -4471,6 +4471,10 @@ class User extends DataObject {
 		if ($customSelfRegForms) {
 			$sections['ils_integration']->addAction(new AdminAction('Self Registration Forms', 'Create self registration forms.', '/ILS/SelfRegistrationForms'), ['Administer Self Registration Forms']);
 			$sections['ils_integration']->addAction(new AdminAction('Self Registration TOS', 'Create self registration Terms of Service pages.', '/ILS/SelfRegistrationTOS'), ['Administer Self Registration Forms']);
+			$sections['ils_integration']->addAction(new AdminAction('Review Library Registrations', 'Review and approve self registrations.', '/ILS/ReviewLibraryRegistrations'), [
+				'Review Self Registrations for All Libraries',
+				'Review Self Registrations for Home Library Only'
+			]);
 		}
 		$sections['ils_integration']->addAction(new AdminAction('Indexing Log', 'View the indexing log for ILS records.', '/ILS/IndexingLog'), 'View Indexing Logs');
 		$sections['ils_integration']->addAction(new AdminAction('Dashboard', 'View the usage dashboard for ILS integration.', '/ILS/Dashboard'), [

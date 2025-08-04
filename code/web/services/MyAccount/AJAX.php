@@ -451,6 +451,10 @@ class MyAccount_AJAX extends JSON_Action {
 				'isPublicFacing' => true,
 			]),
 			'message' => $selfRegTerms->terms,
+			'modalButtons' => "<button type='button' class='tool btn btn-primary' id = 'AcceptTOS' onclick='AspenDiscovery.Account.selfRegistrationAgreeToTOS();'>" . translate([
+				'text' => "Agree",
+				'isPublicFacing' => true,
+			]) . "</button>",
 		];
 	}
 

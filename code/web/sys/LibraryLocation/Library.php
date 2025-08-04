@@ -199,6 +199,7 @@ class Library extends DataObject {
 	public $selfRegistrationUrl;
 	public $selfRegistrationLocationRestrictions;
 	public $institutionCode;
+	public $logSelfRegistrations;
 
 	public $enableCardRenewal;
 	public $showCardRenewalWhenExpirationIsClose;
@@ -1408,7 +1409,7 @@ class Library extends DataObject {
 						'property' => 'showMessagingSettings',
 						'type' => 'checkbox',
 						'label' => 'Show Messaging Settings',
-						'note' => 'Applies to Koha and Symphony Only',
+						'note' => 'Applies to Koha, Symphony, and Sierra Only',
 						'description' => 'Whether or not the user should be able to view their messaging settings.',
 
 						'hideInLists' => true,
@@ -2532,6 +2533,13 @@ class Library extends DataObject {
 								'description' => 'The institution code for self registration (Carl.X Only).',
 								'hideInLists' => true,
 								'default' => '',
+							],
+							'logSelfRegistrations' => [
+								'property' => 'logSelfRegistrations',
+								'type' => 'checkbox',
+								'label' => 'Log Self Registrations',
+								'description' => 'Whether or not to log self registrations (to approve in Review Library Registrations) (Sierra only)',
+								'default' => false,
 							],
 						],
 					],
