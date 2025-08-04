@@ -78,7 +78,7 @@ function getUpdates25_08_00(): array {
 					`sierraPCode4` int DEFAULT NULL,
 					`libraryId` int(11) DEFAULT NULL,			
 					`locationId` int(11) DEFAULT NULL,
-					`approved` tinyint(1) NOT NULL DEFAULT '0',
+					`approved` tinyint(1) NOT NULL DEFAULT '0'
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 			]
 		], //sierra_self_reg_enhancements
