@@ -47,6 +47,20 @@ function getUpdates25_08_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'update_browse_category_sort_options' => [
+			'title' => 'Update Browse Category Sort Options for Lists Search',
+			'description' => 'Add new date sorting options for browse categories when using Lists as search source.',
+			'sql' => [
+				"ALTER TABLE browse_category MODIFY COLUMN defaultSort ENUM('relevance','popularity','newest_to_oldest','author','title','user_rating','holds','publication_year_desc','publication_year_asc','event_date','oldest_to_newest','newest_updated_to_oldest','oldest_updated_to_newest') DEFAULT 'relevance'"
+			]
+		], //update_browse_category_sort_options
+		'update_collection_spotlight_sort_options' => [
+			'title' => 'Update Collection Spotlight Sort Options for Lists Search',
+			'description' => 'Add new date sorting options for collection spotlights when using Lists as search source.',
+			'sql' => [
+				"ALTER TABLE collection_spotlight_lists MODIFY COLUMN defaultSort ENUM('relevance','popularity','newest_to_oldest','author','title','user_rating','holds','publication_year_desc','publication_year_asc','event_date','oldest_to_newest','newest_updated_to_oldest','oldest_updated_to_newest') DEFAULT 'relevance'"
+			]
+		], //update_collection_spotlight_sort_options
 		'add_allow_material_requests_branch_choice_setting' => [
 			'title' => 'Add Allow Material Requests Branch Choice Setting',
 			'description' => 'Add "Allow Material Requests Branch Choice" setting for the ILS Request System.',
