@@ -986,12 +986,15 @@ class OverDriveDriver extends AbstractEContentDriver {
 		$params = [
 			'emailAddress' => trim($patron->overdriveEmail),
 		];
+		$params['suspensionType'] = 'limited';
 		if (empty($reactivationDate)) {
-			$params['suspensionType'] = 'indefinite';
+			$params['numberOfDays'] = 365;
 		} else {
 			try {
 				$numberOfDaysToSuspend = (new DateTime())->diff(new DateTime($reactivationDate))->days + 1;
-				$params['suspensionType'] = 'limited';
+				if ($numberOfDaysToSuspend > 365) {
+					$numberOfDaysToSuspend = 365;
+				}
 				$params['numberOfDays'] = $numberOfDaysToSuspend;
 			} /** @noinspection PhpUnusedLocalVariableInspection */ catch (Exception $e) {
 				return [

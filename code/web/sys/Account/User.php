@@ -182,6 +182,7 @@ class User extends DataObject {
 		'location' => 'location',
 		'position' => 'position',
 		'placed' => 'placed',
+		'cancelDate' => 'cancelDate'
 	];
 
 	function getNumericColumnNames(): array {
@@ -2137,27 +2138,14 @@ class User extends DataObject {
 			uasort($holdsToReturn['available'], $holdSort);
 		}
 		if (!empty($holdsToReturn['unavailable'])) {
-			switch ($unavailableSort) {
-				case 'author' :
-				case 'position' :
-				case 'status' :
-				case 'format' :
-					//This is used in the sort function
-					$indexToSortBy = $unavailableSort;
-					break;
-				case 'placed' :
-					$indexToSortBy = 'createDate';
-					break;
-				case 'libraryAccount' :
-					$indexToSortBy = 'user';
-					break;
-				case 'location' :
-					$indexToSortBy = 'pickupLocationName';
-					break;
-				case 'title' :
-				default :
-					$indexToSortBy = 'sortTitle';
-			}
+			$indexToSortBy = match ($unavailableSort) {
+				'author', 'position', 'status', 'format' => $unavailableSort,
+				'placed' => 'createDate',
+				'cancelDate' => 'automaticCancellationDate',
+				'libraryAccount' => 'user',
+				'location' => 'pickupLocationName',
+				default => 'sortTitle',
+			};
 			uasort($holdsToReturn['unavailable'], $holdSort);
 		}
 
@@ -4520,6 +4508,9 @@ class User extends DataObject {
 				'View Location Holds Reports',
 				'View All Holds Reports',
 			]);
+			$sections['circulation_reports']->addAction(new AdminAction('Librarian Facebook', 'View images and basic information about MNPS School Librarians', '/Report/LibrarianFacebook'), [
+				'View Librarian Facebook',
+			]);
 			$sections['circulation_reports']->addAction(new AdminAction('Student Barcodes', 'View/print a report of all barcodes for a class.', '/Report/StudentBarcodes'), [
 				'View Location Student Reports',
 				'View All Student Reports',
@@ -4794,6 +4785,13 @@ class User extends DataObject {
 				$sections['aspen_lida']->addAction(new AdminAction('ILS Notification Settings', 'Define settings for ILS notifications in Aspen LiDA.', '/AspenLiDA/ILSNotificationSettings'), 'Administer Aspen LiDA Settings');
 			}
 			$sections['aspen_lida']->addAction(new AdminAction('LiDA Notifications', 'LiDA Notifications allow you to send custom alerts to your patrons via the app.', '/Admin/LiDANotifications'), [
+				'Send Notifications to All Libraries',
+				'Send Notifications to All Locations',
+				'Send Notifications to Home Library',
+				'Send Notifications to Home Location',
+				'Send Notifications to Home Library Locations',
+			]);
+			$sections['aspen_lida']->addAction(new AdminAction('LiDA Notification Testing Tool', 'Test LiDA Notifications for specific users and their devices.', '/AspenLiDA/NotificationTestingTool'), [
 				'Send Notifications to All Libraries',
 				'Send Notifications to All Locations',
 				'Send Notifications to Home Library',
@@ -5576,6 +5574,18 @@ class User extends DataObject {
 		return $tokens;
 	}
 
+	public function getNotificationPushTokenByDevice(): array {
+		require_once ROOT_DIR . '/sys/Account/UserNotificationToken.php';
+		$tokens = [];
+		$obj = new UserNotificationToken();
+		$obj->userId = $this->id;
+		$obj->find();
+		while ($obj->fetch()) {
+			$tokens[$obj->deviceModel] = $obj->pushToken;
+		}
+		return $tokens;
+	}
+
 	public function getNotificationPreferencesByToken($token) {
 		$preferences = [];
 		require_once ROOT_DIR . '/sys/Account/UserNotificationToken.php';
@@ -6101,6 +6111,75 @@ class User extends DataObject {
 				])
 			];
 		}
+	}
+
+	public function submitLocalIllRequestEmail() : array {
+		$title = $_REQUEST['title'] ?? '';
+		$author = $_REQUEST['author'] ?? '';
+		$volume = $_REQUEST['volume'] ?? '';
+		$recordId = $_REQUEST['recordId'] ?? '';
+		$note = $_REQUEST['note'] ?? '';
+		$activeLibrary = $this->getHomeLibrary();
+		if (empty($activeLibrary->localIllEmail)) {
+			$results = [
+				'title' => translate([
+					'text' => 'Error placing request',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => "Unable to place your request, the settings are not configured correctly. Please contact the library directly to place your request.",
+					'isPublicFacing' => true,
+				]),
+				'success' => false,
+			];
+		}else if (empty($recordId)) {
+			$results = [
+				'title' => translate([
+					'text' => 'Error placing request',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => "Unable to place your request, the title to request is missing.",
+					'isPublicFacing' => true,
+				]),
+				'success' => false,
+			];
+		}else{
+			require_once ROOT_DIR . '/sys/Email/Mailer.php';
+			$mail = new Mailer();
+			$replyToAddress = $this->email;
+			$subject = "Ill Request Placed";
+			$body = "Request for ILL placed by $this->firstname $this->lastname ($this->ils_barcode) for \nTitle: $title\nAuthor: $author\nVolume: $volume\nRecord ID: $recordId";
+			$body .= "\n\nNote: " . strip_tags($note);
+			$mailSent = $mail->send($activeLibrary->localIllEmail, $subject, $body, $replyToAddress);
+			global $activeLanguage;
+			$successMessage = $activeLibrary->getTextBlockTranslation('localIllEmailSuccessMessage', $activeLanguage->code);
+			if ($mailSent) {
+				$results = [
+					'title' => translate([
+						'text' => 'Request Placed Successfully',
+						'isPublicFacing' => true,
+					]),
+					'message' => $successMessage,
+					'success' => true,
+				];
+			}else{
+				$results = [
+					'title' => translate([
+						'text' => 'Error placing request',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => "Unable to place your request, the request could not be sent. Please try again later or contact the library directly to place your request.",
+						'isPublicFacing' => true,
+					]),
+					'success' => false,
+				];
+			}
+			$results['api']['title'] = strip_tags($results['title']);
+			$results['api']['message'] = strip_tags($results['message']);
+		}
+		return $results;
 	}
 
 	private function loadYearInReviewInfo(): void {

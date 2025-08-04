@@ -235,6 +235,7 @@ class Library extends DataObject {
 	public /** @noinspection PhpUnused */
 		$showGoDeeper;
 	public $defaultNotNeededAfterDays;
+	public $maxHoldCancellationDate;
 
 	public /** @noinspection PhpUnused */
 		$publicListsToInclude;
@@ -323,6 +324,7 @@ class Library extends DataObject {
 	public /** @noinspection PhpUnused */
 		$includeDplaResults;
 	public $showWhileYouWait;
+	public $showYouMightAlsoLike;
 
 	public $useAllCapsWhenSubmittingSelfRegistration;
 	public $validSelfRegistrationStates;
@@ -381,6 +383,8 @@ class Library extends DataObject {
 	public $showGroupedHoldCopiesCount;
 	public $localIllRequestType;
 	public $maximumLocalIllRequests;
+	public $localIllEmail;
+	public $_localIllEmailSuccessMessage;
 	public $ILLSystem;
 	public $interLibraryLoanName;
 	public $interLibraryLoanUrl;
@@ -461,6 +465,9 @@ class Library extends DataObject {
 	public $sendStaffEmailOnCampaignCompletion;
 	public $campaignCompletionNewEmail;
 	public $displayCampaignLeaderboard;
+	public $communityEngagementAdminUserSelect;
+	public $displayOnlyUsersForLocationInUserAdmin;
+	public $allowAdminToEnrollUsersInAdminView;
 
 	//SHAREit
 	public $repeatInShareIt;
@@ -1368,8 +1375,28 @@ class Library extends DataObject {
 					],
 					'showWhileYouWait' => [
 						'property' => 'showWhileYouWait',
-						'type' => 'checkbox',
+						'type' => 'enum',
+						'values' => [
+							'0' => 'No',
+							'1' => 'Yes, include materials available in any format.',
+							'2' => 'Yes, include materials available from this library in the same format only.'
+						],
 						'label' => 'Show While You Wait',
+						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
+						'hideInLists' => true,
+						'default' => 1,
+						'permissions' => ['Library ILS Options'],
+					],
+					'showYouMightAlsoLike' => [
+						'property' => 'showYouMightAlsoLike',
+						'type' => 'enum',
+						'values' => [
+							'0' => 'No',
+							'1' => 'Yes, include materials available in any format.',
+							'2' => 'Yes, include materials owned by this library in any format.',
+							'3' => 'Yes, include materials owned by this library in the same format only.'
+						],
+						'label' => 'Show You Might Also Like',
 						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
 						'hideInLists' => true,
 						'default' => 1,
@@ -2016,10 +2043,29 @@ class Library extends DataObject {
 							'showHoldCancelDate' => [
 								'property' => 'showHoldCancelDate',
 								'type' => 'checkbox',
-								'label' => 'Show Cancellation Date',
-								'description' => 'Whether or not the patron should be able to set a cancellation date (not needed after date) when placing holds.',
+								'label' => 'Show Hold Cancellation Date',
+								'description' => 'Whether or not patrons should be able to set a cancellation date (i.e., not needed after date) when placing holds on this catalog.',
 								'hideInLists' => true,
 								'default' => 1,
+								'onchange' => 'return AspenDiscovery.Admin.updateHoldCancellationDateFields();',
+							],
+							'defaultNotNeededAfterDays' => [
+								'property' => 'defaultNotNeededAfterDays',
+								'type' => 'integer',
+								'label' => 'Default Hold Cancellation Date',
+								'description' => 'Number of days to use for not needed after date by default. Use -1 for no default.',
+								'hideInLists' => true,
+								'default' => -1,
+								'permissions' => ['Library ILS Connection'],
+							],
+							'maxHoldCancellationDate' => [
+								'property' => 'maxHoldCancellationDate',
+								'type' => 'integer',
+								'label' => 'Maximum Hold Cancellation Date',
+								'description' => 'Maximum number of days patrons can set for hold cancellation date on this catalog. Use -1 for no limit.',
+								'hideInLists' => true,
+								'default' => -1,
+								'permissions' => ['Library ILS Connection'],
 							],
 							'showHoldPosition' => [
 								'property' => 'showHoldPosition',
@@ -2101,14 +2147,6 @@ class Library extends DataObject {
 								'description' => 'Number of days that a user can suspend a hold for. Use -1 for no limit.',
 								'hideInLists' => true,
 								'default' => 365,
-								'permissions' => ['Library ILS Connection'],
-							],
-							'defaultNotNeededAfterDays' => [
-								'property' => 'defaultNotNeededAfterDays',
-								'type' => 'integer',
-								'label' => 'Default Not Needed After Days',
-								'description' => 'Number of days to use for not needed after date by default. Use -1 for no default.',
-								'hideInLists' => true,
 								'permissions' => ['Library ILS Connection'],
 							],
 							'inSystemPickupsOnly' => [
@@ -3584,6 +3622,22 @@ class Library extends DataObject {
 						'hideInLists' => true,
 						'default' => 0,
 					],
+					'localIllEmail' => [
+						'property' => 'localIllEmail',
+						'type' => 'email',
+						'label' => 'Email to send local ILL requests that cannot be placed automatically',
+						'description' => 'The email address to send local ILL requests that cannot be placed automatically',
+						'maxLength' => 255,
+						'default' => ''
+					],
+					'localIllEmailSuccessMessage' => [
+						'property' => 'localIllEmailSuccessMessage',
+						'type' => 'translatableTextBlock',
+						'label' => 'Local ILL Email Success Message',
+						'description' => 'The success message to display when a local ILL request is successfully sent via email',
+						'defaultTextFile' => 'Library_localIllEmailSuccessMessage.MD',
+						'hideInLists' => true,
+					],
 					'maximumLocalIllRequests' => [
 						'property' => 'maximumLocalIllRequests',
 						'type' => 'integer',
@@ -3812,6 +3866,33 @@ class Library extends DataObject {
 						],
 						'default' => 'displayBranch',
 					],
+					'allowAdminToEnrollUsersInAdminView' => [
+						'property' => 'allowAdminToEnrollUsersInAdminView',
+						'type' => 'checkbox',
+						'label' => 'Allow Admin to Enroll Users in Admin View',
+						'description' => 'Allow admin to enroll users via the admin view page',
+						'default' => 0,
+						'hideInLists'=> true,
+					],
+					'communityEngagementAdminUserSelect' => [
+						'property' => 'communityEngagementAdminUserSelect',
+						'type' => 'enum',
+						'label' => 'Admin View User Select',
+						'description' => 'Whether to use a dropdown or a search bar to select users in the Community Engagement Admin View section',
+						'values' => [
+							'dropdown' => 'Dropdown',
+							'searchbar' => 'Search bar',
+						],
+						'default' => 'dropdown',
+					],
+					'displayOnlyUsersForLocationInUserAdmin' => [
+						'property' => 'displayOnlyUsersForLocationInUserAdmin',
+						'type' => 'checkbox',
+						'label' => 'Display only users for current library location in user admin view.',
+						'description' => 'Whether to display only the users who have their home location set to the current library when searching bu user in the admin view',
+						'default' => 0,
+						'hideInLists' => true,
+					],
 					'sendStaffEmailOnCampaignCompletion' => [
 						'property' => 'sendStaffEmailOnCampaignCompletion',
 						'type' => 'checkbox',
@@ -3929,8 +4010,8 @@ class Library extends DataObject {
 						'type' => 'integer',
 						'label' => 'Hoopla Library ID',
 						'description' => 'The ID Number Hoopla uses for this library',
+						'note' => 'Set to 0 to replace the "Check Out" and "Place Hold" buttons with the "Access Online" button.',
 						'hideInLists' => true,
-						'forcesReindex' => true,
 					],
 					'hooplaScopeId' => [
 						'property' => 'hooplaScopeId',
@@ -4221,8 +4302,8 @@ class Library extends DataObject {
 					'allowUpdatingHolidaysFromILS' => [
 						'property' => 'allowUpdatingHolidaysFromILS',
 						'type' => 'checkbox',
-						'label' => 'Automatically update holidays from the ILS',
-						'description' => 'Whether holidays should be automatically updated (Koha Only).',
+						'label' => 'Automatically Update Holidays from the ILS',
+						'description' => 'Whether holidays should be automatically updated from the ILS.',
 						'hideInLists' => true,
 						'default' => 1,
 						'permissions' => ['Library ILS Connection'],
@@ -4391,6 +4472,7 @@ class Library extends DataObject {
 			unset($structure['ilsSection']['properties']['selfRegistrationSection']['properties']['selfRegistrationTemplate']);
 		} else {
 			unset($structure['ilsSection']['properties']['selfRegistrationSection']['properties']['bypassReviewQueueWhenUpdatingProfile']);
+			unset($structure['holidaysSection']['properties']['allowUpdatingHolidaysFromILS']);
 		}
 		//TODO: This will eventually need to be enabled/disabled by the library, it is currently off for everyone
 		if (true) {
@@ -4700,6 +4782,7 @@ class Library extends DataObject {
 			$this->saveTextBlockTranslations('paymentHistoryExplanation');
 			$this->saveTextBlockTranslations('costSavingsExplanationEnabled');
 			$this->saveTextBlockTranslations('costSavingsExplanationDisabled');
+			$this->saveTextBlockTranslations('localIllEmailSuccessMessage');
 			if (!empty($this->_changedFields) && in_array('cookieStorageConsent', $this->_changedFields)) {
 				$this->updateLocalAnalyticsPreferences();
 			}
@@ -4773,6 +4856,7 @@ class Library extends DataObject {
 			$this->saveTextBlockTranslations('paymentHistoryExplanation');
 			$this->saveTextBlockTranslations('costSavingsExplanationEnabled');
 			$this->saveTextBlockTranslations('costSavingsExplanationDisabled');
+			$this->saveTextBlockTranslations('localIllEmailSuccessMessage');
 		}
 		return $ret;
 	}
@@ -5357,8 +5441,8 @@ class Library extends DataObject {
 		return '/Admin/Libraries?objectAction=edit&id=' . $this->libraryId;
 	}
 
-	private static $_filteredList = null;
-	private static $_fullList = null;
+	private static $_filteredList = [];
+	private static $_fullList = [];
 
 	/**
 	 * @param boolean $restrictByHomeLibrary whether only the patron's home library should be returned
@@ -5366,12 +5450,10 @@ class Library extends DataObject {
 	 * @return array
 	 */
 	static function getLibraryList(bool $restrictByHomeLibrary, int $accountProfileId = -1): array {
-		if ($accountProfileId == -1) {
-			if ($restrictByHomeLibrary && !is_null(Library::$_filteredList)) {
-				return Library::$_filteredList;
-			}elseif (!is_null(Library::$_fullList)){
-				return Library::$_fullList;
-			}
+		if ($restrictByHomeLibrary && array_key_exists($accountProfileId, Library::$_filteredList)) {
+			return Library::$_filteredList[$accountProfileId];
+		}elseif (!$restrictByHomeLibrary && array_key_exists($accountProfileId, Library::$_fullList)){
+			return Library::$_fullList[$accountProfileId];
 		}
 		$library = new Library();
 		$library->orderBy('displayName');
@@ -5403,12 +5485,10 @@ class Library extends DataObject {
 		while ($library->fetch()) {
 			$libraryList[$library->libraryId] = $library->displayName;
 		}
-		if ($accountProfileId == -1) {
-			if ($restrictByHomeLibrary) {
-				return Library::$_filteredList = $libraryList;
-			}else{
-				return Library::$_fullList = $libraryList;
-			}
+		if ($restrictByHomeLibrary) {
+			return Library::$_filteredList[$accountProfileId] = $libraryList;
+		}else{
+			return Library::$_fullList[$accountProfileId] = $libraryList;
 		}
 		return $libraryList;
 	}
