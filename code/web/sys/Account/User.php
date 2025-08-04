@@ -4787,6 +4787,13 @@ class User extends DataObject {
 				'Send Notifications to Home Location',
 				'Send Notifications to Home Library Locations',
 			]);
+			$sections['aspen_lida']->addAction(new AdminAction('LiDA Notification Testing Tool', 'Test LiDA Notifications for specific users and their devices.', '/AspenLiDA/NotificationTestingTool'), [
+				'Send Notifications to All Libraries',
+				'Send Notifications to All Locations',
+				'Send Notifications to Home Library',
+				'Send Notifications to Home Location',
+				'Send Notifications to Home Library Locations',
+			]);
 			if (SystemVariables::getSystemVariables()->enableBrandedApp) {
 				$sections['aspen_lida']->addAction(new AdminAction('Branded App Settings', 'Define settings for branded versions of Aspen LiDA.', '/AspenLiDA/BrandedAppSettings'), 'Administer Aspen LiDA Settings');
 			}
@@ -5559,6 +5566,18 @@ class User extends DataObject {
 		while ($obj->fetch()) {
 			$token = $obj->pushToken;
 			$tokens[] = $token;
+		}
+		return $tokens;
+	}
+
+	public function getNotificationPushTokenByDevice(): array {
+		require_once ROOT_DIR . '/sys/Account/UserNotificationToken.php';
+		$tokens = [];
+		$obj = new UserNotificationToken();
+		$obj->userId = $this->id;
+		$obj->find();
+		while ($obj->fetch()) {
+			$tokens[$obj->deviceModel] = $obj->pushToken;
 		}
 		return $tokens;
 	}
