@@ -2154,6 +2154,9 @@ class Sierra extends Millennium {
 									if (!empty($municipalities[$matchId]->sierraPType) && $municipalities[$matchId]->sierraPType != -1) {
 										$params['patronType'] = (int)$municipalities[$matchId]->sierraPType;
 									}
+									if (!empty($municipalities[$matchId]->sierraPTypeApproved) && $municipalities[$matchId]->sierraPTypeApproved != -1) {
+										$sierraPTypeApproved = (int)$municipalities[$matchId]->sierraPTypeApproved;
+									}
 									if (!empty($municipalities[$matchId]->sierraPCode1)) {
 										$params['patronCodes']['pcode1'] = $municipalities[$matchId]->sierraPCode1;
 									}
@@ -2227,6 +2230,9 @@ class Sierra extends Millennium {
 				$registration->patronId = $patronId;
 				if (!empty($params['patronType'])) {
 					$registration->sierraPType = $params['patronType'];
+				}
+				if (!empty($sierraPTypeApproved)) {
+					$registration->sierraPTypeApproved = $sierraPTypeApproved;
 				}
 				if (!empty($params['patronCodes']['pcode1'])) {
 					$registration->sierraPCode1 = $params['patronCodes']['pcode1'];

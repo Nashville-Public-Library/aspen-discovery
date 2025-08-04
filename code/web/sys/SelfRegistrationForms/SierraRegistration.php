@@ -11,6 +11,7 @@ class SierraRegistration extends DataObject {
 	public $_expirationDate;
 	public $barcode;
 	public $sierraPType;
+	public $sierraPTypeApproved;
 	public $sierraPCode1;
 	public $sierraPCode2;
 	public $sierraPCode3;
@@ -19,6 +20,7 @@ class SierraRegistration extends DataObject {
 	public $libraryId;
 	public $approved;
 	public $_note;
+	public $_newBarcode;
 	protected $_sierraData;
 	protected $_sierraUpdate = [];
 
@@ -111,26 +113,38 @@ class SierraRegistration extends DataObject {
 				'label' => 'Location',
 				'description' => 'The location the patron registered at',
 			],
-			'barcode' => [
+			'initialBarcode' => [
 				'property' => 'barcode',
+				'type' => 'label',
+				'label' => 'Initial Barcode',
+			],
+			'newBarcode' => [
+				'property' => 'newBarcode',
 				'type' => 'text',
-				'label' => 'Barcode',
+				'label' => 'New Barcode',
 				'description' => 'The patron barcode',
+				'hideInLists' => true,
+			],
+			'initialSierraPType' => [
+				'property' => 'initialSierraPType',
+				'type' => 'label',
+				'label' => 'Initial Sierra PType',
 			],
 			'sierraPType' => [
-				'property' => 'sierraPType',
+				'property' => 'sierraPTypeApproved',
 				'type' => 'enum',
-				'label' => 'Sierra PType',
+				'label' => 'New Sierra PType',
 				'values' => $sierraPTypes,
-				'description' => 'The PType to automatically apply',
+				'description' => 'The PType to use for approved registrations',
 				'default' => '',
+				'hideInLists' => true,
 			],
 			'sierraPCode1' => [
 				'property' => 'sierraPCode1',
 				'type' => 'enum',
 				'label' => 'Sierra PCode1',
 				'values' => $pCode1Options,
-				'description' => 'The PCode 1 to automatically apply',
+				'description' => 'The PCode 1 to use for approved registrations',
 				'default' => '',
 			],
 			'sierraPCode2' => [
@@ -138,7 +152,7 @@ class SierraRegistration extends DataObject {
 				'type' => 'enum',
 				'label' => 'Sierra PCode2',
 				'values' => $pCode2Options,
-				'description' => 'The PCode 2 to automatically apply',
+				'description' => 'The PCode 2 to use for approved registrations',
 				'default' => '',
 			],
 			'sierraPCode3' => [
@@ -146,7 +160,7 @@ class SierraRegistration extends DataObject {
 				'type' => 'enum',
 				'label' => 'Sierra PCode3',
 				'values' => $pCode3Options,
-				'description' => 'The PCode 3 to automatically apply',
+				'description' => 'The PCode 3 to use for approved registrations',
 				'default' => '',
 			],
 			'sierraPCode4' => [
@@ -154,7 +168,7 @@ class SierraRegistration extends DataObject {
 				'type' => 'enum',
 				'label' => 'Sierra PCode4',
 				'values' => $pCode4Options,
-				'description' => 'The PCode 4 to automatically apply',
+				'description' => 'The PCode 4 to use for approved registrations',
 				'default' => '',
 			],
 			'note' => [
@@ -178,6 +192,14 @@ class SierraRegistration extends DataObject {
 	public function update($context = '') {
 		$this->approved = 1;
 		$this->_changedFields[] = 'approved';
+		if (!empty($this->_newBarcode)) {
+			$this->barcode = $this->_newBarcode;
+			$this->_changedFields[] = 'barcode';
+		}
+		if (!empty($this->sierraPTypeApproved)) {
+			$this->sierraPType = $this->sierraPTypeApproved;
+			$this->_changedFields[] = 'sierraPType';
+		}
 		if ($this->sierraPType == '') {
 			$this->sierraPType = -1;
 		}
@@ -226,6 +248,8 @@ class SierraRegistration extends DataObject {
 	public function __set($name, $value) {
 		if ($name == "note") {
 			$this->_note = $value;
+		} if ($name == "newBarcode") {
+			$this->_newBarcode = $value;
 		} else {
 			if ($name == "sierraPType" && $value == '') {
 				$value = -1;
@@ -266,8 +290,10 @@ class SierraRegistration extends DataObject {
 			} else {
 				return null;
 			}
-		}
-		else {
+		} else if ($name == 'initialSierraPType') {
+			$metadataOptions = self::getMetadataOptions('patronType');
+			return $metadataOptions['patronType'][$this->sierraPType];
+		} else {
 			return parent::__get($name);
 		}
 	}

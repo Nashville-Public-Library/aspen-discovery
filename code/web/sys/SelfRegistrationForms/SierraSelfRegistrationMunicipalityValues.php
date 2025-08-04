@@ -10,6 +10,7 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 	public $municipalityType;
 	public $selfRegAllowed;
 	public $sierraPType;
+	public $sierraPTypeApproved;
 	public $sierraPCode1;
 	public $sierraPCode2;
 	public $sierraPCode3;
@@ -25,26 +26,22 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 	}
 
 	static function getObjectStructure() {
-		$sierraPTypes[''] = "None";
-		$pCode1Options[''] = "None";
-		$pCode2Options[''] = "None";
-		$pCode3Options[''] = "None";
-		$pCode4Options[''] = "None";
+		$base[''] = "None";
 		$metadataOptions = self::getMetadataOptions('patronType,pcode1,pcode2,pcode3,pcode4');
 		if (!empty($metadataOptions['patronType'])) {
-			$sierraPTypes = $sierraPTypes + $metadataOptions['patronType'];
+			$sierraPTypes = $base + $metadataOptions['patronType'];
 		}
 		if (!empty($metadataOptions['pcode1'])) {
-			$pCode1Options = $pCode1Options + $metadataOptions['pcode1'];
+			$pCode1Options = $base + $metadataOptions['pcode1'];
 		}
 		if (!empty($metadataOptions['pcode2'])) {
-			$pCode2Options = $pCode2Options + $metadataOptions['pcode2'];
+			$pCode2Options = $base + $metadataOptions['pcode2'];
 		}
 		if (!empty($metadataOptions['pcode3'])) {
-			$pCode3Options = $pCode3Options + $metadataOptions['pcode3'];
+			$pCode3Options = $base + $metadataOptions['pcode3'];
 		}
 		if (!empty($metadataOptions['pcode4'])) {
-			$pCode4Options = $pCode4Options + $metadataOptions['pcode4'];
+			$pCode4Options = $base + $metadataOptions['pcode4'];
 		}
 		return [
 			'id' => [
@@ -82,9 +79,17 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 			'sierraPType' => [
 				'property' => 'sierraPType',
 				'type' => 'enum',
-				'label' => 'Sierra PType',
+				'label' => 'Sierra PType (Initial)',
 				'values' => $sierraPTypes,
-				'description' => 'The PType to automatically apply',
+				'description' => 'The temporary PType to automatically apply before approval',
+				'default' => '',
+			],
+			'sierraPTypeApproved' => [
+				'property' => 'sierraPTypeApproved',
+				'type' => 'enum',
+				'label' => 'Sierra PType (After Approval)',
+				'values' => $sierraPTypes,
+				'description' => 'The PType to apply after approval',
 				'default' => '',
 			],
 			'sierraPCode1' => [
