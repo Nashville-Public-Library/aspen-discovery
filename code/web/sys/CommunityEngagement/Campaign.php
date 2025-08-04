@@ -1269,7 +1269,7 @@ class Campaign extends DataObject {
 						'endDate' => $endDate,
 						'canEnroll' => $canEnroll,
 						'isComplete' => $numCompletedMilestones >= $numCampaignMilestones,
-						'rewardGiven' => $rewardGiven
+						'rewardGiven' => $rewardGiven,
 						'extraCreditActivities' => $extraCreditActivities,
 						'numExtraCreditActivities' => count($extraCreditActivities)
 					];
