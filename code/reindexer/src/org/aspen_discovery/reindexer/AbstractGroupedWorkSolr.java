@@ -93,6 +93,7 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 	protected HashSet<String> titleNew = new HashSet<>();
 	protected String titleSort;
 	protected String titleFormat = "";
+	private boolean hasNotForLoanRecord = false;
 	protected HashSet<String> topics = new HashSet<>();
 	protected HashSet<String> topicFacets = new HashSet<>();
 	protected HashSet<String> subjects = new HashSet<>();
@@ -434,6 +435,7 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 			boolean updateTitle = false;
 			if (this.title == null) {
 				updateTitle = true;
+				if (recordInfo != null && recordInfo.hasNotForLoanStatus()) hasNotForLoanRecord = true;
 			} else {
 				// Skip unavailable records for title selection if we have any other title.
 				if (recordInfo == null || !recordInfo.hasNotForLoanStatus()) {
@@ -442,8 +444,11 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 						// We have a book, update if we didn't have a book before.
 						if (!formatCategory.equals(titleFormat)) {
 							updateTitle = true;
-							// Or update if we had a book before and this title is longer.
+							// Or, update if we had a book before and this title is longer.
 						} else if (shortTitle.length() > this.title.length()) {
+							updateTitle = true;
+						} else if (hasNotForLoanRecord) {
+							// Not for loan record was processed first, and it updated the title, so make sure to override it.
 							updateTitle = true;
 						}
 					} else if (formatCategory.equals("eBook")) {
@@ -742,6 +747,7 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 	void clearSeries(){
 		this.seriesWithVolume.clear();
 		this.series.clear();
+		this.seriesWithVolumePriority.clear();
 	}
 
 	void addSeriesWithVolume(String seriesName, String volume, int priority) {
@@ -860,9 +866,6 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 	private String getNormalizedSeries(String series) {
 		series = AspenStringUtils.trimTrailingPunctuation(series);
 		series = series.replaceAll("[#|]\\s*\\d+$", "");
-
-		//Remove anything in parentheses since it's normally just the format
-		// series = series.replaceAll("\\s+\\(+.*?\\)+", "");
 		series = series.replaceAll(" & ", " and ");
 		series = series.replaceAll("--", " ");
 		series = series.replaceAll(",\\s+(the|an)$", "");

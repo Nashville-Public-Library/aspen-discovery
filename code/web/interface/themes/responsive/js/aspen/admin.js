@@ -1000,6 +1000,7 @@ AspenDiscovery.Admin = (function () {
 			const rowsToHide = [
 				"#propertyRowdisplayMaterialsRequestToPublic",
 				"#propertyRowallowDeletingILSRequests",
+				"#propertyRowallowMaterialRequestsBranchChoice",
 				"#propertyRowexternalMaterialsRequestUrl",
 				"#propertyRowmaxRequestsPerYear",
 				"#propertyRowmaxActiveRequests",
@@ -1037,7 +1038,7 @@ AspenDiscovery.Admin = (function () {
 					].forEach(selector => $(selector).show());
 					break;
 				case "2": // ILS Request System
-					["#propertyRowallowDeletingILSRequests", "#propertyRowdisplayMaterialsRequestToPublic"]
+					["#propertyRowallowDeletingILSRequests", "#propertyRowallowMaterialRequestsBranchChoice", "#propertyRowdisplayMaterialsRequestToPublic"]
 						.forEach(selector => $(selector).show());
 					break;
 				case "3": // External Request Link
@@ -1050,6 +1051,23 @@ AspenDiscovery.Admin = (function () {
 
 			return false;
 		},
+
+		updateHoldCancellationDateFields() {
+			const showCancelDateEnabled = $("#showHoldCancelDate:checked").val();
+			const fieldsToToggle = [
+				"#propertyRowdefaultNotNeededAfterDays",
+				"#propertyRowmaxHoldCancellationDate"
+			];
+
+			if (showCancelDateEnabled) {
+				fieldsToToggle.forEach(selector => $(selector).show());
+			} else {
+				fieldsToToggle.forEach(selector => $(selector).hide());
+			}
+
+			return false;
+		},
+
 		updateDonationFields: function () {
 			var donationsEnabled = $("#enableDonations");
 			var donationsEnabledValue = $("#enableDonations:checked").val()
@@ -2611,6 +2629,35 @@ AspenDiscovery.Admin = (function () {
 						Please complete initial SSO setup first and ensure it is spelled and formatted correctly.
 					</div>
 				`);
+			}
+		},
+
+		getNotificationDevicesForUser: function () {
+			const barcode = $("#testPatronBarcode").val();
+			if (barcode) {
+				$.getJSON(Globals.path + "/Admin/AJAX?method=getNotificationDevicesForUser&user=" + barcode, function (data) {
+					if (data.success) {
+						$("#error").html(data.message).hide();
+						$("#patronDevices").html(data.message).show();
+						$("#notificationSetup").show();
+					} else {
+						$("#patronDevices").html(data.message).hide();
+						$("#error").html(data.message).show();
+					}
+					return data;
+				});
+			}
+			return false;
+		},
+		displayDigitalRewardPlaceholderUpload: function () {
+			const placeholderImageUpload = $('#propertyRowdigitalRewardPlaceholderImage');
+			const digitalRewardControl = $('#displayDigitalRewardOnlyWhenAwarded');
+			const displayOnRewardOnlyIsChecked = digitalRewardControl.is(':checked');
+
+			if (displayOnRewardOnlyIsChecked) {
+				placeholderImageUpload.show();
+			} else {
+				placeholderImageUpload.hide();
 			}
 		}
 	};

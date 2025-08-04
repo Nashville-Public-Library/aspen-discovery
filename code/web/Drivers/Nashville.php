@@ -209,6 +209,17 @@ class Nashville extends CarlX {
 			$level = Logger::LOG_ERROR;
 		}
 		$logger->log($message, $level);
+		//send email if error
+		if ($level == Logger::LOG_ERROR) {
+			global $serverName;
+			require_once ROOT_DIR . '/sys/Email/Mailer.php';
+			$mailer = new Mailer();
+			require_once ROOT_DIR . '/sys/SystemVariables.php';
+			$systemVariables = SystemVariables::getSystemVariables();
+			if (!empty($systemVariables->errorEmail)) {
+				$mailer->send($systemVariables->errorEmail, "$serverName Error with Non Resident Patron Update", $message);
+			}
+		}
 		return [
 			'success' => $success,
 			'message' => $message,
@@ -720,7 +731,7 @@ EOT;
 		oci_free_statement($stid);
 		return $data;
 	}
-		public function getStudentBarcodeData($location, $homeroom): array  {
+		public function getStudentBarcodeData($location, $homeroom): array {
 		$this->initDatabaseConnection();
 		// query students by school and homeroom
 		/** @noinspection SqlResolve */
@@ -1115,8 +1126,38 @@ EOT;
 		}
 		return $data;
 	}
+	public function getLibrarianFacebookData(): ?array {
+		$this->initDatabaseConnection();
+		/** @noinspection SqlResolve */
+		$sql = <<<EOT
+			select 
+				b.branchcode
+				,b.branchname
+				,p.patronid
+				,p.lastname
+				,p.firstname
+				,p.middlename
+				,p.suffixname
+				,'https://nashville.carlconnect.com/Circulation/profile/'||p.patronguid||'.png' as carlConnectImage 
+				,'/images/mnps/' || p.patronid || '.jpg' as catalogImage
+			from patron_v2 p 
+			left join branch_v2 b on p.defaultbranch=b.branchnumber 
+			where p.bty = '40' -- bty 40 is MNPS Librarian
+			order by b.branchname, p.lastname
+EOT;
+		$stid = oci_parse($this->dbConnection, $sql);
+		// consider using oci_set_prefetch to improve performance
+		// oci_set_prefetch($stid, 1000);
+		oci_execute($stid);
+		$data = [];
+		while (($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
+			$data[] = $row;
+		}
+		oci_free_statement($stid);
+		return $data;
+	}
 	public function getWeedingReportData($location): array {
-//        set_time_limit(0);
+//	set_time_limit(0);
 		ini_set('memory_limit', '6G');
 		$this->initDatabaseConnection();
 		/** @noinspection SqlResolve */
@@ -1288,7 +1329,7 @@ EOT;
 				select '325','Migration/Colonization','-10','-16' from dual union all
 				select '326','Slavery/Emancipation','-10','-16' from dual union all
 				select '327','International relations/Spies','-10','-16' from dual union all
-				select '328','Legislation              ','-10','-16' from dual union all
+				select '328','Legislation','-10','-16' from dual union all
 				select '330','Economics-General Topics','-5','-11' from dual union all
 				select '331','Labor Economics/Careers','-5','-11' from dual union all
 				select '332','Finance/Money','-5','-11' from dual union all
@@ -1318,7 +1359,7 @@ EOT;
 				select '348','Laws/Regulations/Cases','-13','-19' from dual union all
 				select '350','Government','-10','-16' from dual union all
 				select '351','Government','-10','-16' from dual union all
-				select '352','Central Governments/Local Units     ','-10','-16' from dual union all
+				select '352','Central Governments/Local Units','-10','-16' from dual union all
 				select '353','Federal and State Government','-10','-16' from dual union all
 				select '354','Specific Central Governments','-10','-16' from dual union all
 				select '355','Military Science','-5','-11' from dual union all
