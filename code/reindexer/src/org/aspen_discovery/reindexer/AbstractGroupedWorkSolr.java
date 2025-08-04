@@ -1,6 +1,7 @@
 package org.aspen_discovery.reindexer;
 
 import com.turning_leaf_technologies.dates.DateUtils;
+import com.turning_leaf_technologies.indexing.DebugLogger;
 import com.turning_leaf_technologies.logging.BaseIndexingLogEntry;
 import com.turning_leaf_technologies.strings.AspenStringUtils;
 import org.apache.logging.log4j.Logger;
@@ -9,7 +10,7 @@ import org.apache.solr.common.SolrInputDocument;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public abstract class AbstractGroupedWorkSolr {
+public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 	protected String id;
 
 	protected HashMap<String, RecordInfo> relatedRecords = new HashMap<>();
