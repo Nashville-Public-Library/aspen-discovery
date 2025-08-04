@@ -2301,7 +2301,7 @@ class Sierra extends Millennium {
 			$patronId = $patron->unique_ils_id;
 			$getNotificationOptionsStmt = "SELECT nm.code, nm.name, (pv.notification_medium_code IS NOT NULL) AS selected 
 			FROM sierra_view.notification_medium_property_myuser AS nm
-    		LEFT JOIN sierra_view.patron_view AS pv ON pv.notification_medium_code = nm.code AND pv.record_num = $1 ORDER BY nm.display_order;";
+			LEFT JOIN sierra_view.patron_view AS pv ON pv.notification_medium_code = nm.code AND pv.record_num = $1 ORDER BY nm.display_order;";
 			$getNotificationOptionsRS = pg_query_params($sierraDnaConnection, $getNotificationOptionsStmt, [$patronId]);
 		} else {
 			$getNotificationOptionsStmt = "SELECT code, name FROM sierra_view.notification_medium_property_myuser ORDER BY display_order;";
