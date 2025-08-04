@@ -2649,5 +2649,16 @@ AspenDiscovery.Admin = (function () {
 			}
 			return false;
 		},
+		displayDigitalRewardPlaceholderUpload: function () {
+			const placeholderImageUpload = $('#propertyRowdigitalRewardPlaceholderImage');
+			const digitalRewardControl = $('#displayDigitalRewardOnlyWhenAwarded');
+			const displayOnRewardOnlyIsChecked = digitalRewardControl.is(':checked');
+
+			if (displayOnRewardOnlyIsChecked) {
+				placeholderImageUpload.show();
+			} else {
+				placeholderImageUpload.hide();
+			}
+		}
 	};
 }(AspenDiscovery.Admin || {}));

@@ -109,6 +109,20 @@ function getUpdates25_08_00(): array {
 				"ALTER TABLE library ADD COLUMN allowAdminToEnrollUsersInAdminView TINYINT(1) DEFAULT 0",
 			],
 		], //allow_admin_to_enroll_users_via_admin_view
+		'add_admin_control_over_digital_reward_display' => [
+			'title' => 'Add Admin Control Over Digital Reward Display',
+			'description' => 'Add the option for libraries to choose whether the digital reward displays all the time or only once awarded',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN displayDigitalRewardOnlyWhenAwarded TINYINT(1) DEFAULT 0",
+			]
+		], //add_admin_control_over_digital_reward_display
+		'add_ability_to_upload_placeholder_image' => [
+			'title' => 'Add Ability to Upload Placeholder Image',
+			'description' => 'Add the ability to upload a placeholder image',
+			'sql' => [
+				"ALTER TABLE library ADD COLUMN digitalRewardPlaceholderImage VARCHAR(100) DEFAULT ''",
+			]
+		], //add_ability_to_upload_placeholder_image
 		'add_table_for_extra_credit' => [
 			'title' => 'Add Table For Extra Credit',
 			'description' => 'Add a table to for extra credit activites',
@@ -120,14 +134,14 @@ function getUpdates25_08_00(): array {
 					allowPatronProgressInput TINYINT DEFAULT 0
 				)ENGINE = InnoDB"
 			],
-		],
+		], //add_table_for_extra_credit
 		'add_extra_credit_to_campaigns' => [
 			'title' => 'Add Extra Credit to Campaigns',
 			'description' => 'Add the ability to add extra credit activities to campaigns',
 			'sql' => [
 				"ALTER TABLE ce_campaign ADD COLUMN addExtraCreditActivities TINYINT DEFAULT 0 "
 			],
-		],
+		], //add_extra_credit_to_campaigns
 		'add_campaign_extra_credit_activities' => [
 			'title' => 'Add Campaign Extra Credit Activities',
 			'description' => 'Add a new table to link campaigns and extra credit activities',
@@ -141,7 +155,7 @@ function getUpdates25_08_00(): array {
 					reward INT(11) DEFAULT -1
 				)ENGINE = InnoDB",
 			],
-		],
+		], //add_campaign_extra_credit_activities
 		'add_extra_credit_progress_table' => [
 			'title' => 'Add Extra Credit Progress Table',
 			'description' => 'Store progress for of extra credit activites for each user',
@@ -155,7 +169,7 @@ function getUpdates25_08_00(): array {
 					 rewardGiven TINYINT DEFAULT 0
 				)ENGINE = InnoDB",
 			],
-		],
+		], //add_extra_credit_progress_table
 
 		//chloe - Open Fifth
 
