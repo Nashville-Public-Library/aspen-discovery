@@ -67,6 +67,7 @@ function getUpdates25_08_00(): array {
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 				"CREATE TABLE IF NOT EXISTS self_registration_sierra (
 					`id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					`patronId` int(11) NOT NULL,
 					`dateRegistered` datetime NOT NULL DEFAULT current_timestamp,
 					`barcode` varchar(255) NOT NULL,
 					`sierraPType` int(11) DEFAULT NULL,
