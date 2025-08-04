@@ -1000,6 +1000,7 @@ AspenDiscovery.Admin = (function () {
 			const rowsToHide = [
 				"#propertyRowdisplayMaterialsRequestToPublic",
 				"#propertyRowallowDeletingILSRequests",
+				"#propertyRowallowMaterialRequestsBranchChoice",
 				"#propertyRowexternalMaterialsRequestUrl",
 				"#propertyRowmaxRequestsPerYear",
 				"#propertyRowmaxActiveRequests",
@@ -1037,7 +1038,7 @@ AspenDiscovery.Admin = (function () {
 					].forEach(selector => $(selector).show());
 					break;
 				case "2": // ILS Request System
-					["#propertyRowallowDeletingILSRequests", "#propertyRowdisplayMaterialsRequestToPublic"]
+					["#propertyRowallowDeletingILSRequests", "#propertyRowallowMaterialRequestsBranchChoice", "#propertyRowdisplayMaterialsRequestToPublic"]
 						.forEach(selector => $(selector).show());
 					break;
 				case "3": // External Request Link

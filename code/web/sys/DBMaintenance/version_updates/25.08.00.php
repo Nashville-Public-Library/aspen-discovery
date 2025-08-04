@@ -47,6 +47,14 @@ function getUpdates25_08_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'add_allow_material_requests_branch_choice_setting' => [
+			'title' => 'Add Allow Material Requests Branch Choice Setting',
+			'description' => 'Add "Allow Material Requests Branch Choice" setting for the ILS Request System.',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE library ADD COLUMN IF NOT EXISTS allowMaterialRequestsBranchChoice tinyint(1) DEFAULT 0;'
+			]
+		],//add_allow_material_requests_branch_choice_setting
 		'update_record_to_include_defaults' => [
 			'title' => 'Update RecordToInclude Column Defaults to Match PHP Defaults',
 			'description' => 'Update database column defaults for includeHoldableOnly, includeItemsOnOrder, and includeEContent to match the PHP class defaults.',
