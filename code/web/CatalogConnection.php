@@ -961,14 +961,15 @@ class CatalogConnection {
 	 * @param string $homeLibraryCode
 	 * @return array
 	 */
-	function updateHomeLibrary($user, $homeLibraryCode) {
-		$oldHomeLibrary = $user->getHomeLocation()->locationId;
+	function updateHomeLibrary(User $user, string $homeLibraryCode): array {
 		$result = $this->driver->updateHomeLibrary($user, $homeLibraryCode);
 		if ($result['success']) {
 			$location = new Location();
 			$location->code = $homeLibraryCode;
 			if ($location->find(true)) {
-				$user->homeLocationId = $location->locationId;
+				if ($user->homeLocationId != $location->locationId) {
+					$user->__set('homeLocationId', $location->locationId);
+				}
 				$user->_homeLocationCode = $homeLibraryCode;
 				$user->_homeLocation = $location;
 				$user->update();
@@ -1679,6 +1680,10 @@ class CatalogConnection {
 	public function getWeedingReportData($location) {
 		return $this->driver->getWeedingReportData($location);
 	}
+	
+	public function getLibrarianFacebookData() {
+		return $this->driver->getLibrarianFacebookData();
+	}
 
 	/**
 	 * Loads any contact information that is not stored by Aspen Discovery from the ILS. Updates the user object.
@@ -1918,7 +1923,7 @@ class CatalogConnection {
 			$result = [
 				'success' => true,
 				'message' => '',
-				'numUsersUpdates' => 0,
+				'numUserUpdates' => 0,
 				'numFailedUserUpdates' => 0,
 				'numMessagesAdded' => 0,
 			];
@@ -1929,10 +1934,10 @@ class CatalogConnection {
 					if ($user->canReceiveNotifications('notifyAccount')) {
 						$userResult = $this->driver->updateAccountNotifications($user, $ilsNotificationSetting);
 						if ($userResult['success']) {
-							$result['numUpdates']++;
+							$result['numUserUpdates']++;
 							$result['numMessagesAdded'] +=  $userResult['numMessagesAdded'];
 						} else {
-							$result['numFailedUpdates']++;
+							$result['numFailedUserUpdates']++;
 							$result['success'] = false;
 						}
 					}

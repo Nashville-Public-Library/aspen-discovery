@@ -1,6 +1,7 @@
 package org.aspen_discovery.reindexer;
 
 import com.turning_leaf_technologies.dates.DateUtils;
+import com.turning_leaf_technologies.indexing.DebugLogger;
 import com.turning_leaf_technologies.logging.BaseIndexingLogEntry;
 import com.turning_leaf_technologies.strings.AspenStringUtils;
 import org.apache.logging.log4j.Logger;
@@ -9,7 +10,7 @@ import org.apache.solr.common.SolrInputDocument;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public abstract class AbstractGroupedWorkSolr {
+public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 	protected String id;
 
 	protected HashMap<String, RecordInfo> relatedRecords = new HashMap<>();
@@ -92,6 +93,7 @@ public abstract class AbstractGroupedWorkSolr {
 	protected HashSet<String> titleNew = new HashSet<>();
 	protected String titleSort;
 	protected String titleFormat = "";
+	private boolean hasNotForLoanRecord = false;
 	protected HashSet<String> topics = new HashSet<>();
 	protected HashSet<String> topicFacets = new HashSet<>();
 	protected HashSet<String> subjects = new HashSet<>();
@@ -433,6 +435,7 @@ public abstract class AbstractGroupedWorkSolr {
 			boolean updateTitle = false;
 			if (this.title == null) {
 				updateTitle = true;
+				if (recordInfo != null && recordInfo.hasNotForLoanStatus()) hasNotForLoanRecord = true;
 			} else {
 				// Skip unavailable records for title selection if we have any other title.
 				if (recordInfo == null || !recordInfo.hasNotForLoanStatus()) {
@@ -441,8 +444,11 @@ public abstract class AbstractGroupedWorkSolr {
 						// We have a book, update if we didn't have a book before.
 						if (!formatCategory.equals(titleFormat)) {
 							updateTitle = true;
-							// Or update if we had a book before and this title is longer.
+							// Or, update if we had a book before and this title is longer.
 						} else if (shortTitle.length() > this.title.length()) {
+							updateTitle = true;
+						} else if (hasNotForLoanRecord) {
+							// Not for loan record was processed first, and it updated the title, so make sure to override it.
 							updateTitle = true;
 						}
 					} else if (formatCategory.equals("eBook")) {
@@ -741,6 +747,7 @@ public abstract class AbstractGroupedWorkSolr {
 	void clearSeries(){
 		this.seriesWithVolume.clear();
 		this.series.clear();
+		this.seriesWithVolumePriority.clear();
 	}
 
 	void addSeriesWithVolume(String seriesName, String volume, int priority) {
@@ -859,9 +866,6 @@ public abstract class AbstractGroupedWorkSolr {
 	private String getNormalizedSeries(String series) {
 		series = AspenStringUtils.trimTrailingPunctuation(series);
 		series = series.replaceAll("[#|]\\s*\\d+$", "");
-
-		//Remove anything in parentheses since it's normally just the format
-		// series = series.replaceAll("\\s+\\(+.*?\\)+", "");
 		series = series.replaceAll(" & ", " and ");
 		series = series.replaceAll("--", " ");
 		series = series.replaceAll(",\\s+(the|an)$", "");

@@ -123,6 +123,31 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	}
 
 	/**
+	 * overriding getLinkUrl from RecordInterface to check
+	 * the conditions which cause us to load the invalidRecord.tpl
+	 * template when viewing a record. 
+	 * 
+	 * @param bool $absolutePath if true prepend site url from config to the result
+	 * @return string url for the record or an empty string 
+	 */
+	public function getLinkUrl($absolutePath = false) {
+		if(!$this->isValid())
+		{
+			return "";
+		}
+		$groupedWork = $this->getGroupedWorkDriver();
+		if(empty($groupedWork) || !$groupedWork->isValid())
+		{
+			$parentRecords = $this->getParentRecords();
+			if(count($parentRecords) == 0)
+			{
+				return "";
+			}
+		}
+		return parent::getLinkUrl($absolutePath);
+	}
+
+	/**
 	 * Return the unique identifier of this record within the Solr index;
 	 * useful for retrieving additional information (like tags and user
 	 * comments) from the external MySQL database.
@@ -393,13 +418,13 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	 * @param string $field
 	 * @return File_MARC_Data_Field[]
 	 */
-	private function getFields(string $field) : array {
+	private function getFields(string $field, bool $useRegularExpression = false) : array {
 		$matches = [];
 
 		if ($this->isValid()) {
 			$marcRecord = $this->getMarcRecord();
 			if ($marcRecord !== false) {
-				$matches = $marcRecord->getFields($field);
+				$matches = $marcRecord->getFields($field, $useRegularExpression);
 			}
 		}
 		return $matches;
@@ -460,13 +485,27 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	public function getSeries() {
 		$seriesInfo = $this->getGroupedWorkDriver()->getSeries();
 		if ($seriesInfo == null || count($seriesInfo) == 0) {
-			// First check the 440, 800 and 830 fields for series information:
+			// First check the 440, 800, 830, and 896 fields for series information:
 			$primaryFields = [
 				'440' => [
 					'a',
 					'p',
 				],
 				'800' => [
+					'p',
+					'q',
+					't',
+				],
+				'810' => [
+					'a',
+					'b',
+					'c',
+					'd',
+					'f',
+					'p',
+					't',
+				],
+				'811' => [
 					'a',
 					'b',
 					'c',
@@ -480,13 +519,41 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 					'a',
 					'p',
 				],
+				'896' => [
+					'p',
+					'q',
+					't',
+				],
+				'897' => [
+					'a',
+					'b',
+					'c',
+					'd',
+					'f',
+					'p',
+					't',
+				],
+				'898' => [
+					'a',
+					'b',
+					'c',
+					'd',
+					'f',
+					'p',
+					'q',
+					't',
+				],
+				'899' => [
+					'a',
+					'p',
+				],
 			];
 			$matches = $this->getSeriesFromMARC($primaryFields);
 			if (!empty($matches)) {
 				return $matches;
 			}
 
-			// Now check 490 and display it only if 440/800/830 were empty:
+			// Now check 490 and display it only if 440/800/830/896 were empty:
 			$secondaryFields = ['490' => ['a']];
 			$matches = $this->getSeriesFromMARC($secondaryFields);
 			if (!empty($matches)) {
@@ -654,12 +721,24 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		return $this->_alternateGraphicRepresentations['notes'];
 	}
 
+	public function get880PublicationDetails() : array {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['publicationDetails'];
+	}
+
+	public function get880PhysicalDescriptions() : array {
+		$this->loadAlternateGraphicRepresentations();
+		return $this->_alternateGraphicRepresentations['physicalDescriptions'];
+	}
+
 	public function loadAlternateGraphicRepresentations() : void{
 		if ($this->_alternateGraphicRepresentations === null) {
 			$this->_alternateGraphicRepresentations = [
 				'title' => '',
 				'authors' => [],
 				'contributors' => [],
+				'publicationDetails' => [],
+				'physicalDescriptions' => [],
 				'description' => '',
 				'subjects' => [],
 				'notes' => []
@@ -675,8 +754,26 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 						$this->_alternateGraphicRepresentations['authors'][] = $this->getSubfieldArray($field880, ['a', 'c', 'd', 'q'], true)[0];
 					}elseif (str_starts_with($subfield6Data, '110-')) {
 						$this->_alternateGraphicRepresentations['authors'][] = $this->getSubfieldArray($field880, ['a', 'b'], true)[0];
+					}elseif (str_starts_with($subfield6Data, '264-')) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$this->_alternateGraphicRepresentations['publicationDetails'][] = [
+							'index' => $index,
+							'value' => $this->getSubfieldArray($field880, ['a', 'b', 'c'], true)[0]
+						];
+					}elseif (str_starts_with($subfield6Data, '300-')) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$this->_alternateGraphicRepresentations['physicalDescriptions'][] = [
+							'index' => $index,
+							'value' => $this->getSubfieldArray($field880, ['a', 'b', 'c', 'e', 'f', 'g'], true)[0]
+						];
+					}elseif (str_starts_with($subfield6Data, '530-')) {
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$this->_alternateGraphicRepresentations['physicalDescriptions'][] = [
+							'index' => $index,
+							'value' => $this->getSubfieldArray($field880, ['a', 'b', 'c', 'd'], true)[0]
+						];
 					}elseif (str_starts_with($subfield6Data, '700-') || str_starts_with($subfield6Data, '710-')) {
-						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4));
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
 						$name = $this->getSubfieldArray($field880, ['a', 'c', 'd', 'q'], true);
 						$title = $this->getSubfieldArray($field880, ['t', 'm', 'n', 'r'], true);
 						$role = $this->getSubfieldArray($field880, ['e'], true);
@@ -691,11 +788,11 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 					}elseif (str_starts_with($subfield6Data, '520-')) {
 						$this->_alternateGraphicRepresentations['description'] = $this->getSubfieldArray($field880, ['a', 'c'], true)[0];
 					}elseif (preg_match('/(600|610|611|630|650|651|655|690)-/', $subfield6Data)) {
-						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4));
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
 						[$type, $search, $title] = $this->getSubjectInfoFromField($field880);
 						$this->_alternateGraphicRepresentations['subjects'][] = ['index' => $index, 'type' => $type, 'search' => $search, 'title' => $title];
 					}elseif (preg_match('/(310|321|351|362|5\d\d)-/', $subfield6Data)) {
-						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4));
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
 						$noteText = [];
 						foreach ($field880->getSubFields() as $subfield) {
 							if ($subfield->getCode() != '6') {
@@ -869,7 +966,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 				//Try to match to an AGR Contributor
 				if ($field->getSubfield('6') != null) {
 					$subfield6Data = $field->getSubfield('6')->getData();
-					$index = preg_replace('/\D/m', '', substr($subfield6Data, 4));
+					$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
 					foreach ($agrContributors as $contributorIndex => $contributor) {
 						if ($contributor['index'] == $index) {
 							$curContributor['agr'] = $contributor;
@@ -1295,13 +1392,13 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 						}
 						if ($allVolumesRequireIll) {
 							if (count($itemsWithoutVolumes) > 0) {
-								//Check to see if a title level request is possible and if so show a request or hold button as appropriate
+								//Check to see if a title level request is possible, and if so show a request or hold button as appropriate
 								if ($itemsWithoutVolumesNeedIllRequest) {
 									if ($interLibraryLoanType == 'vdx') {
 										//VDX does not support volumes, we'll just prompt for a regular VDX
 										$this->_actions[$variationId][] = getVdxRequestAction($this->getModule(), $source, $id);
 									} elseif ($interLibraryLoanType == 'localIll') {
-										$this->_actions[$variationId][] = getMultiVolumeRequestAction($this->getModule(), $source, $id);
+										$this->_actions[$variationId][] = getMultiVolumeRequestAction($this->getModule(), $source, $id, $this);
 									}
 								}else{
 									$this->_actions[$variationId][] = getUntitledVolumeHoldAction($this->getModule(), $source, $id, $variationId);
@@ -1324,7 +1421,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 									//VDX does not support volumes, we'll just prompt for a regular VDX
 									$this->_actions[$variationId][] = getVdxRequestAction($this->getModule(), $source, $id);
 								}elseif ($interLibraryLoanType == 'localIll') {
-									$this->_actions[$variationId][] = getSpecificVolumeLocalIllRequestAction($this->getModule(), $source, $id, $volumeInfo);
+									$this->_actions[$variationId][] = getSpecificVolumeLocalIllRequestAction($this->getModule(), $source, $id, $volumeInfo, $this);
 								}
 							}else{
 								$this->_actions[$variationId][] = getSpecificVolumeHoldAction($this->getModule(), $source, $id, $volumeInfo);
@@ -1332,7 +1429,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 						}
 					}
 				}else{
-					//No volumes, just get the proper action based on interlibrary loan type required
+					//No volumes, just get the proper action based on the interlibrary loan type required
 					if ($treatHoldAsInterLibraryLoanRequest) {
 						if ($interLibraryLoanType == 'vdx') {
 							$this->_actions[$variationId][] = getVdxRequestAction($this->getModule(), $source, $id);
@@ -1559,6 +1656,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		return $this->catalogDriver->driver;
 	}
 
+	private $_physicalDescriptions = null;
 	/**
 	 * Get an array of physical descriptions of the item.
 	 *
@@ -1567,21 +1665,32 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	 */
 	/** @noinspection PhpUnused */
 	public function getPhysicalDescriptions() {
-		$physicalDescription1 = $this->getFieldArray("300", [
-			'a',
-			'b',
-			'c',
-			'e',
-			'f',
-			'g',
-		]);
-		$physicalDescription2 = $this->getFieldArray("530", [
-			'a',
-			'b',
-			'c',
-			'd',
-		]);
-		return array_merge($physicalDescription1, $physicalDescription2);
+		if ($this->_physicalDescriptions == null) {
+			$this->_physicalDescriptions = [];
+			$physicalDescriptionFields = $this->getFields('300|530', true);
+			foreach ($physicalDescriptionFields as $field) {
+				if ($field == '300') {
+					$info = $this->getSubfieldArray($field, ['a', 'b', 'c', 'e', 'f', 'g'], true);
+				}else{
+					$info = $this->getSubfieldArray($field, ['a', 'b', 'c', 'd'], true);
+				}
+				if (count($info) > 0) {
+					$physicalDescriptionInfo = $info[0];
+					if ($field->getSubfield('6') != null) {
+						$subfield6Data = $field->getSubfield('6')->getData();
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+						$agrPhysicalDescriptions = $this->get880PhysicalDescriptions();
+						foreach ($agrPhysicalDescriptions as $agrPhysicalDescription) {
+							if ($agrPhysicalDescription['index'] == $index) {
+								$physicalDescriptionInfo .= " ({$agrPhysicalDescription['value']})";
+							}
+						}
+					}
+					$this->_physicalDescriptions[] = $physicalDescriptionInfo;
+				}
+			}
+		}
+		return $this->_physicalDescriptions;
 	}
 
 	/**
@@ -1610,6 +1719,40 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		}
 
 		return $publicationDates;
+	}
+
+	private $_publicationDetails = null;
+	public function getPublicationDetails() : array {
+		if ($this->_publicationDetails == null) {
+			$this->_publicationDetails = [];
+			if ($this->isValid()) {
+				$publicationFields = $this->getFields('260|264', true);
+				foreach ($publicationFields as $field) {
+					if ($field->getTag() == 264) {
+						if (!($field->getIndicator(2) == 1 || $field->getIndicator(2) == ' ')) {
+							//Not a valid publication field
+							continue;
+						}
+					}
+					$publisherData = $this->getSubfieldArray($field, ['a', 'b', 'c'], true);
+					if (count($publisherData) > 0) {
+						$publisherDetails = $publisherData[0];
+						if ($field->getSubfield('6') != null) {
+							$subfield6Data = $field->getSubfield('6')->getData();
+							$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
+							$agrPublishers = $this->get880PublicationDetails();
+							foreach ($agrPublishers as $agrPublisher) {
+								if ($agrPublisher['index'] == $index) {
+									$publisherDetails .= " ({$agrPublisher['value']})";
+								}
+							}
+						}
+						$this->_publicationDetails[] = $publisherDetails;
+					}
+				}
+			}
+		}
+		return $this->_publicationDetails;
 	}
 
 	/**
@@ -1762,7 +1905,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 				'body' => '<div><div id="descriptionPlaceholder">' . translate([
 						'text' => 'Loading Description...',
 						'isPublicFacing' => true,
-					]) . '</div><div id="agrDescription">' . $this->get880Description() . '</div>',
+					]) . '</div><div id="agrDescription">' . $this->get880Description() . '</div></div>',
 				'hideByDefault' => false,
 				'openByDefault' => true,
 			];
@@ -2041,7 +2184,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 						$agr = null;
 						if ($subfield6 !== false) {
 							$subfield6Data = $subfield6->getData();
-							$index = preg_replace('/\D/m', '', substr($subfield6Data, 4));
+							$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
 							foreach ($agrSubjects as $subjectIndex => $agrSubject) {
 								if ($agrSubject['index'] == $index) {
 									$agr = $agrSubject;
@@ -2389,7 +2532,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 					$subfield6 = $marcField->getSubfield('6');
 					if ($subfield6 !== false) {
 						$subfield6Data = $subfield6->getData();
-						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4));
+						$index = preg_replace('/\D/m', '', substr($subfield6Data, 4, 2));
 						foreach ($agrNotes as $noteIndex => $agrNote) {
 							if ($agrNote['index'] == $index) {
 								$agr = $agrNote['note'];
@@ -3215,7 +3358,7 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 	 * @return array
 	 */
 	public function getInterLibraryLoanIntegrationInformation(?Grouping_Record $relatedRecord, $variationId): array {
-//See if we have InterLibrary Loan integration. If so, we will either be placing a hold or requesting depending on if there is a copy local to the hold group (whether available or not)
+		//See if we have InterLibrary Loan integration. If so, we will either be placing a hold or requesting depending on if there is a copy local to the hold group (whether available or not)
 		$interLibraryLoanType = 'none';
 		$treatHoldAsInterLibraryLoanRequest = false;
 		$homeLocation = null;

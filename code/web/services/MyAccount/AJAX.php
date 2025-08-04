@@ -11,6 +11,11 @@ class MyAccount_AJAX extends JSON_Action {
 			case 'renewItem':
 				$method = 'renewCheckout';
 				break;
+			case 'getUserCheckouts':
+				$method = 'getUserCheckouts';
+				break;
+			case 'getUserHolds':
+				$method = 'getUserHolds';
 		}
 		if (method_exists($this, $method)) {
 			parent::launch($method);
@@ -3735,8 +3740,6 @@ class MyAccount_AJAX extends JSON_Action {
 				$page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 1;
 				$recordsPerPage = 100; // Could be made configurable in the future if requested.
 				$totalCheckouts = count($allCheckedOut);
-				global $logger;
-				$logger->log("Total checkouts: $totalCheckouts", Logger::LOG_ERROR);
 				if ($recordsPerPage != -1) {
 					$interface->assign('page', $page);
 					$link = $_SERVER['REQUEST_URI'];
@@ -4051,6 +4054,9 @@ class MyAccount_AJAX extends JSON_Action {
 				}
 				if ($showPlacedColumn) {
 					$unavailableHoldSortOptions['placed'] = 'Date Placed';
+				}
+				if ($library->showHoldCancelDate) {
+					$unavailableHoldSortOptions['cancelDate'] = 'Hold Cancellation Date';
 				}
 
 				$availableHoldSortOptions = [
@@ -8365,6 +8371,13 @@ class MyAccount_AJAX extends JSON_Action {
 									$title = $recordDriver->getTitle();
 									$userListEntry->title = mb_substr($title, 0, 50);
 								}
+							} elseif (preg_match('`^aspenEvent_`', $userListEntry->sourceId)) {
+								require_once ROOT_DIR . '/RecordDrivers/AspenEventRecordDriver.php';
+								$recordDriver = new AspenEventRecordDriver($userListEntry->sourceId);
+								if ($recordDriver->isValid()) {
+									$title = $recordDriver->getTitle();
+									$userListEntry->title = mb_substr($title, 0, 50);
+								}
 							}
 						} elseif ($userListEntry->source == 'OpenArchives') {
 							require_once ROOT_DIR . '/RecordDrivers/OpenArchivesRecordDriver.php';
@@ -9641,7 +9654,6 @@ class MyAccount_AJAX extends JSON_Action {
 		$campaignId = $_GET['campaignId'] ?? null;
 		$userId = $_GET['userId'] ?? null;
 
-
 		if (!$campaignId || !$userId) {
 			return[
 				'success' => false,
@@ -10119,4 +10131,85 @@ class MyAccount_AJAX extends JSON_Action {
 			'selectHtml' => $html
 		];
 	}
+
+	public function getUserCheckouts(): array {
+
+		$userId = $_REQUEST['userId'] ?? null;
+		if (empty($userId)) {
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'No User Id',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user = new User();
+		$user->id = $userId;
+		if (!$user->find(true)){
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'User not found',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user->checkoutInfoLastLoaded = 0;
+		$user->update();
+
+		$user->getCheckouts(true, 'all');
+
+		return [
+			'success' => true,
+		];
+	}
+
+	public function getUserHolds(): array {
+		$userId = $_REQUEST['userId'] ?? null;
+		if (empty($userId)) {
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'No User Id',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user = new User();
+		$user->id = $userId;
+		if (!$user->find(true)){
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'User not found',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user->holdInfoLastLoaded = 0;
+		$user->update();
+		$user->getHolds(true, 'sortTitle', 'expire', 'all');
+
+		return [
+			'success' => true,
+		];
+	}
+
 }
