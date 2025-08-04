@@ -3949,8 +3949,8 @@ class User extends DataObject {
 		}
 	}
 
-	function getPickupLocation() {
-		//Check if the library allows patrons to update their pickup locaton, if not, pickup location is always the home location
+	function getPickupLocation(): ?Location {
+		// Check if the library allows patrons to update their pickup location; if not, pickup location is always the home location.
 		$allowCustomPickupLocation = false;
 		$homeLocation = $this->getHomeLocation();
 		if ($homeLocation != null && $homeLocation->getParentLibrary() != null) {
