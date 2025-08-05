@@ -3,6 +3,7 @@ The welcome email is sent after a patron has successfully self registered.
 The following template variables are available: 
 - library.displayName - The name of the active library where the patron registered
 - library.baseUrl - The URL to the aspen instance where the patron registered
+- library.messagingSettingsUrl - The URL where the user can update messaging preferences (Koha, Symphony, and Sierra only)
 - library.email - The contact email of the library where the patron registered
 - user.firstname - The first name of the patron who registered
 - user.lastname - The last name of the patron who registered

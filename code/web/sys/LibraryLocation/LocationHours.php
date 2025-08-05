@@ -1,9 +1,12 @@
 <?php
+/** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class LocationHours extends DataObject {
-	public $__table = 'location_hours';   // table name
+	public $__table = 'location_hours';
+	public $__displayNameColumn = 'display_name';
+	public $display_name;
 	public $id;                           // int(11)  not_null primary_key auto_increment
 	public $locationId;                   // int(11)
 	public $day;                          // int(11)
@@ -41,14 +44,6 @@ class LocationHours extends DataObject {
 		while ($location->fetch()) {
 			$locationList[$location->locationId] = $location->displayName;
 		}
-		$timeList = [];
-		for ($hour = 0; $hour < 24; $hour++) {
-			for ($minutes = 0; $minutes < 60; $minutes += 15) {
-				$time = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minutes, 2, '0', STR_PAD_LEFT);
-				$timeList[$time] = $time;
-			}
-		}
-		$timeList['24:00'] = '24:00';
 		return [
 			'id' => [
 				'property' => 'id',
@@ -78,15 +73,13 @@ class LocationHours extends DataObject {
 			],
 			'open' => [
 				'property' => 'open',
-				'type' => 'enum',
-				'values' => $timeList,
+				'type' => 'time',
 				'label' => 'Opening Hour',
 				'description' => 'The opening hour. Use 24 hour format HH:MM, eg: 08:30',
 			],
 			'close' => [
 				'property' => 'close',
-				'type' => 'enum',
-				'values' => $timeList,
+				'type' => 'time',
 				'label' => 'Closing Hour',
 				'description' => 'The closing hour. Use 24 hour format HH:MM, eg: 16:30',
 			],
@@ -98,5 +91,16 @@ class LocationHours extends DataObject {
 				'maxLength' => 255,
 			],
 		];
+	}
+
+	public function fetch(): bool|DataObject|null {
+		$result = parent::fetch();
+		$dayName = self::$dayNames[$this->day] ?? 'Unknown';
+		if ($this->closed) {
+			$this->display_name = $dayName . ': Closed';
+		} else {
+			$this->display_name = $dayName . ': ' . $this->open . ' - ' . $this->close;
+		}
+		return $result;
 	}
 }

@@ -5173,9 +5173,10 @@ class Koha extends AbstractIlsDriver {
 		}
 
 		global $interface;
-		$allowPurchaseSuggestionBranchChoice = $this->getKohaSystemPreference('AllowPurchaseSuggestionBranchChoice');
+		global $library;
+		$allowMaterialRequestsBranchChoice = $library->allowMaterialRequestsBranchChoice;
 		$pickupLocations = [];
-		if ($allowPurchaseSuggestionBranchChoice == 1) {
+		if ($allowMaterialRequestsBranchChoice == 1) {
 			$locations = new Location();
 			$locations->orderBy('displayName');
 			$locations->whereAdd('validHoldPickupBranch != 2');
@@ -5203,6 +5204,7 @@ class Koha extends AbstractIlsDriver {
 				'label' => 'Title',
 				'description' => 'The title of the item to be purchased',
 				'maxLength' => 255,
+				'default' => isset($_REQUEST['title']) ? urldecode($_REQUEST['title']) : '',
 				'required' => true,
 			],
 			[
@@ -5211,6 +5213,7 @@ class Koha extends AbstractIlsDriver {
 				'label' => 'Author',
 				'description' => 'The author of the item to be purchased',
 				'maxLength' => 80,
+				'default' => isset($_REQUEST['author']) ? urldecode($_REQUEST['author']) : '',
 				'required' => false,
 			],
 			[
@@ -5285,6 +5288,7 @@ class Koha extends AbstractIlsDriver {
 				'type' => 'textarea',
 				'label' => 'Note',
 				'description' => '',
+				'default' => isset($_REQUEST['volume']) ? 'Volume ' . urldecode($_REQUEST['volume']) : '',
 				'required' => false,
 			],
 		];
