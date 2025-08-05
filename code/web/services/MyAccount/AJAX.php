@@ -11,6 +11,11 @@ class MyAccount_AJAX extends JSON_Action {
 			case 'renewItem':
 				$method = 'renewCheckout';
 				break;
+			case 'getUserCheckouts':
+				$method = 'getUserCheckouts';
+				break;
+			case 'getUserHolds':
+				$method = 'getUserHolds';
 		}
 		if (method_exists($this, $method)) {
 			parent::launch($method);
@@ -446,6 +451,10 @@ class MyAccount_AJAX extends JSON_Action {
 				'isPublicFacing' => true,
 			]),
 			'message' => $selfRegTerms->terms,
+			'modalButtons' => "<button type='button' class='tool btn btn-primary' id = 'AcceptTOS' onclick='AspenDiscovery.Account.selfRegistrationAgreeToTOS();'>" . translate([
+				'text' => "Agree",
+				'isPublicFacing' => true,
+			]) . "</button>",
 		];
 	}
 
@@ -4049,6 +4058,9 @@ class MyAccount_AJAX extends JSON_Action {
 				}
 				if ($showPlacedColumn) {
 					$unavailableHoldSortOptions['placed'] = 'Date Placed';
+				}
+				if ($library->showHoldCancelDate) {
+					$unavailableHoldSortOptions['cancelDate'] = 'Hold Cancellation Date';
 				}
 
 				$availableHoldSortOptions = [
@@ -9646,7 +9658,6 @@ class MyAccount_AJAX extends JSON_Action {
 		$campaignId = $_GET['campaignId'] ?? null;
 		$userId = $_GET['userId'] ?? null;
 
-
 		if (!$campaignId || !$userId) {
 			return[
 				'success' => false,
@@ -9991,6 +10002,166 @@ class MyAccount_AJAX extends JSON_Action {
 		}
 	}
 
+	/**
+	 * Sends server-sent events (SSE) notifications about community engagement milestones and campaigns.
+	 */
+
+	public function CommunityEngagementSSE() {
+		$debug = false; // Set to true to enable debug mode. true for dev only.
+		if (UserAccount::isLoggedIn()) {
+
+			$patron = UserAccount::getActiveUserObj();
+
+			require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneProgressEntry.php';
+			require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneUsersProgress.php';
+			require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestone.php';
+			require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
+			require_once ROOT_DIR . '/sys/CommunityEngagement/Milestone.php';
+			require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
+
+			header("X-Accel-Buffering: no");
+			header("Content-Type: text/event-stream");
+			header("Cache-Control: no-cache");
+
+			echo "event: established\n";
+			echo "data: connection established\n\n";
+
+			ob_end_flush();
+
+			$interval = 10;
+
+			while (true) {
+
+				if( $debug ){
+					global $logger;
+					$logger->log("RUNNING SSE ", Logger::LOG_ERROR);
+				}
+				// Break the loop if the client aborted the connection (closed the page)
+				if (connection_status() != CONNECTION_NORMAL || connection_aborted()) exit();
+
+				$campaignMilestoneProgressEntry = new CampaignMilestoneProgressEntry();
+				$campaignMilestoneProgressEntry->userId = $patron->id;
+				if(!$debug){
+					$campaignMilestoneProgressEntry->whereAdd("timestamp >= DATE_SUB(NOW(), INTERVAL " . $interval . " SECOND)");
+				}
+
+				if ($campaignMilestoneProgressEntry->find()) {
+					while ($campaignMilestoneProgressEntry->fetch()) {
+
+						# Prepare data
+						$campaign = new Campaign();
+						$campaign->id = $campaignMilestoneProgressEntry->ce_campaign_id;
+						$campaign->find(true);
+
+						$milestone = new Milestone();
+						$milestone->id = $campaignMilestoneProgressEntry->ce_milestone_id;
+						$milestone->find(true);
+
+						$campaignMilestoneUsersProgress = new CampaignMilestoneUsersProgress();
+						$campaignMilestoneUsersProgress->id = $campaignMilestoneProgressEntry->ce_campaign_milestone_users_progress_id;
+						$campaignMilestoneUsersProgress->find(true);
+
+						$campaignMilestone = new CampaignMilestone();
+						$campaignMilestone->campaignId = $campaignMilestoneProgressEntry->ce_campaign_id;
+						$campaignMilestone->milestoneId = $campaignMilestoneProgressEntry->ce_milestone_id;
+						$campaignMilestone->find(true);
+
+						$userCampaign = new UserCampaign();
+						$userCampaign->userId = $patron->id;
+						$userCampaign->campaignId = $campaignMilestoneProgressEntry->ce_campaign_id;
+						$userCampaign->find(true);
+
+						$unwantedOverflowProgress = $campaignMilestoneUsersProgress->progress > $campaignMilestone->goal &&  !$milestone->progressBeyondOneHundredPercent;
+						$wantedOverflowProgress = $campaignMilestoneUsersProgress->progress > $campaignMilestone->goal &&  $milestone->progressBeyondOneHundredPercent;
+						if( $unwantedOverflowProgress ){
+							exit();
+						}
+
+						# Handle milestone progress notification
+						echo "event: ce_notification\n";
+						echo "data: " . json_encode(
+							array(
+								'id'=> $campaignMilestoneProgressEntry->id . '_ce_milestone_progress',
+								'title'=> translate(
+										[
+											'text' => 'Milestone progress! Good job!',
+											'isPublicFacing' => true
+										]
+									),
+								'body' => $campaignMilestoneUsersProgress->progress.'/'.$campaignMilestone->goal.' ' .$milestone->name,
+								'icon' => "fa-chart-line",
+								'link' => ['href' => '/MyAccount/MyCampaigns', 'text' => translate(
+										[
+											'text' => 'View all campaigns',
+											'isPublicFacing' => true
+										]
+									)]
+							)
+						) . "\n\n";
+
+						# Handle milestone completion notification
+						if ($campaignMilestoneUsersProgress->progress >= $campaignMilestone->goal && !$wantedOverflowProgress) {
+							echo "event: ce_notification\n";
+							echo "data: " . json_encode(
+								array(
+									'id'=> $campaignMilestoneProgressEntry->id . '_ce_milestone_completed',
+									'title'=> translate(
+										[
+											'text' => 'Milestone completed! Well done!',
+											'isPublicFacing' => true
+										]
+									),
+									'body' => $milestone->name,
+									'icon' => "fa-clipboard-check",
+									'link' => ['href' => '/MyAccount/MyCampaigns', 'text' => translate(
+										[
+											'text' => 'View all campaigns',
+											'isPublicFacing' => true
+										]
+									)]
+								)
+							) . "\n\n";
+						}
+
+						# Handle campaign completion notification
+						if ($userCampaign->completed && !$wantedOverflowProgress) {
+							echo "event: ce_notification\n";
+							echo "data: " . json_encode(
+								array(
+									'id'=> $campaignMilestoneProgressEntry->id . '_ce_campaign_completed',
+									'title'=> translate(
+										[
+											'text' => 'Campaign completed! Awesome!',
+											'isPublicFacing' => true
+										]
+									),
+									'body' => $campaign->name,
+									'icon' => "fa-medal",
+									'link' => ['href' => '/MyAccount/MyCampaigns', 'text' => translate(
+										[
+											'text' => 'View all campaigns',
+											'isPublicFacing' => true
+										]
+									)]
+								)
+							) . "\n\n";
+						}
+					}
+				}else{
+					echo "event: heart_beat\n";
+					echo "data: No notifications found\n\n";
+				}
+
+				if (ob_get_contents()) {
+					ob_end_flush();
+				}
+				flush();
+
+				sleep($interval);
+			}
+		}
+	}
+
 	function getYearInReviewSlide() : array {
 		$result = [
 			'success' => false,
@@ -10124,4 +10295,85 @@ class MyAccount_AJAX extends JSON_Action {
 			'selectHtml' => $html
 		];
 	}
+
+	public function getUserCheckouts(): array {
+
+		$userId = $_REQUEST['userId'] ?? null;
+		if (empty($userId)) {
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'No User Id',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user = new User();
+		$user->id = $userId;
+		if (!$user->find(true)){
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'User not found',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user->checkoutInfoLastLoaded = 0;
+		$user->update();
+
+		$user->getCheckouts(true, 'all');
+
+		return [
+			'success' => true,
+		];
+	}
+
+	public function getUserHolds(): array {
+		$userId = $_REQUEST['userId'] ?? null;
+		if (empty($userId)) {
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'No User Id',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user = new User();
+		$user->id = $userId;
+		if (!$user->find(true)){
+			return ['success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'User not found',
+						'isPublicFacing' => true,
+					]),
+			];
+		}
+
+		$user->holdInfoLastLoaded = 0;
+		$user->update();
+		$user->getHolds(true, 'sortTitle', 'expire', 'all');
+
+		return [
+			'success' => true,
+		];
+	}
+
 }

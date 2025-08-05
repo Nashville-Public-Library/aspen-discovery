@@ -457,15 +457,13 @@ abstract class Solr {
 	/**
 	 * Get search suggestions based on input phrase.
 	 *
-	 * @access    public
-	 * @param string $phrase The input phrase
+	 * @param string $phrase The input phrase.
 	 * @param string $suggestionHandler
-	 * @return    array     An array of search suggestions
+	 * @return array|AspenError An array of search suggestions.
 	 */
-	function getSearchSuggestions($phrase, $suggestionHandler = 'suggest') {
-		// Query String Parameters
+	function getSearchSuggestions(string $phrase, string $suggestionHandler = 'suggest'): array|AspenError {
 		$options = [
-			'q' => $phrase,
+			'suggest.q' => $phrase,
 			'q.op' => 'AND',
 			'rows' => 0,
 			'start' => 1,
@@ -474,14 +472,36 @@ abstract class Solr {
 
 		$searchLibrary = Library::getSearchLibrary($this->searchSource);
 		$searchLocation = Location::getSearchLocation($this->searchSource);
-		$scopingFilters = $this->getScopingFilters($searchLibrary, $searchLocation);
-		if (is_array($scopingFilters) && count($scopingFilters)) {
-			$options['cfq'] = $scopingFilters;
+		$cfqFilters = $this->getScopingFiltersForCFQ($searchLibrary, $searchLocation);
+		if (!empty($cfqFilters)) {
+			$options['suggest.cfq'] = implode(' AND ', $cfqFilters);
 		}
 
 		$result = $this->_select('GET', $options, false, $suggestionHandler);
 		if ($result instanceof AspenError) {
 			AspenError::raiseError($result);
+		}
+
+		// Add highlighting because suggestion highlighting still does not
+		// work in Solr (https://issues.apache.org/jira/browse/SOLR-7964).
+		if (isset($result['suggest']) && !empty($phrase)) {
+			$searchTerms = preg_split('/\s+/', strtolower(trim($phrase)));
+			$searchTerms = array_filter($searchTerms, function($term) { return strlen($term) > 1; });
+
+			foreach ($result['suggest'] as &$dictionary) {
+				foreach ($dictionary as &$queryData) {
+					if (isset($queryData['suggestions'])) {
+						foreach ($queryData['suggestions'] as &$suggestion) {
+							if (isset($suggestion['term'])) {
+								foreach ($searchTerms as $term) {
+									$pattern = '/(' . preg_quote($term, '/') . ')/i';
+									$suggestion['term'] = preg_replace($pattern, '<b>$1</b>', $suggestion['term']);
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 
 		return $result;
@@ -1341,6 +1361,33 @@ abstract class Solr {
 	}
 
 	/**
+	 * Get scoping filters specifically formatted for Context Filter Query (CFQ) in search suggestions.
+	 * This method extracts and formats only the language and edition_info filters from the full
+	 * scoping filters, stripping the field prefixes for use in suggest.cfq parameter.
+	 *
+	 * @param ?Library $searchLibrary
+	 * @param ?Location $searchLocation
+	 * @return array Array of CFQ filter strings without field prefixes.
+	 */
+	protected function getScopingFiltersForCFQ(?Library $searchLibrary, ?Location $searchLocation): array {
+		$scopingFilters = $this->getScopingFilters($searchLibrary, $searchLocation);
+		if (!is_array($scopingFilters) || empty($scopingFilters)) {
+			return [];
+		}
+
+		$cfqParts = [];
+		foreach ($scopingFilters as $filter) {
+			if (str_starts_with($filter, 'edition_info:')) {
+				$cfqParts[] = substr($filter, strlen('edition_info:'));
+			} elseif (str_starts_with($filter, 'language:')) {
+				$cfqParts[] = substr($filter, strlen('language:'));
+			}
+		}
+
+		return $cfqParts;
+	}
+
+	/**
 	 * Convert an array of fields into XML for saving to Solr.
 	 *
 	 * @param array $fields Array of fields to save
@@ -2120,4 +2167,3 @@ abstract class Solr {
 		return $tokenizedNoStopWords;
 	}
 }
-

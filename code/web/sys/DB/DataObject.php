@@ -868,7 +868,7 @@ abstract class DataObject implements JsonSerializable {
 		$properties = get_object_vars($this);
 		$where = '';
 		foreach ($properties as $name => $value) {
-			if ($value != null && $name[0] != '_') {
+			if ($value !== null && $name[0] != '_') {
 				if (strlen($where) != 0) {
 					$where .= ' AND ';
 				}
@@ -1103,7 +1103,8 @@ abstract class DataObject implements JsonSerializable {
 						$history->actionType = 2;
 						$history->objectId = $this->$primaryKey;
 						$history->oldValue = $oldValue;
-						$history->propertyName = $propertyName;
+						require_once ROOT_DIR . '/sys/DataObjectUtil.php';
+						$history->propertyName = DataObjectUtil::getHistoryPropertyName($this, $propertyName);
 						$history->newValue = $newValue;
 						$history->changedBy = UserAccount::getActiveUserId();
 						$history->changeDate = time();

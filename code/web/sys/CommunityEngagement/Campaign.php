@@ -6,6 +6,8 @@ require_once ROOT_DIR . '/sys/CommunityEngagement/Reward.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignPatronTypeAccess.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignLibraryAccess.php';
 require_once ROOT_DIR . '/sys/Account/User.php';
+require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignExtraCredit.php';
+require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignLocationAccess.php';
 
 
 class Campaign extends DataObject {
@@ -23,12 +25,18 @@ class Campaign extends DataObject {
 	public $currentEnrollments;
 	public $campaignReward;
 	public $userAgeRange;
+	public $extraCreditActivities;
+	public $addExtraCreditActivities;
 
 	/** @var AvailableMilestones[] */
 	private $_availableMilestones;
 
+	/** @var AvailableExtraCreditActivities[] */
+	private $_availableExtraCreditActivities;
+
 	protected $_allowPatronTypeAccess;
 	protected $_allowLibraryAccess;
+	protected $_allowLocationAccess;
 
 	public static function getObjectStructure($context = ''): array {
 		$milestoneList = Milestone::getMilestoneList();
@@ -36,9 +44,14 @@ class Campaign extends DataObject {
 		unset($milestoneStructure['campaignId']);
 		unset($milestoneStructure['weight']);
 
+		$extraCreditStructure = CampaignExtraCredit::getObjectStructure($context);
+		unset($extraCreditStructure['campaignId']);
+		unset($extraCreditStructure['weight']);
+
 		$libraryList = Library::getLibraryList(false);
 		$patronTypeList = PType::getPatronTypeList();
 		$rewardList = Reward::getRewardList();
+		$locationList = Location::getLocationList(false);
 		return [
 			'id' => [
 				'property' => 'id',
@@ -74,6 +87,31 @@ class Campaign extends DataObject {
 				'keyOther' => 'campaignId',
 				'subObjectType' => 'CampaignMilestone',
 				'structure' => $milestoneStructure,
+				'sortable' => true,
+				'storeDb' => true,
+				'allowEdit' => false,
+				'canEdit' => false,
+				'canAddNew' => true,
+				'canDelete' => true,
+			],
+			'addExtraCreditActivities' => [
+				'property' => 'addExtraCreditActivities',
+				'type' => 'checkbox',
+				'label' => 'Add Extra Credit Activities to the Campaign',
+				'description' => 'Whether or not to add activities that earn rewards but do not count towards the completion of the campaign',
+				'deafult' => false,
+				'onchange' => 'AspenDiscovery.CommunityEngagement.displayExtraCreditBentoBox()',
+			],
+			'availableExtraCreditActivities' => [
+				'property' => 'availableExtraCreditActivities',
+				'type' => 'oneToMany',
+				'label' => 'Extra Credit Activities',
+				'renderAsHeading' => true,
+				'description' => 'The Extra Credit Activities to be linked to this campaign',
+				'keyThis' => 'campaignId',
+				'keyOther' => 'campaignId',
+				'subObjectType' => 'CampaignExtraCredit',
+				'structure' => $extraCreditStructure,
 				'sortable' => true,
 				'storeDb' => true,
 				'allowEdit' => false,
@@ -131,6 +169,15 @@ class Campaign extends DataObject {
 				'values' => $libraryList,
 				'hideInLists' => false,
 			],
+			'allowLocationAccess' => [
+				'property' => 'allowLocationAccess',
+				'type' => 'multiSelect',
+				'listStyle' => 'checkboxSimple',
+				'label' => 'Location Access',
+				'description' => 'Define what locations should have access to this campaign',
+				'values' => $locationList,
+				'hideInLists' => false,
+			],
 			'userAgeRange' => [
 				'property' => 'userAgeRange',
 				'type' => 'text',
@@ -170,6 +217,19 @@ class Campaign extends DataObject {
 		return $this->_allowLibraryAccess;
 	}
 
+		public function getLocationAccess(): ?array {
+		if (!isset($this->_allowLocationAccess) && $this->id) {
+			$this->_allowLocationAccess = [];
+			$locationLink = new CampaignLocationAccess();
+			$locationLink->campaignId = $this->id;
+			$locationLink->find();
+			while ($locationLink->fetch()) {
+				$this->_allowLocationAccess[$locationLink->locationId] = $locationLink->locationId;
+			}
+		}
+		return $this->_allowLocationAccess;
+	}
+
 	public function savePatronTypeAccess() {
 		if (isset($this->_allowPatronTypeAccess) && is_array($this->_allowPatronTypeAccess)) {
 			$this->clearPatronTypeAccess();
@@ -198,6 +258,20 @@ class Campaign extends DataObject {
 		}
 	}
 
+	public function saveLocationAccess() {
+		if (isset($this->_allowLocationAccess) && is_array($this->_allowLocationAccess)) {
+			$this->clearLocationAccess();
+
+			foreach ($this->_allowLocationAccess as $locationId) {
+				$locationLink = new CampaignLocationAccess();
+				$locationLink->campaignId = $this->id;
+				$locationLink->locationId = $locationId;
+				$locationLink->insert();
+			}
+			unset($this->_allowLocationAccess);
+		}
+	}
+
 	private function clearPatronTypeAccess() {
 		//Delete links to the patron types
 		$link = new CampaignPatronTypeAccess();
@@ -210,6 +284,13 @@ class Campaign extends DataObject {
 		$libraryLink = new CampaignLibraryAccess();
 		$libraryLink->campaignId = $this->id;
 		return $libraryLink->delete(true);
+	}
+
+	private function clearLocationAccess() {
+		//Delete links to the libraries
+		$locationLink = new CampaignLocationAccess();
+		$locationLink->campaignId = $this->id;
+		return $locationLink->delete(true);
 	}
 
 	public function getUsers() {
@@ -260,6 +341,10 @@ class Campaign extends DataObject {
 			return $this->getLibraryAccess();
 		} else if ($name == 'availableMilestones') {
 			return $this->getMilestones();
+		} else if ($name == 'availableExtraCreditActivities') {
+			return $this->getExtraCreditActivities();
+		} else if ($name == 'allowLocationAccess') {
+			return $this->getLocationAccess();
 		} else {
 			return parent::__get($name);
 		}
@@ -272,6 +357,10 @@ class Campaign extends DataObject {
 			$this->_allowLibraryAccess = $value;
 		} else if ($name == 'availableMilestones') {
 			$this->_availableMilestones = $value;
+		} else if ($name == 'availableExtraCreditActivities') {
+			$this->_availableExtraCreditActivities = $value;
+		} else if ($name == 'allowLocationAccess') {
+			$this->_allowLocationAccess = $value;
 		} else {
 			parent::__set($name, $value);
 		}
@@ -293,6 +382,23 @@ class Campaign extends DataObject {
 			}
 		}
 		return $this->_availableMilestones;
+	}
+
+	public function getExtraCreditActivities(){
+		if (!isset($this->_availableExtraCreditActivities)) {
+			$this->_availableExtraCreditActivities = [];
+			if (!empty($this->id)) {
+				$campaignExtraCredit = new CampaignExtraCredit();
+				$campaignExtraCredit->campaignId = $this->id;
+				$campaignExtraCredit->orderBy('weight');
+				if ($campaignExtraCredit->find()) {
+					while ($campaignExtraCredit->fetch()) {
+						$this->_availableExtraCreditActivities[$campaignExtraCredit->id] = clone($campaignExtraCredit);
+					}
+				}
+			}
+		}
+		return $this->_availableExtraCreditActivities;
 	}
 
 	public function getRewardDetails() {
@@ -327,7 +433,8 @@ class Campaign extends DataObject {
 			$this->saveLibraryAccess();
 			$this->saveMilestones();
 			$this->saveTextBlockTranslations('description');
-
+			$this->saveExtraCreditActivities();
+			$this->saveLocationAccess();
 		}
 		return $ret;
 	}
@@ -344,6 +451,8 @@ class Campaign extends DataObject {
 			$this->saveLibraryAccess();
 			$this->saveMilestones();
 			$this->saveTextBlockTranslations('description');
+			$this->saveExtraCreditActivities();
+			$this->saveLocationAccess();
 		}
 		return $ret;
 	}
@@ -353,6 +462,7 @@ class Campaign extends DataObject {
 		if ($ret && !empty($this->id)) {
 			$this->clearPatronTypeAccess();
 			$this->clearLibraryAccess();
+			$this->clearLocationAccess();
 		}
 		return $ret;
 	}
@@ -405,24 +515,7 @@ class Campaign extends DataObject {
 	public function find($fetchFirst = false, $requireOneMatchToReturn = true): bool {
 		if (!UserAccount::isLoggedIn() || UserAccount::getActiveUserObj()->isAspenAdminUser() || UserAccount::getActiveUserObj()->isUserAdmin())
 			 return parent::find($fetchFirst, $requireOneMatchToReturn);
-		$this->joinAdd(new CampaignPatronTypeAccess(), 'LEFT', 'ce_campaign_patron_type_access', 'id', 'campaignId');
-		$this->whereAdd("ce_campaign_patron_type_access.patronTypeId = '" . UserAccount::getActiveUserObj()->getPTypeObj()->id . "' OR ce_campaign_patron_type_access.patronTypeId IS NULL");
-		$this->joinAdd(new CampaignLibraryAccess(), 'LEFT', 'ce_campaign_library_access', 'id', 'campaignId');
-		$this->whereAdd("ce_campaign_library_access.libraryId = '" . UserAccount::getActiveUserObj()->getHomeLibrary()->libraryId . "' OR NOT EXISTS (SELECT 1 FROM ce_campaign_library_access WHERE ce_campaign_library_access.campaignId = ce_campaign.id)");
-		$userAge = (int)UserAccount::getActiveUserObj()->getAge();
-		$ageCondition = "(
-			userAgeRange IS NULL OR
-			userAgeRange = '' OR
-			userAgeRange = 'All Ages' OR
-			(userAgeRange LIKE 'Under %' AND $userAge < CAST(SUBSTRING_INDEX(userAgeRange, ' ', -1) AS UNSIGNED)) OR
-			(userAgeRange LIKE 'Over %' AND $userAge > CAST(SUBSTRING_INDEX(userAgeRange, ' ', -1) AS UNSIGNED)) OR
-			(userAgeRange LIKE '%+' AND $userAge >= CAST(LEFT(userAgeRange, LOCATE('+', userAgeRange) -1) AS UNSIGNED)) OR
-			(userAgeRange LIKE '%-%' AND $userAge BETWEEN
-				CAST(LEFT(userAgeRange, LOCATE('-', userAgeRange) -1) AS UNSIGNED) AND
-				CAST(SUBSTRING_INDEX(userAgeRange, '-', -1) AS UNSIGNED)
-			)
-		)";
-		$this->whereAdd($ageCondition);
+		$this->applyUserFiltering(UserAccount::getActiveUserObj());
 		return parent::find($fetchFirst, $requireOneMatchToReturn);
 	}
 
@@ -584,6 +677,10 @@ class Campaign extends DataObject {
 				// Fetch campaign milestones and their rewards using mapping
 				$milestones = CampaignMilestone::getMilestoneByCampaign($campaign->id);
 				$pastCampaignList[$campaign->id]->milestones = $milestones;
+				$extraCreditActivities = $this->getFormattedExtraCreditActivities($campaign->id, $userId);
+				$pastCampaignList[$campaign->id]->extraCreditActivities = $extraCreditActivities;
+				$pastCampaignList[$campaign->id]->numExtraCreditActivities = count($extraCreditActivities);
+
 
 				usort($pastCampaignList[$campaign->id]->milestones, function($a, $b) {
 					return $a->weight <=> $b->weight;
@@ -718,11 +815,14 @@ class Campaign extends DataObject {
 			}
 		}
 	}
-	
-	
-	
-	
 
+	public function saveExtraCreditActivities() {
+		if (isset($this->_availableExtraCreditActivities) && is_array($this->_availableExtraCreditActivities)) {
+			$this->saveOneToManyOptions($this->_availableExtraCreditActivities, 'campaignId');
+			unset($this->_availableExtraCreditActivities);
+		}
+	}
+	
 	 /**
 	 * Return an overall leaderboard based on the number of milestones completed by each user across all campaigns.
 	 * 
@@ -968,17 +1068,29 @@ class Campaign extends DataObject {
 		return $leaderboard;
 	}
 
-	function getCampaigns() {
+	function getCampaigns($userId = null, $applyUserFiltering = false) {
 		global $activeLanguage;
 
 		$campaign = new Campaign();
 		$campaignList = [];
 
-		if (!UserAccount::isLoggedIn()) {
-			return $campaignList;
+		if ($userId === null) {
+			if (!UserAccount::isLoggedIn()) {
+				return $campaignList;
+			}
+			$user = UserAccount::getLoggedInUser();
+			$userId = $user->id;
+		} else {
+			$user = new User();
+			$user->id = $userId;
+			if (!$user->find(true)) {
+				return $campaignList;
+			}
 		}
-		$user = UserAccount::getLoggedInUser();
-		$userId = $user->id;
+
+		if ($applyUserFiltering) {
+			$campaign->applyUserFiltering($user);
+		}
 
 		//Get active campaigns
 		$activeCampaigns = Campaign::getActiveCampaignsList();
@@ -1028,7 +1140,9 @@ class Campaign extends DataObject {
 					//Calculate milestone progress
 					$milestoneProgress = CampaignMilestone::getMilestoneProgress($campaignId, $userId, $milestone->id);
 					$progressData = CampaignMilestoneProgressEntry::getUserProgressDataByMilestoneId($userId, $milestoneId, $campaignId);
-
+					usort($progressData, function ($a, $b) {
+						return $a['checkoutDate'] <=> $b['checkoutDate'];
+					});
 					$milestone->progress = $milestoneProgress['progress'];
 					$milestone->extraProgress = $milestoneProgress['extraProgress'];
 					$milestone->completedGoals = $milestoneProgress['completed'];
@@ -1049,7 +1163,9 @@ class Campaign extends DataObject {
 				//Add completed milestones count to campaign object
 				// $campaign->numCompletedMilestones = $completedMilestonesCount;
 				$campaign->numCampaignMilestones = $numCampaignMilestones;
-				
+				$extraCreditActivities = $this->getFormattedExtraCreditActivities($campaign->id, $userId);
+
+				$campaign->numExtraCreditActivities = count($extraCreditActivities);
 
 				$currentDate = date('Y-m-d');
 				$canEnroll = (
@@ -1080,6 +1196,8 @@ class Campaign extends DataObject {
 
 				//Add milestones to campaign object
 				$campaign->milestones = $milestones;
+				$campaign->extraCreditActivities = $extraCreditActivities;
+				$campaign->translatedDescription = $campaign->getTextBlockTranslation('description', $activeLanguage->code);
 
 				//Add the campaign to the list
 			$campaignList[] = clone $campaign;
@@ -1111,11 +1229,15 @@ class Campaign extends DataObject {
 
 			if ($campaign->find()) {
 				while ($campaign->fetch()) {
+					if (empty($campaign->startDate) || empty($campaign->endDate)) {
+						continue;
+					}
 					$userCampaign = new UserCampaign();
 					$userCampaign->userId = $linkedUser->id;
 					$userCampaign->campaignId = $campaign->id;
 	
 					$isEnrolled = $userCampaign->find(true);
+					$rewardGiven = (int)$userCampaign->rewardGiven;
 					$campaignReward = null;
 					$rewardDetails = $campaign->getRewardDetails();
 					if ($rewardDetails != null) {
@@ -1126,6 +1248,8 @@ class Campaign extends DataObject {
 							'rewardExists' => $rewardDetails['rewardExists'],
 							'displayName' => $rewardDetails['displayName'],
 							'rewardDescription' => $rewardDetails['rewardDescription'],
+							'awardAutomatically' =>$rewardDetails['awardAutomatically'],
+
 						];
 					}
 
@@ -1147,7 +1271,11 @@ class Campaign extends DataObject {
 						$completedGoals = $milestoneProgress['completed'];
 						$totalGoals = CampaignMilestone::getMilestoneGoalCountByCampaign($campaign->id, $milestone->id);
 						$progressData = CampaignMilestoneProgressEntry::getUserProgressDataByMilestoneId($linkedUser->id, $milestone->id, $campaign->id);
+						usort($progressData, function ($a, $b) {
+							return $a['checkoutDate'] <=> $b['checkoutDate'];
+						});
 
+						$milestoneRewardGiven = CampaignMilestoneUsersProgress::getRewardGivenForMilestone($milestone->id, $linkedUser->id, $campaign->id);
 
 						if ($milestoneProgress['progress'] >= 100) {
 							$numCompletedMilestones++;
@@ -1174,12 +1302,14 @@ class Campaign extends DataObject {
 							'progressBeyondOneHundredPercent' => $milestone->progressBeyondOneHundredPercent,
 							'allowPatronProgressInput' => $milestone->allowPatronProgressInput,
 							'milestoneComplete' => ($completedGoals >= $totalGoals),
+							'rewardGiven' => $milestoneRewardGiven,
 						];
 					}
 					usort($milestoneRewards, function($a, $b) {
 						return $a['weight'] <=> $b['weight'];
 					});
 
+					$extraCreditActivities = $this->getFormattedExtraCreditActivities($campaign->id, $linkedUser->id);
 
 					$eligibleCampaigns[] = [
 						'campaignId' => $campaign->id,
@@ -1191,7 +1321,11 @@ class Campaign extends DataObject {
 						'numCampaignMilestones' => $numCampaignMilestones,
 						'startDate' => $startDate,
 						'endDate' => $endDate,
-						'canEnroll' => $canEnroll
+						'canEnroll' => $canEnroll,
+						'isComplete' => $numCompletedMilestones >= $numCampaignMilestones,
+						'rewardGiven' => $rewardGiven,
+						'extraCreditActivities' => $extraCreditActivities,
+						'numExtraCreditActivities' => count($extraCreditActivities)
 					];
 				}
 			}
@@ -1236,5 +1370,101 @@ class Campaign extends DataObject {
 			'milestoneSummary' => $milestoneSummary,
 		];
 	}
-	
+
+	private function applyUserFiltering($user) {
+		$this->joinAdd(new CampaignPatronTypeAccess(), 'LEFT', 'ce_campaign_patron_type_access', 'id', 'campaignId');
+		$this->whereAdd("ce_campaign_patron_type_access.patronTypeId = '" . $user->getPTypeObj()->id . "' OR ce_campaign_patron_type_access.patronTypeId IS NULL");
+		
+		$this->joinAdd(new CampaignLibraryAccess(), 'LEFT', 'ce_campaign_library_access', 'id', 'campaignId');
+		$this->whereAdd("ce_campaign_library_access.libraryId = '" . $user->getHomeLibrary()->libraryId . "' OR NOT EXISTS (SELECT 1 FROM ce_campaign_library_access WHERE ce_campaign_library_access.campaignId = ce_campaign.id)");
+
+		$homeLocation = UserAccount::getActiveUserObj()->getHomeLocation();
+		if ($homeLocation != null) {
+			$this->joinAdd(new CampaignLocationAccess(), 'LEFT', 'ce_campaign_location_access', 'id', 'campaignId');
+			$this->whereAdd("ce_campaign_location_access.locationId = '{$homeLocation->locationId}' OR NOT EXISTS (SELECT 1 FROM ce_campaign_location_access WHERE ce_campaign_location_access.campaignId = ce_campaign.id)");
+		}
+		
+		$userAge = (int)$user->getAge();
+		$ageCondition = "(
+			userAgeRange IS NULL OR
+			userAgeRange = '' OR
+			userAgeRange = 'All Ages' OR
+			(userAgeRange LIKE 'Under %' AND $userAge < CAST(SUBSTRING_INDEX(userAgeRange, ' ', -1) AS UNSIGNED)) OR
+			(userAgeRange LIKE 'Over %' AND $userAge > CAST(SUBSTRING_INDEX(userAgeRange, ' ', -1) AS UNSIGNED)) OR
+			(userAgeRange LIKE '%+' AND $userAge >= CAST(LEFT(userAgeRange, LOCATE('+', userAgeRange) -1) AS UNSIGNED)) OR
+			(userAgeRange LIKE '%-%' AND $userAge BETWEEN
+				CAST(LEFT(userAgeRange, LOCATE('-', userAgeRange) -1) AS UNSIGNED) AND
+				CAST(SUBSTRING_INDEX(userAgeRange, '-', -1) AS UNSIGNED)
+			)
+		)";
+		$this->whereAdd($ageCondition);
+	}
+
+	private function formatExtraCreditActivity($extraCreditActivity, int $userId, int $campaignId): array {
+		$progressData = CampaignExtraCredit::getExtraCreditActivityProgress($campaignId, $userId, $extraCreditActivity->id);
+		$totalGoals = CampaignExtraCredit::getExtraCreditGoalCountByCampaign($campaignId, $extraCreditActivity->id);
+		$completedGoals = $progressData['completed'] ?? 0;
+		$progress = $progressData['progress'] ?? 0;
+
+		return [
+			'id' => $extraCreditActivity->id,
+			'name' => $extraCreditActivity->name,
+			'displayName' => $extraCreditActivity->displayName,
+			'rewardName' => $extraCreditActivity->rewardName,
+			'rewardId' => $extraCreditActivity->rewardId,
+			'rewardType' => $extraCreditActivity->rewardType,
+			'rewardImage' => $extraCreditActivity->rewardImage,
+			'rewardExists' => $extraCreditActivity->rewardExists,
+			'awardAutomatically' => $extraCreditActivity->awardAutomatically,
+			'progress' => $progress,
+			'completedGoals' => $completedGoals,
+			'totalGoals' => $totalGoals,
+			'isComplete' => $progress >= 100,
+			'allowPatronProgressInput' => $extraCreditActivity->allowPatronProgressInput,
+			'rewardGiven' => CampaignExtraCreditActivityUsersProgress::getRewardGivenForExtraCreditActivity(
+				$extraCreditActivity->id,
+				$userId,
+				$campaignId
+			),
+		];
+	}
+
+	private function getFormattedExtraCreditActivities(int $campaignId, int $userId): array {
+		$rawExtraCreditActivities = CampaignExtraCredit::getExtraCreditByCampaign($campaignId);
+		$formatted = [];
+
+		foreach ($rawExtraCreditActivities as $extraCreditActivity) {
+			$formatted[] = $this->formatExtraCreditActivity($extraCreditActivity, $userId, $campaignId);
+		}
+
+		return $formatted;
+	}
+
+	public static function filterByCanEnroll(array $campaigns, int $userId): array {
+		$filteredCampaigns = [];
+		$currentDate = date('Y-m-d');
+
+		foreach ($campaigns as $campaign) {
+			if ($campaign->endDate && $campaign->endDate < $currentDate) {
+				continue;
+			}
+
+			if (!$campaign->isActive && !$campaign->isUpcoming) {
+				continue;
+			}
+
+			if ($campaign->isUserEnrolled($userId)) {
+				continue;
+			}
+
+			$canEnroll = 
+				(!$campaign->enrollmentStartDate && !$campaign->enrollmentEndDate) || (!$campaign->enrollmentStartDate && $campaign->enrollmentEndDate >= $currentDate) || ($campaign->enrollmentStartDate <= $currentDate && !$campaign->enrollmentEndDate) || ($campaign->enrollmentStartDate <= $currentDate && $campaign->enrollmentEndDate >= $currentDate);
+
+				if ($canEnroll) {
+					$filteredCampaigns[] = $campaign;
+				}
+		}
+		return $filteredCampaigns;
+	}
+
 }

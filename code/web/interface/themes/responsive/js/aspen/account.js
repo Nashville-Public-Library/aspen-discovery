@@ -690,9 +690,11 @@ AspenDiscovery.Account = (function () {
 					} else if (response.result.success === false && response.result.has2FA === true) {
 						AspenDiscovery.showMessageWithButtons(response.result.title, response.result.body, response.result.buttons);
 					} else {
+						loadingElem.hide();
 						loginErrorElem.html(response.result.message).show();
 					}
 				}, 'json').fail(function () {
+					loadingElem.hide();
 					loginErrorElem.text("There was an error processing your login, please try again.").show();
 				})
 			}
@@ -2184,8 +2186,15 @@ AspenDiscovery.Account = (function () {
 			};
 			// noinspection JSUnresolvedFunction
 			$.getJSON(url, params, function (data) {
-				AspenDiscovery.showMessage(data.title, data.message, false);
+				AspenDiscovery.showMessageWithButtons(data.title, data.message, data.modalButtons);
 			}).fail(AspenDiscovery.ajaxFail);
+			return false;
+		},
+
+		selfRegistrationAgreeToTOS: function () {
+			$("#tosCheckbox").prop("checked", true);
+			$("div.form-group button[value='Register']").prop("disabled", false);
+			AspenDiscovery.closeLightbox();
 			return false;
 		},
 
