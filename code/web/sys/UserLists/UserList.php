@@ -164,7 +164,7 @@ class UserList extends DataObject {
 				require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
 				$listEntry = new UserListEntry();
 				$listEntry->listId = $this->id;
-				$listEntry->delete(false, true);
+				$listEntry->delete(true);
 			}
 		} else {
 			$ret = parent::delete($useWhere, $hardDelete);

@@ -58,10 +58,9 @@ class UserListEntry extends DataObject {
 	/**
 	 * @param bool $useWhere
 	 * @param bool $hardDelete
-	 * @param bool $updateBrowseCategories
 	 * @return int
 	 */
-	function delete($useWhere = false, $hardDelete = false, bool $updateBrowseCategories = true) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		$result = parent::delete($useWhere, $hardDelete);
 		global $memCache;
 		$memCache->delete('user_list_data_' . UserAccount::getActiveUserId());
