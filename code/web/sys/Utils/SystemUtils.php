@@ -70,6 +70,22 @@ class SystemUtils {
 		return false;
 	}
 
+	static function validatePhoneNumber($phone): bool {
+		$justNumber = preg_replace('/[^0-9]/', '', $phone);
+		if (preg_match('/[^0-9()\-+\s.]/', $phone)) {
+			return false;
+		}
+		else if (strlen($justNumber) == 10) {
+			return true;
+		}
+		else if (substr($phone, 0, 1) == '+') {
+			if (strlen($justNumber) >= 10) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	static function validateAddress($streetAddress, $city, $state, $zip): bool {
 		$baseUrl = 'https://api.usps.com';
 		require_once ROOT_DIR . '/sys/CurlWrapper.php';

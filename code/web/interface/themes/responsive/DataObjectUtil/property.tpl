@@ -454,6 +454,8 @@
 					{if empty($property.suppressNotSetForEmpty)}{translate text="Not Set" isAdminFacing=true}{/if}
 				{elseif is_array($propValue)}
 					{implode subject=$propValue glue=", " escape=true}
+				{elseif !empty($property.doNotEscape)}
+					{$propValue}
 				{else}
 					{$propValue|escape}
 				{/if}

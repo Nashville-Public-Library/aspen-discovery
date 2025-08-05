@@ -1,19 +1,17 @@
 <?php
+/** @noinspection PhpMissingFieldTypeInspection */
 
 class LibrarySideLoadScope extends DataObject {
 	public $__table = 'library_sideload_scopes';
-
+	public $__displayNameColumn = 'scope_name';
+	public $scope_name;
 	public $id;
 	public $libraryId;
 	public $sideLoadScopeId;
 
 	static function getObjectStructure($context = ''): array {
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Side Loads'));
 		$allLibraryList = Library::getLibraryList(false);
-		if (!UserAccount::userHasPermission('Administer All Side Loads')) {
-			$libraryList = Library::getLibraryList(true);
-		}else{
-			$libraryList = $allLibraryList;
-		}
 
 		$sideLoadScopes = [];
 		require_once ROOT_DIR . '/sys/Indexing/SideLoadScope.php';
@@ -53,6 +51,19 @@ class LibrarySideLoadScope extends DataObject {
 				'description' => 'The id of a library',
 			],
 		];
+	}
+
+	public function fetch(): bool|DataObject|null {
+		$result = parent::fetch();
+		require_once ROOT_DIR . '/sys/Indexing/SideLoadScope.php';
+		$scope = new SideLoadScope();
+		$scope->id = $this->sideLoadScopeId;
+		if ($scope->find(true)) {
+			$this->scope_name = $scope->name;
+		} else {
+			$this->scope_name = '';
+		}
+		return $result;
 	}
 
 	function getEditLink($context): string {

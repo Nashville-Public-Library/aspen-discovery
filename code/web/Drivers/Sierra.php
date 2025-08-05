@@ -1325,7 +1325,7 @@ class Sierra extends Millennium {
 		$params = [
 			'varFieldTag' => 'b',
 			'varFieldContent' => $barcode,
-			'fields' => 'id,names,deleted,suppressed,addresses,phones,emails,expirationDate,homeLibraryCode,moneyOwed,patronType,patronCodes,blockInfo,message,pMessage,langPref,fixedFields,varFields,updatedDate,createdDate',
+			'fields' => 'id,names,deleted,suppressed,addresses,phones,emails,expirationDate,homeLibraryCode,moneyOwed,patronType,patronCodes,blockInfo,message,pMessage,langPref,fixedFields,varFields,updatedDate,createdDate,birthDate',
 		];
 
 		$sierraUrl = $this->accountProfile->vendorOpacUrl;
@@ -1368,6 +1368,41 @@ class Sierra extends Millennium {
 			}
 		}
 	}
+
+	public function getPatronsByIdList($ids) {
+		$params = [
+			'id' => implode(",", $ids),
+			'fields' => 'id,names,deleted,suppressed,addresses,phones,emails,expirationDate,homeLibraryCode,moneyOwed,patronType,patronCodes,blockInfo,message,pMessage,langPref,fixedFields,varFields,updatedDate,createdDate,birthDate',
+		];
+
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl .= "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/?";
+		$sierraUrl .= http_build_query($params);
+
+		$response = $this->_callUrl('sierra.findPatronsByIdList', $sierraUrl);
+		if (!$response) {
+			return false;
+		} else {
+			if (!empty($response->httpStatus) && $response->httpStatus == 404) {
+				return false;
+			} else {
+				return $response;
+			}
+		}
+	}
+
+	public function deletePatronById($id) {
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl .= "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $id;
+
+		$response = $this->_sendPage('sierra.deletePatron', 'DELETE', $sierraUrl);
+		if ($this->lastResponseCode == 204) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 
 	public function findNewUser($patronBarcode, $patronUsername) {
 		global $library;
@@ -1857,6 +1892,24 @@ class Sierra extends Millennium {
 						'label' => 'Confirm PIN',
 						'required' => true
 					];
+				} else if ($customField->ilsName == 'noticePreference') {
+					if (!empty($selfRegistrationForm->selfRegNoticePrefOptions)) {
+						$noticePrefValues = json_decode($selfRegistrationForm->selfRegNoticePrefOptions);
+					} else {
+						$noticePrefValues = $this->getValidNotificationOptions();
+						if (!empty($selfRegistrationForm)) {
+							$selfRegistrationForm->selfRegNoticePrefOptions = json_encode($noticePrefValues);
+							$selfRegistrationForm->update();
+						}
+					}
+					$fields[$customField->section]['properties'][] = [
+						'property' => $customField->ilsName,
+						'type' => 'enum',
+						'values' => $noticePrefValues,
+						'label' => $customField->displayName,
+						'required' => $customField->required,
+						'note' => $customField->note
+					];
 				} else {
 					$fields[$customField->section]['properties'][] = [
 						'property' => $customField->ilsName,
@@ -1887,11 +1940,13 @@ class Sierra extends Millennium {
 
 		$selfRegistrationForm = null;
 		$formFields = null;
+		$municipalities = null;
 		if ($library->selfRegistrationFormId > 0){
 			$selfRegistrationForm = new SierraSelfRegistrationForm();
 			$selfRegistrationForm->id = $library->selfRegistrationFormId;
 			if ($selfRegistrationForm->find(true)) {
 				$formFields = $selfRegistrationForm->getFields();
+				$municipalities = $selfRegistrationForm->getMunicipalities();
 			}else {
 				$selfRegistrationForm = null;
 			}
@@ -1955,21 +2010,25 @@ class Sierra extends Millennium {
 			$barcodePrefix = '';
 			// set barcode suffix length to 7 if not set
 			$barcodeSuffixLength = 7;
-			if (!empty($selfRegistrationForm->selfRegBarcodePrefix)) {
-				$barcodePrefix = $selfRegistrationForm->selfRegBarcodePrefix;
-			}
-			if (!empty($selfRegistrationForm->selfRegBarcodeSuffixLength)) {
-				$barcodeSuffixLength = $selfRegistrationForm->selfRegBarcodeSuffixLength;
-			}
-			$barcode = $this->generateBarcode($barcodePrefix, $barcodeSuffixLength);
+			if (!$selfRegistrationForm->selfRegUsePatronIdBarcode) {
+				if (!empty($selfRegistrationForm->selfRegBarcodePrefix)) {
+					$barcodePrefix = $selfRegistrationForm->selfRegBarcodePrefix;
+				}
+				if (!empty($selfRegistrationForm->selfRegBarcodeSuffixLength)) {
+					$barcodeSuffixLength = $selfRegistrationForm->selfRegBarcodeSuffixLength;
+				}
+				$barcode = $this->generateBarcode($barcodePrefix, $barcodeSuffixLength);
 
-			if ($barcode) {
-				$params['barcodes'] = [$barcode];
+				if ($barcode) {
+					$params['barcodes'] = [$barcode];
+				} else {
+					return [
+						'success' => false,
+						'message' => 'Could not generate a valid library card number. Please try again later.'
+					];
+				}
 			} else {
-				return [
-					'success' => false,
-					'message' => 'Could not generate a valid library card number. Please try again later.'
-				];
+				$params['barcodes'] = [''];
 			}
 
 			if (!empty($selfRegistrationForm->selfRegExpirationDays)) {
@@ -1990,30 +2049,215 @@ class Sierra extends Millennium {
 				'pcode4' => (int)$selfRegistrationForm->selfRegPcode4
 			];
 			$params['pMessage'] = $selfRegistrationForm->selfRegPatronMessage;
-			$params['fixedFields'] = [
-				'268' => [
-					'label' => 'Notice Preference',
-					'value' => $selfRegistrationForm->selfRegNoticePref
-				],
-				'158' => [
+			if (!empty($_REQUEST['noticePreference'])) {
+				$params['fixedFields'] = [
+					'268' => [
+						'label' => 'Notice Preference',
+						'value' => $_REQUEST['noticePreference']
+					],
+				];
+			} else {
+				$params['fixedFields'] = [
+					'268' => [
+						'label' => 'Notice Preference',
+						'value' => $selfRegistrationForm->selfRegNoticePref
+					],
+				];
+			}
+			if ($selfRegistrationForm->selfRegUseAgency) {
+				$params['fixedFields']['158'] = [
 					'label' => 'Patron Agency',
 					'value' => $selfRegistrationForm->selfRegAgency
-				],
+				];
+			}
+			$params['varFields'][] = [
+				'fieldTag' => 'x',
+				'content' => translate([
+					'text' => 'Patron self-registered on %1%.',
+					1 => date('m/d/Y'),
+					'isPublicFacing' => 'false'
+				]),
 			];
+
+			// Override with any municipality-specific settings
+			if (!empty($municipalities)) {
+				// Use Google Geocoding API to get patron's municipality
+				if (!empty($params['addresses'])) {
+					$address = implode(", ", $params['addresses'][0]->lines);
+					$address = str_replace("\r\n", ",", $address);
+					$address = str_replace(" ", "+", $address);
+					$address = str_replace("#", "", $address);
+
+					require_once ROOT_DIR . '/sys/Enrichment/GoogleApiSetting.php';
+					$googleSettings = new GoogleApiSetting();
+					if ($googleSettings->find(true)) {
+						if (!empty($googleSettings->googleMapsKey)) {
+							$apiKey = $googleSettings->googleMapsKey;
+							$url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' . $address . '&key=' . $apiKey;
+
+							// fetch google geocode data
+							$curl = new CurlWrapper();
+							$response = $curl->curlGetPage($url);
+							$data = json_decode($response);
+							$curl->close_curl();
+
+							if ($data->status == 'OK') {
+								$components = $data->results[0]->address_components;
+
+								$city = '';
+								$county = '';
+								$state = '';
+								foreach ($components as $component) {
+									if ($component->types[0] == 'locality') {
+										$city = $component->short_name;
+									}
+									else if ($component->types[0] == 'administrative_area_level_2') {
+										$county = $component->short_name;
+									}
+									else if ($component->types[0] == 'administrative_area_level_1') {
+										$state = $component->short_name;
+									}
+								}
+								$matchId = null;
+								if ($city != '') {
+									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType($city, 'city');
+								}
+								if (!$matchId && $county != '') {
+									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType($county, 'county');
+								}
+								if (!$matchId && $state != '') {
+									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType($state, 'state');
+								}
+								if (!$matchId) {
+									$matchId = $selfRegistrationForm->getMunicipalitySettingsByNameAndType('other');
+								}
+								if ($matchId) {
+									// Abort if self-registration is not allowed
+									if (!$municipalities[$matchId]->selfRegAllowed) {
+										return [
+											'success' => false,
+											'message' => translate([
+												'text' => "Your address is not within the library’s service area. Please contact the library for more information.",
+												'isPublicFacing' => true
+											])
+										];
+									}
+									// Override PType and PCode Settings according to match settings
+									if (!empty($municipalities[$matchId]->expirationLength)) {
+										$expirationDays = $municipalities[$matchId]->expirationLength;
+										$expirationDate = new DateTime();
+										if (!empty($municipalities[$matchId]->expirationPeriod)) {
+											$expirationPeriod = $municipalities[$matchId]->expirationPeriod;
+										} else {
+											$expirationPeriod = "D";
+										}
+										$expirationDate->add(new DateInterval('P' . $expirationDays . $expirationPeriod));
+										$params['expirationDate'] = $expirationDate->format('Y-m-d');
+									}
+									if (!empty($municipalities[$matchId]->sierraPType) && $municipalities[$matchId]->sierraPType != -1) {
+										$params['patronType'] = (int)$municipalities[$matchId]->sierraPType;
+									}
+									if (!empty($municipalities[$matchId]->sierraPTypeApproved) && $municipalities[$matchId]->sierraPTypeApproved != -1) {
+										$sierraPTypeApproved = (int)$municipalities[$matchId]->sierraPTypeApproved;
+									}
+									if (!empty($municipalities[$matchId]->sierraPCode1)) {
+										$params['patronCodes']['pcode1'] = $municipalities[$matchId]->sierraPCode1;
+									}
+									if (!empty($municipalities[$matchId]->sierraPCode2)) {
+										$params['patronCodes']['pcode2'] = $municipalities[$matchId]->sierraPCode2;
+									}
+									if (!empty($municipalities[$matchId]->sierraPCode3 && $municipalities[$matchId]->sierraPCode3 != -1)) {
+										$params['patronCodes']['pcode3'] = (int)$municipalities[$matchId]->sierraPCode3;
+									}
+									if (!empty($municipalities[$matchId]->sierraPCode1) && $municipalities[$matchId]->sierraPCode4 != -1) {
+										$params['patronCodes']['pcode4'] = (int)$municipalities[$matchId]->sierraPCode4;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		if (!$selfRegistrationForm->selfRegNoDuplicateCheck) {
+			if ($this->checkForDuplicateUsers($_REQUEST['lastName'], $_REQUEST['firstName'], $params['birthDate'])) {
+				return [
+					'success' => false,
+					'message' => translate([
+						'text' => "It looks like you already have an account with the library. Please sign in with your library card. If you believe you're receiving this message in error, please contact the library.",
+						'isPublicFacing' => true
+					])
+				];
+			}
 		}
 
 		$sierraUrl = $this->accountProfile->vendorOpacUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/";
-		$this->_postPage('sierra.createPatron', $sierraUrl, json_encode($params));
+		$createPatronResult = $this->_postPage('sierra.createPatron', $sierraUrl, json_encode($params));
 
 		if ($this->lastResponseCode == 200) {
-			$selfRegResult = [
-				'success' => true,
-				'barcode' => $params['barcodes'][0]
-			];
-			$newUser = $this->findNewUser($barcode, null);
+			$patronId = str_replace($sierraUrl, '', $createPatronResult->link);
+			if ($selfRegistrationForm->selfRegUsePatronIdBarcode) {
+				$updateBarcodeResult = $this->updateBarcode($patronId, $patronId);
+				if ($updateBarcodeResult) {
+					$selfRegResult = [
+						'success' => true,
+						'barcode' => $patronId
+					];
+					$barcode = $patronId;
+					$newUser = $this->findNewUser($barcode, null);
+				} else {
+					$selfRegResult = [
+						'success' => false,
+						'message' => translate([
+							'text' => 'Unable to assign barcode.',
+							'isPublicFacing' => true,
+						]),
+					];
+				}
+			} else {
+				$selfRegResult = [
+					'success' => true,
+					'barcode' => $params['barcodes'][0]
+				];
+				$newUser = $this->findNewUser($barcode, null);
+			}
 			if ($newUser != null) {
 				$selfRegResult['newUser'] = $newUser;
 				$selfRegResult['sendWelcomeMessage'] = true;
+			}
+			if ($library->logSelfRegistrations) {
+				// Add to registration table
+				require_once ROOT_DIR . '/sys/SelfRegistrationForms/SierraRegistration.php';
+				$registration = new SierraRegistration();
+				$registration->barcode = $barcode;
+				$registration->patronId = $patronId;
+				if (!empty($params['patronType'])) {
+					$registration->sierraPType = $params['patronType'];
+				}
+				if (!empty($sierraPTypeApproved)) {
+					$registration->sierraPTypeApproved = $sierraPTypeApproved;
+				}
+				if (!empty($params['patronCodes']['pcode1'])) {
+					$registration->sierraPCode1 = $params['patronCodes']['pcode1'];
+				}
+				if (!empty($params['patronCodes']['pcode2'])) {
+					$registration->sierraPCode2 = $params['patronCodes']['pcode2'];
+				}
+				if (!empty($params['patronCodes']['pcode3'])) {
+					$registration->sierraPCode3 = $params['patronCodes']['pcode3'];
+				}
+				if (!empty($params['patronCodes']['pcode4'])) {
+					$registration->sierraPCode4 = $params['patronCodes']['pcode4'];
+				}
+				global $locationSingleton;
+				$activeLocation = $locationSingleton->getActiveLocation();
+				if (!empty($activeLocation)) {
+					$registration->locationId = $activeLocation->id;
+				}
+				if (!empty($library->libraryId)) {
+					$registration->libraryId = $library->libraryId;
+				}
+				$registration->insert();
 			}
 		}
 
@@ -2034,6 +2278,159 @@ class Sierra extends Millennium {
 			$attempts++;
 		}
 		return $foundValidBarcode ? $barcode : null;
+	}
+
+	private function checkForDuplicateUsers($lastName, $firstName, $birthDate): bool {
+		$sierraDnaConnection = $this->connectToSierraDNA();
+
+		$getDuplicatePatronsStmt = "SELECT prf.last_name, prf.first_name, pr.birth_date_gmt FROM sierra_view.patron_record_fullname AS prf LEFT JOIN sierra_view.patron_record AS pr ON prf.patron_record_id = pr.id WHERE UPPER(prf.last_name) = $1 AND UPPER(prf.first_name) = $2 AND pr.birth_date_gmt = $3";
+
+		$getPatronsRS = pg_query_params($sierraDnaConnection, $getDuplicatePatronsStmt, [strtoupper(trim($lastName)), strtoupper(trim($firstName)), $birthDate]);
+		if ($getPatronsRS === false || pg_num_rows($getPatronsRS) === 0) {
+			// No duplicate patrons
+			return false;
+		} else {
+			// Found one or more duplicates
+			return true;
+		}
+	}
+
+	private function getValidNotificationOptions($patron = null) {
+		$sierraDnaConnection = $this->connectToSierraDNA();
+		if ($patron != null) {
+			$patronId = $patron->unique_ils_id;
+			$getNotificationOptionsStmt = "SELECT nm.code, nm.name, (pv.notification_medium_code IS NOT NULL) AS selected 
+			FROM sierra_view.notification_medium_property_myuser AS nm
+			LEFT JOIN sierra_view.patron_view AS pv ON pv.notification_medium_code = nm.code AND pv.record_num = $1 ORDER BY nm.display_order;";
+			$getNotificationOptionsRS = pg_query_params($sierraDnaConnection, $getNotificationOptionsStmt, [$patronId]);
+		} else {
+			$getNotificationOptionsStmt = "SELECT code, name FROM sierra_view.notification_medium_property_myuser ORDER BY display_order;";
+			$getNotificationOptionsRS = pg_query($sierraDnaConnection, $getNotificationOptionsStmt);
+		}
+		if ($getNotificationOptionsRS === false) {
+			return [];
+		} else {
+			$options = [];
+			while ($curRow = pg_fetch_array($getNotificationOptionsRS, NULL, PGSQL_ASSOC)) {
+				if ($patron != null) {
+					$options[$curRow['code']]['name'] = $curRow['name'];
+					$options[$curRow['code']]['selected'] = $curRow['selected'] == 't';
+				} else {
+					$options[$curRow['code']] = $curRow['name'];
+				}
+			}
+			return $options;
+		}
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function showMessagingSettings(): bool {
+		return true;
+	}
+
+	/**
+	 * @param User $patron
+	 * @return string
+	 */
+	public function getMessagingSettingsTemplate(User $patron): ?string {
+		global $interface;
+		$library = $patron->getHomeLibrary();
+		$notificationOptions = $this->getValidNotificationOptions($patron);
+		$interface->assign('notificationOptions', $notificationOptions);
+		if ($library->allowProfileUpdates) {
+			$interface->assign('canSave', true);
+		} else {
+			$interface->assign('canSave', false);
+		}
+
+		return 'sierraMessagingSettings.tpl';
+	}
+
+	public function processMessagingSettingsForm(User $patron): array {
+		/** @noinspection PhpArrayIndexImmediatelyRewrittenInspection */
+		$result = [
+			'success' => false,
+			'message' => 'Unknown error processing messaging settings.',
+		];
+		$noticeCode = $_REQUEST['noticePreference'];
+		$updateAccountInfoResponse = $this->updateNoticePreference($noticeCode, $patron->unique_ils_id);
+		if (!$updateAccountInfoResponse) {
+			if (strlen($result['message']) == 0) {
+				$result['message'] = 'Error processing messaging settings.';
+			}
+		} else {
+			$result['success'] = true;
+			$result['message'] = 'Your account was updated successfully.';
+		}
+		return $result;
+	}
+
+	private function updateBarcode($barcode, $patronId) {
+		$params = [
+			'barcodes' => [$barcode]
+		];
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId;
+		$updatePatronResponse = $this->_sendPage('sierra.updatePatron', 'PUT', $sierraUrl, json_encode($params));
+		if ($this->lastResponseCode == 204) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	private function updateNoticePreference($preferenceCode, $patronId) {
+		$params = [
+			'fixedFields' => [
+				'268' => [
+					'label' => 'Notice Preference',
+					'value' => $preferenceCode
+				],
+			]
+		];
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId;
+		$updatePatronResponse = $this->_sendPage('sierra.updatePatron', 'PUT', $sierraUrl, json_encode($params));
+		if ($this->lastResponseCode == 204) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public function updatePatronRegistration($patronObject, $patronId) {
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId;
+		$updatePatronResponse = $this->_sendPage('sierra.updatePatron', 'PUT', $sierraUrl, json_encode($patronObject));
+		if ($this->lastResponseCode == 204) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public function getPatronMetadataOptions($field) {
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$params = [
+			'fields' => $field,
+		];
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/metadata?";
+		$sierraUrl .= http_build_query($params);
+		$metadataResponse = $this->_callUrl('sierra.getPatronMetadata', $sierraUrl);
+		if ($metadataResponse && is_array($metadataResponse)) {
+			$metadataOptions = [];
+			foreach ($metadataResponse as $metadata) {
+				foreach ($metadata->values as $option) {
+					$code = $option->code;
+					$metadataOptions[$metadata->field][$code] = $code . " - " . $option->desc;
+				}
+			}
+			return $metadataOptions;
+		} else {
+			return [];
+		}
 	}
 
 	public function getFines($patron = null, $includeMessages = false): array {
