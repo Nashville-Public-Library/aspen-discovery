@@ -551,13 +551,13 @@ abstract class DataObject implements JsonSerializable {
 		return $this->find(true);
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		global $aspen_db;
 		if (!isset($aspen_db)) {
 			return false;
 		}
 
-		if (!$useWhere && $this->supportsSoftDelete()) {
+		if (!$hardDelete && $this->supportsSoftDelete()) {
 			$this->deleted = 1;
 			$this->dateDeleted = time();
 			$this->deletedBy = UserAccount::getActiveUserId();
@@ -1614,6 +1614,6 @@ abstract class DataObject implements JsonSerializable {
 		// Technically, the dateDeleted > 0 safeguard should be unnecessary because those soft-deleted lists
 		// contain no titles anyway.
 		$obj->whereAdd("dateDeleted > 0 AND dateDeleted < $cutOff");
-		return $obj->delete(true);
+		return $obj->delete(true, true);
 	}
 }

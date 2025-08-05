@@ -155,8 +155,8 @@ class UserList extends DataObject {
 		return $result;
 	}
 
-	function delete($useWhere = false) : int {
-		if ($useWhere && !empty($this->id) && $this->id >= 1) {
+	function delete($useWhere = false, $hardDelete = false) : int {
+		if ($hardDelete && !empty($this->id) && $this->id >= 1) {
 			// Hard delete by marking for index cleanup.
 			$this->deleteFromIndex = 1;
 			$ret = $this->update();
@@ -164,10 +164,10 @@ class UserList extends DataObject {
 				require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
 				$listEntry = new UserListEntry();
 				$listEntry->listId = $this->id;
-				$listEntry->delete(true);
+				$listEntry->delete(false, true);
 			}
 		} else {
-			$ret = parent::delete($useWhere);
+			$ret = parent::delete($useWhere, $hardDelete);
 		}
 
 		global $memCache;

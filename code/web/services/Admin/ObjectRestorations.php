@@ -252,7 +252,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 				$deleteObj->_includeDeleted = true;
 
 				if ($deleteObj->find(true)) {
-					if ($deleteObj->delete(true)) {
+					if ($deleteObj->delete(false, true)) {
 						$user->updateMessage = "Permanently deleted $class #$id.";
 						$user->updateMessageIsError = false;
 					} else {
@@ -293,7 +293,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 			$obj->$pk = $id;
 			$obj->_includeDeleted = true;
 			if ($obj->find(true)) {
-				if ($obj->delete(true)) $deletedCnt++;
+				if ($obj->delete(false, true)) $deletedCnt++;
 			}
 		}
 

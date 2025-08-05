@@ -361,9 +361,9 @@ class ImageUpload extends DataObject {
 	 * @param bool $useWhere
 	 * @return int
 	 */
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		global $serverName;
-		if ($useWhere) {
+		if ($hardDelete) {
 			$baseDir = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image';
 			$variants = [
 				'full' => $this->fullSizePath,
@@ -381,7 +381,7 @@ class ImageUpload extends DataObject {
 				}
 			}
 		}
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 
 	public function supportsSoftDelete(): bool {

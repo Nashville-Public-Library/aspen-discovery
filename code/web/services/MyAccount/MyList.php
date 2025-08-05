@@ -114,7 +114,7 @@ class MyAccount_MyList extends MyAccount {
 					header("Location: /MyAccount/Lists");
 					die();
 				} elseif ($actionToPerform == 'deleteListHard') {
-					$list->delete(true);
+					$list->delete(false, true);
 
 					header("Location: /MyAccount/Lists");
 					die();

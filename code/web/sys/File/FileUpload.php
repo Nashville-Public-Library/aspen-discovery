@@ -203,8 +203,8 @@ class FileUpload extends DataObject {
 	 * @param bool $useWhere
 	 * @return int
 	 */
-	public function delete($useWhere = false) : int {
-		if ($useWhere) {
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		if ($hardDelete) {
 			if (!empty($this->fullPath) && file_exists($this->fullPath)) {
 				@unlink($this->fullPath);
 			}
@@ -212,7 +212,7 @@ class FileUpload extends DataObject {
 				@unlink($this->thumbFullPath);
 			}
 		}
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 
 	public function supportsSoftDelete(): bool {

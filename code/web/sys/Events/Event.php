@@ -474,7 +474,7 @@ class Event extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		if (!$useWhere) {
 			$this->deleted = 1;
 			$this->dateUpdated = time();
@@ -485,13 +485,13 @@ class Event extends DataObject {
 				$instance->eventId = $this->id;
 				$instance->find();
 				while ($instance->fetch()) {
-					$instance->delete(false);
+					$instance->delete();
 				}
 				return true;
 			}
 			return false;
 		} else {
-			return parent::delete($useWhere);
+			return parent::delete($useWhere, $hardDelete);
 		}
 	}
 

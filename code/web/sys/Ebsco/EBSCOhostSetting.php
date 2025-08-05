@@ -133,8 +133,8 @@ class EBSCOhostSetting extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret) {
 			$this->clearSearchSettings();
 		}

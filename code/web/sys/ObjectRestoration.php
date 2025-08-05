@@ -75,7 +75,7 @@ class ObjectRestoration extends DataObject {
 	public function fetch(): bool|DataObject|null { return null; }
 	public function insert($context = ''): bool { return false; }
 	public function update($context = ''): bool { return false; }
-	public function delete($useWhere = false) : int { return 0; }
+	public function delete($useWhere = false, $hardDelete = false) : int { return 0; }
 	public function canActiveUserEdit() : bool { return false; }
 	public function canActiveUserDelete() : bool { return false; }
 

@@ -542,11 +542,11 @@ class AccountProfile extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		/** @var Memcache $memCache */ global $memCache;
 		global $instanceName;
 		$memCache->delete('account_profiles_' . $instanceName);
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 
 	public function saveLibraries() : void {
