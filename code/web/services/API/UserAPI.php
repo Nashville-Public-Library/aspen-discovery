@@ -6928,6 +6928,7 @@ class UserAPI extends AbstractAPI {
 
 	function getUserCampaigns() {
 		global $offlineMode;
+		global $library;
 		if ($offlineMode) {
 			return [
 				'success' => false,
@@ -6949,8 +6950,9 @@ class UserAPI extends AbstractAPI {
 
 		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 		$campaign = new Campaign();
-		$imageSettings = Campaign::getImageDisplaySettings($user);
-
+		$imageSettings = Campaign::getImageDisplaySettings($user, $library);
+		global $logger;
+		$logger->log("IMAGE SETTINGS: " . print_r($imageSettings, true), Logger::LOG_ERROR);
 
 		$filter = $_REQUEST['filter'] ?? 'enrolled';
 		$page = $_REQUEST['page'] ?? 1;
