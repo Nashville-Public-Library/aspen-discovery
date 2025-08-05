@@ -2736,6 +2736,17 @@ AspenDiscovery.Admin = (function () {
 			} else {
 				placeholderImageUpload.hide();
 			}
+		},
+		highlightCampaignsOpenToEnroll: function() {
+			const highlightOpenToEnrollCampaigns = $('#propertyRowhighlightCommunityEngagementOpenToEnroll');
+			const highlightCampaigns = $('#highlightCommunityEngagement');
+			const isChecked = highlightCampaigns.is(':checked');
+
+				if (isChecked) {
+					highlightOpenToEnrollCampaigns.show();
+				} else {
+					highlightOpenToEnrollCampaigns.hide();
+				}
 		}
 	};
 }(AspenDiscovery.Admin || {}));

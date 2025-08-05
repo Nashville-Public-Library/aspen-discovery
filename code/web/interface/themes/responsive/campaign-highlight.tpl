@@ -31,6 +31,17 @@
 					</div>
 				</div>
 			</div>
+			{if $highlightOpenToEnrollCampaigns && !empty($campaignsToEnroll)}
+				<h3 class="card-title text-primary">
+					{translate text="Enroll Now: " isPublicFacing=true}
+				</h3>
+				{foreach $campaignsToEnroll item="campaign"}
+					<div>
+						<div><a href="/MyAccount/MyCampaigns?campaignId={$campaign->id}">{$campaign->name}</a></div>
+						<div>{$campaign->translatedDescription}</div>
+					</div>
+				{/foreach}
+			{/if}
 		</div>
 	</div>
 </div>
