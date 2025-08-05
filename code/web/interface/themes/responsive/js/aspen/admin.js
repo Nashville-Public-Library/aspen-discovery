@@ -2734,8 +2734,8 @@ AspenDiscovery.Admin = (function () {
 
 			AspenDiscovery.confirm(title, body, okLabel, 'Cancel', true, confirmJs, 'btn-danger');
 			return false;
-    	},
-      
+		},
+
 		getNotificationDevicesForUser: function () {
 			const barcode = $("#testPatronBarcode").val();
 			if (barcode) {
