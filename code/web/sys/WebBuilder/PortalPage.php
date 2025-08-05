@@ -241,8 +241,10 @@ class PortalPage extends DB_LibraryLinkedObject {
 			$this->clearAudiences();
 			$this->clearCategories();
 			$this->clearAccess();
-			foreach ($this->getRows() as $row) {
-				$row->delete();
+			if (!$useWhere) {
+				foreach ($this->getRows() as $row) {
+					$row->delete();
+				}
 			}
 		}
 		return $ret;
