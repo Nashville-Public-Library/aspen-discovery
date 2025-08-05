@@ -5037,8 +5037,8 @@ class Library extends DataObject {
 		return $this->_libraryLinks;
 	}
 
-	public function getCloudLibraryScope() : null|string|int {
-		if ($this->_cloudLibraryScope == null && $this->libraryId) {
+	public function getCloudLibraryScope() : int {
+		if ($this->_cloudLibraryScope === null && $this->libraryId) {
 			require_once ROOT_DIR . '/sys/CloudLibrary/LibraryCloudLibraryScope.php';
 			$libraryCloudLibraryScope = new LibraryCloudLibraryScope();
 			$libraryCloudLibraryScope->libraryId = $this->libraryId;
@@ -5049,6 +5049,10 @@ class Library extends DataObject {
 				if ($cloudLibraryScope->find(true)) {
 					$this->_cloudLibraryScope = $cloudLibraryScope->id;
 				}
+			}
+			// If still not set, default to '-1', which corresponds to 'none'.
+			if ($this->_cloudLibraryScope === null) {
+				$this->_cloudLibraryScope = -1;
 			}
 		}
 		return $this->_cloudLibraryScope;

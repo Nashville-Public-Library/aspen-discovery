@@ -201,8 +201,8 @@ class DataObjectUtil {
 				$object->setProperty($propertyName, strip_tags($object->$propertyName), $property);
 			} elseif ($property['type'] != 'javascript') {
 				$systemVariables = SystemVariables::getSystemVariables();
-				if ($systemVariables != false) {
-					if ($systemVariables->allowHtmlInMarkdownFields != false || $systemVariables->useHtmlEditorRatherThanMarkdown != false) {
+				if ($systemVariables) {
+					if ($systemVariables->allowHtmlInMarkdownFields || $systemVariables->useHtmlEditorRatherThanMarkdown) {
 						if (!empty($systemVariables->allowableHtmlTags)) {
 							$allowableTags = '<' . implode('><', explode('|', $systemVariables->allowableHtmlTags)) . '>';
 						} else {
@@ -257,7 +257,7 @@ class DataObjectUtil {
 			$object->setProperty($propertyName, $_REQUEST[$propertyName], $property);
 		} elseif ($property['type'] == 'currency') {
 			if (preg_match('/\\$?\\d*\\.?\\d*/', $_REQUEST[$propertyName])) {
-				if (substr($_REQUEST[$propertyName], 0, 1) == '$') {
+				if (str_starts_with($_REQUEST[$propertyName], '$')) {
 					$object->setProperty($propertyName, substr($_REQUEST[$propertyName], 1), $property);
 				} else {
 					$object->setProperty($propertyName, $_REQUEST[$propertyName], $property);
@@ -280,16 +280,16 @@ class DataObjectUtil {
 			}
 
 		} elseif ($property['type'] == 'date') {
-			if (empty(strlen($_REQUEST[$propertyName])) || strlen($_REQUEST[$propertyName]) == 0 || $_REQUEST[$propertyName] == '0000-00-00') {
+			if (empty(strlen($_REQUEST[$propertyName])) || $_REQUEST[$propertyName] == '0000-00-00') {
 				$object->setProperty($propertyName, null, $property);
 			} else {
 				$dateParts = date_parse($_REQUEST[$propertyName]);
-				$time = $dateParts['year'] . '-' . $dateParts['month'] . '-' . $dateParts['day'];
+				$time = $dateParts['year'] . '-' . str_pad($dateParts['month'], 2, '0', STR_PAD_LEFT) . '-' . str_pad($dateParts['day'], 2, '0', STR_PAD_LEFT);
 				$object->setProperty($propertyName, $time, $property);
 			}
 
 		} elseif ($property['type'] == 'time') {
-			if (empty(strlen($_REQUEST[$propertyName])) || strlen($_REQUEST[$propertyName]) == 0 || $_REQUEST[$propertyName] == '00:00:00') {
+			if (empty(strlen($_REQUEST[$propertyName])) || $_REQUEST[$propertyName] == '00:00:00') {
 				$object->setProperty($propertyName, null, $property);
 			} else {
 				$dateParts = date_parse($_REQUEST[$propertyName]);
@@ -481,7 +481,7 @@ class DataObjectUtil {
 						chgrp($destFolder, 'aspen_apache');
 						chmod($destFolder, 0775);
 					}
-					if (substr($destFolder, -1) == '/') {
+					if (str_ends_with($destFolder, '/')) {
 						$destFolder = substr($destFolder, 0, -1);
 					}
 
@@ -565,7 +565,7 @@ class DataObjectUtil {
 			//Set all the translations for
 			$allTranslations = [];
 			foreach ($_REQUEST as $requestName => $propertyValue) {
-				if (strpos($requestName, $propertyName) === 0) {
+				if (str_starts_with($requestName, $propertyName)) {
 					$language = str_replace($property['property'] . '_', '', $requestName);
 					if ($language != 'default') {
 						$allTranslations[$language] = $propertyValue;
@@ -576,9 +576,9 @@ class DataObjectUtil {
 			$object->$privatePropertyName = $allTranslations;
 		} elseif ($property['type'] == 'oneToMany') {
 			//Check for deleted associations
-			$deletions = isset($_REQUEST[$propertyName . 'Deleted']) ? $_REQUEST[$propertyName . 'Deleted'] : [];
+			$deletions = $_REQUEST[$propertyName . 'Deleted'] ?? [];
 			//Check for changes to the sort order
-			if ($property['sortable'] == true && isset($_REQUEST[$propertyName . 'Weight'])) {
+			if ($property['sortable'] && isset($_REQUEST[$propertyName . 'Weight'])) {
 				$weights = $_REQUEST[$propertyName . 'Weight'];
 			}
 			$values = [];
@@ -608,10 +608,22 @@ class DataObjectUtil {
 					if ($deleted == 'true') {
 						if ($subObject->getPrimaryKeyValue() > 0) {
 							$object->handlePropertyChangeEffects($propertyName, $subObject, null, $property, 'deleted', 'oneToMany entry');
+							require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+							$history = new DataObjectHistory();
+							$history->objectType = get_class($object);
+							$primaryKey = $object->__primaryKey;
+							$history->objectId = $object->$primaryKey;
+							$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName);
+							$history->actionType = 3;
+							$history->oldValue = (string)$subObject;
+							$history->newValue = 'Deleted sub-object';
+							$history->changedBy = UserAccount::getActiveUserId();
+							$history->changeDate = time();
+							$history->insert();
 						}
 						$subObject->_deleteOnSave = true;
 					} else {
-						//Update properties of each associated object
+						// Update properties of each associated sub-object.
 						foreach ($subStructure as $subProperty) {
 							$requestKey = $propertyName . '_' . $subProperty['property'];
 							$subPropertyName = $subProperty['property'];
@@ -630,16 +642,60 @@ class DataObjectUtil {
 									'regularExpression',
 									'multilineRegularExpression',
 								])) {
-									$subObject->setProperty($subPropertyName, $_REQUEST[$requestKey][$id], $subProperty);
-								} elseif (in_array($subProperty['type'], ['checkbox'])) {
-									$subObject->setProperty($subPropertyName, isset($_REQUEST[$requestKey][$id]) ? 1 : 0, $subProperty);
+									$oldValue = $subObject->$subPropertyName;
+									$changed = $subObject->setProperty($subPropertyName, $_REQUEST[$requestKey][$id], $subProperty);
+									if ($changed && !empty($object->{$object->__primaryKey}) && $object->objectHistoryEnabled()) {
+										require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+										$history = new DataObjectHistory();
+										$history->objectType = get_class($object);
+										$primaryKey = $object->__primaryKey;
+										$history->objectId = $object->$primaryKey;
+										$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName . '.' . $subPropertyName);
+										$history->oldValue = (string)$oldValue;
+										$history->newValue = (string)$subObject->$subPropertyName;
+										$history->changedBy = UserAccount::getActiveUserId();
+										$history->changeDate = time();
+										$history->insert();
+									}
+								} elseif ($subProperty['type'] == 'checkbox') {
+									$oldValue = $subObject->$subPropertyName;
+									$newVal = isset($_REQUEST[$requestKey][$id]) ? 1 : 0;
+									$changed = $subObject->setProperty($subPropertyName, $newVal, $subProperty);
+									if ($changed && !empty($object->{$object->__primaryKey}) && $object->objectHistoryEnabled()) {
+										require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+										$history = new DataObjectHistory();
+										$history->objectType = get_class($object);
+										$primaryKey = $object->__primaryKey;
+										$history->objectId = $object->$primaryKey;
+										$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName . '.' . $subPropertyName);
+										$history->oldValue = (string)$oldValue;
+										$history->newValue = (string)$newVal;
+										$history->changedBy = UserAccount::getActiveUserId();
+										$history->changeDate = time();
+										$history->insert();
+									}
 								} elseif ($subProperty['type'] == 'date') {
+									$oldValue = $subObject->$subPropertyName;
 									if (strlen($_REQUEST[$requestKey][$id]) == 0 || $_REQUEST[$requestKey][$id] == '0000-00-00') {
-										$subObject->setProperty($subPropertyName, null, $subProperty);
+										$changed = $subObject->setProperty($subPropertyName, null, $subProperty);
 									} else {
 										$dateParts = date_parse($_REQUEST[$requestKey][$id]);
-										$time = $dateParts['year'] . '-' . $dateParts['month'] . '-' . $dateParts['day'];
-										$subObject->setProperty($subPropertyName, $time, $subProperty);
+										$time = $dateParts['year'] . '-' . str_pad($dateParts['month'], 2, '0', STR_PAD_LEFT) . '-' . str_pad($dateParts['day'], 2, '0', STR_PAD_LEFT);
+										$changed = $subObject->setProperty($subPropertyName, $time, $subProperty);
+									}
+
+									if (!empty($changed) && !empty($object->{$object->__primaryKey}) && $object->objectHistoryEnabled()) {
+										require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+										$history = new DataObjectHistory();
+										$history->objectType = get_class($object);
+										$primaryKey = $object->__primaryKey;
+										$history->objectId = $object->$primaryKey;
+										$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName . '.' . $subPropertyName);
+										$history->oldValue = (string)$oldValue;
+										$history->newValue = (string)($subObject->$subPropertyName ?? '');
+										$history->changedBy = UserAccount::getActiveUserId();
+										$history->changeDate = time();
+										$history->insert();
 									}
 								} elseif (!in_array($subProperty['type'], [
 									'label',
@@ -653,7 +709,7 @@ class DataObjectUtil {
 							}
 						}
 					}
-					if ($property['sortable'] == true && isset($weights)) {
+					if ($property['sortable'] && isset($weights)) {
 						$subObject->setProperty('weight', $weights[$id], null);
 					}
 
@@ -663,6 +719,111 @@ class DataObjectUtil {
 			}
 
 			$object->$propertyName = $values;
+			if (isset($existingValues)) {
+				$oldKeys = array_keys((array)$existingValues);
+				$newKeys = array_keys($values);
+				// Only log if the related IDs changed rather than logging all the time, which clutters the history.
+				if ($oldKeys !== $newKeys && !empty($object->{$object->__primaryKey}) && $object->objectHistoryEnabled()) {
+					require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+					$history = new DataObjectHistory();
+					$history->objectType = get_class($object);
+					$primaryKey = $object->__primaryKey;
+					$history->objectId = $object->$primaryKey;
+					$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName);
+					$history->actionType = 1;
+					// Use human-readable labels for old and new values.
+					$oldLabels = [];
+					foreach ($existingValues as $subObject) {
+						$oldLabels[] = (string)$subObject;
+					}
+					$newLabels = [];
+					foreach ($values as $subObject) {
+						$newLabels[] = (string)$subObject;
+					}
+					$history->oldValue = implode(',', $oldLabels);
+					$history->newValue = implode(',', $newLabels);
+					$history->changedBy = UserAccount::getActiveUserId();
+					$history->changeDate = time();
+					$history->insert();
+				}
+			}
 		}
+	}
+
+	/**
+	 * Get a human-readable property name for history logging.
+	 *
+	 * @param DataObject $object
+	 * @param string $propertyName
+	 * @return string formatted as "propertyName (Human Label)" or just "propertyName" if no label found.
+	 */
+	static function getHistoryPropertyName(DataObject $object, string $propertyName): string {
+		try {
+			if (!method_exists($object, 'getObjectStructure')) {
+				return $propertyName;
+			}
+
+			$objectStructure = $object->getObjectStructure();
+
+			// Handle one-to-many relationships.
+			$parts = explode('.', $propertyName);
+			if (count($parts) == 2) {
+				$parentProperty = $parts[0];
+				$childProperty = $parts[1];
+
+				$parentLabel = '';
+				$childLabel = '';
+
+				// Get parent property label.
+				if (isset($objectStructure[$parentProperty]['label'])) {
+					$parentLabel = $objectStructure[$parentProperty]['label'];
+				}
+
+				// Get child property label from subObjectType structure.
+				if (isset($objectStructure[$parentProperty]['subObjectType'])) {
+					$subObjectType = $objectStructure[$parentProperty]['subObjectType'];
+					if (class_exists($subObjectType) && method_exists($subObjectType, 'getObjectStructure')) {
+						$subStructure = $subObjectType::getObjectStructure();
+						if (isset($subStructure[$childProperty]['label'])) {
+							$childLabel = $subStructure[$childProperty]['label'];
+						}
+					}
+				}
+
+				if ($parentLabel && $childLabel) {
+					return "$propertyName ($parentLabel - $childLabel)";
+				} elseif ($childLabel) {
+					return "$propertyName ($childLabel)";
+				} elseif ($parentLabel) {
+					return "$propertyName ($parentLabel)";
+				}
+			} else {
+				// Simple property: check all sections of the structure for nested properties' labels.
+				foreach ($objectStructure as $section) {
+					if (is_array($section)) {
+						// Check if this section contains the property.
+						if (isset($section[$propertyName]['label'])) {
+							$label = $section[$propertyName]['label'];
+							return "$propertyName ($label)";
+						}
+						// Also check if section itself has properties.
+						if (isset($section['properties'][$propertyName]['label'])) {
+							$label = $section['properties'][$propertyName]['label'];
+							return "$propertyName ($label)";
+						}
+					}
+				}
+
+				// Direct property check (fallback).
+				if (isset($objectStructure[$propertyName]['label'])) {
+					$label = $objectStructure[$propertyName]['label'];
+					return "$propertyName ($label)";
+				}
+			}
+		} catch (Exception) {
+			// If anything fails, just return the original property name.
+		}
+
+		return $propertyName;
 	}
 }

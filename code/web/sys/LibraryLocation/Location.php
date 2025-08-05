@@ -2152,8 +2152,8 @@ class Location extends DataObject {
 		}
 	}
 
-	public function getCloudLibraryScope(): null|string|int {
-		if ($this->_cloudLibraryScope == null && $this->locationId) {
+	public function getCloudLibraryScope(): int {
+		if ($this->_cloudLibraryScope === null && $this->locationId) {
 			require_once ROOT_DIR . '/sys/CloudLibrary/LocationCloudLibraryScope.php';
 			$locationCloudLibraryScope = new LocationCloudLibraryScope();
 			$locationCloudLibraryScope->locationId = $this->locationId;
@@ -2164,6 +2164,10 @@ class Location extends DataObject {
 				if ($cloudLibraryScope->find(true)) {
 					$this->_cloudLibraryScope = $cloudLibraryScope->id;
 				}
+			}
+			// If still not set, default to '-1', which corresponds to 'none'.
+			if ($this->_cloudLibraryScope === null) {
+				$this->_cloudLibraryScope = -1;
 			}
 		}
 		return $this->_cloudLibraryScope;
