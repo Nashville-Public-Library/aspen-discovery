@@ -6,12 +6,18 @@ require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
 require_once ROOT_DIR . '/sys/Account/User.php';
 require_once ROOT_DIR . '/sys/Email/EmailTemplate.php';
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Send Campaign Ending Emails';
+$cronLogEntry->insert();
 
 $today = date('Y-m-d');
 
 $campaign = new Campaign();
 $campaign->endDate = $today;
 
+$numEmailsSent = 0;
 if ($campaign->find()) {
 	while ($campaign->fetch()) {
 		$campaignId = $campaign->id;
@@ -27,6 +33,7 @@ if ($campaign->find()) {
 					$user->id = $userCampaign->userId;
 
 					if ($user->find(true) && !empty($user->email)) {
+						$numEmailsSent++;
 						sendCampaignEndingEmail($user, $campaignId);
 					}
 
@@ -36,8 +43,11 @@ if ($campaign->find()) {
 		}
 	}
 }
+$cronLogEntry->notes .= "Sent $numEmailsSent emails";
+$cronLogEntry->endTime = time();
+$cronLogEntry->update();
 
-function sendCampaignEndingEmail($user, $campaignId) {
+function sendCampaignEndingEmail($user, $campaignId) : void {
 	require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 
 	$emailTemplate = EmailTemplate::getActiveTemplate('campaignEnding');

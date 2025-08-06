@@ -1,10 +1,11 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class CronLogEntry extends DataObject {
 	public $__table = 'cron_log';   // table name
 	public $id;
+	public $name;
 	public $startTime;
 	public $lastUpdate;
 	public $endTime;
@@ -12,7 +13,7 @@ class CronLogEntry extends DataObject {
 	public $notes;
 	private $_processes = null;
 
-	function processes() {
+	function processes() : array {
 		if (is_null($this->_processes)) {
 			$this->_processes = [];
 			$reindexProcess = new CronProcessLogEntry();
@@ -26,11 +27,13 @@ class CronLogEntry extends DataObject {
 		return $this->_processes;
 	}
 
-	function getNumProcesses() {
+	/** @noinspection PhpUnused */
+	function getNumProcesses() : int {
 		return count($this->processes());
 	}
 
-	function getHadErrors() {
+	/** @noinspection PhpUnused */
+	function getHadErrors() : bool {
 		foreach ($this->processes() as $process) {
 			if ($process->numErrors > 0) {
 				return true;
@@ -39,8 +42,9 @@ class CronLogEntry extends DataObject {
 		return false;
 	}
 
-	function getElapsedTime() {
-		if (!isset($this->endTime) || is_null($this->endTime)) {
+	/** @noinspection PhpUnused */
+	function getElapsedTime() : string {
+		if (empty($this->endTime)) {
 			return "";
 		} else {
 			$elapsedTimeMin = ceil(($this->endTime - $this->startTime) / 60);

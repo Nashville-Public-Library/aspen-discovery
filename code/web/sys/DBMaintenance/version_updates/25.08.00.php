@@ -28,6 +28,22 @@ function getUpdates25_08_00(): array {
 				"ALTER TABLE materials_request ADD COLUMN source TINYINT DEFAULT 1"
 			]
 		], //materials_request_add_source
+		'manually_run_cron_permission' => [
+			'title' => 'Add Manually Run Cron Permission',
+			'description' => 'Add permission to manually run cron',
+			'sql' => [
+				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES 
+					 ('System Administration', 'Manually Run Cron Processes', '', 60, 'Allows the user to manually start cron processes.')",
+				"INSERT INTO role_permissions(roleId, permissionId) VALUES ((SELECT roleId from roles where name='opacAdmin'), (SELECT id from permissions where name='Manually Run Cron Processes'))",
+			]
+		], //manually_run_cron_permission
+		'add_cron_name' => [
+			'title' => 'Add Cron Name',
+			'description' => 'Add Name to cron table',
+			'sql' => [
+				"ALTER TABLE cron_log ADD COLUMN name varchar(255) default 'Primary Cron'"
+			]
+		], //add_cron_name
 
 		//katherine - Grove
 		'sierra_self_reg_enhancement_settings' => [

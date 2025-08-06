@@ -4,6 +4,11 @@ require_once __DIR__ . '/../bootstrap_aspen.php';
 
 require_once ROOT_DIR . '/sys/Notifications/ExpoNotification.php';
 require_once ROOT_DIR . '/sys/LocalEnrichment/LiDANotification.php';
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Send LiDA Notifications';
+$cronLogEntry->insert();
 
 $allNotifications = new LiDANotification();
 $allNotifications->sent = 0;
@@ -11,6 +16,8 @@ $notifications = $allNotifications->fetchAll('id');
 $allNotifications->__destruct();
 $allNotifications = null;
 
+$numNotificationsSent = 0;
+$cronLogEntry->notes = "Found " . count($notifications) . " notifications to process";
 foreach ($notifications as $notification) {
 	$tokens = [];
 	$notificationToSend = new LiDANotification();
@@ -47,6 +54,7 @@ foreach ($notifications as $notification) {
 				$expoNotification = new ExpoNotification();
 				$expoNotification->sendExpoPushNotification($body, $user['token'], $user['uid'], "custom_notification");
 				$expoNotification = null;
+				$numNotificationsSent++;
 			}
 			$tokens = null;
 
@@ -58,6 +66,10 @@ foreach ($notifications as $notification) {
 	$notificationToSend->__destruct();
 	$notificationToSend = null;
 }
+
+$cronLogEntry->notes .= "<br/>Sent $numNotificationsSent notifications";
+$cronLogEntry->endTime = time();
+$cronLogEntry->update();
 
 global $aspen_db;
 $aspen_db = null;
