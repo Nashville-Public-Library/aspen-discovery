@@ -34,9 +34,14 @@ if (!array_key_exists('Talpa Search', $enabledModules)) {
 
 //Since this is run generically for an interface and is not library-specific, it needs to be run for each setting
 $talpaSettings = new TalpaSettings();
-$talpaSettings->id = $library->talpaSettingsId;
-$talpaSettings->find();
-while ($talpaSettings->fetch(true)) {
+if (!$talpaSettings->find(true)) {
+	$cronLogEntry->notes = "No Talpa settings found, quitting";
+	$cronLogEntry->endTime = time();
+	$cronLogEntry->update();
+	return;
+}
+
+
 $token = $talpaSettings->talpaApiToken;
 
 	$cronLogEntry->notes .= "<br/>Running Talpa recalculation cron for settings " . $talpaSettings->id;
@@ -208,8 +213,8 @@ if ($results) {
 					'api_version' => 2,
 				);
 
-					$cronLogEntry->notes .= '<br/>Sending '.count($chunk).' records for recalculation';
-					$cronLogEntry->update();
+				$cronLogEntry->notes .= '<br/>Sending '.count($chunk).' records for recalculation';
+				$cronLogEntry->update();
 
 				$curlConnection = curl_init($talpaWorkAPI);
 				curl_setopt($curlConnection, CURLOPT_CONNECTTIMEOUT, 15);
@@ -238,17 +243,6 @@ if ($results) {
 				//item has been received for processing. Mark as checked.
 				if($resA['status']=='ok') {
 					foreach ($chunk as $permanent_id => $data) {
-						$cronLogEntry->notes .= "<br/>permanent id: ".$permanent_id;
-						$cronLogEntry->update();
-
-					if(!empty($resA['msg']) && !empty($resA['mappedWorkIDs'])) {
-						$mappedWorkIDs = $resA['mappedWorkIDs'];
-						$notFoundA = $resA['notFoundA'];
-						$logger->log('Talpa recalculated '.count($mappedWorkIDs).' mapped workids. Not found: '.count($notFoundA), Logger::LOG_DEBUG);
-
-						//save to the talpa_lt_to_groupedwork table
-						if($mappedWorkIDs) {
-							foreach ($mappedWorkIDs as $permanent_id => $lt_workcode) {
 						$talpaData = new TalpaData();
 						$talpaData->groupedRecordPermanentId = $permanent_id;
 						if ($talpaData->find(true)) {
@@ -280,7 +274,7 @@ if ($results) {
 $results->closeCursor();
 $endTime = time();
 
-	$cronLogEntry->notes .= "<br/>Recalculation complete - seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN;
+$cronLogEntry->notes .= "<br/>Recalculation complete - seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN;
 
 $cronLogEntry->endTime = time();
 $cronLogEntry->update();
