@@ -5,7 +5,7 @@ require_once ROOT_DIR . '/services/Admin/Admin.php';
 require_once ROOT_DIR . '/sys/Pager.php';
 
 class Admin_CronLog extends Admin_Admin {
-	function launch() {
+	function launch() : void {
 		global $interface;
 
 		$logEntries = [];
@@ -13,7 +13,7 @@ class Admin_CronLog extends Admin_Admin {
 		$total = $cronLogEntry->count();
 		$cronLogEntry = new CronLogEntry();
 		$cronLogEntry->orderBy('startTime DESC');
-		$page = isset($_REQUEST['page']) ? $_REQUEST['page'] : 1;
+		$page = $_REQUEST['page'] ?? 1;
 		$interface->assign('page', $page);
 		$cronLogEntry->limit(($page - 1) * 30, 30);
 		$cronLogEntry->find();

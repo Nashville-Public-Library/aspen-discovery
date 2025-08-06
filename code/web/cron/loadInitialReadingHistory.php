@@ -12,6 +12,11 @@
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../bootstrap_aspen.php';
 require_once ROOT_DIR . '/sys/ReadingHistoryEntry.php';
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Load Initial Reading History';
+$cronLogEntry->insert();
 
 global $configArray;
 global $serverName;
@@ -39,14 +44,17 @@ try {
 	$stmt->execute();
 	$usersToProcess = $stmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (Exception $e) {
-	$logger->log("Error fetching users for reading history import: " . $e->getMessage() . ".", Logger::LOG_ERROR);
+	$cronLogEntry->numErrors++;
+	$cronLogEntry->notes .= "Error fetching users for reading history import: " . $e->getMessage() . ".";
+	$cronLogEntry->endTime = time();
+	$cronLogEntry->update();
 	exit(1);
 }
 
 $loadedCount = 0;
 $errorCount = 0;
 
-$logger->log("Starting initial reading history load. Found ". count($usersToProcess) ." potential users to process.", Logger::LOG_DEBUG);
+$cronLogEntry->notes .= "<br/>Starting initial reading history load. Found ". count($usersToProcess) ." potential users to process.";
 
 foreach ($usersToProcess as $userId) {
 
@@ -68,11 +76,13 @@ foreach ($usersToProcess as $userId) {
 		$claimStmt->execute();
 
 		if ($claimStmt->rowCount() === 0) {
-			$logger->log("User $userId already claimed by another process or state changed. Skipping.", Logger::LOG_ERROR);
+			$cronLogEntry->numErrors++;
+			$cronLogEntry->notes .= "<br/>User $userId already claimed by another process or state changed. Skipping.";
 			continue;
 		}
 	} catch (Exception $e) {
-		$logger->log("Error claiming user $userId: " . $e->getMessage() . ".", Logger::LOG_ERROR);
+		$cronLogEntry->numErrors++;
+		$cronLogEntry->notes .= "<br/>Error claiming user $userId: " . $e->getMessage() . ".";
 		$errorCount++;
 		continue;
 	}
@@ -81,13 +91,14 @@ foreach ($usersToProcess as $userId) {
 	$user = new User();
 	$user->id = $userId;
 	if (!$user->find(true)) {
-		$logger->log("Failed to load claimed user object for $userId. Skipping.", Logger::LOG_ERROR);
+		$cronLogEntry->numErrors++;
+		$cronLogEntry->notes .= "<br/>Failed to load claimed user object for $userId. Skipping.";
 		// Note: The timestamp remains set, will be retried later if needed.
 		$errorCount++;
 		continue;
 	}
 
-	$logger->log("Processing initial reading history for user: $user->displayName ($userId).", Logger::LOG_DEBUG);
+	$cronLogEntry->notes .= "<br/>Processing initial reading history for user: $user->displayName ($userId).";
 
 	try {
 		$catalog = $user->getCatalogDriver();
@@ -96,7 +107,7 @@ foreach ($usersToProcess as $userId) {
 			if ($catalog->driver->hasNativeReadingHistory()) {
 				$result = $catalog->driver->getReadingHistory($user, -1, -1, "checkedOut");
 				if ($result['numTitles'] > 0) {
-					$logger->log("Found {$result['numTitles']} titles to load for $user->displayName ($user->id).", Logger::LOG_DEBUG);
+					$cronLogEntry->notes .= "<br/>Found {$result['numTitles']} titles to load for $user->displayName ($user->id).";
 
 					foreach ($result['titles'] as $title) {
 						$userReadingHistoryEntry = new ReadingHistoryEntry();
@@ -140,7 +151,7 @@ foreach ($usersToProcess as $userId) {
 				$updateStmt->execute();
 
 				$loadedCount++;
-				$logger->log("Successfully loaded initial reading history for $user->displayName ($user->id).", Logger::LOG_DEBUG);
+				$cronLogEntry->notes .= "<br/>Successfully loaded initial reading history for $user->displayName ($user->id).";
 			} else {
 				// Mark the attempted load even if the ILS doesn't support it and clear timestamp.
 				$updateSql = "
@@ -155,18 +166,23 @@ foreach ($usersToProcess as $userId) {
 				$updateStmt->execute();
 
 				$loadedCount++;
-				$logger->log("Marked user $user->id as having reading history loaded, ILS does not support native reading history.", Logger::LOG_DEBUG);
+				$cronLogEntry->notes .= "<br/>Marked user $user->id as having reading history loaded, ILS does not support native reading history.";
 			}
 		} else {
-			$logger->log("Could not get catalog driver for $user->displayName ($user->id).", Logger::LOG_ERROR);
+			$cronLogEntry->numErrors++;
+			$cronLogEntry->notes .= "<br/>Could not get catalog driver for $user->displayName ($user->id).";
 			$errorCount++;
 		}
 	} catch (Exception $e) {
-		$logger->log("Error loading reading history for $user->displayName ($user->id): " . $e->getMessage() . ".", Logger::LOG_ERROR);
+		$cronLogEntry->numErrors++;
+		$cronLogEntry->notes .= "<br/>Error loading reading history for $user->displayName ($user->id): " . $e->getMessage() . ".";
 		$errorCount++;
 	}
 
-	$logger->log("Processed $loadedCount users so far, with $errorCount errors.", Logger::LOG_DEBUG);
+	$cronLogEntry->notes .= "<br/>Processed $loadedCount users so far, with $errorCount errors.";
 }
 
-$logger->log("Finished initial reading history load process. Processed $loadedCount users with $errorCount errors.", Logger::LOG_DEBUG);
+$cronLogEntry->notes .= "<br/>Finished initial reading history load process. Processed $loadedCount users with $errorCount errors.";
+
+$cronLogEntry->endTime = time();
+$cronLogEntry->update();

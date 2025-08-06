@@ -89,7 +89,10 @@ class InclusionRule {
 		if (iType == null || iType.isEmpty()){
 			iType = ".*";
 		}
-		if (iType.equals(".*") && iTypesToExclude.isEmpty()){
+		if (iTypesToExclude == null) {
+			iTypesToExclude = "";
+		}
+		if (iType.equals(".*") && (iTypesToExclude.isEmpty())){
 			matchAlliTypes = true;
 		}
 		this.iTypePattern = Pattern.compile(iType, Pattern.CASE_INSENSITIVE);
@@ -100,6 +103,9 @@ class InclusionRule {
 		//Audience Inclusion/Exclusion Check
 		if (audience == null || audience.isEmpty()) {
 			audience = ".*";
+		}
+		if (audiencesToExclude == null) {
+			audiencesToExclude = "";
 		}
 		if (audience.equals(".*") && audiencesToExclude.isEmpty()){
 			matchAllAudiences = true;
@@ -114,6 +120,9 @@ class InclusionRule {
 			format = ".*";
 		}
 		this.formatPatternString = format;
+		if (formatsToExclude == null) {
+			formatsToExclude = "";
+		}
 		if (format.equals(".*") && formatsToExclude.isEmpty()){
 			matchAllFormats = true;
 		}
