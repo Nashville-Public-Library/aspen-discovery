@@ -105,6 +105,7 @@ function getUpdates25_08_00(): array {
 			'continueOnError' => true,
 			'sql' => [
 				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES ('System Administration', 'Administer Object Restoration', '', 13, 'Allows the user to view and restore soft-deleted objects (e.g., User Lists) within Aspen.')",
+				"INSERT INTO role_permissions (roleId, permissionId) SELECT (SELECT roleId FROM roles WHERE name='opacAdmin'), (SELECT id FROM permissions WHERE name='Administer Object Restoration') WHERE NOT EXISTS (SELECT 1 FROM role_permissions WHERE roleId = (SELECT roleId FROM roles WHERE name='opacAdmin') AND permissionId = (SELECT id FROM permissions WHERE name='Administer Object Restoration'))",
 			],
 		],// object_restoration_permission
 		'add_soft_delete_columns' => [

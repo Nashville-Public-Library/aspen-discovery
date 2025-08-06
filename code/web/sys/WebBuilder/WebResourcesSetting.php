@@ -284,6 +284,7 @@ class WebResourcesSetting extends DataObject
 			foreach ($this->_customWebResourcesList as $customWebResourcePageId) {
 				$customWebResourcePage = new CustomWebResourcePage();
 				$customWebResourcePage->id = $customWebResourcePageId;
+				$customWebResourcePage->deleted = 0;
 				$customWebResourcePage->find();
 				while ($customWebResourcePage->fetch()) {
 					$customResourcesToIndex = new WebResourcesToIndex();

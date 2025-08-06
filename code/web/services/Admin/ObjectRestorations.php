@@ -1,7 +1,5 @@
 <?php
 
-use JetBrains\PhpStorm\NoReturn;
-
 require_once ROOT_DIR . '/services/Admin/ObjectEditor.php';
 require_once ROOT_DIR . '/sys/ObjectRestoration.php';
 
@@ -43,7 +41,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 
 	public function __construct() {
 		parent::__construct();
-		$this->cachedRows = $this->buildRows();
+		$this->cachedRows = [];
 	}
 
 	function getObjectType(): string { return 'ObjectRestoration'; }
@@ -62,15 +60,25 @@ class Admin_ObjectRestorations extends ObjectEditor {
 	function canBatchEdit(): bool { return false; }
 	function canCompare(): bool { return true; }
 	protected function showHistoryLinks(): bool { return false; }
-	protected function showEditButtons(): bool { return false; }
+	protected function showEditButtonsInCompareAndHistoryViews(): bool { return false; }
 	public function canActiveUserEdit() : bool { return false; }
 	public function canExportToCSV() : bool { return false; }
 
 	function getAllObjects($page, $recordsPerPage): array {
-		$offset = ($page - 1) * $recordsPerPage;
-		return array_slice($this->cachedRows, $offset, $recordsPerPage, true);
+		$sort = $this->getSort();
+		$cacheKey = "page_{$page}_size_{$recordsPerPage}_sort_{$sort}";
+		if (!isset($this->cachedRows[$cacheKey])) {
+			$this->cachedRows[$cacheKey] = $this->buildRows($page, $recordsPerPage, $sort);
+		}
+		return $this->cachedRows[$cacheKey];
 	}
-	function getNumObjects(): int { return count($this->cachedRows); }
+	
+	function getNumObjects(): int { 
+		if (!isset($this->cachedRows['_total_count'])) {
+			$this->cachedRows['_total_count'] = $this->getTotalRowCount();
+		}
+		return $this->cachedRows['_total_count'];
+	}
 
 	function getObjectStructure($context = ''): array {
 		// For comparison, use the actual object's structure instead of ObjectRestoration's minimal structure.
@@ -80,10 +88,10 @@ class Admin_ObjectRestorations extends ObjectEditor {
 				$id = $selectedObjects[0];
 				if (str_contains($id, '_')) {
 					[$objectType, $actualId] = explode('_', $id, 2);
-					if (class_exists($objectType)) {
-						$managedClasses = self::$managedClasses;
-						if (isset($managedClasses[$objectType])) {
-							require_once ROOT_DIR . self::$managedClasses[$objectType]['classFile'];
+					$managedClasses = self::$managedClasses;
+					if (isset($managedClasses[$objectType])) {
+						require_once ROOT_DIR . self::$managedClasses[$objectType]['classFile'];
+						if (class_exists($objectType)) {
 							$tempObject = new $objectType();
 							$structure = $tempObject->getObjectStructure($context);
 							$structure['dateDeleted'] = [
@@ -108,15 +116,68 @@ class Admin_ObjectRestorations extends ObjectEditor {
 	}
 
 	/**
-	 * Scan all managed classes for rows where `deleted = 1` and `dateDeleted > 0`.
+	 * Get all soft-deleted composite IDs directly from database without caching.
 	 *
-	 * Because the list is virtual, build it once per request and cache the
-	 * resulting `ObjectRestoration` objects in `$this->cachedRows`.
+	 * @return string[] Array of composite IDs (e.g., ['UserList_123', 'BasicPage_456']).
+	 */
+	private function getAllCompositeIdsFromDatabase(): array {
+		$compositeIds = [];
+		foreach (self::$managedClasses as $class => $info) {
+			require_once ROOT_DIR . $info['classFile'];
+			$sample = new $class();
+			if (!$sample->supportsSoftDelete()) continue;
+			$sample->selectAdd();
+			$sample->selectAdd($sample->getPrimaryKey());
+			$sample->_includeDeleted = true;
+			$sample->deleted = 1;
+			$sample->whereAdd('dateDeleted > 0');
+			if ($class === 'UserList') {
+				$sample->whereAdd('(deleteFromIndex IS NULL OR deleteFromIndex = 0)');
+			}
+			$sample->find();
+			while ($sample->fetch()) {
+				$compositeIds[] = $class . '_' . $sample->getPrimaryKeyValue();
+			}
+		}
+		return $compositeIds;
+	}
+
+	/**
+	 * Get total count of all deleted objects across all managed classes.
 	 *
+	 * @return int Total count of deleted objects.
+	 */
+	private function getTotalRowCount(): int {
+		$totalCount = 0;
+		foreach (self::$managedClasses as $class => $info) {
+			// Lazy-load class definition only when iterating.
+			require_once ROOT_DIR . $info['classFile'];
+			$sample = new $class();
+			if (!$sample->supportsSoftDelete()) continue;
+
+			$sample->_includeDeleted = true;
+			$sample->deleted = 1;
+			$sample->whereAdd('dateDeleted > 0');
+			if ($class === 'UserList') {
+				// Exclude lists marked for deletion from index.
+				$sample->whereAdd('(deleteFromIndex IS NULL OR deleteFromIndex = 0)');
+			}
+			$totalCount += $sample->count();
+		}
+		return $totalCount;
+	}
+
+	/**
+	 * Scan all managed classes for paginated rows where
+	 * `deleted = 1` and `dateDeleted > 0`.
+	 *
+	 * @param int $page Page number (1-based).
+	 * @param int $recordsPerPage Number of records per page.
+	 * @param string $sort Sort field and direction (e.g., 'deletedOn desc').
 	 * @return ObjectRestoration[] Keyed by composite ID `<Class>_<pk>`.
 	 */
-	private function buildRows(): array {
-		$rows = [];
+	private function buildRows(int $page = 1, int $recordsPerPage = 25, string $sort = 'deletedOn desc'): array {
+		$allObjects = [];
 		foreach (self::$managedClasses as $class => $info) {
 			// Lazy-load class definition only when iterating.
 			require_once ROOT_DIR . $info['classFile'];
@@ -131,7 +192,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 				$sample->selectAdd('user_id');
 				$sample->selectAdd('deleteFromIndex');
 			}
-			if (!method_exists($sample, 'supportsSoftDelete') || !$sample->supportsSoftDelete()) continue;
+			if (!$sample->supportsSoftDelete()) continue;
 
 			$sample->_includeDeleted = true;
 			$sample->deleted = 1;
@@ -142,11 +203,49 @@ class Admin_ObjectRestorations extends ObjectEditor {
 			}
 			$sample->find();
 			while ($sample->fetch()) {
-				$rows[$class . '_' . $sample->getPrimaryKeyValue()] = $this->createRestorationItem($sample, $class, $info['titleColumn']);
+				$allObjects[] = [
+					'object' => clone $sample,
+					'class' => $class,
+					'titleColumn' => $info['titleColumn'],
+					'dateDeleted' => $sample->dateDeleted
+				];
 			}
 		}
 
-		return $rows;
+		// Convert to ObjectRestoration objects first for proper sorting.
+		$restorationObjects = [];
+		foreach ($allObjects as $objectData) {
+			$sample = $objectData['object'];
+			$class = $objectData['class'];
+			$titleColumn = $objectData['titleColumn'];
+			$restorationObjects[] = $this->createRestorationItem($sample, $class, $titleColumn);
+		}
+
+		[$fieldName, $direction] = array_pad(explode(' ', $sort), 2, 'desc');
+		usort($restorationObjects, function($a, $b) use ($fieldName, $direction) {
+			$valA = $a->$fieldName;
+			$valB = $b->$fieldName;
+
+			if ($fieldName === 'deletedOn') {
+				// Convert formatted date strings back to timestamps.
+				$timestampA = strtotime($valA);
+				$timestampB = strtotime($valB);
+				$cmp = $timestampA <=> $timestampB;
+			} elseif (is_numeric($valA) && is_numeric($valB)) {
+				// Numeric comparison.
+				$cmp = $valA <=> $valB;
+			} elseif ($valA == $valB) {
+				return 0;
+			} else {
+				// String comparison (case-insensitive).
+				$cmp = strcasecmp($valA, $valB);
+			}
+			return (strtolower($direction) === 'desc') ? -$cmp : $cmp;
+		});
+
+		$offset = ($page - 1) * $recordsPerPage;
+		$pagedObjects = array_slice($restorationObjects, $offset, $recordsPerPage);
+		return array_column($pagedObjects, null, 'compositeId');
 	}
 
 	/**
@@ -171,7 +270,15 @@ class Admin_ObjectRestorations extends ObjectEditor {
 			$user = new User();
 			$user->id = $orig->user_id;
 			if ($user->find(true)) {
-				$item->userInfo = trim($user->getBarcode() . ' - ' . $user->getDisplayName(), ' -');
+				$displayName = $user->getDisplayName();
+				$barcode = $user->getBarcode();
+				if (!empty($barcode)) {
+					$item->userInfo = trim($barcode . ' - ' . $displayName, ' -');
+				} elseif (!empty($user->username)) {
+					$item->userInfo = trim($user->username . ' - ' . $displayName, ' -');
+				} else {
+					$item->userInfo = $displayName;
+				}
 			} else {
 				$item->userInfo = 'User ID: ' . $orig->user_id;
 			}
@@ -191,7 +298,15 @@ class Admin_ObjectRestorations extends ObjectEditor {
 			$deletingUser = new User();
 			$deletingUser->id = $orig->deletedBy;
 			if ($deletingUser->find(true)) {
-				$item->deletedBy = trim($deletingUser->getBarcode() . ' - ' . $deletingUser->getDisplayName(), ' -');
+				$displayName = $deletingUser->getDisplayName();
+				$barcode = $deletingUser->getBarcode();
+				if (!empty($barcode)) {
+					$item->deletedBy = trim($barcode . ' - ' . $displayName, ' -');
+				} elseif (!empty($deletingUser->username)) {
+					$item->deletedBy = trim($deletingUser->username . ' - ' . $displayName, ' -');
+				} else {
+					$item->deletedBy = $displayName;
+				}
 			} else {
 				$item->deletedBy = 'User ID: ' . $orig->deletedBy;
 			}
@@ -205,7 +320,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 	/**
 	 * Restore a single object from the "recycle-bin" back to an active state.
 	 */
-	#[NoReturn] public function restore(): void {
+	public function restore(): void {
 		$compositeId = $_REQUEST['id'] ?? '';
 		$user = UserAccount::getActiveUserObj();
 		if (str_contains($compositeId, '_')) {
@@ -231,7 +346,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 		exit;
 	}
 
-	#[NoReturn] public function history(): void {
+	public function history(): void {
 		$this->showHistory();
 	}
 
@@ -240,7 +355,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 	 *
 	 * @noinspection PhpUnused
 	 */
-	#[NoReturn] public function hardDeleteSingle(): void {
+	public function hardDeleteSingle(): void {
 		$compositeId = $_REQUEST['id'] ?? '';
 		$user = UserAccount::getActiveUserObj();
 		if (str_contains($compositeId, '_')) {
@@ -272,14 +387,15 @@ class Admin_ObjectRestorations extends ObjectEditor {
 
 	/**
 	 * Permanently delete many (or all) soft-deleted rows.
-	 * If no checkboxes are selected, assume "delete all".
+	 * If no checkboxes are selected, scan database directly
+	 * to delete ALL soft-deleted objects.
 	 *
 	 * @noinspection PhpUnused
 	 */
-	#[NoReturn] public function batchHardDelete(): void {
+	public function batchHardDelete(): void {
 		$selected = $_REQUEST['selectedObject'] ?? [];
 		if (empty($selected)) {
-			$selected = array_keys($this->cachedRows);
+			$selected = $this->getAllCompositeIdsFromDatabase();
 		}
 
 		$deletedCnt = 0;
@@ -351,7 +467,15 @@ class Admin_ObjectRestorations extends ObjectEditor {
 			$deletingUser = new User();
 			$deletingUser->id = $propertyValue;
 			if ($deletingUser->find(true)) {
-				return trim($deletingUser->getBarcode() . ' - ' . $deletingUser->getDisplayName(), ' -');
+				$displayName = $deletingUser->getDisplayName();
+				$barcode = $deletingUser->getBarcode();
+				if (!empty($barcode)) {
+					return trim($barcode . ' - ' . $displayName, ' -');
+				} elseif (!empty($deletingUser->username)) {
+					return trim($deletingUser->username . ' - ' . $displayName, ' -');
+				} else {
+					return $displayName;
+				}
 			} else {
 				return 'User ID: ' . $propertyValue;
 			}
@@ -395,7 +519,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 		global $interface;
 		$interface->assign('instructions', $this->getListInstructions());
 		$interface->assign('sortableFields', $this->getSortableFields($structure));
-		$sort = $_REQUEST['sort'] ?? $this->getDefaultSort();
+		$sort = $this->getSort();
 		$interface->assign('sort', $sort);
 		$filterFields = $this->getFilterFields($structure);
 		$interface->assign('filterFields', $filterFields);
@@ -403,7 +527,10 @@ class Admin_ObjectRestorations extends ObjectEditor {
 		$interface->assign('appliedFilters', $appliedFilters);
 		$interface->assign('hiddenFields', $this->getHiddenFields());
 
-		$rows = $this->cachedRows;
+		$page = isset($_REQUEST['page']) && is_numeric($_REQUEST['page']) ? (int)$_REQUEST['page'] : 1;
+		$recordsPerPage = isset($_REQUEST['pageSize']) ? (int)$_REQUEST['pageSize'] : $this->getDefaultRecordsPerPage();
+
+		$rows = $this->getAllObjects($page, $recordsPerPage);
 		foreach ($appliedFilters as $filter) {
 			$field = $filter['field']['property'];
 			$type = $filter['filterType'] ?? 'contains';
@@ -451,22 +578,8 @@ class Admin_ObjectRestorations extends ObjectEditor {
 			}
 		}
 
-		[$fieldName, $direction] = array_pad(explode(' ', $sort), 2, 'desc');
-		uasort($rows, function($a, $b) use ($fieldName, $direction) {
-			$valA = $a->$fieldName;
-			$valB = $b->$fieldName;
-			if ($valA == $valB) return 0;
-			$cmp = ($valA < $valB) ? -1 : 1;
-			return (strtolower($direction) === 'desc') ? -$cmp : $cmp;
-		});
-
-		$page = isset($_REQUEST['page']) && is_numeric($_REQUEST['page']) ? (int)$_REQUEST['page'] : 1;
-		$recordsPerPage = isset($_REQUEST['pageSize']) ? (int)$_REQUEST['pageSize'] : $this->getDefaultRecordsPerPage();
-		$totalItems = count($rows);
-		$offset = ($page - 1) * $recordsPerPage;
-		$pagedRows = array_slice($rows, $offset, $recordsPerPage, true);
-
 		if ($this->supportsPagination()) {
+			$totalItems = $this->getNumObjects();
 			$options = [
 				'totalItems' => $totalItems,
 				'perPage' => $recordsPerPage,
@@ -477,7 +590,7 @@ class Admin_ObjectRestorations extends ObjectEditor {
 			$interface->assign('pageLinks', $pager->getLinks());
 		}
 
-		$interface->assign('dataList', $pagedRows);
+		$interface->assign('dataList', $rows);
 		$interface->assign('showQuickFilterOnPropertiesList', $this->showQuickFilterOnPropertiesList());
 		$interface->setTemplate('../Admin/propertiesList.tpl');
 	}

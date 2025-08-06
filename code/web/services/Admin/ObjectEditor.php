@@ -869,14 +869,14 @@ abstract class ObjectEditor extends Admin_Admin {
 			foreach ($_REQUEST['selectedObject'] as $id => $value) {
 				if ($index == 1) {
 					$object1 = $this->getExistingObjectById($id);
-					if ($this->showEditButtons()) {
+					if ($this->showEditButtonsInCompareAndHistoryViews()) {
 						$object1EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
 						$interface->assign('object1EditUrl', $object1EditUrl);
 					}
 					$index = 2;
 				} else {
 					$object2 = $this->getExistingObjectById($id);
-					if ($this->showEditButtons()) {
+					if ($this->showEditButtonsInCompareAndHistoryViews()) {
 						$object2EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
 						$interface->assign('object2EditUrl', $object2EditUrl);
 					}
@@ -894,7 +894,7 @@ abstract class ObjectEditor extends Admin_Admin {
 			$interface->assign('error', 'Please select two objects to compare');
 		}
 
-		$interface->assign('showEditButtons', $this->showEditButtons());
+		$interface->assign('showEditButtonsInCompareAndHistoryViews', $this->showEditButtonsInCompareAndHistoryViews());
 		$interface->assign('showReturnToList', $this->getToolName() === 'ObjectRestorations');
 		$interface->assign('module', $this->getModule());
 		$interface->assign('toolName', $this->getToolName());
@@ -1077,7 +1077,7 @@ abstract class ObjectEditor extends Admin_Admin {
 				$objectHistory[] = clone $historyEntry;
 			}
 			$interface->assign('objectHistory', $objectHistory);
-			$interface->assign('showEditButtons', $this->showEditButtons());
+			$interface->assign('showEditButtonsInCompareAndHistoryViews', $this->showEditButtonsInCompareAndHistoryViews());
 			$interface->assign('module', $this->getModule());
 			$interface->assign('toolName', $this->getToolName());
 			$this->display('../Admin/objectHistory.tpl', $title);
@@ -1412,7 +1412,7 @@ abstract class ObjectEditor extends Admin_Admin {
 	 * Purpose: Override it to hide edit functionality when appropriate.
 	 * @return bool True if edit buttons are enabled, false otherwise.
 	 */
-	protected function showEditButtons(): bool {
+	protected function showEditButtonsInCompareAndHistoryViews(): bool {
 		return true;
 	}
 

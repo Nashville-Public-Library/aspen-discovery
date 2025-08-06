@@ -6,7 +6,7 @@
 {if !empty($showReturnToList)}
 	<a class="btn btn-default" href='/{$module}/{$toolName}?objectAction=list'><i class="fas fa-arrow-alt-circle-left" role="presentation"></i> {translate text="Return to List" isAdminFacing=true}</a>
 {/if}
-{if !empty($showEditButtons)}
+{if !empty($showEditButtonsInCompareAndHistoryViews)}
 <a class="btn btn-default" href='/{$module}/{$toolName}?objectAction=edit&id={$id}'>{translate text="Edit" isAdminFacing=true}</a>
 {/if}
 

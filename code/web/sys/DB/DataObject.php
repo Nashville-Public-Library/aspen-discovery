@@ -133,7 +133,7 @@ abstract class DataObject implements JsonSerializable {
 		}
 
 		// Soft-delete support: automatically hide rows where deleted = 1 unless caller opted-in.
-		if (method_exists($this, 'supportsSoftDelete') && $this->supportsSoftDelete()) {
+		if ($this->supportsSoftDelete()) {
 			$includeDeleted = property_exists($this, '_includeDeleted') ? $this->_includeDeleted : false;
 			$deletedPropIsSet = property_exists($this, 'deleted') && ($this->deleted !== null);
 			if (!$includeDeleted && !$deletedPropIsSet) {
@@ -638,7 +638,7 @@ abstract class DataObject implements JsonSerializable {
 		}
 
 		// Soft-delete support: automatically hide rows where deleted = 1 unless caller opted-in.
-		if (method_exists($this, 'supportsSoftDelete') && $this->supportsSoftDelete()) {
+		if ($this->supportsSoftDelete()) {
 			$includeDeleted = property_exists($this, '_includeDeleted') ? $this->_includeDeleted : false;
 			$deletedPropIsSet = property_exists($this, 'deleted') && ($this->deleted !== null);
 			if (!$includeDeleted && !$deletedPropIsSet) {

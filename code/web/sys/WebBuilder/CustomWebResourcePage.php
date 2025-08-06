@@ -520,6 +520,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 	public static function getCustomPages() {
 		$customPages = [];
 		$customPage = new CustomWebResourcePage();
+		$customPage->deleted = 0;
 		$customPage->orderBy('title');
 		$customPage->find();
 		while ($customPage->fetch()) {
