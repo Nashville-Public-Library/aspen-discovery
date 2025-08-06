@@ -7,6 +7,11 @@ require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 require_once ROOT_DIR . '/sys/Talpa/TalpaData.php';
 require_once ROOT_DIR . '/sys/ISBN.php';
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Talpa Works';
+$cronLogEntry->insert();
 
 $startTime = time();
 $talpaWorkAPI ='https://www.librarything.com/api_aspen_works.php';
@@ -22,7 +27,9 @@ global $logger;
 global $library;
 global $enabledModules;
 if (!array_key_exists('Talpa Search', $enabledModules)) {
-	$logger->log("Talpa module not enabled, quitting", Logger::LOG_NOTICE);
+	$cronLogEntry->notes = "Talpa module not enabled, quitting";
+	$cronLogEntry->endTime = time();
+	$cronLogEntry->update();
 	return;
 }
 
@@ -33,7 +40,8 @@ $talpaSettings->find();
 while ($talpaSettings->fetch(true)) {
 	$token = $talpaSettings->talpaApiToken;
 
-	$logger->log("Running Talpa groupedWorks cron for settings " . $talpaSettings->id, Logger::LOG_NOTICE);
+	$cronLogEntry->notes = "<br/>Running Talpa groupedWorks cron for settings " . $talpaSettings->id;
+	$cronLogEntry->update();
 
 	$noIsbns = 0;
 	$noIsbnA = array();
@@ -47,7 +55,8 @@ while ($talpaSettings->fetch(true)) {
 
 	if ($results) {
 		while ($result = $results->fetch()) {
-			$logger->log('found '. $result['total'] . ' permanent IDs to send to Talpa for processing', Logger::LOG_NOTICE);
+			$cronLogEntry->notes .= '<br/>found '. $result['total'] . ' permanent IDs to send to Talpa for processing';
+			$cronLogEntry->update();
 		}
 	}
 
@@ -75,7 +84,8 @@ while ($talpaSettings->fetch(true)) {
 			}
 
 			if( count($permanent_ids) > $BATCH_SIZE ) {
-				$logger->log("getting works for batch ". $batchN. ' of size:'. $BATCH_SIZE, Logger::LOG_DEBUG);
+				$cronLogEntry->notes .= "<br/>getting works for batch ". $batchN. ' of size:'. $BATCH_SIZE;
+				$cronLogEntry->update();
 
 				// mark that we have checked these works
 				if (!empty($ids)) {
@@ -193,7 +203,9 @@ while ($talpaSettings->fetch(true)) {
 						$groupedWorkDriver = null;
 
 					} else {
-						$logger->log('failed to fetch info for grouped work '.$permanent_id, Logger::LOG_ERROR);
+						$cronLogEntry->numErrors++;
+						$cronLogEntry->notes .= '<br/>failed to fetch info for grouped work '.$permanent_id;
+						$cronLogEntry->update();
 					}
 					$groupedWork = null;
 				}
@@ -208,7 +220,7 @@ while ($talpaSettings->fetch(true)) {
 						'type' => 'daily',
 					);
 
-					$logger->log('Sending '.count($chunk).' records', Logger::LOG_DEBUG);
+					$cronLogEntry->notes .= '<br/>Sending '.count($chunk).' records';
 
 					$curlConnection = curl_init($talpaWorkAPI);
 					curl_setopt($curlConnection, CURLOPT_CONNECTTIMEOUT, 15);
@@ -223,7 +235,11 @@ while ($talpaSettings->fetch(true)) {
 
 					$curl_result = curl_exec($curlConnection);
 					if ($curl_result === false) {
-						throw new Exception("Error in HTTP Request: " . curl_error($curlConnection));
+						$cronLogEntry->numErrors++;
+						$cronLogEntry->notes .= "<br/>Error in HTTP Request: " . curl_error($curlConnection);
+						$cronLogEntry->endTime = time();
+						$cronLogEntry->update();
+						die();
 					}
 
 					$resA = json_decode($curl_result, true);
@@ -253,10 +269,12 @@ while ($talpaSettings->fetch(true)) {
 								$talpaData = null;
 							}
 						} else {
-							$logger->log("no works to update", Logger::LOG_DEBUG);
+							$cronLogEntry->notes .= "<br/>no works to update";
+							$cronLogEntry->update();
 						}
 					} else {
-						$logger->log("something went wrong with the response", Logger::LOG_DEBUG);
+						$cronLogEntry->notes .= "<br/>something went wrong with the response";
+						$cronLogEntry->update();
 					}
 				} // foreach chunksA
 
@@ -271,8 +289,9 @@ while ($talpaSettings->fetch(true)) {
 	$results->closeCursor();
 	$endTime = time();
 
-	$logger->log("seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN, Logger::LOG_NOTICE);
-	$logger->log("total time: ".($endTime - $startTime), Logger::LOG_NOTICE);
+	$cronLogEntry->notes .= "<br/>seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN;
+	$cronLogEntry->endTime = time();
+	$cronLogEntry->update();
 }
 
 
