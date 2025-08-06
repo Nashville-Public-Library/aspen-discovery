@@ -228,7 +228,7 @@ if ($results) {
 					'api_version' => 2,
 				);
 
-				$cronLogEntry->notes .= '<br/>Sending '.count($chunk).' records';
+					$cronLogEntry->notes .= '<br/>Sending '.count($chunk).' records';
 
 				$curlConnection = curl_init($talpaWorkAPI);
 				curl_setopt($curlConnection, CURLOPT_CONNECTTIMEOUT, 15);

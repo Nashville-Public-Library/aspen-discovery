@@ -23,6 +23,7 @@ global $interface;
 global $aspen_db;
 global $logger;
 
+global $library;
 global $enabledModules;
 if (!array_key_exists('Talpa Search', $enabledModules)) {
 	$cronLogEntry->notes = "Talpa module not enabled, quitting";
@@ -33,18 +34,13 @@ if (!array_key_exists('Talpa Search', $enabledModules)) {
 
 //Since this is run generically for an interface and is not library-specific, it needs to be run for each setting
 $talpaSettings = new TalpaSettings();
-if (!$talpaSettings->find(true)) {
-	$cronLogEntry->notes = "No Talpa settings found, quitting";
-	$cronLogEntry->endTime = time();
-	$cronLogEntry->update();
-	return;
-}
-
-
+$talpaSettings->id = $library->talpaSettingsId;
+$talpaSettings->find();
+while ($talpaSettings->fetch(true)) {
 $token = $talpaSettings->talpaApiToken;
 
-$cronLogEntry->notes .= "<br/>Running Talpa recalculation cron for settings " . $talpaSettings->id;
-$cronLogEntry->update();
+	$cronLogEntry->notes .= "<br/>Running Talpa recalculation cron for settings " . $talpaSettings->id;
+	$cronLogEntry->update();
 
 $noIsbns = 0;
 $noIsbnA = array();
@@ -81,8 +77,8 @@ if ($results) {
 		$permanent_ids[] = $result['permanent_id'];
 
 		if( count($permanent_ids) > $BATCH_SIZE ) {
-			$cronLogEntry->notes .= "<br/>getting works for recalculation batch ". $batchN. ' of size:'. $BATCH_SIZE;
-			$cronLogEntry->update();
+				$cronLogEntry->notes .= "<br/>getting works for recalculation batch ". $batchN. ' of size:'. $BATCH_SIZE;
+				$cronLogEntry->update();
 
 			foreach ($permanent_ids as $permanent_id) {
 				$groupedWork = new GroupedWork();
@@ -212,8 +208,8 @@ if ($results) {
 					'api_version' => 2,
 				);
 
-				$cronLogEntry->notes .= '<br/>Sending '.count($chunk).' records for recalculation';
-				$cronLogEntry->update();
+					$cronLogEntry->notes .= '<br/>Sending '.count($chunk).' records for recalculation';
+					$cronLogEntry->update();
 
 				$curlConnection = curl_init($talpaWorkAPI);
 				curl_setopt($curlConnection, CURLOPT_CONNECTTIMEOUT, 15);
@@ -245,6 +241,14 @@ if ($results) {
 						$cronLogEntry->notes .= "<br/>permanent id: ".$permanent_id;
 						$cronLogEntry->update();
 
+					if(!empty($resA['msg']) && !empty($resA['mappedWorkIDs'])) {
+						$mappedWorkIDs = $resA['mappedWorkIDs'];
+						$notFoundA = $resA['notFoundA'];
+						$logger->log('Talpa recalculated '.count($mappedWorkIDs).' mapped workids. Not found: '.count($notFoundA), Logger::LOG_DEBUG);
+
+						//save to the talpa_lt_to_groupedwork table
+						if($mappedWorkIDs) {
+							foreach ($mappedWorkIDs as $permanent_id => $lt_workcode) {
 						$talpaData = new TalpaData();
 						$talpaData->groupedRecordPermanentId = $permanent_id;
 						if ($talpaData->find(true)) {
@@ -276,7 +280,7 @@ if ($results) {
 $results->closeCursor();
 $endTime = time();
 
-$cronLogEntry->notes .= "<br/>Recalculation complete - seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN;
+	$cronLogEntry->notes .= "<br/>Recalculation complete - seenN: ".$seenN . " inserted: ".$insertedN . "updated: ".$updatedN;
 
 $cronLogEntry->endTime = time();
 $cronLogEntry->update();
