@@ -24,6 +24,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	public $sourceId;
 	public $generatedFromSource;
 	public $isCustomized;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	/** @var PlacardTrigger[] */
 	protected $_triggers;
@@ -287,9 +290,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
+		if ($ret && $hardDelete && !empty($this->id)) {
 			$triggers = new PlacardTrigger();
 			$triggers->placardId = $this->id;
 			$triggers->delete(true);
@@ -562,5 +565,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 				}
 			}
 		}
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

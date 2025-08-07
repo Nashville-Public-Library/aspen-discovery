@@ -108,7 +108,7 @@ class EBSCOhostDatabase extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		$this->deleted = 1;
 		$this->clearDefaultCovers();
 		return $this->update();
