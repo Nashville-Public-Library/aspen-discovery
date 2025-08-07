@@ -320,8 +320,8 @@ class User extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false): int {
-		$ret = parent::delete($useWhere);
+	public function delete($useWhere = false, $hardDelete = false): int {
+		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret) {
 			// delete browse_category_dismissal
 			require_once ROOT_DIR . '/sys/Browse/BrowseCategoryDismissal.php';
@@ -4148,6 +4148,7 @@ class User extends DataObject {
 		$sections['system_admin']->addAction(new AdminAction('USPS Settings', 'Settings to allow Aspen Discovery to validate addresses via USPS API.', '/Admin/USPS'), 'Administer System Variables');
 		$sections['system_admin']->addAction(new AdminAction('Variables', 'Variables set by the Aspen Discovery itself as part of background processes.', '/Admin/Variables'), 'Administer System Variables');
 		$sections['system_admin']->addAction(new AdminAction('System Variables', 'Settings for Aspen Discovery that apply to all libraries on this installation.', '/Admin/SystemVariables'), 'Administer System Variables');
+		$sections['system_admin']->addAction(new AdminAction('Object Restorations', 'Restore soft-deleted objects from the recycle bin.', '/Admin/ObjectRestorations'), 'Administer Object Restoration');
 		$sections['system_admin']->addAction(new AdminAction('Manually Run Cron', 'Manually Start Cron Processes.', '/Admin/CronRunner'), 'Manually Run Cron Processes');
 
 		$sections['system_reports'] = new AdminSection('System Reports');

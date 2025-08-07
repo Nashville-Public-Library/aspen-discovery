@@ -2085,8 +2085,8 @@ class Location extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false): int {
-		$ret = parent::delete($useWhere);
+	public function delete($useWhere = false, $hardDelete = false): int {
+		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$locationMap = new EventsBranchMapping();
 			$locationMap->locationId = $this->locationId;

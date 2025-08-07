@@ -2709,6 +2709,33 @@ AspenDiscovery.Admin = (function () {
 			}
 		},
 
+		recycleBinDelete(scope) {
+			const selected = $('.selectedObject:checked');
+			const count = selected.length;
+			let title, body, okLabel;
+
+			if (scope === 'selected') {
+				if (!selected.length) {
+					AspenDiscovery.showMessage('Failed to Delete Selected Objects', 'Please select at least one object to delete.');
+					return false;
+				}
+			}
+			if (scope === 'all') {
+				title = 'Permanently Delete All';
+				body = 'Are you sure you want to permanently delete ALL objects? This action cannot be undone.';
+				okLabel = 'Delete All';
+			} else {
+				title = 'Permanently Delete Selected';
+				body = 'Are you sure you want to permanently delete ' + count + ' object(s)? This action cannot be undone.';
+				okLabel = 'Delete';
+			}
+
+			const confirmJs = "$(\"#objectAction\").val(\"batchHardDelete\"); $(\"#propertiesListForm\").submit();";
+
+			AspenDiscovery.confirm(title, body, okLabel, 'Cancel', true, confirmJs, 'btn-danger');
+			return false;
+		},
+
 		getNotificationDevicesForUser: function () {
 			const barcode = $("#testPatronBarcode").val();
 			if (barcode) {

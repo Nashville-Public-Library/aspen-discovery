@@ -54,11 +54,11 @@ class EventFieldSet extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		$type = new EventType();
 		$type->eventFieldSetId = $this->id;
 		if ($type->count() == 0) {
-			return parent::delete($useWhere);
+			return parent::delete($useWhere, $hardDelete);
 		}
 		return 0;
 	}
