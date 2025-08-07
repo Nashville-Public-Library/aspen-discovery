@@ -11391,6 +11391,33 @@ AspenDiscovery.Admin = (function () {
 			}
 		},
 
+		recycleBinDelete(scope) {
+			const selected = $('.selectedObject:checked');
+			const count = selected.length;
+			let title, body, okLabel;
+
+			if (scope === 'selected') {
+				if (!selected.length) {
+					AspenDiscovery.showMessage('Failed to Delete Selected Objects', 'Please select at least one object to delete.');
+					return false;
+				}
+			}
+			if (scope === 'all') {
+				title = 'Permanently Delete All';
+				body = 'Are you sure you want to permanently delete ALL objects? This action cannot be undone.';
+				okLabel = 'Delete All';
+			} else {
+				title = 'Permanently Delete Selected';
+				body = 'Are you sure you want to permanently delete ' + count + ' object(s)? This action cannot be undone.';
+				okLabel = 'Delete';
+			}
+
+			const confirmJs = "$(\"#objectAction\").val(\"batchHardDelete\"); $(\"#propertiesListForm\").submit();";
+
+			AspenDiscovery.confirm(title, body, okLabel, 'Cancel', true, confirmJs, 'btn-danger');
+			return false;
+		},
+
 		getNotificationDevicesForUser: function () {
 			const barcode = $("#testPatronBarcode").val();
 			if (barcode) {
@@ -14523,8 +14550,17 @@ AspenDiscovery.Lists = (function(){
 			return this.submitListForm('makePrivate');
 		},
 
-		deleteListAction: function (){
-			AspenDiscovery.confirm("Delete List?", "Are you sure you want to delete this entire list? The list and all titles within it will be permanently deleted.","Yes", "No", true, "AspenDiscovery.Lists.doDeleteList()", "btn-danger");
+		deleteListAction(){
+			const messageTitle = "Delete List?";
+			const messageBody = "Are you sure you want to delete this entire list? The list and all titles within it will be soft-deleted and can be restored within 30 days.<br/><br/>" +
+				"<div>" +
+				"<input type='checkbox' id='optOutSoftDeletion' style='margin-right: 5px;'>" +
+				"<label class='form-check-label' for='optOutSoftDeletion'>Opt Out of Soft Deletion</label>" +
+				"</div>";
+
+			let buttons = "<button id='confirmDeleteList' class='tool btn btn-danger' onclick='AspenDiscovery.Lists.doDeleteList()'><span class='fas fa-spinner fa-spin' style='display:none; margin-right: 4px;'></span>Yes</button>";
+			buttons += "<button id='cancelDeleteList' class='tool btn btn-default' onclick='AspenDiscovery.closeLightbox()'>No</button>";
+			AspenDiscovery.showMessageWithButtons(messageTitle, messageBody, buttons, false, '', false, false, true);
 			return false;
 		},
 
@@ -14532,8 +14568,16 @@ AspenDiscovery.Lists = (function(){
 			window.location.href = Globals.path + '/MyAccount/MyList/' + listId + '?delete=' + listEntryId;
 		},
 
-		doDeleteList: function () {
-			this.submitListForm('deleteList');
+		doDeleteList() {
+			$('#confirmDeleteList .fa-spinner').show();
+			$('#confirmDeleteList').prop('disabled', true);
+			const hardDelete = $('#optOutSoftDeletion').is(':checked');
+
+			if (hardDelete) {
+				this.submitListForm('deleteListHard');
+			} else {
+				this.submitListForm('deleteList');
+			}
 		},
 
 		updateListAction: function (){
@@ -18011,39 +18055,52 @@ AspenDiscovery.WebBuilder = function () {
 			return false;
 		},
 
-		deleteCell: function (id) {
-			if (!confirm("Are you sure you want to delete this cell?")){
-				return false;
-			}
-			var url = Globals.path + '/WebBuilder/AJAX';
-			var params = {
+		deleteCell(id) {
+			AspenDiscovery.confirm('Delete Cell', `Are you sure you want to delete this cell (ID: ${id})?`, 'Delete', 'Cancel', true, `AspenDiscovery.WebBuilder.deleteCellConfirmed("${id}")`, 'btn-danger');
+			return false;
+		},
+
+		deleteCellConfirmed(id) {
+			const url = `${Globals.path}/WebBuilder/AJAX`;
+			const params = {
 				method: 'deleteCell',
-				id: id
+				id
 			};
-			$.getJSON(url, params, function (data) {
-				if (data.success){
-					$('#portalRow' + data.rowId).replaceWith(data.newRow);
+
+			$.getJSON(url, params, (data) => {
+				const { success, rowId, newRow,  message} = data || [];
+				if (success) {
+					const $targetRow = $(`#portalRow${rowId}`);
+					if ($targetRow.length) {
+						$targetRow.replaceWith(newRow);
+					}
+					AspenDiscovery.closeLightbox();
 				} else {
-					AspenDiscovery.showMessage('An error occurred', data.message);
+					AspenDiscovery.showMessage('Error Deleting Cell', data.message);
 				}
 			});
 			return false;
 		},
 
-		deleteRow: function (id) {
-			if (!confirm("Are you sure you want to delete this row?")){
-				return false;
-			}
-			var url = Globals.path + '/WebBuilder/AJAX';
-			var params = {
+		deleteRow(id) {
+			AspenDiscovery.confirm('Delete Row', `Are you sure you want to delete this row (ID: ${id})?`, 'Delete', 'Cancel', true, `AspenDiscovery.WebBuilder.deleteRowConfirmed("${id}")`, 'btn-danger');
+			return false;
+		},
+
+		deleteRowConfirmed(id) {
+			const url = `${Globals.path}/WebBuilder/AJAX`;
+			const params = {
 				method: 'deleteRow',
-				id: id
+				id
 			};
-			$.getJSON(url, params, function (data) {
-				if (data.success){
+
+			$.getJSON(url, params, (data) => {
+				const { success, message } = data;
+				if (success){
 					$("#portalRow" + id).hide();
+					AspenDiscovery.closeLightbox();
 				} else {
-					AspenDiscovery.showMessage('An error occurred', data.message);
+					AspenDiscovery.showMessage('Error Deleting Row', data.message);
 				}
 			});
 			return false;
