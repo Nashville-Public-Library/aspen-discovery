@@ -15,6 +15,20 @@ $dbPort = $configArray['Database']['database_aspen_dbport'];
 $curDir = __DIR__;
 $baseAspenSQL = "$curDir/../../install/aspen.sql";
 
+//Remove all existing foreign constraints
+$foreignConstraintResults = $aspen_db->query("SELECT CONSTRAINT_NAME, TABLE_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE = 'FOREIGN KEY' AND TABLE_SCHEMA = '$dbName'");
+$allForeignConstraints = $foreignConstraintResults->fetchAll(PDO::FETCH_ASSOC);
+$aspen_db->exec("SET foreign_key_checks = 0;");
+foreach ($allForeignConstraints as $foreignConstraint) {
+	$tableName = $foreignConstraint['TABLE_NAME'];
+	$constraintName = $foreignConstraint['CONSTRAINT_NAME'];
+
+	// Construct the DROP FOREIGN KEY statement
+	$dropSql = "ALTER TABLE $tableName DROP FOREIGN KEY $constraintName";
+	$aspen_db->exec($dropSql);
+}
+$aspen_db->exec("SET foreign_key_checks = 1;");
+
 //Remove all existing database tables
 $result = $aspen_db->query("SELECT TABLE_NAME FROM information_schema.tables where TABLE_SCHEMA = '$dbName'");
 $allTables = $result->fetchAll(PDO::FETCH_ASSOC);

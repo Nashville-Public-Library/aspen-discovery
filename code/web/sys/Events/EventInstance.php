@@ -104,13 +104,13 @@ class EventInstance extends DataObject {
 		return parent::insert();
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		if (!$useWhere) {
 			$this->deleted = 1;
 			$this->dateUpdated = time();
 			return parent::update();
 		} else {
-			return parent::delete($useWhere);
+			return parent::delete($useWhere, $hardDelete);
 		}
 	}
 

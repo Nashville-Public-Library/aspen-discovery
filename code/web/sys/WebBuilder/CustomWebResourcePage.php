@@ -15,6 +15,9 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 	public $requireLogin;
 	public $requireLoginUnlessInLibrary;
 	public $lastUpdate;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	private $_libraries;
 	private $_audiences;
@@ -187,10 +190,9 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false): int
-	{
-		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+	public function delete($useWhere = false, $hardDelete = false): int {
+		$ret = parent::delete($useWhere, $hardDelete);
+		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearAudiences();
 			$this->clearCategories();
@@ -518,6 +520,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 	public static function getCustomPages() {
 		$customPages = [];
 		$customPage = new CustomWebResourcePage();
+		$customPage->deleted = 0;
 		$customPage->orderBy('title');
 		$customPage->find();
 		while ($customPage->fetch()) {
@@ -530,5 +533,9 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		$this->getCategories();
 		$this->getAudiences();
 		$this->getAccess();
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

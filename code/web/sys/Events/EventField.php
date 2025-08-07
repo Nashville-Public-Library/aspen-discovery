@@ -83,11 +83,11 @@ class EventField extends DataObject {
 		return $structure;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		$fieldSet = new EventFieldSetField();
 		$fieldSet->eventFieldId = $this->id;
 		if ($fieldSet->count() == 0) {
-			return parent::delete($useWhere);
+			return parent::delete($useWhere, $hardDelete);
 		}
 		return 0;
 	}

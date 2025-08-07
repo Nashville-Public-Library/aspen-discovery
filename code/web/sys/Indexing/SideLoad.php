@@ -543,7 +543,7 @@ class SideLoad extends DataObject {
 		return $structure;
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		//Delete all scopes for the sideload
 		if (!$useWhere) {
 			if (!empty($this->id)) {
@@ -551,11 +551,11 @@ class SideLoad extends DataObject {
 				$sideLoadScope->sideLoadId = $this->id;
 				$sideLoadScope->find();
 				while ($sideLoadScope->fetch()) {
-					$sideLoadScope->delete($useWhere);
+					$sideLoadScope->delete($useWhere, $hardDelete);
 				}
 			}
 		}
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 
 	public function update($context = '') : bool|int {
