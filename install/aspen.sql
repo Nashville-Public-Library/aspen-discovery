@@ -1,3 +1,4 @@
+SET FOREIGN_KEY_CHECKS=0;
 DROP TABLE IF EXISTS accelerated_reading_isbn;
 CREATE TABLE `accelerated_reading_isbn` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -7778,3 +7779,4 @@ INSERT INTO events_facet VALUES (1,1, 'Age Group/Audience', 'Age Groups/Audience
 INSERT INTO open_archives_facet_groups (id, name) VALUES (1, 'default');
 INSERT INTO open_archives_facets VALUES (1,1, 'Collection', 'Collections', 'collection_name', 1, 5, 'num_results', 1, 1, 1, 1, 1),(2,1, 'Creator', 'Creators', 'creator_facet', 2, 5, 'num_results', 1, 1, 1, 1, 1),(3,1, 'Contributor', 'Contributors', 'contributor_facet', 3, 5, 'num_results', 1, 1, 1, 1, 1),(4,1, 'Type', 'Types', 'type', 4, 5, 'num_results', 1, 1, 1, 1, 1),(5,1, 'Subject', 'Subjects', 'subject_facet', 5, 5, 'num_results', 1, 1, 1, 1, 1),(6,1, 'Publisher', 'Publishers', 'publisher_facet', 6, 5, 'num_results', 1, 1, 1, 1, 1),(7,1, 'Source', 'Sources', 'source', 7, 5, 'num_results', 1, 1, 1, 1, 1);
 INSERT INTO grouped_work_format_sort_group (id, name) VALUES (1, 'Default Format Sorting');
+SET FOREIGN_KEY_CHECKS=1;
