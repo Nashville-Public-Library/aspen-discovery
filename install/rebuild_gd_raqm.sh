@@ -112,7 +112,13 @@ if [[ ! -d $PHP_SRC_DIR ]]; then
   sudo -u "${SUDO_USER:-$USER}" bash -c "
       cd \"$USER_HOME\" &&
       apt-get -q source php${PHP_VER} &&
-      mv php${PHP_VER}-*/ ${PHP_SRC_DIR}
+      PHP_EXTRACTED_DIR=\$(find . -maxdepth 1 -type d -name 'php${PHP_VER}-*' | head -n1) &&
+      if [[ -n \"\$PHP_EXTRACTED_DIR\" && -d \"\$PHP_EXTRACTED_DIR\" ]]; then
+        mv \"\$PHP_EXTRACTED_DIR\" \"${PHP_SRC_DIR}\"
+      else
+        echo 'Error: Could not find extracted PHP source directory' >&2
+        exit 1
+      fi
   "
 fi
 
@@ -130,8 +136,12 @@ pushd "$PHP_SRC_DIR/ext/gd" >/dev/null
 popd >/dev/null
 
 # 3. Restart web-stack and verify.
-log "Restarting apache2"
-sudo systemctl restart apache2
+if systemctl is-active --quiet apache2; then
+  log "Restarting apache2"
+  sudo systemctl restart apache2
+else
+  log "apache2 is not running, skipping restart"
+fi
 
 EXT_DIR="$(php -r 'echo ini_get("extension_dir");')"
 log "gd_info() after rebuild:"
