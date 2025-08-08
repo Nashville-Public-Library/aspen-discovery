@@ -181,9 +181,9 @@ class WebResourcesSetting extends DataObject
 		}
 	}
 
-	public function delete($useWhere = false): int {
-		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+	public function delete($useWhere = false, $hardDelete = false): int {
+		$ret = parent::delete($useWhere, $hardDelete);
+		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
 		}
 		return $ret;
@@ -284,6 +284,7 @@ class WebResourcesSetting extends DataObject
 			foreach ($this->_customWebResourcesList as $customWebResourcePageId) {
 				$customWebResourcePage = new CustomWebResourcePage();
 				$customWebResourcePage->id = $customWebResourcePageId;
+				$customWebResourcePage->deleted = 0;
 				$customWebResourcePage->find();
 				while ($customWebResourcePage->fetch()) {
 					$customResourcesToIndex = new WebResourcesToIndex();

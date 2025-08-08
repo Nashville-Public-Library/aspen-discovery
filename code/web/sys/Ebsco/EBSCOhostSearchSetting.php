@@ -154,7 +154,7 @@ class EBSCOhostSearchSetting extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		if (!$useWhere) {
 			$obj = new Library();
 			$obj->ebscohostSearchSettingId = $this->id;
@@ -180,7 +180,7 @@ class EBSCOhostSearchSetting extends DataObject {
 			}
 			$this->clearOneToManyOptions('EBSCOhostDatabase', 'searchSettingId');
 		}
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 
 	public function updateDatabasesFromEBSCOhost() {

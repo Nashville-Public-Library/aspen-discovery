@@ -259,8 +259,8 @@ class GroupedWorkFormatSortingGroup extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false): int {
-		$ret = parent::delete($useWhere);
+	public function delete($useWhere = false, $hardDelete = false): int {
+		$ret = parent::delete($useWhere, $hardDelete);
 		/** @noinspection PhpStrictComparisonWithOperandsOfDifferentTypesInspection */
 		if ($ret !== false) {
 			$sortedFormat = new GroupedWorkFormatSort();

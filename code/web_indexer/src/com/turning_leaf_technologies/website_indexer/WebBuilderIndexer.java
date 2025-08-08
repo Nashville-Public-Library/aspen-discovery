@@ -45,6 +45,7 @@ class WebBuilderIndexer {
 			solrUpdateServer.deleteByQuery("recordtype:\"BasicPage\"");
 			solrUpdateServer.deleteByQuery("recordtype:\"PortalPage\"");
 			solrUpdateServer.deleteByQuery("recordtype:\"GrapesPage\"");
+			logEntry.addNote("Web Builder index cleared for reindexing.");
 			//3-19-2019 Don't commit so the index does not get cleared during run (but will clear at the end).
 		} catch (BaseHttpSolrClient.RemoteSolrException rse) {
 			logEntry.addNote("Solr is not running properly, try restarting " + rse);
@@ -123,7 +124,7 @@ class WebBuilderIndexer {
 			PreparedStatement getAudiencesForResourceStmt = aspenConn.prepareStatement("SELECT audienceId FROM web_builder_resource_audience where webResourceId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement getCategoriesForResourceStmt = aspenConn.prepareStatement("SELECT categoryId FROM web_builder_resource_category where webResourceId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement getLibrariesForResourceStmt = aspenConn.prepareStatement("SELECT library.libraryId FROM library_web_builder_resource INNER JOIN library ON library_web_builder_resource.libraryId = library.libraryId WHERE webResourceId = ? AND library.enableWebBuilder = 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			PreparedStatement getResourcesStmt = aspenConn.prepareStatement("SELECT * from web_builder_resource", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			PreparedStatement getResourcesStmt = aspenConn.prepareStatement("SELECT * from web_builder_resource WHERE deleted = 0", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			ResultSet getResourcesRS = getResourcesStmt.executeQuery();
 			while (getResourcesRS.next()){
 				SolrInputDocument solrDocument = new SolrInputDocument();
@@ -203,7 +204,7 @@ class WebBuilderIndexer {
 			PreparedStatement getAudiencesForBasicPageStmt = aspenConn.prepareStatement("SELECT audienceId FROM web_builder_basic_page_audience where basicPageId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement getCategoriesForBasicPageStmt = aspenConn.prepareStatement("SELECT categoryId FROM web_builder_basic_page_category where basicPageId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement getLibrariesForBasicPageStmt = aspenConn.prepareStatement("SELECT library.libraryId FROM library_web_builder_basic_page INNER JOIN  library ON library_web_builder_basic_page.libraryId = library.libraryId WHERE basicPageId = ? AND library.enableWebBuilder = 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			PreparedStatement getBasicPagesStmt = aspenConn.prepareStatement("SELECT * from web_builder_basic_page", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			PreparedStatement getBasicPagesStmt = aspenConn.prepareStatement("SELECT * from web_builder_basic_page WHERE deleted = 0", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			ResultSet getBasicPagesRS = getBasicPagesStmt.executeQuery();
 			while (getBasicPagesRS.next()){
 				SolrInputDocument solrDocument = new SolrInputDocument();
@@ -271,7 +272,7 @@ class WebBuilderIndexer {
 			PreparedStatement getAudiencesForPortalPageStmt = aspenConn.prepareStatement("SELECT audienceId FROM web_builder_portal_page_audience where portalPageId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement getCategoriesForPortalPageStmt = aspenConn.prepareStatement("SELECT categoryId FROM web_builder_portal_page_category where portalPageId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			PreparedStatement getLibrariesForPortalPageStmt = aspenConn.prepareStatement("SELECT library.libraryId FROM library_web_builder_portal_page INNER JOIN library ON library_web_builder_portal_page.libraryId = library.libraryId WHERE portalPageId = ? AND library.enableWebBuilder = 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			PreparedStatement getPortalPagesStmt = aspenConn.prepareStatement("SELECT * from web_builder_portal_page", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			PreparedStatement getPortalPagesStmt = aspenConn.prepareStatement("SELECT * from web_builder_portal_page WHERE deleted = 0", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			ResultSet getPortalPagesRS = getPortalPagesStmt.executeQuery();
 			while (getPortalPagesRS.next()){
 				SolrInputDocument solrDocument = new SolrInputDocument();
