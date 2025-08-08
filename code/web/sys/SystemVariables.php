@@ -41,9 +41,13 @@ class SystemVariables extends DataObject {
 	public $lidaGitHubRepository;
 	public $numBoundlessSettingsToProcessInParallel;
 	public $disable_user_agent_logging;
+	public $logFrequentCrons;
 
 
 	static function getObjectStructure($context = ''): array {
+		require_once ROOT_DIR . '/services/Admin/CronRunner.php';
+		$frequentJobs = Admin_CronRunner::getFrequentCronJobs();
+
 		$objectStructure = [
 			'id' => [
 				'property' => 'id',
@@ -370,6 +374,14 @@ class SystemVariables extends DataObject {
 				'type' => 'checkbox',
 				'label' => 'Disable User Agent Tracking',
 				'description' => 'When enabled, disables all user agent tracking including logging, spam detection, and blocking.',
+				'default' => false,
+			],
+			'logFrequentCrons' => [
+				'property' => 'logFrequentCrons',
+				'type' => 'checkbox',
+				'label' => 'Log Frequent Cron Jobs',
+				'description' => 'Whether or not to log frequently running cron jobs (e.g., runs every few minutes).',
+				'note' => 'Frequent jobs include: ' . implode(', ', $frequentJobs) . '.',
 				'default' => false,
 			],
 		];
