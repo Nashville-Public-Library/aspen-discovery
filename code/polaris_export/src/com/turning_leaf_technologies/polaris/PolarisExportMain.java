@@ -1232,10 +1232,16 @@ public class PolarisExportMain {
 			logEntry.addNote("There are " + bibsToUpdateBasedOnChangedItems + " records to be updated based on changes to the items.");
 			logEntry.saveResults();
 		}
+
+
 		//Now that we have a list of all bibs that need to be updated based on item changes, reindex the bib
-		for(String bibNumber: bibsToUpdate){
-			logger.debug("Updating " + bibNumber);
-			numChanges += updateBibFromPolaris(bibNumber, marcFactory, lastExtractTime, false);
+		List<String> bibsNumber = new ArrayList<>(bibsToUpdate);
+		int batchSize = 50;
+
+		for (int i = 0; i < bibsNumber.size(); i += batchSize) {
+			List<String> batch = bibsNumber.subList(i, Math.min(i + batchSize, bibsNumber.size()));
+			String bibIds = String.join(",", batch);
+			numChanges += updateBibFromPolaris(bibIds, marcFactory, lastExtractTime, false);
 		}
 
 		logEntry.addNote("Finished updating bibs");
@@ -1309,6 +1315,7 @@ public class PolarisExportMain {
 		//Get the bib record
 		//noinspection SpellCheckingInspection
 		String getBibUrl = "/PAPIService/REST/protected/v1/1033/100/1/" + accessToken + "/synch/bibs/MARCXML?bibids=" + bibNumber;
+		logger.error("getBibUrl: " + getBibUrl);
 		ProcessBibRequestResponse response = processGetBibsRequest(getBibUrl, marcFactory, lastExtractTime, incrementProductsInLog);
 		return response.numChanges;
 	}
