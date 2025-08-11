@@ -213,6 +213,14 @@ function getUpdates25_08_00(): array {
 				'ALTER TABLE library ADD COLUMN IF NOT EXISTS maxHoldCancellationDate int(11) DEFAULT -1 AFTER defaultNotNeededAfterDays;'
 			]
 		], //add_max_hold_cancellation_date_field
+		'log_frequent_crons_system_variable' => [
+			'title' => 'Add Log Frequent Crons System Variable',
+			'description' => 'Add system variable to control logging of frequently running cron jobs.',
+			'continueOnError' => false,
+			'sql' => [
+				"ALTER TABLE system_variables ADD COLUMN logFrequentCrons TINYINT(1) DEFAULT 0"
+			]
+		], //log_frequent_crons_system_variable
 
 		// Laura Escamilla - ByWater Solutions
 
