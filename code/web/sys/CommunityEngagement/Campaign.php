@@ -1494,9 +1494,6 @@ class Campaign extends DataObject {
 		$itemType = isset($item['campaignId']) ? 'CAMPAIGN' : (isset($item['id']) ? 'MILESTONE' : 'UNKNOWN');
 		$itemId = $item['campaignId'] ?? $item['id'] ?? 'NO_ID';
 
-		global $logger;
-		$logger->log("SETTINGS IN SETDISPALY: " . print_r($settings, true), Logger::LOG_ERROR);
-
 		$rewardGivenBool = (bool)$rewardGiven;
 		$awardAutomaticallyBool = (bool)$awardAutomatically;
 		$isCompleteBool = (bool)$isComplete;
