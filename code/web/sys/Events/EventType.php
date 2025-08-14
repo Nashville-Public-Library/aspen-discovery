@@ -144,7 +144,7 @@ class EventType extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		$event = new Event();
 		$event->eventTypeId = $this->id;
 		$event->deleted = "0";
@@ -152,7 +152,7 @@ class EventType extends DataObject {
 			//Delete links to libraries and locations as well
 			$this->clearLocations();
 			$this->clearLibraries();
-			return parent::delete($useWhere);
+			return parent::delete($useWhere, $hardDelete);
 		} else{
 			//Cannot delete event types that have events created for them
 		}

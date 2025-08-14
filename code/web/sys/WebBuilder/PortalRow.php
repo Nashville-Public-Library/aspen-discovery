@@ -172,13 +172,13 @@ class PortalRow extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		if ($useWhere == false) {
 			foreach ($this->getCells() as $cell) {
 				$cell->delete();
 			}
 		}
-		$ret = parent::delete($useWhere);
+		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret) {
 			//Reorder the rows on the page to remove the gap
 			require_once ROOT_DIR . '/sys/WebBuilder/PortalPage.php';

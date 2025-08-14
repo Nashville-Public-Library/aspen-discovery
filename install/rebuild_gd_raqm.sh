@@ -53,7 +53,7 @@ done
 log "Building GD with RAQM support for PHP ${PHP_VER} using ${GD_VER}"
 
 log "Installing build prerequisites"
-sudo apt-get update -qq
+sudo apt-get update -qq || true
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   build-essential cmake git pkg-config autoconf libtool \
   libfreetype6-dev libpng-dev libjpeg-dev libwebp-dev libavif-dev \
@@ -103,7 +103,7 @@ if ! sudo -u "${SUDO_USER:-$USER}" bash -c \
   cat <<EOF | sudo tee /etc/apt/sources.list.d/sury-src.list >/dev/null
 deb-src [signed-by=/etc/apt/keyrings/sury.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main
 EOF
-  sudo apt-get update -qq
+  sudo apt-get update -qq || true
 fi
 
 log "Re-building PHP ${PHP_VER} GD extension"
@@ -112,7 +112,13 @@ if [[ ! -d $PHP_SRC_DIR ]]; then
   sudo -u "${SUDO_USER:-$USER}" bash -c "
       cd \"$USER_HOME\" &&
       apt-get -q source php${PHP_VER} &&
-      mv php${PHP_VER}-*/ ${PHP_SRC_DIR}
+      PHP_EXTRACTED_DIR=\$(find . -maxdepth 1 -type d -name 'php${PHP_VER}-*' | head -n1) &&
+      if [[ -n \"\$PHP_EXTRACTED_DIR\" && -d \"\$PHP_EXTRACTED_DIR\" ]]; then
+        mv \"\$PHP_EXTRACTED_DIR\" \"${PHP_SRC_DIR}\"
+      else
+        echo 'Error: Could not find extracted PHP source directory' >&2
+        exit 1
+      fi
   "
 fi
 
@@ -130,8 +136,12 @@ pushd "$PHP_SRC_DIR/ext/gd" >/dev/null
 popd >/dev/null
 
 # 3. Restart web-stack and verify.
-log "Restarting apache2"
-sudo systemctl restart apache2
+if systemctl is-active --quiet apache2; then
+  log "Restarting apache2"
+  sudo systemctl restart apache2
+else
+  log "apache2 is not running, skipping restart"
+fi
 
 EXT_DIR="$(php -r 'echo ini_get("extension_dir");')"
 log "gd_info() after rebuild:"

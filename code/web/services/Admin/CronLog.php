@@ -5,15 +5,36 @@ require_once ROOT_DIR . '/services/Admin/Admin.php';
 require_once ROOT_DIR . '/sys/Pager.php';
 
 class Admin_CronLog extends Admin_Admin {
-	function launch() {
+	function launch() : void {
 		global $interface;
 
 		$logEntries = [];
 		$cronLogEntry = new CronLogEntry();
+		if (isset($_REQUEST['showErrorsOnly'])) {
+			$interface->assign('showErrorsOnly', true);
+			$cronLogEntry->whereAdd('numErrors > 0');
+		}
 		$total = $cronLogEntry->count();
+
 		$cronLogEntry = new CronLogEntry();
-		$cronLogEntry->orderBy('startTime DESC');
 		$page = isset($_REQUEST['page']) ? $_REQUEST['page'] : 1;
+		$pageSize = isset($_REQUEST['pageSize']) ? $_REQUEST['pageSize'] : 30; // to adjust number of items listed on a page
+		$interface->assign('recordsPerPage', $pageSize);
+		$interface->assign('page', $page);
+		$cronLogEntry->limit(($page - 1) * $pageSize, $pageSize);
+		$cronNamesToShow = isset($_REQUEST['cronNamesToShow']) ? $_REQUEST['cronNamesToShow'] : '';
+
+		if (!isSpammySearchTerm($cronNamesToShow)) {
+			$interface->assign('cronNamesToShow', $cronNamesToShow);
+			$escapedFilter = $cronLogEntry->escape('%' . $cronNamesToShow . '%');
+			$cronLogEntry->whereAdd("name LIKE $escapedFilter");
+		}
+		if (isset($_REQUEST['showErrorsOnly'])) {
+			$interface->assign('showErrorsOnly', true);
+			$cronLogEntry->whereAdd('numErrors > 0');
+		}
+		$cronLogEntry->orderBy('startTime DESC');
+		$page = $_REQUEST['page'] ?? 1;
 		$interface->assign('page', $page);
 		$cronLogEntry->limit(($page - 1) * 30, 30);
 		$cronLogEntry->find();
