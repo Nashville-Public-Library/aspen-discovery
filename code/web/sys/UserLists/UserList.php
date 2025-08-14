@@ -157,8 +157,11 @@ class UserList extends DataObject {
 
 	function delete($useWhere = false, $hardDelete = false) : int {
 		if ($hardDelete && !empty($this->id) && $this->id >= 1) {
-			// Hard delete by marking for index cleanup.
+			// Hard delete by marking for index cleanup and updating deletion information.
 			$this->deleteFromIndex = 1;
+			$this->deleted = 1;
+			$this->dateDeleted = time();
+			$this->deletedBy = UserAccount::getActiveUserId();
 			$ret = $this->update();
 			if ($ret) {
 				require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
