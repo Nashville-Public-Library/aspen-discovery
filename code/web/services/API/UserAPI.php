@@ -6971,58 +6971,51 @@ class UserAPI extends AbstractAPI {
 				$offset = ($page -1) * $pageSize;
 
 				$paginated = array_slice($flatCampaigns, $offset, $pageSize);
-				$paginated = array_map(function($campaign) {
-					if (is_object($campaign)) {
-						$base = get_object_vars($campaign);
-						$base['name'] = $campaign->campaignName;
-						$base['id'] = $campaign->campaignId;
-						$base['enrolled'] = $campaign->isEnrolled ?? false;
-						$base['canEnroll'] = $campaign->canEnroll ?? false;
-						if (isset($campaign->campaignReward) && is_object($campaign->campaignReward)) {
-							$base['rewardName'] = $campaign->campaignReward->rewardName;
-							$base['displayName'] = $campaign->campaignReward->displayName;
-							$base['rewardType'] = $campaign->campaignReward->rewardType;
-							$base['rewardExists'] = $campaign->campaignReward->rewardExists;
-							$base['badgeImage'] = $campaign->campaignReward->badgeImage;
-						}
-						return $base;
-					} else {
-						$campaign['name'] = $campaign['campaignName'];
-						$campaign['id'] = $campaign['campaignId'];
-						$campaign['enrolled'] = $campaign['isEnrolled'] ?? false;
-						$campaign['canEnroll'] = $campaign['canEnroll'] ?? false;
-						if (isset($campaign['campaignReward'])) {
-							$campaign['rewardName'] = $campaign['campaignReward']['rewardName'];
-							$campaign['displayName'] = $campaign['campaignReward']['displayName'];
-							$campaign['rewardType'] = $campaign['campaignReward']['rewardType'];
-							$campaign['rewardExists'] = $campaign['campaignReward']['rewardExists'];
-							$campaign['badgeImage'] = $campaign['campaignReward']['badgeImage'];
-							Campaign::setDisplayImageForArray($campaign, $imageSettings, $campaign['rewardGiven'] ?? false, $campaign['campaignReward']['awardAutomatically'] ?? false, $campaign['isComplete'] ?? false);
-						}
-
-						if (isset($campaign['milestones']) && is_array($campaign['milestones'])) {
-							$campaign['milestones'] = array_map(function ($milestone) use ($imageSettings){
-								$milestoneArray = [
-									'type' => 'milestone',
-									'id' => $milestone['id'] ?? null,
-									'name' => $milestone['milestoneName'] ?? null,
-									'completedGoals' => $milestone['completedGoals'] ?? null,
-									'totalGoals' => $milestone['totalGoals'] ?? null,
-									'isComplete' => ($milestone['completedGoals'] >= $milestone['totalGoals']) ? true : false,
-									'rewardName' => $milestone['rewardName'] ?? null,
-									'rewardId' => $milestone['rewardId'] ?? null,
-									'rewardType' => $milestone['rewardType'] ?? null,
-									'rewardExists' => $milestone['rewardExists'] ?? null,
-									'displayName' => $milestone['displayName'] ?? null,
-									'awardAutomatically' => $milestone['awardAutomatically'] ?? null,
-									'rewardImage' => $milestone['badgeImage'] ?? null,
-								];
-								Campaign::setDisplayImageForArray($milestoneArray, $imageSettings, $milestone['rewardGiven'] ?? false, $milestone['awardAutomatically'] ?? false, $milestoneArray['isComplete']);
-								return $milestoneArray;
-							}, $campaign['milestones']);
-						}
-						return $campaign;
+				$paginated = array_map(function($campaign) use ($imageSettings) {
+					$campaign['name'] = $campaign['campaignName'];
+					$campaign['id'] = $campaign['campaignId'];
+					$campaign['enrolled'] = $campaign['isEnrolled'] ?? false;
+					$campaign['canEnroll'] = $campaign['canEnroll'] ?? false;
+					$campaign['campaignRewardGiven'] = $campaign['rewardGiven'] ?? false;
+					$campaign['campaignIsComplete'] = $campaign['isComplete'] ?? false;
+					
+					if (isset($campaign['campaignReward'])) {
+						$campaign['rewardName'] = $campaign['campaignReward']['rewardName'];
+						$campaign['displayName'] = $campaign['campaignReward']['displayName'];
+						$campaign['rewardType'] = $campaign['campaignReward']['rewardType'];
+						$campaign['rewardExists'] = $campaign['campaignReward']['rewardExists'];
+						$campaign['badgeImage'] = $campaign['campaignReward']['badgeImage'];
+						$campaign['awardAutomatically'] = $campaign['campaignReward']['awardAutomatically'] ?? false;
+						
+						Campaign::setDisplayImageForArray($campaign, $imageSettings, $campaign['campaignRewardGiven'], $campaign['awardAutomatically'], $campaign['campaignIsComplete']);
 					}
+
+					if (isset($campaign['milestones']) && is_array($campaign['milestones'])) {
+						$campaign['milestones'] = array_map(function ($milestone) use ($imageSettings) {
+							$milestoneArray = [
+								'type' => 'milestone',
+								'id' => $milestone['id'] ?? null,
+								'name' => $milestone['milestoneName'] ?? null,
+								'completedGoals' => $milestone['completedGoals'] ?? null,
+								'totalGoals' => $milestone['totalGoals'] ?? null,
+								'isComplete' => ($milestone['completedGoals'] >= $milestone['totalGoals']) ? true : false,
+								'rewardName' => $milestone['rewardName'] ?? null,
+								'rewardId' => $milestone['rewardId'] ?? null,
+								'rewardType' => $milestone['rewardType'] ?? null,
+								'rewardExists' => $milestone['rewardExists'] ?? null,
+								'displayName' => $milestone['displayName'] ?? null,
+								'awardAutomatically' => $milestone['awardAutomatically'] ?? null,
+								'rewardImage' => $milestone['badgeImage'] ?? null,
+								'milestoneRewardGiven' => $milestone['rewardGiven'] ?? false,
+								'milestoneIsComplete' => ($milestone['completedGoals'] >= $milestone['totalGoals']) ? true : false,
+								'allowPatronProgressInput' => $milestone['allowPatronProgressInput'] ?? null,
+								'progressBeyondOneHundredPercent' => $milestone['progressBeyondOneHundredPercent'] ?? null,
+							];
+							Campaign::setDisplayImageForArray($milestoneArray, $imageSettings, $milestoneArray['milestoneRewardGiven'], $milestoneArray['awardAutomatically'], $milestoneArray['milestoneIsComplete']);
+							return $milestoneArray;
+						}, $campaign['milestones']);
+					}
+					return $campaign;
 				}, $paginated);
 				return [
 					'success' => true,
@@ -7081,6 +7074,8 @@ class UserAPI extends AbstractAPI {
 				$base['enrolled'] = $campaign->enrolled ?? false;
 				$base['isPast'] = $campaign->isPast ?? false;
 				$base['canEnroll'] = $campaign->canEnroll ?? false;
+				$base['campaignRewardGiven'] = $campaign->campaignRewardGiven ?? false;
+				$base['campaignIsComplete'] = $campaign->isComplete ?? false;
 				Campaign::setDisplayImageForArray($base, $imageSettings, $campaign->campaignRewardGiven ?? false, $campaign->awardAutomatically ?? false, $campaign->isComplete ?? false);
 
 				if (!empty($campaign->milestones) && is_array($campaign->milestones)) {
@@ -7097,6 +7092,8 @@ class UserAPI extends AbstractAPI {
 						$m['displayName'] = $milestone->displayName ?? null;
 						$m['awardAutomatically'] = $milestone->awardAutomatically ?? null;
 						$m['rewardImage'] = $milestone->rewardImage ?? null;
+						$m['milestoneRewardGiven'] = $milestone->rewardGiven ?? false;
+						$m['milestoneIsComplete'] = $m['isComplete'];
 						Campaign::setDisplayImageForArray($m, $imageSettings, $milestone->rewardGiven ?? false, $milestone->awardAutomatically ?? false, $m['isComplete']);
 						return $m;
 					}, $campaign->milestones);
