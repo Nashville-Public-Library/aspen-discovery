@@ -923,9 +923,14 @@ function renameUploadedWBFiles(&$update) : void {
 function renameUploadedThemeImages(&$update) : void {
 	global $aspen_db;
 	global $configArray;
+	// Use LOG_ERROR mode because these updates must be tracked during the upgrade in
+	// case anything else fails.
+	global $logger;
 	require_once ROOT_DIR . '/sys/Theming/Theme.php';
 	$themeImagesUpdated = 0;
 
+	// First pass: Collect all themes and their image files to identify duplicates.
+	$themeImageMap = [];
 	$theme = new Theme();
 	$theme->find();
 	while ($theme->fetch()){
@@ -961,33 +966,99 @@ function renameUploadedThemeImages(&$update) : void {
 		foreach ($themeImagesToCheck as $image) {
 			$dbName = $image['dbName'];
 			if (!empty($theme->$dbName) && substr($theme->$dbName, 0, -4) != $image['prefix']) {
-				$originalPath = $configArray['Site']['local'] . "/files/original/".$theme->$dbName;
-				$originalThumbnailPath = $configArray['Site']['local'] . "/files/thumbnail/".$theme->$dbName;
-				$fileType = substr($theme->$dbName, -3);
-				$fileType = match($fileType){
-					'gif' => ".gif",
-					'png' => ".png",
-					'svg' => ".svg",
-					default => ".jpg",
-				};
-				$newPathOriginal = $configArray['Site']['local'] . "/files/original/".$image['prefix'].$fileType;
-				$newPathThumbnail = $configArray['Site']['local'] . "/files/thumbnail/".$image['prefix'].$fileType;
-				$newFileName = $image['prefix'].$fileType;
-				$mainFileRenamed = false;
-				if (file_exists($originalPath) && !file_exists($newPathOriginal)) {
-					$mainFileRenamed = rename($originalPath, $newPathOriginal);
+				$originalFileName = $theme->$dbName;
+				$logger->log("Theme Image Renaming: Found theme $themeId using image '$originalFileName' for $dbName", Logger::LOG_ERROR);
+				if (!isset($themeImageMap[$originalFileName])) {
+					$themeImageMap[$originalFileName] = [];
 				}
-				if (file_exists($originalThumbnailPath) && !file_exists($newPathThumbnail)) {
-					rename($originalThumbnailPath, $newPathThumbnail);
-				}
-
-				if ($mainFileRenamed) {
-					$aspen_db->query("UPDATE themes set $dbName = '$newFileName' WHERE id=$themeId");
-					$themeImagesUpdated++;
-				}
+				$themeImageMap[$originalFileName][] = [
+					'themeId' => $themeId,
+					'dbName' => $dbName,
+					'prefix' => $image['prefix']
+				];
 			}
 		}
 	}
+
+	// Second pass: Process each unique filename.
+	foreach ($themeImageMap as $originalFileName => $themesUsingFile) {
+		$originalPath = $configArray['Site']['local'] . "/files/original/" . $originalFileName;
+		$originalThumbnailPath = $configArray['Site']['local'] . "/files/thumbnail/" . $originalFileName;
+
+		$themeCount = count($themesUsingFile);
+		$logger->log("Theme Image Renaming: Processing '$originalFileName' used by $themeCount theme(s): " . implode(', ', array_column($themesUsingFile, 'themeId')), Logger::LOG_ERROR);
+
+		if (!file_exists($originalPath)) {
+			continue;
+		}
+
+		$fileType = substr($originalFileName, -3);
+		$fileType = match($fileType){
+			'gif' => ".gif",
+			'png' => ".png",
+			'svg' => ".svg",
+			default => ".jpg",
+		};
+
+		// Process each theme that uses this file.
+		$isFirstTheme = true;
+		foreach ($themesUsingFile as $themeInfo) {
+			$themeId = $themeInfo['themeId'];
+			$dbName = $themeInfo['dbName'];
+			$prefix = $themeInfo['prefix'];
+
+			$newPathOriginal = $configArray['Site']['local'] . "/files/original/" . $prefix . $fileType;
+			$newPathThumbnail = $configArray['Site']['local'] . "/files/thumbnail/" . $prefix . $fileType;
+			$newFileName = $prefix . $fileType;
+
+			$mainFileProcessed = false;
+
+			if ($isFirstTheme) {
+				// First theme: rename (move) the original file.
+				$logger->log("Theme Image Renaming: First theme $themeId - renaming '$originalPath' to '$newPathOriginal'", Logger::LOG_ERROR);
+				if (!file_exists($newPathOriginal)) {
+					$mainFileProcessed = rename($originalPath, $newPathOriginal);
+					if ($mainFileProcessed) {
+						$logger->log("Theme Image Renaming: Successfully renamed file for theme $themeId", Logger::LOG_ERROR);
+					} else {
+						$logger->log("Theme Image Renaming: FAILED to rename file for theme $themeId", Logger::LOG_ERROR);
+					}
+				}
+				if (file_exists($originalThumbnailPath) && !file_exists($newPathThumbnail)) {
+					$thumbRenamed = rename($originalThumbnailPath, $newPathThumbnail);
+					$logger->log("Theme Image Renaming: Thumbnail rename for theme $themeId: " . ($thumbRenamed ? "SUCCESS" : "FAILED"), Logger::LOG_ERROR);
+				}
+				$isFirstTheme = false;
+			} else {
+				// Subsequent themes: copy from the first theme's renamed file.
+				$firstThemeInfo = $themesUsingFile[0];
+				$firstThemePrefix = $firstThemeInfo['prefix'];
+				$firstThemeNewPath = $configArray['Site']['local'] . "/files/original/" . $firstThemePrefix . $fileType;
+				$firstThemeNewThumbnailPath = $configArray['Site']['local'] . "/files/thumbnail/" . $firstThemePrefix . $fileType;
+
+				$logger->log("Theme Image Renaming: Subsequent theme $themeId - copying from theme {$firstThemeInfo['themeId']} file '$firstThemeNewPath' to '$newPathOriginal'", Logger::LOG_ERROR);
+
+				if (file_exists($firstThemeNewPath) && !file_exists($newPathOriginal)) {
+					$mainFileProcessed = copy($firstThemeNewPath, $newPathOriginal);
+					if ($mainFileProcessed) {
+						$logger->log("Theme Image Renaming: Successfully copied file for theme $themeId", Logger::LOG_ERROR);
+					} else {
+						$logger->log("Theme Image Renaming: FAILED to copy file for theme $themeId", Logger::LOG_ERROR);
+					}
+				}
+				if (file_exists($firstThemeNewThumbnailPath) && !file_exists($newPathThumbnail)) {
+					$thumbCopied = copy($firstThemeNewThumbnailPath, $newPathThumbnail);
+					$logger->log("Theme Image Renaming: Thumbnail copy for theme $themeId: " . ($thumbCopied ? "SUCCESS" : "FAILED"), Logger::LOG_ERROR);
+				}
+			}
+
+			if ($mainFileProcessed) {
+				$aspen_db->query("UPDATE themes set $dbName = '$newFileName' WHERE id=$themeId");
+				$themeImagesUpdated++;
+			}
+		}
+	}
+
 	$update['status'] = "Renamed $themeImagesUpdated images in themes so they will not conflict with other image uploads.";
 	$update['success'] = true;
 }
