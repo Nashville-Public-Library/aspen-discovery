@@ -300,7 +300,7 @@
 				{
 					"id": "assert-hold-details",
 					"command": "assertText",
-					"target": "css=.result:nth-child(1) .title",
+					"target": "linkText=${holdBook.title}",
 					"targets": [],
 					"value": "${holdBook.title}"
 				}
@@ -320,14 +320,14 @@
 				{
 					"id": "assert-freeze-btn",
 					"command": "assertText",
-					"target": "css=div[class*=ilsHold_${holdBook.bibRecordId}][class*=button.freezeButton]",
+					"target": "css=div[class*=\"ilsHold_${holdBook.bibRecordId}\"] button.freezeButton",
 					"targets": [],
 					"value": "Freeze Hold"
 				},
 				{
 					"id": "click-freeze-btn",
 					"command": "click",
-					"target": "css=div[class*=ilsHold_${holdBook.bibRecordId}][class*=button.freezeButton]",
+					"target": "css=div[class*=\"ilsHold_${holdBook.bibRecordId}\"] button.freezeButton",
 					"targets": [],
 					"value": ""
 				},
