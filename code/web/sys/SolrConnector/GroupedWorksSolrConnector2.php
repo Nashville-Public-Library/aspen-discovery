@@ -229,7 +229,7 @@ class GroupedWorksSolrConnector2 extends Solr {
 		if ($availableOnly) {
 			$options['fq'][] = "($editionLimiter#available#*) OR ($editionLimiter#available_online#*)";
 		}else{
-			$options['fq'][] = "#$selectedAvailabilityToggle#*";
+			$options['fq'][] = "$editionLimiter#$selectedAvailabilityToggle#*";
 		}
 
 		foreach ($scopingFilters as $filter) {
