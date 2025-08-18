@@ -112,7 +112,7 @@ class WorkAPI extends AbstractAPI {
 			$relatedManifestations = $groupedWorkDriver->getRelatedManifestations();
 			foreach ($relatedManifestations as $relatedManifestation) {
 				foreach ($relatedManifestation->getVariations() as $obj) {
-					if(!array_key_exists($obj->manifestation->format, $itemData['formats'])) {
+					if(!is_null($obj->manifestation) && !array_key_exists($obj->manifestation->format, $itemData['formats'])) {
 						$format = $obj->manifestation->format;
 						$itemData['formats'][$format] = [];
 						$itemData['formats'][$format]['label'] = translate(['text' => $format, 'isPublicFacing' => true]);

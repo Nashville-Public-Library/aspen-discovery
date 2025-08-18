@@ -83,7 +83,7 @@ class SelfReg extends Action {
 						}
 					}
 					//if there's no USPS info or email or phone are invalid, don't bother trying to validate
-					if ($uspsInfo & !$invalidContactInfo){
+					if ($uspsInfo && !$invalidContactInfo){
 						//Submit form to ILS if address is validated
 						if (SystemUtils::validateAddress($streetAddress, $city, $state, $zip)){
 							//Submit form to ILS if age is validated

@@ -1,31 +1,30 @@
 {strip}
-	<div id="main-content" class="col-md-12">
-		<div class="row">
-			<div class="col-xs-12">
-				<h1 id="pageTitle">{$pageTitleShort}</h1>
-			</div>
-		</div>
-		{if isset($results)}
-			<div class="row">
-				<div class="col-xs-12">
-					<div class="alert {if !empty($results.success)}alert-success{else}alert-danger{/if}">
-						{$results.message}
-					</div>
-				</div>
-			</div>
-		{elseif isset($error)}
-			<div class="row">
-				<div class="col-xs-12">
-					<div class="alert alert-danger">
-						{$error}
-					</div>
-				</div>
-			</div>
-		{/if}
-	</div>
+<div id="main-content" class="col-xs-12">
 	<div class="row">
 		<div class="col-xs-12">
-			<div class="alert alert-info">{translate text="This tool can be used to start a background process. Results can be checked in the Cron Log." isAdminFacing=true}</div>
+			<h1 id="pageTitle">{$pageTitleShort}</h1>
+		</div>
+	</div>
+	{if isset($results)}
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="alert {if !empty($results.success)}alert-success{else}alert-danger{/if}">
+					{$results.message}
+				</div>
+			</div>
+		</div>
+	{elseif isset($error)}
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="alert alert-danger">
+					{$error}
+				</div>
+			</div>
+		</div>
+	{/if}
+	<div class="row">
+		<div class="col-xs-12">
+			<div class="alert alert-info">{translate text="This tool can be used to start a background cron process. Results can be checked in the %1%Cron Log%2%." 1='<a href="/Admin/CronLog">' 2='</a>' isAdminFacing=true}</div>
 		</div>
 	</div>
 	<form id="generateTestUsersForm" method="get" role="form">
@@ -45,4 +44,5 @@
 			</div>
 		</div>
 	</form>
+</div>
 {/strip}
