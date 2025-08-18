@@ -105,7 +105,7 @@ class GroupedWorksSolrConnector2 extends Solr {
 	 * @return    array                            An array of query results
 	 *
 	 */
-	function getMoreLikeThis($id, $availableOnly = false, $limitFormat = true, $limit = null, $format = null, $fieldsToReturn = null) {
+	function getMoreLikeThis($id, $selectedAvailabilityToggle = 'global', $availableOnly = false, $limitFormat = true, $limit = null, $format = null, $fieldsToReturn = null) {
 		$originalResult = $this->getRecord($id, 'target_audience_full,mpaa_rating,literary_form,language,isbn,upc,series');
 		// Query String Parameters
 		if ($fieldsToReturn == null) {
@@ -119,6 +119,13 @@ class GroupedWorksSolrConnector2 extends Solr {
 		];
 		if ($originalResult) {
 			$options['fq'] = [];
+			//Apply scoping filter
+			global $solrScope;
+			if ($availableOnly) {
+				$options['fq'][] = "(availability_toggle:\"$solrScope#available\") OR (availability_toggle:\"$solrScope#available_online\")";
+			}else{
+				$options['fq'][] = "availability_toggle:\"$solrScope#$selectedAvailabilityToggle\"";
+			}
 			if (isset($originalResult['target_audience_full'])) {
 				if (is_array($originalResult['target_audience_full'])) {
 					$filter = '';
@@ -211,11 +218,20 @@ class GroupedWorksSolrConnector2 extends Solr {
 		if (isset($format) && $limitFormat) {
 			$options['fq'][] = 'format:"' . $solrScope.'#' . $format . '"';
 		}
+		
+		$scopingFilters = $this->getScopingFilters($searchLibrary, $searchLocation);
+		$editionLimiter = "edition_info:$solrScope#*";
+		if (isset($format) && $limitFormat) {
+			$editionLimiter .= "#" . str_replace(' ', '_', $format);
+		}else{
+			$editionLimiter .= "#*";
+		}
 		if ($availableOnly) {
-			$options['fq'][] = "availability_toggle:$solrScope#available OR availability_toggle:$solrScope#available_online";
+			$options['fq'][] = "($editionLimiter#available#*) OR ($editionLimiter#available_online#*)";
+		}else{
+			$options['fq'][] = "$editionLimiter#$selectedAvailabilityToggle#*";
 		}
 
-		$scopingFilters = $this->getScopingFilters($searchLibrary, $searchLocation);
 		foreach ($scopingFilters as $filter) {
 			$options['fq'][] = $filter;
 		}

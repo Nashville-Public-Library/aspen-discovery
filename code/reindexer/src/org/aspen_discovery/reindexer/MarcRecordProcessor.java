@@ -399,7 +399,7 @@ abstract class MarcRecordProcessor {
 			}else{
 				subfields = "abcdfpqt";
 			}
-			String series = AspenStringUtils.trimTrailingPunctuation(MarcUtil.getSpecifiedSubfieldsAsString(seriesField, subfields,"")).toString();
+			String series = AspenStringUtils.trimTrailingPunctuation(MarcUtil.getSpecifiedSubfieldsAsString(seriesField, subfields," ")).toString();
 			String seriesLanguage = AspenStringUtils.trimTrailingPunctuation(MarcUtil.getSpecifiedSubfieldsAsString(seriesField, "l","")).toString();
 			if (!seriesLanguage.isEmpty()) {
 				series = series + " (" + seriesLanguage + ")";
@@ -423,7 +423,7 @@ abstract class MarcRecordProcessor {
 		for (DataField seriesField : seriesFields){
 			// Include only uncontrolled series from 490, since controlled will also be in 800/830
 			if (seriesField.getIndicator1() == '0') {
-				String series = AspenStringUtils.trimTrailingPunctuation(MarcUtil.getSpecifiedSubfieldsAsString(seriesField, "a", "")).toString();
+				String series = AspenStringUtils.trimTrailingPunctuation(MarcUtil.getSpecifiedSubfieldsAsString(seriesField, "a", " ")).toString();
 				//Remove anything in parentheses since it's normally just the format
 				//series = series.replaceAll("\\s+\\(.*?\\)", "");
 				//Remove the word series at the end since this gets cataloged inconsistently

@@ -31,8 +31,8 @@ public class UpdateReadingHistory implements IProcessHandler {
 		}
 
 		// Get the thread settings from the configuration, if any.
-		int minThreads = 8;
-		int maxThreads = 16;
+		int minThreads = 4;
+		int maxThreads = 8;
 		try {
 			String minThreadsStr = processSettings.get("minThreads");
 			if (minThreadsStr != null && !minThreadsStr.isEmpty()) {
