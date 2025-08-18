@@ -2060,6 +2060,27 @@ class MyAccount_AJAX extends JSON_Action {
 						$pickupSublocations[$locationKey] = $user->getValidSublocations($location->locationId);
 					}
 				}
+
+				$catalogDriver = $user->getCatalogDriver();
+				if (!empty($catalogDriver) && $catalogDriver->restrictValidPickupLocationsForRecordByILS()) {
+					$getPickupLocationsFromILS = $catalogDriver->getValidPickupLocationsForRecordFromILS($marcRecord->getUniqueID(), $user);
+					if (!empty($getPickupLocationsFromILS['locationCodes']) && $getPickupLocationsFromILS['success']) {
+						$validLocationCodesFromILS = $getPickupLocationsFromILS['locationCodes'];
+						$pickupBranches = array_filter($pickupBranches, function($location) use ($validLocationCodesFromILS) {
+							if (!is_object($location)) {
+								return true;
+							}
+							foreach ($validLocationCodesFromILS as $validCode) {
+								if (strpos($validCode, $location->code) === 0) {
+									return true;
+								}
+							}
+							return false;
+						});
+					} else {
+						$pickupBranches = [];
+					}
+				}
 			}
 
 			$interface->assign('pickupAt', $pickupAt);

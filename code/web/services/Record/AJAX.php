@@ -1857,6 +1857,27 @@ class Record_AJAX extends Action {
 			$interface->assign('holdNotificationTemplate', $user->getCatalogDriver()->getHoldNotificationTemplate($user));
 		}
 
+		$catalogDriver = $user->getCatalogDriver();
+		if (!empty($catalogDriver) && $catalogDriver->restrictValidPickupLocationsForRecordByILS()) {
+			$getPickupLocationsFromILS = $catalogDriver->getValidPickupLocationsForRecordFromILS($marcRecord->getUniqueID(), $user);
+			if (!empty($getPickupLocationsFromILS['locationCodes']) && $getPickupLocationsFromILS['success']) {
+				$validLocationCodesFromILS = $getPickupLocationsFromILS['locationCodes'];
+				$locations = array_filter($locations, function($location) use ($validLocationCodesFromILS) {
+					if (!is_object($location)) {
+						return true;
+					}
+					foreach ($validLocationCodesFromILS as $validCode) {
+						if (strpos($validCode, $location->code) === 0) {
+							return true;
+						}
+					}
+					return false;
+				});
+			} else {
+				$locations = [];
+			}
+		}
+
 		global $library;
 		//Check to see if we can bypass the holds popup and just place the hold
 		if (!$multipleAccountPickupLocations && !$promptForHoldNotifications && $library->allowRememberPickupLocation) {
