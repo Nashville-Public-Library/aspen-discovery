@@ -90,6 +90,7 @@ class GroupedWorksSolrConnector extends Solr {
 	 *
 	 * @access    public
 	 * @param $id
+	 * @param string $selectedAvailabilityToggle
 	 * @param bool $availableOnly
 	 * @param bool $limitFormat
 	 * @param null $limit
@@ -97,7 +98,7 @@ class GroupedWorksSolrConnector extends Solr {
 	 * @return    array                            An array of query results
 	 *
 	 */
-	function getMoreLikeThis($id, $availableOnly = false, $limitFormat = true, $limit = null, $fieldsToReturn = null) {
+	function getMoreLikeThis($id, $selectedAvailabilityToggle = 'global', $availableOnly = false, $limitFormat = true, $limit = null, $fieldsToReturn = null) {
 		$originalResult = $this->getRecord($id, 'target_audience_full,mpaa_rating,literary_form,language,isbn,upc,series');
 		// Query String Parameters
 		if ($fieldsToReturn == null) {

@@ -3,7 +3,7 @@
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class CronLogEntry extends DataObject {
-	public $__table = 'cron_log';   // table name
+	public $__table = 'cron_log';
 	public $id;
 	public $name;
 	public $startTime;
@@ -56,6 +56,41 @@ class CronLogEntry extends DataObject {
 				return "$hours hours, $minutes min";
 			}
 		}
+	}
+
+	private $skipLogging = false;
+
+	/**
+	 * Override insert to check if this is a frequent cron job with logging disabled.
+	 * If so, sets skipLogging flag and prevents database insertion.
+	 */
+	function insert($context = ''): bool|int {
+		if (!empty($this->name)) {
+			require_once ROOT_DIR . '/services/Admin/CronRunner.php';
+			require_once ROOT_DIR . '/sys/SystemVariables.php';
+			
+			$frequentJobs = Admin_CronRunner::getFrequentCronJobs();
+			if (in_array($this->name, $frequentJobs)) {
+				$systemVariables = SystemVariables::getSystemVariables();
+				if (!$systemVariables->logFrequentCrons) {
+					$this->skipLogging = true;
+					return true;
+				}
+			}
+		}
+		
+		return parent::insert($context);
+	}
+
+	/**
+	 * Override update to prevent database operations when logging is disabled.
+	 * This handles cases where cron jobs call update() after insert() returned early.
+	 */
+	function update($context = ''): bool|int {
+		if ($this->skipLogging) {
+			return true;
+		}
+		return parent::update($context);
 	}
 
 }

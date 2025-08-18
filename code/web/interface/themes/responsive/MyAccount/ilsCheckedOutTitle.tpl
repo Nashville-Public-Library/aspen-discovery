@@ -255,7 +255,7 @@
 							{/if}
 						{/if}
 					</div>
-					{if !empty($showWhileYouWait)}
+					{if !empty($showYouMightAlsoLike)}
 						{if !$record->isIll}
 							<div class="btn-group btn-group-vertical btn-block">
 								{if !empty($record->getGroupedWorkId())}

@@ -410,7 +410,7 @@ class CloudLibraryDriver extends AbstractEContentDriver {
 					$groupedWorkId = $recordDriver->getPermanentId();
 					require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 					$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
-					$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait();
+					$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait($recordDriver->getPrimaryFormat());
 
 					global $interface;
 					if (count($whileYouWaitTitles) > 0) {
