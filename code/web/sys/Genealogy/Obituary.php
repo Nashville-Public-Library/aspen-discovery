@@ -125,9 +125,9 @@ class Obituary extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		$personId = $this->personId;
-		$ret = parent::delete($useWhere);
+		$ret = parent::delete($useWhere, $hardDelete);
 		//Load the person this is for, and update solr
 		if ($personId) {
 			require_once ROOT_DIR . '/sys/Genealogy/Person.php';

@@ -69,9 +69,9 @@ public class UpdateReadingHistoryTask implements Runnable {
 				// Call the patron API to get their checked out items.
 				URL patronApiUrl = new URL(aspenUrl + "/API/UserAPI?method=updatePatronReadingHistory&username=" + URLEncoder.encode(ilsBarcode, StandardCharsets.UTF_8));
 				HttpURLConnection conn = (HttpURLConnection) patronApiUrl.openConnection();
-				// Give 5 seconds for connection timeout and 5 minutes for read timeout.
-				conn.setConnectTimeout(5000);
-				conn.setReadTimeout(300000);
+				// Give 10 seconds for connection timeout and 10 minutes for read timeout.
+				conn.setConnectTimeout(10000);
+				conn.setReadTimeout(600000);
 				conn.addRequestProperty("User-Agent", "Aspen Discovery");
 				conn.addRequestProperty("Accept", "*/*");
 				conn.addRequestProperty("Cache-Control", "no-cache");

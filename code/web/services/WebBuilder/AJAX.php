@@ -609,10 +609,9 @@ class WebBuilder_AJAX extends JSON_Action {
 	}
 
 	/** @noinspection PhpUnused */
-	function deleteCell() {
+	function deleteCell(): array {
 		$result = [
 			'success' => false,
-			'message' => 'Unknown error deleting cell',
 		];
 		if (UserAccount::isLoggedIn()) {
 			if (UserAccount::userHasPermission([
@@ -625,7 +624,7 @@ class WebBuilder_AJAX extends JSON_Action {
 					$portalCell = new PortalCell();
 					$portalCell->id = $_REQUEST['id'];
 					if ($portalCell->find(true)) {
-						//Update the widths of the cells based on the number of cells in the row
+						// Update the widths of the cells based on the number of cells in the row.
 						$portalRow = new PortalRow();
 						$portalRow->id = $portalCell->portalRowId;
 						$portalCell->delete();
@@ -633,32 +632,31 @@ class WebBuilder_AJAX extends JSON_Action {
 							$portalRow->resizeColumnWidths();
 						}
 						$result['success'] = true;
-						$result['message'] = 'The cell was deleted successfully';
+						//$result['message'] = 'The cell was deleted successfully.';
 						global $interface;
 						$interface->assign('portalRow', $portalRow);
 						$interface->assign('inPageEditor', false);
 						$result['rowId'] = $portalCell->portalRowId;
 						$result['newRow'] = $interface->fetch('DataObjectUtil/portalRow.tpl');
 					} else {
-						$result['message'] = 'Unable to find that cell, it may have been deleted already';
+						$result['message'] = 'Unable to find that cell; it may have been already deleted.';
 					}
 				} else {
-					$result['message'] = 'No cell id was provided';
+					$result['message'] = 'No cell id was provided.';
 				}
 			} else {
-				$result['message'] = 'You don\'t have the correct permissions to delete a cell';
+				$result['message'] = 'You don\'t have the correct permissions to delete a cell.';
 			}
 		} else {
-			$result['message'] = 'You must be logged in to delete a cell';
+			$result['message'] = 'You must be logged in to delete a cell.';
 		}
 		return $result;
 	}
 
 	/** @noinspection PhpUnused */
-	function deleteRow() {
+	function deleteRow(): array {
 		$result = [
 			'success' => false,
-			'message' => 'Unknown error deleting row',
 		];
 		if (UserAccount::isLoggedIn()) {
 			if (UserAccount::userHasPermission([
@@ -672,18 +670,18 @@ class WebBuilder_AJAX extends JSON_Action {
 					if ($portalRow->find(true)) {
 						$portalRow->delete();
 						$result['success'] = true;
-						$result['message'] = 'The row was deleted successfully';
+						//$result['message'] = 'The row was deleted successfully.';
 					} else {
-						$result['message'] = 'Unable to find that row, it may have been deleted already';
+						$result['message'] = 'Unable to find that row; it may have been already deleted.';
 					}
 				} else {
-					$result['message'] = 'No row id was provided';
+					$result['message'] = 'No row id was provided.';
 				}
 			} else {
-				$result['message'] = 'You don\'t have the correct permissions to delete a row';
+				$result['message'] = 'You don\'t have the correct permissions to delete a row.';
 			}
 		} else {
-			$result['message'] = 'You must be logged in to delete a row';
+			$result['message'] = 'You must be logged in to delete a row.';
 		}
 		return $result;
 	}

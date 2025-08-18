@@ -241,7 +241,7 @@ class FormatMapValue extends DataObject {
 	 * @param bool $useWhere
 	 * @return int
 	 */
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		// Check if we're deleting a specific record (i.e., not a bulk delete).
 		if (!$useWhere && !empty($this->id)) {
 			// Trigger regrouping if a format value is being deleted.
@@ -252,6 +252,6 @@ class FormatMapValue extends DataObject {
 		}
 
 		// Call parent delete to perform the actual deletion.
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 }

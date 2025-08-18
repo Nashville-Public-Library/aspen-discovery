@@ -210,7 +210,7 @@ class OpenArchivesCollection extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		$this->clearLibraries();
 		$this->clearLocations();
 		$this->clearDefaultCovers();

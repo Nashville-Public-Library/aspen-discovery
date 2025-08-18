@@ -28,6 +28,22 @@ function getUpdates25_08_00(): array {
 				"ALTER TABLE materials_request ADD COLUMN source TINYINT DEFAULT 1"
 			]
 		], //materials_request_add_source
+		'manually_run_cron_permission' => [
+			'title' => 'Add Manually Run Cron Permission',
+			'description' => 'Add permission to manually run cron',
+			'sql' => [
+				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES 
+					 ('System Administration', 'Manually Run Cron Processes', '', 60, 'Allows the user to manually start cron processes.')",
+				"INSERT INTO role_permissions(roleId, permissionId) VALUES ((SELECT roleId from roles where name='opacAdmin'), (SELECT id from permissions where name='Manually Run Cron Processes'))",
+			]
+		], //manually_run_cron_permission
+		'add_cron_name' => [
+			'title' => 'Add Cron Name',
+			'description' => 'Add Name to cron table',
+			'sql' => [
+				"ALTER TABLE cron_log ADD COLUMN name varchar(255) default 'Primary Cron'"
+			]
+		], //add_cron_name
 
 		//katherine - Grove
 		'sierra_self_reg_enhancement_settings' => [
@@ -99,6 +115,53 @@ function getUpdates25_08_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'object_restoration_permission' => [
+			'title' => 'Add Object Restoration Permission',
+			'description' => 'Add new permission to allow administrators to restore soft-deleted objects.',
+			'continueOnError' => true,
+			'sql' => [
+				"INSERT INTO permissions (sectionName, name, requiredModule, weight, description) VALUES ('System Administration', 'Administer Object Restoration', '', 13, 'Allows the user to view and restore soft-deleted objects (e.g., User Lists) within Aspen.')",
+				"INSERT INTO role_permissions (roleId, permissionId) SELECT (SELECT roleId FROM roles WHERE name='opacAdmin'), (SELECT id FROM permissions WHERE name='Administer Object Restoration') WHERE NOT EXISTS (SELECT 1 FROM role_permissions WHERE roleId = (SELECT roleId FROM roles WHERE name='opacAdmin') AND permissionId = (SELECT id FROM permissions WHERE name='Administer Object Restoration'))",
+			],
+		],// object_restoration_permission
+		'add_soft_delete_columns' => [
+			'title' => 'Add Soft-Delete Columns to Supported Tables',
+			'description' => 'Ensure tables for soft-deletable objects have deleted and dateDeleted columns.',
+			'continueOnError' => true,
+			'sql' => [
+				"ALTER TABLE user_list ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE user_list ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE user_list ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE user_list ADD COLUMN IF NOT EXISTS deleteFromIndex TINYINT(1) DEFAULT 0",
+				"ALTER TABLE user_list_entry ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE user_list_entry ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE user_list_entry ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE web_builder_basic_page ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE web_builder_basic_page ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE web_builder_basic_page ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE web_builder_portal_page ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE web_builder_portal_page ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE web_builder_portal_page ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE web_builder_custom_form ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE web_builder_custom_form ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE web_builder_custom_form ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE web_builder_custom_web_resource_page ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE web_builder_custom_web_resource_page ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE web_builder_custom_web_resource_page ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE web_builder_resource ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE web_builder_resource ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE web_builder_resource ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE image_uploads ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE image_uploads ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE image_uploads ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE file_uploads ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE file_uploads ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE file_uploads ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+				"ALTER TABLE placards ADD COLUMN IF NOT EXISTS deleted TINYINT(1) DEFAULT 0",
+				"ALTER TABLE placards ADD COLUMN IF NOT EXISTS dateDeleted INT(11) DEFAULT 0",
+				"ALTER TABLE placards ADD COLUMN IF NOT EXISTS deletedBy INT(11) DEFAULT NULL",
+			],
+		],// add_soft_delete_columns
 		'update_browse_category_sort_options' => [
 			'title' => 'Update Browse Category Sort Options for Lists Search',
 			'description' => 'Add new date sorting options for browse categories when using Lists as search source.',

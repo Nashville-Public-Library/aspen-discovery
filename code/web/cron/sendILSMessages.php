@@ -6,6 +6,11 @@ require_once ROOT_DIR . '/sys/Account/User.php';
 require_once ROOT_DIR . '/sys/Account/UserILSMessage.php';
 require_once ROOT_DIR . '/sys/Notifications/ExpoNotification.php';
 require_once ROOT_DIR . '/sys/AspenLiDA/LocationSetting.php';
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Send ILS Messages';
+$cronLogEntry->insert();
 
 $allNotifications = new UserILSMessage();
 $allNotifications->status = "pending";
@@ -13,6 +18,8 @@ $notifications = $allNotifications->fetchAll('id');
 $allNotifications->__destruct();
 $allNotifications = null;
 
+$numNotificationsSent = 0;
+$cronLogEntry->notes = "Found " . count($notifications) . " notifications to process";
 foreach ($notifications as $notification) {
 	$tokens = [];
 	$ilsMessage = new UserILSMessage();
@@ -47,6 +54,7 @@ foreach ($notifications as $notification) {
 						$expoNotification = new ExpoNotification();
 						$expoNotification->sendExpoPushNotification($body, $token, $user->id, "ils_message");
 						$expoNotification = null;
+						$numNotificationsSent++;
 					}
 				}
 				$tokens = null;
@@ -57,6 +65,10 @@ foreach ($notifications as $notification) {
 		}
 	}
 }
+
+$cronLogEntry->notes .= "<br/>Sent $numNotificationsSent notifications";
+$cronLogEntry->endTime = time();
+$cronLogEntry->update();
 
 global $aspen_db;
 $aspen_db = null;
