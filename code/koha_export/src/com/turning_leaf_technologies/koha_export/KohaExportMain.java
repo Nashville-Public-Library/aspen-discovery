@@ -1095,9 +1095,13 @@ public class KohaExportMain {
 					}
 
 					if (libraryId != 0){
+						String[] contactInfo = extractBranchContactInfo(kohaBranches);
 						addAspenLocationStmt.setLong(1, libraryId);
 						addAspenLocationStmt.setString(2, AspenStringUtils.trimTo(60, branchDisplayName));
 						addAspenLocationStmt.setString(3, ilsCode);
+						addAspenLocationStmt.setString(4, contactInfo[0]);
+						addAspenLocationStmt.setString(5, contactInfo[1]);
+						addAspenLocationStmt.setString(6, contactInfo[2]);
 						addAspenLocationStmt.executeUpdate();
 						ResultSet addAspenLocationRS = addAspenLocationStmt.getGeneratedKeys();
 						if (addAspenLocationRS.next()){

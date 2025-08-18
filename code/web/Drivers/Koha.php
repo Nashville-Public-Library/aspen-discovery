@@ -7742,6 +7742,8 @@ class Koha extends AbstractIlsDriver {
 			$message .= 'Item is an onsite checkout';
 		} elseif ($code == "has_fine") {
 			$message .= 'Item has an outstanding fine';
+		} elseif ($code == "overdue") {
+			$message .= "Renewal is blocked by an overdue item";
 		} elseif (!empty($code)) {
 			$message = 'Unknown error:' . $code;
 		} else {
@@ -8585,8 +8587,8 @@ class Koha extends AbstractIlsDriver {
 			must be kept up to date in the background; otherwise, patrons will report gaps in their reading history. */
 			//$lastReadingHistoryUpdate = $patron->lastReadingHistoryUpdate;
 			//if ($lastSeenDate <= $lastReadingHistoryUpdate) {}
-			// Bypass reading history update if the patron hasn't been seen in the last 2 weeks (inactive patron).
-			if ($lastSeenDate <= (time() - 2 * 7 * 24 * 60 * 60)) {
+			// Bypass reading history update if the patron hasn't been seen in the last 23 hours (inactive patron for the day).
+			if ($lastSeenDate <= (time() - 82800)) {
 				return true;
 			}
 		}
