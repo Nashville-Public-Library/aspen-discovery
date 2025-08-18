@@ -1393,10 +1393,11 @@ class Library extends DataObject {
 						'values' => [
 							'0' => 'No',
 							'1' => 'Yes, include materials available in any format.',
-							'2' => 'Yes, include materials available from this library in the same format only.'
+							'2' => 'Yes, include materials available in the same format only.'
 						],
 						'label' => 'Show While You Wait',
 						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
+						'note' => 'To use this setting effectively you should include',
 						'hideInLists' => true,
 						'default' => 1,
 						'permissions' => ['Library ILS Options'],
@@ -1406,9 +1407,10 @@ class Library extends DataObject {
 						'type' => 'enum',
 						'values' => [
 							'0' => 'No',
-							'1' => 'Yes, include materials available in any format.',
-							'2' => 'Yes, include materials owned by this library in any format.',
-							'3' => 'Yes, include materials owned by this library in the same format only.'
+							'1' => 'Yes, include materials in global scope in any format.',
+							'4' => 'Yes, include materials in global scope in the same format only.',
+							'2' => 'Yes, include materials in local scope in any format.',
+							'3' => 'Yes, include materials in local scope in the same format only.'
 						],
 						'label' => 'Show You Might Also Like',
 						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
@@ -5038,16 +5040,18 @@ class Library extends DataObject {
 	}
 
 	public function getCloudLibraryScope() : int {
-		if ($this->_cloudLibraryScope === null && $this->libraryId) {
-			require_once ROOT_DIR . '/sys/CloudLibrary/LibraryCloudLibraryScope.php';
-			$libraryCloudLibraryScope = new LibraryCloudLibraryScope();
-			$libraryCloudLibraryScope->libraryId = $this->libraryId;
-			if ($libraryCloudLibraryScope->find(true)) {
-				require_once ROOT_DIR . '/sys/CloudLibrary/CloudLibraryScope.php';
-				$cloudLibraryScope = new CloudLibraryScope();
-				$cloudLibraryScope->id = $libraryCloudLibraryScope->scopeId;
-				if ($cloudLibraryScope->find(true)) {
-					$this->_cloudLibraryScope = $cloudLibraryScope->id;
+		if ($this->_cloudLibraryScope === null) {
+			if ($this->libraryId) {
+				require_once ROOT_DIR . '/sys/CloudLibrary/LibraryCloudLibraryScope.php';
+				$libraryCloudLibraryScope = new LibraryCloudLibraryScope();
+				$libraryCloudLibraryScope->libraryId = $this->libraryId;
+				if ($libraryCloudLibraryScope->find(true)) {
+					require_once ROOT_DIR . '/sys/CloudLibrary/CloudLibraryScope.php';
+					$cloudLibraryScope = new CloudLibraryScope();
+					$cloudLibraryScope->id = $libraryCloudLibraryScope->scopeId;
+					if ($cloudLibraryScope->find(true)) {
+						$this->_cloudLibraryScope = $cloudLibraryScope->id;
+					}
 				}
 			}
 			// If still not set, default to '-1', which corresponds to 'none'.
