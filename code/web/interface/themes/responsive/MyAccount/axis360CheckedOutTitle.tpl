@@ -105,7 +105,7 @@
 						{/if}
 						<a href="#" onclick="return AspenDiscovery.Axis360.returnCheckout('{$record->userId}', '{$record->recordId}', '{$record->transactionId}');" class="btn btn-sm btn-warning">{translate text='Return Now' isPublicFacing=true}</a>
 					</div>
-					{if !empty($showWhileYouWait)}
+					{if !empty($showYouMightAlsoLike)}
 						<div class="btn-group btn-group-vertical btn-block">
 							{if !empty($record->getGroupedWorkId())}
 								<button onclick="return AspenDiscovery.GroupedWork.getYouMightAlsoLike('{$record->getGroupedWorkId()}', '{$record->getPrimaryFormat()}');" class="btn btn-sm btn-default btn-wrap">{translate text="You Might Also Like" isPublicFacing=true}</button>

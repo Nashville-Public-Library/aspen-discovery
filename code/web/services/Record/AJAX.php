@@ -614,7 +614,7 @@ class Record_AJAX extends Action {
 						$groupedWorkId = $recordDriver->getPermanentId();
 						require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 						$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
-						$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait();
+						$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait($recordDriver->getPrimaryFormat());
 
 						$interface->assign('whileYouWaitTitles', $whileYouWaitTitles);
 
@@ -1160,7 +1160,7 @@ class Record_AJAX extends Action {
 								require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 								$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
 								if ($groupedWorkDriver->isValid()) {
-									$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait();
+									$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait($recordDriver->getPrimaryFormat());
 
 									$interface->assign('whileYouWaitTitles', $whileYouWaitTitles);
 								} else {
@@ -1257,7 +1257,7 @@ class Record_AJAX extends Action {
 					$groupedWorkId = $recordDriver->getPermanentId();
 					require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 					$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
-					$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait();
+					$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait($recordDriver->getPrimaryFormat());
 
 					$interface->assign('whileYouWaitTitles', $whileYouWaitTitles);
 				}
