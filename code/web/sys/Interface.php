@@ -175,9 +175,8 @@ class UInterface extends Smarty {
 			$this->assign('ie8', $ie8);
 		}
 
-		$session = new Session();
-		$session->session_id = session_id();
-		if ($session->find(true)) {
+		global $session;
+		if (!empty($session->id)) {
 			$this->assign('session', session_id() . ', remember me ' . $session->remember_me);
 		} else {
 			$this->assign('session', session_id() . ' - not saved');
