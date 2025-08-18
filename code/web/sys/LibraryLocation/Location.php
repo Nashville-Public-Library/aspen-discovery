@@ -1939,7 +1939,7 @@ class Location extends DataObject {
 		require_once ROOT_DIR . '/sys/IP/IPAddress.php';
 		self::$_ipLocation = null;
 		$subnet = IPAddress::getIPAddressForIP($activeIp);
-		if ($subnet !== false) {
+		if ($subnet !== false && $subnet->locationid > 0) {
 			$matchedLocation = new Location();
 			$matchedLocation->locationId = $subnet->locationid;
 			if ($matchedLocation->find(true)) {
