@@ -3584,10 +3584,13 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 	}
 
-	function getWhileYouWait() : array {
+	function getWhileYouWait($selectedFormat = null) : array {
 		global $library;
 		if (!$library->showWhileYouWait) {
 			return [];
+		}
+		if ($selectedFormat == null && !empty($_REQUEST['activeFormat'])){
+			$selectedFormat = $_REQUEST['activeFormat'];
 		}
 		//Load Similar titles (from Solr)
 		global $configArray;
@@ -3598,9 +3601,9 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$searchObject->init();
 		$selectedAvailabilityToggle = 'local';
 		$interface->assign('activeSearchSource', $selectedAvailabilityToggle);
-		if ($library->showWhileYouWait == 2 && !empty($_REQUEST['activeFormat'])) {
-			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, true, 3, $_REQUEST['activeFormat']);
-			$interface->assign('activeFormat', $_REQUEST['activeFormat']);
+		if ($library->showWhileYouWait == 2 && !empty($selectedFormat)) {
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, true, 3, $selectedFormat);
+			$interface->assign('activeFormat', $selectedFormat);
 		} else{
 			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, false, 3);
 		}
