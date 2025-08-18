@@ -1921,7 +1921,14 @@ class Record_AJAX extends Action {
 				$rememberHoldPickupLocation = $user->rememberHoldPickupLocation;
 			} else {
 				$rememberHoldPickupLocation = false;
-				if (!$preferredPickupLocationIsValid) {
+				$locationKeys = array_keys($locations);
+				if (!$preferredPickupLocationIsValid && count($locations) == 2 && !empty($locations[$locationKeys[1]])) {
+					$onlyValidPickupLocation = $locations[$locationKeys[1]]->code;
+					$interface->assign('pickupLocationInvalidMessage', translate([
+						'text' => 'Your preferred pickup location is not available for this item, as it is restricted by item location rules. The item must be picked up at the following location.',
+						'isPublicFacing' => true,
+					]));
+				} elseif (!$preferredPickupLocationIsValid) {
 					$interface->assign('pickupLocationInvalidMessage', translate([
 						'text' => 'Your preferred pickup location is not available for this item, as it is restricted by item location rules. Please select a pickup location.',
 						'isPublicFacing' => true,
@@ -1950,6 +1957,7 @@ class Record_AJAX extends Action {
 			// then no need to display a message because the patron cannot choose a preferred pickup location anyway.
 		}
 		$interface->assign('rememberHoldPickupLocation', $rememberHoldPickupLocation);
+		$interface->assign('onlyValidPickupLocation', $onlyValidPickupLocation ?? null);
 
 		$interface->assign('pickupLocations', $locations);
 		$interface->assign('pickupSublocations', $pickupSublocations);
