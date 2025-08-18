@@ -11,7 +11,7 @@ class CurlWrapper {
 	public $responseHeaders = [];
 	public $cookies = [];
 
-	public function __construct() {
+	public function __construct($userAgent = "") {
 		global $interface;
 		if ($interface != null) {
 			$aspenVersion = $interface->getVariable('aspenVersion');
@@ -28,7 +28,11 @@ class CurlWrapper {
 		$header[] = "Connection: keep-alive";
 		$header[] = "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7";
 		$header[] = "Accept-Language: en-us,en;q=0.5";
-		$header[] = "User-Agent: Aspen Discovery " . $aspenVersion;
+		if($userAgent != "")
+		{
+			$userAgent = $userAgent .= " via ";
+		}
+		$header[] = "User-Agent: " . $userAgent . "Aspen Discovery " . $aspenVersion;
 		$this->headers = $header;
 
 		$default_options = [

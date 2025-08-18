@@ -343,7 +343,7 @@ class AspenSite extends DataObject {
 		require_once ROOT_DIR . '/sys/Utils/StringUtils.php';
 		$status = $this->toArray();
 
-		$curlWrapper = new CurlWrapper();
+		$curlWrapper = new CurlWrapper("Greenhouse");
 		$curlWrapper->setTimeout(5);
 		$this->lastOfflineNote = '';
 		if (!empty($this->baseUrl)) {
