@@ -6,6 +6,12 @@ global $serverName;
 global $interface;
 global $aspen_db;
 
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Create Sitemaps';
+$cronLogEntry->insert();
+
 require_once ROOT_DIR . '/sys/Module.php';
 $aspenModule = new Module();
 $aspenModule->enabled = true;
@@ -19,6 +25,7 @@ while ($aspenModule->fetch()) {
 }
 $aspenModule = null;
 
+$cronLogEntry->notes = "Creating Grouped Works Sitemaps";
 ini_set('memory_limit', '4G');
 set_time_limit(0);
 $library = new Library();
@@ -26,6 +33,9 @@ $library->find();
 while ($library->fetch()) {
 	if ($addGroupedWorks && $library->generateSitemap) {
 		$subdomain = $library->subdomain;
+		$cronLogEntry->notes .= "<br/> - $subdomain";
+		$cronLogEntry->update();
+
 		global $solrScope;
 		$solrScope = preg_replace('/[^a-zA-Z0-9_]/', '', $subdomain);
 
@@ -38,7 +48,7 @@ while ($library->fetch()) {
 		echo(date('H:i:s') . " Creating sitemaps for $library->displayName ($library->subdomain)\r\n");
 		ob_flush();
 
-		//Technically google will take 50k, but they don't like it if you have that many.
+		//Technically, Google will take 50k, but they don't like it if you have that many.
 		$recordsPerSitemap = 40000;
 
 		//Export all Grouped Works
@@ -98,6 +108,9 @@ while ($library->fetch()) {
 	}
 }
 $library = null;
+
+$cronLogEntry->endTime = time();
+$cronLogEntry->update();
 
 $aspen_db = null;
 $configArray = null;

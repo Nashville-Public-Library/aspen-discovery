@@ -1,10 +1,11 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class CronLogEntry extends DataObject {
-	public $__table = 'cron_log';   // table name
+	public $__table = 'cron_log';
 	public $id;
+	public $name;
 	public $startTime;
 	public $lastUpdate;
 	public $endTime;
@@ -12,7 +13,7 @@ class CronLogEntry extends DataObject {
 	public $notes;
 	private $_processes = null;
 
-	function processes() {
+	function processes() : array {
 		if (is_null($this->_processes)) {
 			$this->_processes = [];
 			$reindexProcess = new CronProcessLogEntry();
@@ -26,11 +27,13 @@ class CronLogEntry extends DataObject {
 		return $this->_processes;
 	}
 
-	function getNumProcesses() {
+	/** @noinspection PhpUnused */
+	function getNumProcesses() : int {
 		return count($this->processes());
 	}
 
-	function getHadErrors() {
+	/** @noinspection PhpUnused */
+	function getHadErrors() : bool {
 		foreach ($this->processes() as $process) {
 			if ($process->numErrors > 0) {
 				return true;
@@ -39,8 +42,9 @@ class CronLogEntry extends DataObject {
 		return false;
 	}
 
-	function getElapsedTime() {
-		if (!isset($this->endTime) || is_null($this->endTime)) {
+	/** @noinspection PhpUnused */
+	function getElapsedTime() : string {
+		if (empty($this->endTime)) {
 			return "";
 		} else {
 			$elapsedTimeMin = ceil(($this->endTime - $this->startTime) / 60);
@@ -52,6 +56,41 @@ class CronLogEntry extends DataObject {
 				return "$hours hours, $minutes min";
 			}
 		}
+	}
+
+	private $skipLogging = false;
+
+	/**
+	 * Override insert to check if this is a frequent cron job with logging disabled.
+	 * If so, sets skipLogging flag and prevents database insertion.
+	 */
+	function insert($context = ''): bool|int {
+		if (!empty($this->name)) {
+			require_once ROOT_DIR . '/services/Admin/CronRunner.php';
+			require_once ROOT_DIR . '/sys/SystemVariables.php';
+			
+			$frequentJobs = Admin_CronRunner::getFrequentCronJobs();
+			if (in_array($this->name, $frequentJobs)) {
+				$systemVariables = SystemVariables::getSystemVariables();
+				if (!$systemVariables->logFrequentCrons) {
+					$this->skipLogging = true;
+					return true;
+				}
+			}
+		}
+		
+		return parent::insert($context);
+	}
+
+	/**
+	 * Override update to prevent database operations when logging is disabled.
+	 * This handles cases where cron jobs call update() after insert() returned early.
+	 */
+	function update($context = ''): bool|int {
+		if ($this->skipLogging) {
+			return true;
+		}
+		return parent::update($context);
 	}
 
 }

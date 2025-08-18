@@ -10,8 +10,13 @@ require_once ROOT_DIR . '/sys/NYTApi.php';
 require_once ROOT_DIR . '/sys/Enrichment/NewYorkTimesSetting.php';
 require_once ROOT_DIR . '/sys/UserLists/NYTUpdateLogEntry.php';
 require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
 
-//Create a NYTUpdateLogEntry
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Update New York Times Lists';
+$cronLogEntry->insert();
+
 $nytUpdateLog = new NYTUpdateLogEntry();
 $nytUpdateLog->startTime = time();
 $nytUpdateLog->insert();
@@ -59,6 +64,10 @@ if (!$nytSettings->find(true)) {
 $nytUpdateLog->addNote("Finished updating lists");
 $nytUpdateLog->endTime = time();
 $nytUpdateLog->update();
+
+$cronLogEntry->notes .= "New York Times Lists update completed (<a href='/UserLists/NYTUpdatesLog'>View detailed NYT Log</a>).";
+$cronLogEntry->endTime = time();
+$cronLogEntry->update();
 
 $nytSettings->__destruct();
 $nytSettings = null;

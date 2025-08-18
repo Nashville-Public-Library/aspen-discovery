@@ -13,6 +13,9 @@ class CustomForm extends DB_LibraryLinkedObject {
 	public $requireLogin;
 	public $introText;
 	public $submissionResultText;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	private $_libraries;
 	/** @var CustomFormField[] */
@@ -158,9 +161,9 @@ class CustomForm extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
+		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearFormFields();
 		}
@@ -333,5 +336,9 @@ class CustomForm extends DB_LibraryLinkedObject {
 		}
 
 		return $result;
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

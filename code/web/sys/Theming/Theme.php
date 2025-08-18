@@ -2794,11 +2794,11 @@ class Theme extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		$this->clearLibraries();
 		$this->clearLocations();
 		$this->clearDefaultCovers();
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 
 	public function applyDefaults() {
