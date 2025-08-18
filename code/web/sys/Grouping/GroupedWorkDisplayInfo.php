@@ -38,13 +38,13 @@ class GroupedWorkDisplayInfo extends DataObject {
 		return parent::update();
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 		$groupedWork = new GroupedWork();
 		$groupedWork->permanent_id = $this->permanent_id;
 		if ($groupedWork->find(true)) {
 			$groupedWork->forceReindex(true);
 		}
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 }

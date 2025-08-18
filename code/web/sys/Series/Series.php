@@ -134,7 +134,7 @@ class Series extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		if (!$useWhere) {
 			$this->deleted = 1;
 			$this->dateUpdated = time();
@@ -151,7 +151,7 @@ class Series extends DataObject {
 			}
 			return false;
 		} else {
-			return parent::delete($useWhere);
+			return parent::delete($useWhere, $hardDelete);
 		}
 	}
 

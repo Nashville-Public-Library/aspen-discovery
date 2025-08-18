@@ -256,7 +256,7 @@ class MaterialsRequest_AJAX extends Action {
 											// Get Available Assignees
 											$materialsRequestManagers = new User();
 											if (count($locationsForLibrary) > 0) {
-												if ($materialsRequestManagers->query("SELECT * from user WHERE id IN (SELECT userId FROM user_roles WHERE roleId = $rolePermissions->roleId) AND homeLocationId IN (" . implode(', ', $locationsForLibrary) . ")")) {
+												if ($materialsRequestManagers->query("SELECT * from user WHERE id IN (SELECT userId FROM user_roles WHERE roleId = $rolePermissions->roleId) AND ((id IN (SELECT userId from user_administration_locations WHERE locationId IN (" . implode(', ', $locationsForLibrary) . "))) OR homeLocationId IN (" . implode(', ', $locationsForLibrary) . "))")) {
 													while ($materialsRequestManagers->fetch()) {
 														if (empty($materialsRequestManagers->displayName)) {
 															$assignees[$materialsRequestManagers->id] = $materialsRequestManagers->firstname . ' ' . $materialsRequestManagers->lastname;

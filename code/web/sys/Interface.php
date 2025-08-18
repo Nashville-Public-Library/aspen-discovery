@@ -636,6 +636,7 @@ class UInterface extends Smarty {
 		$this->assign('expiredMessage', $library->expiredMessage);
 		$this->assign('expirationNearMessage', $library->expirationNearMessage);
 		$this->assign('showWhileYouWait', $library->showWhileYouWait);
+		$this->assign('showYouMightAlsoLike', $library->showYouMightAlsoLike);
 
 		$hasEventSettings = $library->hasEventSettings();
 		$this->assign('hasEventSettings', $hasEventSettings);

@@ -543,6 +543,7 @@ class Library extends DataObject {
 	}
 
 	static function getObjectStructure($context = ''): array {
+		global $enabledModules;
 		// get the structure for the library system's holidays
 		$holidaysStructure = Holiday::getObjectStructure($context);
 
@@ -1393,10 +1394,11 @@ class Library extends DataObject {
 						'values' => [
 							'0' => 'No',
 							'1' => 'Yes, include materials available in any format.',
-							'2' => 'Yes, include materials available from this library in the same format only.'
+							'2' => 'Yes, include materials available in the same format only.'
 						],
 						'label' => 'Show While You Wait',
 						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
+						'note' => 'To use this setting effectively you should include',
 						'hideInLists' => true,
 						'default' => 1,
 						'permissions' => ['Library ILS Options'],
@@ -1406,9 +1408,10 @@ class Library extends DataObject {
 						'type' => 'enum',
 						'values' => [
 							'0' => 'No',
-							'1' => 'Yes, include materials available in any format.',
-							'2' => 'Yes, include materials owned by this library in any format.',
-							'3' => 'Yes, include materials owned by this library in the same format only.'
+							'1' => 'Yes, include materials in global scope in any format.',
+							'4' => 'Yes, include materials in global scope in the same format only.',
+							'2' => 'Yes, include materials in local scope in any format.',
+							'3' => 'Yes, include materials in local scope in the same format only.'
 						],
 						'label' => 'Show You Might Also Like',
 						'description' => 'Whether or not the user should be shown suggestions of other titles they might like.',
@@ -3131,9 +3134,11 @@ class Library extends DataObject {
 			'useSeriesSearchIndex' => [
 				'property' => 'useSeriesSearchIndex',
 				'type' => 'enum',
-				'values' => [
+				'values' => array_key_exists('Series', $enabledModules) ? [
 					'0' => 'Grouped Work Based Series Search',
 					'1' => 'Aspen Series Search',
+				] : [
+					'0' => 'Grouped Work Based Series Search',
 				],
 				'label' => 'Series Search Mode',
 				'hideInLists' => false,
@@ -4520,8 +4525,17 @@ class Library extends DataObject {
 			unset($structure['casSection']);
 		}
 		global $enabledModules;
-		if (!array_key_exists('EBSCO EDS', $enabledModules)) {
-			unset($structure['edsSection']);
+		if (!array_key_exists('EBSCO EDS', $enabledModules) && !array_key_exists('EBSCOhost', $enabledModules)) {
+			unset($structure['ebscoSection']);
+		} else {
+			if (!array_key_exists('EBSCO EDS', $enabledModules)) {
+				unset($structure['ebscoSection']['properties']['edsSettingsId']);
+				unset($structure['exploreMoreBarSection']['properties']['displayExploreMoreBarInEbscoEds']);
+			}
+			if (!array_key_exists('EBSCOhost', $enabledModules)) {
+				unset($structure['ebscoSection']['properties']['ebscohostSearchSettingId']);
+				unset($structure['exploreMoreBarSection']['properties']['displayExploreMoreBarInEbscoHost']);
+			}
 		}
 		if (!array_key_exists('Summon', $enabledModules)) {
 			unset($structure['summonSection']);
@@ -4550,11 +4564,22 @@ class Library extends DataObject {
 		if (!array_key_exists('Single sign-on', $enabledModules)) {
 			unset($structure['ssoSection']);
 		}
-		if (!$catalog || !$catalog->hasIlsConsentSupport()) {
-			unset($structure['dataProtectionRegulations']['properties']['ilsConsentEnabled']);
-		}
 		if (!array_key_exists('Talpa Search', $enabledModules)) {
 			unset($structure['talpaSearchSection']);
+		}
+		if (!array_key_exists('Community Engagement', $enabledModules)) {
+			unset($structure['communityEngagement']);
+			unset($structure['displaySection']['properties']['highlightCommunityEngagement']);
+			unset($structure['displaySection']['properties']['highlightCommunityEngagementOpenToEnroll']);
+		}
+		if (!array_key_exists('Axis 360', $enabledModules)) {
+			unset($structure['axis360Section']);
+		}
+		if (!array_key_exists('Palace Project', $enabledModules)) {
+			unset($structure['palaceProjectSection']);
+		}
+		if (!$catalog || !$catalog->hasIlsConsentSupport()) {
+			unset($structure['dataProtectionRegulations']['properties']['ilsConsentEnabled']);
 		}
 
 		return $structure;
@@ -5038,16 +5063,18 @@ class Library extends DataObject {
 	}
 
 	public function getCloudLibraryScope() : int {
-		if ($this->_cloudLibraryScope === null && $this->libraryId) {
-			require_once ROOT_DIR . '/sys/CloudLibrary/LibraryCloudLibraryScope.php';
-			$libraryCloudLibraryScope = new LibraryCloudLibraryScope();
-			$libraryCloudLibraryScope->libraryId = $this->libraryId;
-			if ($libraryCloudLibraryScope->find(true)) {
-				require_once ROOT_DIR . '/sys/CloudLibrary/CloudLibraryScope.php';
-				$cloudLibraryScope = new CloudLibraryScope();
-				$cloudLibraryScope->id = $libraryCloudLibraryScope->scopeId;
-				if ($cloudLibraryScope->find(true)) {
-					$this->_cloudLibraryScope = $cloudLibraryScope->id;
+		if ($this->_cloudLibraryScope === null) {
+			if ($this->libraryId) {
+				require_once ROOT_DIR . '/sys/CloudLibrary/LibraryCloudLibraryScope.php';
+				$libraryCloudLibraryScope = new LibraryCloudLibraryScope();
+				$libraryCloudLibraryScope->libraryId = $this->libraryId;
+				if ($libraryCloudLibraryScope->find(true)) {
+					require_once ROOT_DIR . '/sys/CloudLibrary/CloudLibraryScope.php';
+					$cloudLibraryScope = new CloudLibraryScope();
+					$cloudLibraryScope->id = $libraryCloudLibraryScope->scopeId;
+					if ($cloudLibraryScope->find(true)) {
+						$this->_cloudLibraryScope = $cloudLibraryScope->id;
+					}
 				}
 			}
 			// If still not set, default to '-1', which corresponds to 'none'.
@@ -5535,7 +5562,6 @@ class Library extends DataObject {
 		}else{
 			return Library::$_fullList[$accountProfileId] = $libraryList;
 		}
-		return $libraryList;
 	}
 
 	static $libraryListAsObjects = null;

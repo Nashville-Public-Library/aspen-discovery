@@ -869,13 +869,17 @@ abstract class ObjectEditor extends Admin_Admin {
 			foreach ($_REQUEST['selectedObject'] as $id => $value) {
 				if ($index == 1) {
 					$object1 = $this->getExistingObjectById($id);
-					$object1EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
-					$interface->assign('object1EditUrl', $object1EditUrl);
+					if ($this->showEditButtonsInCompareAndHistoryViews()) {
+						$object1EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
+						$interface->assign('object1EditUrl', $object1EditUrl);
+					}
 					$index = 2;
 				} else {
 					$object2 = $this->getExistingObjectById($id);
-					$object2EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
-					$interface->assign('object2EditUrl', $object2EditUrl);
+					if ($this->showEditButtonsInCompareAndHistoryViews()) {
+						$object2EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
+						$interface->assign('object2EditUrl', $object2EditUrl);
+					}
 				}
 			}
 			if ($object1 == null || $object2 == null) {
@@ -890,6 +894,10 @@ abstract class ObjectEditor extends Admin_Admin {
 			$interface->assign('error', 'Please select two objects to compare');
 		}
 
+		$interface->assign('showEditButtonsInCompareAndHistoryViews', $this->showEditButtonsInCompareAndHistoryViews());
+		$interface->assign('showReturnToList', $this->getToolName() === 'ObjectRestorations');
+		$interface->assign('module', $this->getModule());
+		$interface->assign('toolName', $this->getToolName());
 		$interface->setTemplate('../Admin/compareObjects.tpl');
 	}
 
@@ -1037,6 +1045,9 @@ abstract class ObjectEditor extends Admin_Admin {
 		} else {
 			global $interface;
 			$curObject = $this->getExistingObjectById($id);
+			if (!$curObject) {
+				AspenError::raiseError('The object with ID ' . $id . ' does not exist.');
+			}
 			$interface->assign('curObject', $curObject);
 			$interface->assign('id', $id);
 			$displayNameColumn = $curObject->__displayNameColumn;
@@ -1066,6 +1077,9 @@ abstract class ObjectEditor extends Admin_Admin {
 				$objectHistory[] = clone $historyEntry;
 			}
 			$interface->assign('objectHistory', $objectHistory);
+			$interface->assign('showEditButtonsInCompareAndHistoryViews', $this->showEditButtonsInCompareAndHistoryViews());
+			$interface->assign('module', $this->getModule());
+			$interface->assign('toolName', $this->getToolName());
 			$this->display('../Admin/objectHistory.tpl', $title);
 			exit();
 		}
@@ -1390,6 +1404,15 @@ abstract class ObjectEditor extends Admin_Admin {
 	}
 
 	protected function showHistoryLinks() {
+		return true;
+	}
+
+	/**
+	 * Control whether edit buttons should be shown in history and compare views.
+	 * Purpose: Override it to hide edit functionality when appropriate.
+	 * @return bool True if edit buttons are enabled, false otherwise.
+	 */
+	protected function showEditButtonsInCompareAndHistoryViews(): bool {
 		return true;
 	}
 

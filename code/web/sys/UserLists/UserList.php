@@ -15,9 +15,12 @@ class UserList extends DataObject {
 	public $displayListAuthor;
 	public $deleted;
 	public $dateUpdated;
+	public $deleteFromIndex;
 	public $defaultSort;
 	public $importedFrom;
 	public $nytListModified;
+	public $dateDeleted;
+	public $deletedBy;
 
 	public function getUniquenessFields(): array {
 		return ['id'];
@@ -48,6 +51,7 @@ class UserList extends DataObject {
 			'deleted',
 			'searchable',
 			'displayListAuthor',
+			'deleteFromIndex',
 		];
 	}
 
@@ -151,20 +155,22 @@ class UserList extends DataObject {
 		return $result;
 	}
 
-	function delete($useWhere = false) : int {
-		if (!$useWhere && $this->id >= 1) {
+	function delete($useWhere = false, $hardDelete = false) : int {
+		if ($hardDelete && !empty($this->id) && $this->id >= 1) {
+			// Hard delete by marking for index cleanup and updating deletion information.
+			$this->deleteFromIndex = 1;
 			$this->deleted = 1;
-			$this->dateUpdated = time();
-			$ret = parent::update();
-
-			require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
-			$listEntry = new UserListEntry();
-			$listEntry->listId = $this->id;
-			$listEntry->delete(true);
-
-			$ret = true;
+			$this->dateDeleted = time();
+			$this->deletedBy = UserAccount::getActiveUserId();
+			$ret = $this->update();
+			if ($ret) {
+				require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
+				$listEntry = new UserListEntry();
+				$listEntry->listId = $this->id;
+				$listEntry->delete(true);
+			}
 		} else {
-			$ret = parent::delete($useWhere);
+			$ret = parent::delete($useWhere, $hardDelete);
 		}
 
 		global $memCache;
@@ -1522,5 +1528,9 @@ class UserList extends DataObject {
 			global $logger;
 			$logger->log("Unable to create RIS file " . $e, Logger::LOG_ERROR);
 		}
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

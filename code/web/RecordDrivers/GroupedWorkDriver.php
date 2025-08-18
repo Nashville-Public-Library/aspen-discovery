@@ -3584,32 +3584,28 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 	}
 
-	function getWhileYouWait() : array {
+	function getWhileYouWait($selectedFormat = null) : array {
 		global $library;
-		global $interface;
 		if (!$library->showWhileYouWait) {
 			return [];
+		}
+		if ($selectedFormat == null && !empty($_REQUEST['activeFormat'])){
+			$selectedFormat = $_REQUEST['activeFormat'];
 		}
 		//Load Similar titles (from Solr)
 		global $configArray;
 		global $interface;
 		require_once ROOT_DIR . '/sys/SolrConnector/GroupedWorksSolrConnector.php';
-		/** @var SearchObject_AbstractGroupedWorkSearcher $db */
+		/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */
 		$searchObject = SearchObjectFactory::initSearchObject();
 		$searchObject->init();
-		if ($library->showWhileYouWait == 1) {
-			$searchObject->init();
-			$searchObject->disableScoping();
-			$interface->assign('activeSearchSource', 'global');
-		} else {
-			$searchObject->init('local');
-			$interface->assign('activeSearchSource', 'local');
-		}
-		if ($library->showWhileYouWait == 2 && !empty($_REQUEST['activeFormat'])) {
-			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, true, 3, $_REQUEST['activeFormat']);
-			$interface->assign('activeFormat', $_REQUEST['activeFormat']);
+		$selectedAvailabilityToggle = 'local';
+		$interface->assign('activeSearchSource', $selectedAvailabilityToggle);
+		if ($library->showWhileYouWait == 2 && !empty($selectedFormat)) {
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, true, 3, $selectedFormat);
+			$interface->assign('activeFormat', $selectedFormat);
 		} else{
-			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, false, 3);
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, false, 3);
 		}
 
 		// Send the similar items to the template; if there is only one, we need

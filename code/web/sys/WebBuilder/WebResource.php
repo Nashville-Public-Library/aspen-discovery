@@ -25,12 +25,13 @@ class WebResource extends DB_LibraryLinkedObject {
 	public $description;
 	public $lastUpdate;
 	public $generatePlacard;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	protected $_allowAccessByLibrary;
-
 	protected $_audiences;
 	protected $_categories;
-
 	protected $_libraries;
 
 	public function getNumericColumnNames(): array {
@@ -255,9 +256,9 @@ class WebResource extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
+		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearAudiences();
 			$this->clearCategories();
@@ -540,5 +541,9 @@ class WebResource extends DB_LibraryLinkedObject {
 			$placard->generatedFromSource = 'web_resource:' . $this->id;
 			$placard->insert();
 		}
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

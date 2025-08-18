@@ -18,9 +18,9 @@ import java.util.concurrent.*;
 public class UpdateReadingHistory implements IProcessHandler {
 
 	public void doCronProcess(String servername, Ini configIni, Section processSettings, Connection dbConn, CronLogEntry cronEntry, Logger logger) {
-		CronProcessLogEntry processLog = new CronProcessLogEntry(cronEntry, "Updating Reading History", dbConn, logger);
+		CronProcessLogEntry processLog = new CronProcessLogEntry(cronEntry, "Update Reading History", dbConn, logger);
 		processLog.saveResults();
-		processLog.addNote("Starting nightly reading history updates....");
+		processLog.addNote("Starting nightly reading history updates...");
 
 		String aspenUrl = configIni.get("Site", "url");
 		if (aspenUrl == null || aspenUrl.isEmpty()) {
@@ -31,8 +31,8 @@ public class UpdateReadingHistory implements IProcessHandler {
 		}
 
 		// Get the thread settings from the configuration, if any.
-		int minThreads = 8;
-		int maxThreads = 16;
+		int minThreads = 4;
+		int maxThreads = 8;
 		try {
 			String minThreadsStr = processSettings.get("minThreads");
 			if (minThreadsStr != null && !minThreadsStr.isEmpty()) {

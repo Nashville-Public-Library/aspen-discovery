@@ -5,6 +5,11 @@ require_once __DIR__ . '/../bootstrap_aspen.php';
 require_once ROOT_DIR . '/sys/Translation/TranslationTerm.php';
 require_once ROOT_DIR . '/sys/Translation/Language.php';
 require_once ROOT_DIR . '/sys/Translation/Translation.php';
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Updating Community Translations';
+$cronLogEntry->insert();
 
 set_time_limit(0);
 
@@ -20,8 +25,8 @@ foreach($languages as $languageId) {
 	$language->id = $languageId;
 	if($language->find(true)) {
 		if ($language->code != 'en' && $language->code != 'pig' && $language->code != 'ubb') {
-			echo ("Updating $language->displayNameEnglish\n");
-			ob_flush();
+			$cronLogEntry->notes .= "<br/>Updating $language->displayNameEnglish";
+			$cronLogEntry->update();
 			//Loop through all terms to be translated
 			$translationTerm = new TranslationTerm();
 			$translationTerm->whereAdd('isMetadata = 0');
@@ -81,8 +86,9 @@ foreach($languages as $languageId) {
 	$language = null;
 }
 
-echo ("Imported a total of " . $numUpdated. " translations\n");
-ob_flush();
+$cronLogEntry->notes .= "<br/>Imported a total of " . $numUpdated. " translations";
+$cronLogEntry->endTime = time();
+$cronLogEntry->update();
 
 global $aspen_db;
 $aspen_db = null;
