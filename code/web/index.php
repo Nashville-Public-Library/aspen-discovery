@@ -1177,7 +1177,11 @@ function loadModuleActionId() {
 		$_GET['action'] = $matches[2];
 		$_REQUEST['module'] = $matches[1];
 		$_REQUEST['action'] = $matches[2];
-		$checkWebBuilderAliases = true;
+		if (file_exists(ROOT_DIR . '/services/' . $_REQUEST['module'] . '/' . $_REQUEST['action'] . '.php')) {
+			$checkWebBuilderAliases = false;
+		}else{
+			$checkWebBuilderAliases = true;
+		}
 	} else {
 		$checkWebBuilderAliases = true;
 	}
