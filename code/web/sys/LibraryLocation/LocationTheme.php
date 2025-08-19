@@ -18,6 +18,7 @@ class LocationTheme extends DataObject {
 		];
 	}
 
+	/** @noinspection PhpUnusedParameterInspection */
 	static function getObjectStructure($context = ''): array {
 		//Load Libraries for lookup values
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Locations'));
@@ -70,7 +71,7 @@ class LocationTheme extends DataObject {
 					$this->_themeName = '';
 				}
 			}
-			return $this->themeName;
+			return $this->_themeName;
 		}
 		return parent::__get($name);
 	}

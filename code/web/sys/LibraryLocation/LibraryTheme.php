@@ -18,6 +18,7 @@ class LibraryTheme extends DataObject {
 		];
 	}
 
+	/** @noinspection PhpUnusedParameterInspection */
 	static function getObjectStructure($context = ''): array {
 		//Load Libraries for lookup values
 		$allLibraryList = Library::getLibraryList(false);
@@ -83,9 +84,9 @@ class LibraryTheme extends DataObject {
 					$this->_themeName = '';
 				}
 			}
-			return $this->themeName;
+			return $this->_themeName;
 		}
-		return parent::__get($name); 
+		return parent::__get($name);
 	}
 
 	function getEditLink($context): string {
