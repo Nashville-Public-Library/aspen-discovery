@@ -8,10 +8,20 @@ require_once ROOT_DIR . '/sys/Indexing/SideLoad.php';
 class SideLoads_SideLoads extends ObjectEditor {
 	function launch() : void {
 		global $interface;
-		$objectAction = isset($_REQUEST['objectAction']) ? $_REQUEST['objectAction'] : null;
+		$objectAction = $_REQUEST['objectAction'] ?? null;
 		if ($objectAction == 'viewMarcFiles') {
 			$id = $_REQUEST['id'];
 			$interface->assign('id', $id);
+
+			$user = UserAccount::getActiveUserObj();
+			if (!empty($user->updateMessage)) {
+				$interface->assign('updateMessage', $user->updateMessage);
+				$interface->assign('updateMessageIsError', $user->updateMessageIsError);
+				$user->updateMessage = '';
+				$user->updateMessageIsError = 0;
+				$user->update();
+			}
+			
 			$files = [];
 			$sideLoadConfiguration = new SideLoad();
 			$sideLoadConfiguration->id = $id;
@@ -64,7 +74,7 @@ class SideLoads_SideLoads extends ObjectEditor {
 		$object->orderBy($this->getSort());
 		$this->applyFilters($object);
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
-		if ((UserAccount::userHasPermission('Administer Side Loads for Home Library') || UserAccount::userHasPermission('Administer Side Load Scopes for Home Library')) && !UserAccount::userHasPermission('Administer Side Loads')) {
+		if ((UserAccount::userHasPermission('Administer Side Loads for Home Library') || UserAccount::userHasPermission('Administer Side Load Scopes for Home Library')) && !UserAccount::userHasPermission('Administer All Side Loads')) {
 			$libraryList = Library::getLibraryList(true);
 			$object->whereAddIn("owningLibrary", array_keys($libraryList), false, "OR");
 			$object->whereAdd("sharing != 0", "OR");
@@ -108,7 +118,7 @@ class SideLoads_SideLoads extends ObjectEditor {
 			}
 			if ($existingObject->id != '' && !$existingObject->isReadOnly()) {
 				$actions[] = [
-					'text' => 'Upload MARC file',
+					'text' => 'Upload MARC File',
 					'url' => '/SideLoads/UploadMarc?id=' . $existingObject->id,
 				];
 			}
@@ -131,15 +141,15 @@ class SideLoads_SideLoads extends ObjectEditor {
 
 	function canBatchEdit(): bool {
 		return UserAccount::userHasPermission([
-			'Administer Side Loads',
+			'Administer All Side Loads',
 		]);
 	}
 
 	function canView(): bool {
-		return UserAccount::userHasPermission(['Administer Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library']);
+		return UserAccount::userHasPermission(['Administer All Side Loads', 'Administer Side Loads for Home Library', 'Administer Side Load Scopes for Home Library']);
 	}
 
 	function canAddNew() : bool {
-		return UserAccount::userHasPermission(['Administer Side Loads', 'Administer Side Loads for Home Library']);
+		return UserAccount::userHasPermission(['Administer All Side Loads', 'Administer Side Loads for Home Library']);
 	}
 }

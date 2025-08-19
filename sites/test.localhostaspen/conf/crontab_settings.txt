@@ -101,7 +101,6 @@
 #########################
 15 1 * * * root php /usr/local/aspen-discovery/code/web/cron/updateCommunityTranslations.php test.localhostaspen
 
-
 #########################
 # Update the Talpa ISBN Mapping Table #
 #########################

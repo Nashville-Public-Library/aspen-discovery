@@ -145,7 +145,7 @@ public class MarcRecordFormatClassifier {
 		getFormatFromPublicationInfo(groupedWork, record, printFormats);
 		getFormatFromNotes(groupedWork, record, printFormats);
 		getFormatFromEdition(groupedWork, record, printFormats);
-		getFormatFromPhysicalDescription(groupedWork, record, printFormats);
+		getFormatFromPhysicalDescription(groupedWork, record, printFormats, settings);
 		getFormatFromSubjects(groupedWork, record, printFormats);
 		getFormatFromTitle(groupedWork, record, printFormats);
 		getFormatFromDigitalFileCharacteristics(groupedWork, record, printFormats);
@@ -189,6 +189,9 @@ public class MarcRecordFormatClassifier {
 			}else if (curField.equalsIgnoreCase("DVD video")){
 				if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format DVD based on 347b", 2);}
 				printFormats.add("DVD");
+			}else if (curField.equalsIgnoreCase("4K Ultra HD Blu-ray")){
+				if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format 4KBlu-ray based on 347b", 2);}
+				printFormats.add("4KBlu-ray");
 			}
 		}
 	}
@@ -210,7 +213,7 @@ public class MarcRecordFormatClassifier {
 	Pattern pagesPattern = Pattern.compile("^.*?\\d+\\s+(p\\.|pages|v\\.|volume|volumes).*$");
 	Pattern pagesPattern2 = Pattern.compile("^.*?\\b\\d+\\s+(p\\.|pages|v\\.|volume|volumes)\\b.*");
 	Pattern kitPattern = Pattern.compile(".*\\bkit\\b.*");
-	public void getFormatFromPhysicalDescription(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, Set<String> result) {
+	public void getFormatFromPhysicalDescription(AbstractGroupedWorkSolr groupedWork, org.marc4j.marc.Record record, Set<String> result, BaseIndexingSettings settings) {
 		List<DataField> physicalDescriptions = MarcUtil.getDataFields(record, 300);
 		for (DataField field : physicalDescriptions) {
 			List<Subfield> subFields = field.getSubfields();
@@ -254,7 +257,7 @@ public class MarcRecordFormatClassifier {
 						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format Kit based on 300 Physical Description", 2);}
 						result.add("Kit");
 					} else if (audioDiscPattern.matcher(physicalDescriptionData).matches() && !(physicalDescriptionData.contains("cd player") || physicalDescriptionData.contains("cd boombox") || physicalDescriptionData.contains("cd boom box") || physicalDescriptionData.contains("cd/mp3 player"))) {
-						//Check to see if there is a subfield e.  If so, this could be a combined format
+						// Check to see if there is a subfield e. If so, this could be a combined format.
 						Subfield subfieldE = field.getSubfield('e');
 						if (subfieldE != null && subfieldE.getData().toLowerCase().contains("book") && !subfieldE.getData().toLowerCase().contains("booklet")){
 							if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format CD+Book based on 300 Physical Description", 2);}
@@ -265,6 +268,11 @@ public class MarcRecordFormatClassifier {
 								result.add("SoundDisc");
 							}
 						}
+					} else if (subfield.getCode() == 'a' && physicalDescriptionData.contains("video-enabled book")){
+						result.add("VideoEnabledBook");
+					} else if (subfield.getCode() == 'a' && physicalDescriptionData.contains("online resource") && settings instanceof IndexingProfile) {
+						if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format online_resource based on 300$a Physical Description (ILS records only).", 2);}
+						result.add("online_resource");
 					} else if (subfield.getCode() == 'a' && (pagesPattern2.matcher(physicalDescriptionData).matches())){
 						Subfield subfieldE = field.getSubfield('e');
 						if (subfieldE != null && (subfieldE.getData().toLowerCase().contains("dvd") || subfieldE.getData().toLowerCase().contains("videodisc"))){
@@ -1088,6 +1096,9 @@ public class MarcRecordFormatClassifier {
 				} else if (editionData.contains("gamecube")) {
 					if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format GameCube based on 250 edition", 2);}
 					result.add("GameCube");
+				} else if (editionData.contains("nintendo switch 2")) {
+					if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format NintendoSwitch2 based on 250 edition", 2);}
+					result.add("NintendoSwitch2");
 				} else if (editionData.contains("nintendo switch")) {
 					if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format NintendoSwitch based on 250 edition", 2);}
 					result.add("NintendoSwitch");
@@ -1217,6 +1228,8 @@ public class MarcRecordFormatClassifier {
 			return "Wii";
 		} else if (value.contains("nintendo 3ds")) {
 			return "3DS";
+		} else if (value.contains("nintendo switch 2")) {
+			return "NintendoSwitch2";
 		} else if (value.contains("nintendo switch")) {
 			return "NintendoSwitch";
 		} else if (value.contains("nintendo ds")) {
@@ -1335,6 +1348,11 @@ public class MarcRecordFormatClassifier {
 		if (printFormats.contains("Kit")){
 			printFormats.clear();
 			printFormats.add("Kit");
+			return;
+		}
+		if (printFormats.contains("VideoEnabledBook")){
+			printFormats.clear();
+			printFormats.add("VideoEnabledBook");
 			return;
 		}
 		if (printFormats.contains("DVD")){
@@ -1483,7 +1501,7 @@ public class MarcRecordFormatClassifier {
 				|| printFormats.contains("PlayStation4") || printFormats.contains("PlayStation5") || printFormats.contains("PlayStationVita")
 				|| printFormats.contains("Wii") || printFormats.contains("WiiU")
 				|| printFormats.contains("3DS") || printFormats.contains("WindowsGame")
-				|| printFormats.contains("NintendoSwitch") || printFormats.contains("NintendoDS")){
+				|| printFormats.contains("NintendoSwitch2") || printFormats.contains("NintendoSwitch") || printFormats.contains("NintendoDS")){
 			printFormats.remove("Software");
 			printFormats.remove("Electronic");
 			printFormats.remove("CDROM");

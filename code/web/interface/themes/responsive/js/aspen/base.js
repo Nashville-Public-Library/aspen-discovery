@@ -118,6 +118,11 @@ var AspenDiscovery = (function(){
 		},
 
 		closeLightbox: function(callback){
+			if (AspenDiscovery._autoCloseTimer) {
+				clearTimeout(AspenDiscovery._autoCloseTimer);
+				AspenDiscovery._autoCloseTimer = null;
+			}
+			
 			var modalDialog = aspenJQ("#modalDialog");
 			if (modalDialog.is(":visible")){
 				modalDialog.modal('hide');
@@ -283,21 +288,27 @@ var AspenDiscovery = (function(){
 			return newValue ? (query.length > 2 ? query + "&" : "?") + param + "=" + newValue : query;
 		},
 
-		getSelectedTitles: function(){
+		getSelectedTitles: function(promptForProcessingAll){
+			if (promptForProcessingAll === undefined) {
+				promptForProcessingAll = true;
+			}
 			var selectedTitles = aspenJQ("input.titleSelect:checked ").map(function() {
 				return aspenJQ(this).attr('name') + "=" + aspenJQ(this).val();
 			}).get().join("&");
-			if (selectedTitles.length === 0){
+			if (selectedTitles.length === 0 && promptForProcessingAll){
 				var ret = confirm('You have not selected any items, process all items?');
 				if (ret === true){
-					var titleSelect = aspenJQ("input.titleSelect");
-					titleSelect.attr('checked', 'checked');
+					AspenDiscovery.selectAllTitles();
 					selectedTitles = titleSelect.map(function() {
 						return aspenJQ(this).attr('name') + "=" + aspenJQ(this).val();
 					}).get().join("&");
 				}
 			}
 			return selectedTitles;
+		},
+		selectAllTitles: function (){
+			var titleSelect = aspenJQ("input.titleSelect");
+			titleSelect.attr('checked', 'checked');
 		},
 		getSelectedLists: function(){
 			var selectedLists = aspenJQ("input.listSelect:checked ").map(function() {
@@ -379,38 +390,57 @@ var AspenDiscovery = (function(){
 		showMessage: function(title, body, autoClose, refreshAfterClose, largeModal, hideTitle){
 			if (largeModal === undefined || largeModal === false) {
 				aspenJQ('#modalDialog').removeClass('modal-dialog-large');
-			}else{
+			} else{
 				aspenJQ('#modalDialog').addClass('modal-dialog-large');
 			}
 			if (hideTitle !== undefined && hideTitle === true) {
 				aspenJQ('.modal-header').hide();
-			}else{
+			} else{
 				aspenJQ('.modal-header').show();
 			}
 
-			//	 autoclose is treated as an on/off switch. Default timeout interval of 3 seconds.
+			// Clear any existing auto-close timer to prevent it from closing new modals.
+			if (AspenDiscovery._autoCloseTimer) {
+				clearTimeout(AspenDiscovery._autoCloseTimer);
+				AspenDiscovery._autoCloseTimer = null;
+			}
+
+			// autoClose can be a boolean (true = 3 seconds) or a number (custom timeout in milliseconds).
 			// if refreshAfterClose is set but not autoClose, the page will reload when the box is closed by the user.
-			if (autoClose === undefined){
+			if (autoClose === undefined) {
 				autoClose = false;
 			}
-			if (refreshAfterClose === undefined){
+			if (refreshAfterClose === undefined) {
 				refreshAfterClose = false;
 			}
 			aspenJQ("#myModalLabel").html(title);
 			aspenJQ(".modal-body").html(body);
 			aspenJQ('.modal-buttons').html('');
-			var modalDialog = aspenJQ("#modalDialog");
+			const modalDialog = aspenJQ("#modalDialog");
 			modalDialog.removeClass('image-popup');
 			modalDialog.modal('show');
+			
 			if (autoClose) {
-				setTimeout(function(){
-					if (refreshAfterClose) {
-						location.reload();
-					} else {
-						AspenDiscovery.closeLightbox();
+				// Determine timeout duration
+				let timeoutDuration;
+				if (typeof autoClose === 'number') {
+					timeoutDuration = autoClose;
+				} else {
+					timeoutDuration = 3000;
+				}
+				
+				AspenDiscovery._autoCloseTimer = setTimeout(function(){
+					// Only close if this timer hasn't been cleared (prevents closing new modals).
+					if (AspenDiscovery._autoCloseTimer) {
+						AspenDiscovery._autoCloseTimer = null;
+						if (refreshAfterClose) {
+							location.reload();
+						} else {
+							AspenDiscovery.closeLightbox();
+						}
 					}
-				}, 3000);
-			}else if (refreshAfterClose) {
+				}, timeoutDuration);
+			} else if (refreshAfterClose) {
 				modalDialog.on('hide.bs.modal', function(){
 					location.reload();
 				})
@@ -418,6 +448,11 @@ var AspenDiscovery = (function(){
 		},
 
 		showMessageWithButtons: function(title, body, buttons, refreshAfterClose, closeDestination, largeModal, hideTitle, hideCloseButton){
+			if (AspenDiscovery._autoCloseTimer) {
+				clearTimeout(AspenDiscovery._autoCloseTimer);
+				AspenDiscovery._autoCloseTimer = null;
+			}
+			
 			if (largeModal === undefined || largeModal === false) {
 				aspenJQ('.modal-dialog').removeClass('modal-dialog-large');
 			}else{
@@ -448,7 +483,7 @@ var AspenDiscovery = (function(){
 						return false;
 					}
 				});
-			}else{
+			} else {
 				Globals.modalCloseDestination = '';
 			}
 			aspenJQ("#modalDialog").modal('show');
@@ -457,6 +492,36 @@ var AspenDiscovery = (function(){
 					location.reload();
 				})
 			}
+		},
+
+		confirm: function(messageTitle, messageBody, okButtonLabel, cancelButtonLabel, translate, confirmFunctionAsString, confirmStyle) {
+			if (confirmStyle === undefined) {
+				confirmStyle = 'btn-primary';
+			}
+			if (okButtonLabel === undefined) {
+				okButtonLabel = 'Ok';
+			}
+			if (cancelButtonLabel === undefined) {
+				cancelButtonLabel = 'Cancel';
+			}
+			if (translate === true) {
+				var language = Globals.language;
+				$.getJSON(Globals.path + '/API/SystemAPI?method=getBulkTranslations&terms[1]=' + encodeURI(messageTitle) + '&terms[2]=' + encodeURI(messageBody) + '&terms[3]=' + okButtonLabel + '&terms[4]=' + cancelButtonLabel + '&language=' + language, function (data) {
+					if (data.result.success) {
+						if (data[language]) {
+							messageTitle = data[language][1];
+							messageBody = data[language][2];
+							okButtonLabel = data[language][3];
+							cancelButtonLabel = data[language][4];
+						}
+					}
+				}).then(function () {
+					var buttons = "<button id='confirmOkBtn' class='tool btn " + confirmStyle + "' onclick='" + confirmFunctionAsString + "'><i class='fas fa-spinner fa-spin hidden' role='status' aria-hidden='true'></i> " + okButtonLabel + "</button>";
+					buttons += "<button id='confirmCancelBtn' class='tool btn btn-default' onclick='AspenDiscovery.closeLightbox()'>" + cancelButtonLabel + "</button>";
+					AspenDiscovery.showMessageWithButtons(messageTitle, messageBody, buttons, false, '', false, messageTitle.length === 0,true);
+				});
+			}
+
 		},
 
 		// common loading message for lightbox while waiting for AJAX processes to complete.
@@ -776,19 +841,11 @@ var AspenDiscovery = (function(){
 			}
 		},
 
-		scrollToTop: function () {
-			// Let's set a variable for the number of pixels we are from the top of the document.
-			var c = document.documentElement.scrollTop || document.body.scrollTop;
-
-			// If that number is greater than 0, we'll scroll back to 0, or the top of the document.
-			// We'll also animate that scroll with requestAnimationFrame:
-			// https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame
-			if (c > 0) {
-				window.requestAnimationFrame(AspenDiscovery.scrollToTop);
-				// ScrollTo takes an x and a y coordinate.
-				// Increase the '10' value to get a smoother/slower scroll!
-				window.scrollTo(0, c - c / 10);
-			}
+		scrollToTop() {
+			window.scrollTo({
+				top: 0,
+				behavior: 'smooth'
+			});
 		},
 
 		showDisplaySettings: function () {
@@ -865,7 +922,7 @@ $.validator.addMethod('repeat', function(value, element){
 		var valueOriginal = aspenJQ('#' + idOriginal).val();
 		return value === valueOriginal;
 	}
-}, "Repeat fields do not match");
+}, "Repeat fields must match.");
 
 jQuery.validator.addMethod("pinConfirmation", function (value, element) {
 	if (this.optional(element)) {
@@ -883,3 +940,38 @@ if (!String.prototype.startsWith) {
 		}
 	});
 }
+
+jQuery.validator.addMethod("strongPassword", function(value, element) {
+	// Return true early if field is empty and not required.
+	if (value.length === 0 && !$(element).hasClass('required')) {
+		return true;
+	}
+
+	const uppercaseValid = /[A-Z]/.test(value);
+	const lowercaseValid = /[a-z]/.test(value);
+	const numberValid = /[0-9]/.test(value);
+	const specialValid = /[-_~!@#$%^&*.+]/.test(value);
+
+	$(element).data('pwdUpperValid', uppercaseValid);
+	$(element).data('pwdLowerValid', lowercaseValid);
+	$(element).data('pwdNumberValid', numberValid);
+	$(element).data('pwdSpecialValid', specialValid);
+
+	return uppercaseValid && lowercaseValid && numberValid && specialValid;
+}, function(params, element) {
+	const errors = [];
+	if (!$(element).data('pwdUpperValid')) {
+		errors.push('At least one uppercase letter is required.');
+	}
+	if (!$(element).data('pwdLowerValid')) {
+		errors.push('At least one lowercase letter is required.');
+	}
+	if (!$(element).data('pwdNumberValid')) {
+		errors.push('At least one number is required.');
+	}
+	if (!$(element).data('pwdSpecialValid')) {
+		errors.push('At least one special character (-_~!@#$%^&*.+) is required.');
+	}
+
+	return '<ul class="password-error-list" style="margin-top:5px; margin-bottom:0; padding-left:1.25em; list-style-type:disc"><li>' + errors.join('</li><li>') + '</li></ul>';
+});

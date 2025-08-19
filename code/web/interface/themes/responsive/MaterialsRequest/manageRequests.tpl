@@ -104,6 +104,27 @@
 		</div>
 		{if count($allRequests) > 0}
 			<form id="updateRequests" method="post" action="/MaterialsRequest/ManageRequests" class="form form-horizontal">
+				{foreach from=$statusFilter item=status}
+					<input type="hidden" name="statusFilter[]" value="{$status}">
+				{/foreach}
+				{foreach from=$formatFilter item=format}
+					<input type="hidden" name="formatFilter[]" value="{$format}">
+				{/foreach}
+				{if !empty($showUnassigned)}
+					<input type="hidden" name="showUnassigned" value="on">
+				{/if}
+				{foreach from=$assigneesFilter item=assignee}
+					<input type="hidden" name="assigneesFilter[]" value="{$assignee}">
+				{/foreach}
+				{if !empty($startDate)}
+					<input type="hidden" name="startDate" value="{$startDate}">
+				{/if}
+				{if !empty($endDate)}
+					<input type="hidden" name="endDate" value="{$endDate}">
+				{/if}
+				{if !empty($idsToShow)}
+					<input type="hidden" name="idsToShow" value="{$idsToShow}">
+				{/if}
 				<div class="form-group col-xs-4">
 					<label for="pageSize" class="control-label">{translate text="Entries Per Page" isAdminFacing=true}&nbsp;</label>
 					<select id="pageSize" name="pageSize" class="pageSize form-control input-sm" onchange="AspenDiscovery.changePageSize()">
@@ -113,6 +134,7 @@
 						<option value="100"{if $materialsRequestsPerPage == 100} selected="selected"{/if}>100</option>
 						<option value="250"{if $materialsRequestsPerPage == 250} selected="selected"{/if}>250</option>
 						<option value="500"{if $materialsRequestsPerPage == 500} selected="selected"{/if}>500</option>
+						<option value="all"{if $showingAllRequests} selected="selected"{/if}>{translate text="All" isAdminFacing=true inAttribute=true}</option>
 					</select>
 				</div>
 				<table id="requestedMaterials" class="table tablesorter table-striped table-hover table-sticky">
@@ -177,6 +199,8 @@
 										<td>{$request->bookmobileStop}</td>
 									{elseif $column == 'assignedTo'}
 										<td>{$request->getAssigneeName()|escape}</td>
+									{elseif $column == 'source'}
+										<td>{if $request->source == 1}{translate text="Materials Request" isAdminFacing=true}{else}{translate text="Local ILL" isAdminFacing=true}{/if}</td>
 									{else}
 										{* All columns that can be displayed with out special handling *}
 										<td>{$request->$column}</td>

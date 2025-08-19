@@ -2,7 +2,7 @@
 
 require_once ROOT_DIR . '/Action.php';
 require_once ROOT_DIR . '/services/Admin/Admin.php';
-
+require_once ROOT_DIR . '/sys/User/PageDefaults.php';
 abstract class ObjectEditor extends Admin_Admin {
 	protected $activeObject;
 	protected $objectAction;
@@ -185,7 +185,14 @@ abstract class ObjectEditor extends Admin_Admin {
 		$validationResults = $this->updateFromUI($newObject, $structure, null);
 		if ($validationResults['validatedOk']) {
 			$ret = $newObject->insert($this->getContext());
-			if (!$ret) {
+			$doImageAndFileUpdateAfterInsert = DataObjectUtil::structureContainsImagesOrFiles($structure);
+			//for images and files, we need to also update the object to assign correct image names
+			if ($ret && $doImageAndFileUpdateAfterInsert) {
+				$this->updateImagesAndFilesAfterInsert($newObject, $structure);
+				$ret = $newObject->update('updateImagesAndFilesAfterInsert');
+			}
+			// Strict comparison because the update() above could return 0, as no rows changed.
+			if ($ret === false) {
 				global $logger;
 				if ($newObject->getLastError()) {
 					$errorDescription = $newObject->getLastError();
@@ -237,8 +244,14 @@ abstract class ObjectEditor extends Admin_Admin {
 		return DataObjectUtil::validateObject($structure, $object);
 	}
 
+	function updateImagesAndFilesAfterInsert($object, $structure) {
+		require_once ROOT_DIR . '/sys/DataObjectUtil.php';
+		DataObjectUtil::updateImagesAndFilesAfterInsert($object, $structure);
+	}
+
 	function viewExistingObjects($structure) {
 		global $interface;
+		$user = UserAccount::getActiveUserObj();
 		$interface->assign('instructions', $this->getListInstructions());
 		$interface->assign('sortableFields', $this->getSortableFields($structure));
 		$interface->assign('sort', $this->getSort());
@@ -252,7 +265,20 @@ abstract class ObjectEditor extends Admin_Admin {
 		if (!is_numeric($page)) {
 			$page = 1;
 		}
-		$recordsPerPage = isset($_REQUEST['pageSize']) ? $_REQUEST['pageSize'] : $this->getDefaultRecordsPerPage();
+
+		if (isset($_REQUEST['pageSize'])) {
+			$recordsPerPage = $_REQUEST['pageSize'];
+			if ($user !== false) {
+				PageDefaults::updatePageDefaultsForUser($user->id, $this->getModule(), $this->getToolName(),null, $recordsPerPage, null);
+			}
+		}else{
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($user->id, $this->getModule(), $this->getToolName(),null);
+			if ($pageDefaults !== null && !empty($pageDefaults->pageSize)) {
+				$recordsPerPage =  $pageDefaults->pageSize;
+			}else{
+				$recordsPerPage = $this->getDefaultRecordsPerPage();
+			}
+		}
 		if (isset($_REQUEST['objectAction']) && $_REQUEST['objectAction'] == 'exportToCSV') { // Export [all, filtered] to CSV
 			$allObjects = $this->getAllObjects('1', min(1000, $numObjects));
 			Exporter::downloadCSV($this->getToolName(), 'Admin/propertiesListCSV.tpl', $structure, $allObjects);
@@ -770,8 +796,20 @@ abstract class ObjectEditor extends Admin_Admin {
 		return $this->getNumObjects() > 3;
 	}
 
-	function getSort() {
-		return isset($_REQUEST['sort']) ? $_REQUEST['sort'] : $this->getDefaultSort();
+	function getSort() : string {
+		$user = UserAccount::getActiveUserObj();
+		if (isset($_REQUEST['sort'])) {
+			$sort = $_REQUEST['sort'];
+			PageDefaults::updatePageDefaultsForUser($user->id, $this->getModule(), $this->getToolName(), null, null, $sort);
+		} else {
+			$pageDefaults = PageDefaults::getPageDefaultsForUser($user->id, $this->getModule(), $this->getToolName(), null);
+			if ($pageDefaults == null || is_null($pageDefaults->pageSort)) {
+				$sort = $this->getDefaultSort();
+			}else{
+				$sort = $pageDefaults->pageSort;
+			}
+		}
+		return $sort;
 	}
 
 	abstract function getDefaultSort(): string;
@@ -831,13 +869,17 @@ abstract class ObjectEditor extends Admin_Admin {
 			foreach ($_REQUEST['selectedObject'] as $id => $value) {
 				if ($index == 1) {
 					$object1 = $this->getExistingObjectById($id);
-					$object1EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
-					$interface->assign('object1EditUrl', $object1EditUrl);
+					if ($this->showEditButtonsInCompareAndHistoryViews()) {
+						$object1EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
+						$interface->assign('object1EditUrl', $object1EditUrl);
+					}
 					$index = 2;
 				} else {
 					$object2 = $this->getExistingObjectById($id);
-					$object2EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
-					$interface->assign('object2EditUrl', $object2EditUrl);
+					if ($this->showEditButtonsInCompareAndHistoryViews()) {
+						$object2EditUrl = "/{$this->getModule()}/{$this->getToolName()}?objectAction=edit&id=$id";
+						$interface->assign('object2EditUrl', $object2EditUrl);
+					}
 				}
 			}
 			if ($object1 == null || $object2 == null) {
@@ -852,6 +894,10 @@ abstract class ObjectEditor extends Admin_Admin {
 			$interface->assign('error', 'Please select two objects to compare');
 		}
 
+		$interface->assign('showEditButtonsInCompareAndHistoryViews', $this->showEditButtonsInCompareAndHistoryViews());
+		$interface->assign('showReturnToList', $this->getToolName() === 'ObjectRestorations');
+		$interface->assign('module', $this->getModule());
+		$interface->assign('toolName', $this->getToolName());
 		$interface->setTemplate('../Admin/compareObjects.tpl');
 	}
 
@@ -913,7 +959,7 @@ abstract class ObjectEditor extends Admin_Admin {
 	 * @param string|null $sectionName
 	 * @return array
 	 */
-	protected function compareObjectProperties($structure, ?DataObject $object1, ?DataObject $object2, array $properties, $sectionName): array {
+	protected function compareObjectProperties($structure, ?DataObject $object1, ?DataObject $object2, array $properties, ?string $sectionName): array {
 		foreach ($structure as $property) {
 			if ($property['type'] == 'section') {
 				$label = $property['label'];
@@ -923,7 +969,7 @@ abstract class ObjectEditor extends Admin_Admin {
 				$properties = $this->compareObjectProperties($property['properties'], $object1, $object2, $properties, $label);
 			} else {
 				$propertyName = $property['property'];
-				$uniqueProperty = isset($property['uniqueProperty']) ? $property['uniqueProperty'] : ($propertyName == $this->getPrimaryKeyColumn());
+				$uniqueProperty = $property['uniqueProperty'] ?? ($propertyName == $this->getPrimaryKeyColumn());
 				$propertyValue1 = $this->getPropertyValue($property, $object1->$propertyName, $property['type']);
 				$propertyValue2 = $this->getPropertyValue($property, $object2->$propertyName, $property['type']);
 				$label = $property['label'];
@@ -955,33 +1001,53 @@ abstract class ObjectEditor extends Admin_Admin {
 	function getPropertyValue($property, $propertyValue, $propertyType) {
 		if ($propertyType == 'oneToMany' || $propertyType == 'multiSelect') {
 			if ($propertyValue == null) {
-				return 'null';
-			} else {
-				return implode('<br/>', $propertyValue);
-			}
-		} elseif ($propertyType == 'enum') {
-			if (isset($property['values'][$propertyValue])) {
-				return $property['values'][$propertyValue];
-			} else {
 				return translate([
-					'text' => 'Undefined value %1%',
-					1 => $propertyValue,
+					'text' => 'None Selected',
 					'isAdminFacing' => true,
 				]);
+			} else {
+				if ($propertyType == 'multiSelect' && isset($property['values']) && is_array($propertyValue)) {
+					$displayValues = [];
+					foreach ($propertyValue as $id) {
+						if (isset($property['values'][$id])) {
+							$displayValues[] = $property['values'][$id];
+						} else {
+							$displayValues[] = $id;
+						}
+					}
+					return implode('<br/>', $displayValues);
+				} else {
+					return implode('<br/>', $propertyValue);
+				}
 			}
+		} elseif ($propertyType == 'enum') {
+			return $property['values'][$propertyValue] ?? translate([
+				'text' => 'Undefined Value %1%',
+				1 => $propertyValue,
+				'isAdminFacing' => true,
+			]);
+		} elseif ($propertyType == 'html') {
+			if ($propertyValue === null || $propertyValue === '') {
+				return '';
+			}
+			// Strip all HTML tags and collapse whitespace.
+			$plain = strip_tags($propertyValue);
+			return trim(preg_replace('/\s+/u', ' ', $plain));
 		} else {
 			return is_array($propertyValue) ? implode(', ', $propertyValue) : (is_object($propertyValue) ? (string)$propertyValue : $propertyValue);
 		}
 	}
 
-	function showHistory() {
-		$id = isset($_REQUEST['id']) ? $_REQUEST['id'] : '';
+	function showHistory(): void {
+		$id = $_REQUEST['id'] ?? '';
 		if (empty($id) || $id < 0) {
-			AspenError::raiseError('Please select an object to show history for');
+			AspenError::raiseError('Please select an object to display its history.');
 		} else {
-			//Work with an existing record
 			global $interface;
 			$curObject = $this->getExistingObjectById($id);
+			if (!$curObject) {
+				AspenError::raiseError('The object with ID ' . $id . ' does not exist.');
+			}
 			$interface->assign('curObject', $curObject);
 			$interface->assign('id', $id);
 			$displayNameColumn = $curObject->__displayNameColumn;
@@ -1011,6 +1077,9 @@ abstract class ObjectEditor extends Admin_Admin {
 				$objectHistory[] = clone $historyEntry;
 			}
 			$interface->assign('objectHistory', $objectHistory);
+			$interface->assign('showEditButtonsInCompareAndHistoryViews', $this->showEditButtonsInCompareAndHistoryViews());
+			$interface->assign('module', $this->getModule());
+			$interface->assign('toolName', $this->getToolName());
 			$this->display('../Admin/objectHistory.tpl', $title);
 			exit();
 		}
@@ -1335,6 +1404,15 @@ abstract class ObjectEditor extends Admin_Admin {
 	}
 
 	protected function showHistoryLinks() {
+		return true;
+	}
+
+	/**
+	 * Control whether edit buttons should be shown in history and compare views.
+	 * Purpose: Override it to hide edit functionality when appropriate.
+	 * @return bool True if edit buttons are enabled, false otherwise.
+	 */
+	protected function showEditButtonsInCompareAndHistoryViews(): bool {
 		return true;
 	}
 

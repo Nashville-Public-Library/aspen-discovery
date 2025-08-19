@@ -129,6 +129,15 @@ class WebBuilder_AJAX extends JSON_Action {
 				$object = new ImageUpload();
 				$object->type = 'web_builder_image';
 				$object->orderBy('title');
+				if (!UserAccount::userHasPermission('Administer All Web Content') && (UserAccount::userHasPermission('Administer Web Content for Home Library'))) {
+					$libraryList = Library::getLibraryList(true);
+					$object->whereAddIn("owningLibrary", array_keys($libraryList), false, "OR");
+					$object->whereAdd("owningLibrary = -1", "OR");
+					$object->whereAdd("sharing = 2 OR sharing = 3", "OR");
+					if (Library::getLibraryList(true)){
+						$object->whereAdd("sharing = 1 AND sharedWithLibrary IN (" . implode(array_keys($libraryList)) . ")", "OR");
+					}
+				}
 				$object->find();
 				while ($object->fetch()) {
 					$list[$object->id] = $object->title;
@@ -145,6 +154,15 @@ class WebBuilder_AJAX extends JSON_Action {
 				$object = new FileUpload();
 				$object->type = 'web_builder_pdf';
 				$object->orderBy('title');
+				if (!UserAccount::userHasPermission('Administer All Web Content') && (UserAccount::userHasPermission('Administer Web Content for Home Library'))) {
+					$libraryList = Library::getLibraryList(true);
+					$object->whereAddIn("owningLibrary", array_keys($libraryList), false, "OR");
+					$object->whereAdd("owningLibrary = -1", "OR");
+					$object->whereAdd("sharing = 2 OR sharing = 3", "OR");
+					if (Library::getLibraryList(true)){
+						$object->whereAdd("sharing = 1 AND sharedWithLibrary IN (" . implode(array_keys($libraryList)) . ")", "OR");
+					}
+				}
 				$object->find();
 				while ($object->fetch()) {
 					$list[$object->id] = $object->title;
@@ -327,16 +345,19 @@ class WebBuilder_AJAX extends JSON_Action {
 	function saveLinkedObject() {
 		//Save Linked Placard
 		require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
-		$imageForPlacard = $_REQUEST['image'];
-		if (!str_starts_with($imageForPlacard, 'logo')) {
-			$imageForPlacard = 'logo' . $imageForPlacard;
-		}
+		$fileType = substr($_REQUEST['image'], 0, -3);
+		$fileType = match ($fileType) {
+			'gif' => ".gif",
+			'png' => ".png",
+			'svg' => ".svg",
+			default => ".jpg",
+		};
 		$placard = new Placard();
 		$placard->sourceId = $_REQUEST['objectId'];
 		if ($placard->find(true)) {
 			if ($_REQUEST['doFullSave'] == "true"){
 				$placard->title = $_REQUEST['objectName'];
-				$placard->image = $imageForPlacard;
+				$placard->image = "web_resource_image_".$_REQUEST['objectId'].$fileType;
 				$placard->link = $_REQUEST['url'];
 				$placard->body = $_REQUEST['body'];
 				$placard->isCustomized = 0;
@@ -361,7 +382,7 @@ class WebBuilder_AJAX extends JSON_Action {
 			'message' => 'Unknown error uploading image',
 		];
 		if (UserAccount::isLoggedIn()) {
-			if (UserAccount::userHasPermission('Administer All Web Content')) {
+			if (UserAccount::userHasPermission(['Administer All Web Content', 'Administer Web Content for Home Library'])) {
 				if (!empty($_FILES)) {
 					require_once ROOT_DIR . '/sys/File/ImageUpload.php';
 					$structure = ImageUpload::getObjectStructure('');
@@ -417,7 +438,7 @@ class WebBuilder_AJAX extends JSON_Action {
 	/** @noinspection PhpUnused */
 	function uploadImageTinyMCE() {
 		if (UserAccount::isLoggedIn()) {
-			if (UserAccount::userHasPermission('Administer All Web Content')) {
+			if (UserAccount::userHasPermission(['Administer All Web Content', 'Administer Web Content for Home Library'])) {
 				if (!empty($_FILES)) {
 					require_once ROOT_DIR . '/sys/File/ImageUpload.php';
 					$structure = ImageUpload::getObjectStructure('');
@@ -476,7 +497,7 @@ class WebBuilder_AJAX extends JSON_Action {
 			'message' => 'Unknown error getting upload form',
 		];
 		if (UserAccount::isLoggedIn()) {
-			if (UserAccount::userHasPermission('Administer All Web Content')) {
+			if (UserAccount::userHasPermission(['Administer All Web Content', 'Administer Web Content for Home Library'])) {
 				$editorName = strip_tags($_REQUEST['editorName']);
 				$interface->assign('editorName', $editorName);
 				$result = [
@@ -588,10 +609,9 @@ class WebBuilder_AJAX extends JSON_Action {
 	}
 
 	/** @noinspection PhpUnused */
-	function deleteCell() {
+	function deleteCell(): array {
 		$result = [
 			'success' => false,
-			'message' => 'Unknown error deleting cell',
 		];
 		if (UserAccount::isLoggedIn()) {
 			if (UserAccount::userHasPermission([
@@ -604,7 +624,7 @@ class WebBuilder_AJAX extends JSON_Action {
 					$portalCell = new PortalCell();
 					$portalCell->id = $_REQUEST['id'];
 					if ($portalCell->find(true)) {
-						//Update the widths of the cells based on the number of cells in the row
+						// Update the widths of the cells based on the number of cells in the row.
 						$portalRow = new PortalRow();
 						$portalRow->id = $portalCell->portalRowId;
 						$portalCell->delete();
@@ -612,31 +632,31 @@ class WebBuilder_AJAX extends JSON_Action {
 							$portalRow->resizeColumnWidths();
 						}
 						$result['success'] = true;
-						$result['message'] = 'The cell was deleted successfully';
+						//$result['message'] = 'The cell was deleted successfully.';
 						global $interface;
 						$interface->assign('portalRow', $portalRow);
+						$interface->assign('inPageEditor', false);
 						$result['rowId'] = $portalCell->portalRowId;
 						$result['newRow'] = $interface->fetch('DataObjectUtil/portalRow.tpl');
 					} else {
-						$result['message'] = 'Unable to find that cell, it may have been deleted already';
+						$result['message'] = 'Unable to find that cell; it may have been already deleted.';
 					}
 				} else {
-					$result['message'] = 'No cell id was provided';
+					$result['message'] = 'No cell id was provided.';
 				}
 			} else {
-				$result['message'] = 'You don\'t have the correct permissions to delete a cell';
+				$result['message'] = 'You don\'t have the correct permissions to delete a cell.';
 			}
 		} else {
-			$result['message'] = 'You must be logged in to delete a cell';
+			$result['message'] = 'You must be logged in to delete a cell.';
 		}
 		return $result;
 	}
 
 	/** @noinspection PhpUnused */
-	function deleteRow() {
+	function deleteRow(): array {
 		$result = [
 			'success' => false,
-			'message' => 'Unknown error deleting row',
 		];
 		if (UserAccount::isLoggedIn()) {
 			if (UserAccount::userHasPermission([
@@ -650,18 +670,18 @@ class WebBuilder_AJAX extends JSON_Action {
 					if ($portalRow->find(true)) {
 						$portalRow->delete();
 						$result['success'] = true;
-						$result['message'] = 'The row was deleted successfully';
+						//$result['message'] = 'The row was deleted successfully.';
 					} else {
-						$result['message'] = 'Unable to find that row, it may have been deleted already';
+						$result['message'] = 'Unable to find that row; it may have been already deleted.';
 					}
 				} else {
-					$result['message'] = 'No row id was provided';
+					$result['message'] = 'No row id was provided.';
 				}
 			} else {
-				$result['message'] = 'You don\'t have the correct permissions to delete a row';
+				$result['message'] = 'You don\'t have the correct permissions to delete a row.';
 			}
 		} else {
-			$result['message'] = 'You must be logged in to delete a row';
+			$result['message'] = 'You must be logged in to delete a row.';
 		}
 		return $result;
 	}

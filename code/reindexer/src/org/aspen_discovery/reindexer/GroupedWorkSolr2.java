@@ -66,6 +66,12 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			doc.addField("author2-role", author2Role);
 			doc.addField("author_additional", authorAdditional);
 			doc.addField("author_display", authorDisplay);
+
+			//title auth
+			HashSet<String> titleAuthors = new HashSet<>();
+			titleAuthors.add(fullTitle + " " + getPrimaryAuthor());
+			doc.addField("title_author", titleAuthors);
+
 			//format
 			doc.addField("grouping_category", groupingCategory);
 
@@ -96,10 +102,24 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			doc.addField("dateSpan", dateSpans);
 			//series.values().removeAll(GroupedWorkIndexer.hideSeries);
 			doc.addField("series", series.values());
-			//series2.values().removeAll(GroupedWorkIndexer.hideSeries);
-			doc.addField("series2", series2.values());
+			String[] sortedSeriesWithVolume = seriesWithVolumePriority.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).map(Map.Entry::getKey).toArray(String[]::new);
+			if (isDebugEnabled() && !seriesWithVolumePriority.isEmpty()) {
+				addDebugMessage("Series Priority Values", 1);
+				for (String seriesWithVolume : sortedSeriesWithVolume) {
+					addDebugMessage(seriesWithVolume + " priority: " + seriesWithVolumePriority.get(seriesWithVolume), 2);
+				}
+			}
 			//seriesWithVolume.values().removeAll(GroupedWorkIndexer.hideSeries);
-			doc.addField("series_with_volume", seriesWithVolume.values());
+			boolean isFirstSeries = true;
+			for (String seriesName : sortedSeriesWithVolume) {
+				if (seriesWithVolume.containsKey(seriesName)) {
+					doc.addField("series_with_volume", seriesWithVolume.get(seriesName));
+					if (isFirstSeries) {
+						doc.addField("series_author", seriesName + " " + getPrimaryAuthor());
+						isFirstSeries = false;
+					}
+				}
+			}
 
 			doc.addField("topic", topics);
 			topicFacets.removeAll(groupedWorkIndexer.hideSubjects);
@@ -124,12 +144,12 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			checkDefaultValue(literaryFormFull, "Not Coded");
 			checkDefaultValue(literaryFormFull, "Other");
 			checkDefaultValue(literaryFormFull, "Unknown");
-			if (this.isDebugEnabled()) {this.addDebugMessage("Total full literary form score: " + this.literaryFormFull, 2);}
+			if (this.isDebugEnabled()) {this.addDebugMessage("Total full literary form score: " + this.literaryFormFull, 1);}
 			checkInconsistentLiteraryFormsFull();
 			checkDefaultValue(literaryForm, "Not Coded");
 			checkDefaultValue(literaryForm, "Other");
 			checkDefaultValue(literaryForm, "Unknown");
-			if (this.isDebugEnabled()) {this.addDebugMessage("Total fiction vs non fiction score: " + this.literaryForm, 2);}
+			if (this.isDebugEnabled()) {this.addDebugMessage("Total fiction vs non fiction score: " + this.literaryForm, 1);}
 			checkInconsistentLiteraryForms();
 			//Check if .isHide
 			if (groupedWorkIndexer.isHideUnknownLiteraryForm()) {
@@ -141,8 +161,8 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 				literaryFormFull.remove("Not Coded");
 			}
 			//Add field
-			if (this.debugEnabled) {this.addDebugMessage("Literary form is " + literaryForm.keySet(), 4);}
-			if (this.debugEnabled) {this.addDebugMessage("Full literary form is " + literaryFormFull.keySet(), 4);}
+			if (this.debugEnabled) {this.addDebugMessage("Literary form is " + literaryForm.keySet(), 2);}
+			if (this.debugEnabled) {this.addDebugMessage("Full literary form is " + literaryFormFull.keySet(), 2);}
 			doc.addField("literary_form_full", literaryFormFull.keySet());
 			doc.addField("literary_form", literaryForm.keySet());
 			if (targetAudienceFull.size() > 1 || !groupedWorkIndexer.isTreatUnknownAudienceAsUnknown()) {
@@ -165,8 +185,8 @@ public class GroupedWorkSolr2 extends AbstractGroupedWorkSolr implements Cloneab
 			if (targetAudience.isEmpty()) {
 				targetAudience.add(groupedWorkIndexer.getTreatUnknownAudienceAs());
 			}
-			if (this.isDebugEnabled()) {this.addDebugMessage("Final target audience is " + targetAudience, 4);}
-			if (this.isDebugEnabled()) {this.addDebugMessage("Final full target audience is " + targetAudienceFull, 4);}
+			if (this.isDebugEnabled()) {this.addDebugMessage("Final target audience is " + targetAudience, 1);}
+			if (this.isDebugEnabled()) {this.addDebugMessage("Final full target audience is " + targetAudienceFull, 1);}
 			doc.addField("target_audience", targetAudience);
 			doc.addField("system_list", systemLists);
 			//Date added to catalog

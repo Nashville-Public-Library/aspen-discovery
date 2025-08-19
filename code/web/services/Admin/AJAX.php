@@ -1681,6 +1681,7 @@ class Admin_AJAX extends JSON_Action {
 		require_once ROOT_DIR . '/services/Admin/UsageGraphs.php';
 		$aspenUsageGraph = new Admin_UsageGraphs();
 		$aspenUsageGraph->buildCSV();
+
 	}
 	/**
 	 * Retrieves patron types for the admin_sso account profile and
@@ -1751,6 +1752,46 @@ class Admin_AJAX extends JSON_Action {
 			$result['primaryProfilesData'][$profileId] = PType::getPatronTypeList(false, true, $profileId);
 		}
 
+		return $result;
+	}
+
+	function getNotificationDevicesForUser(): array {
+		$result = [
+			'success' => false,
+			'message' => 'Unknown error getting devices',
+		];
+
+		$user = $_REQUEST['user'] ?? null;
+		if ($user) {
+			$patron = new User();
+			$patron->whereAdd("ils_barcode = '$user' OR ils_username = '$user'");
+			$patron->find();
+			$numResults = $patron->count();
+			if ($numResults == 0) {
+				$result['message'] = 'Patron barcode or username does not exist.';
+				return $result;
+			} elseif ($numResults >= 2) {
+				$result['message'] = 'Multiple patrons found with that username.';
+				return $result;
+			} elseif ($patron->find(true)) {
+				$tokens = $patron->getNotificationPushTokenByDevice();
+				if ($tokens) {
+					$html = '<select name="pushToken" id="pushToken" class="form-control">';
+					foreach ($tokens as $device => $token) {
+						$html .= '<option value="' . $token . '">' . $device . '</option>';
+					}
+					$html .= '</select>';
+
+					$result['message'] = $html;
+					$result['success'] = true;
+
+				} else {
+					$result['message'] = 'Patron does not have any stored push tokens.';
+				}
+			}
+		} else {
+			$result['message'] = 'No barcode or username provided.';
+		}
 		return $result;
 	}
 

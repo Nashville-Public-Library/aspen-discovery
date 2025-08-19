@@ -84,8 +84,12 @@ public class Scope implements Comparable<Scope>{
 	 * @param subLocationCode   The sub location code to check.  Set to blank if no sub location code
 	 * @return                  Whether the item is included within the scope
 	 */
-	public InclusionResult isItemPartOfScope(String itemIdentifier, String recordType, String locationCode, String subLocationCode, String iType, TreeSet<String> audiences, String audiencesAsString, String format, String shelfLocation, String collectionCode, boolean isHoldable, boolean isOnOrder, boolean isEContent, Record marcRecord, String econtentUrl){
-		if (isItemOwnedByScope(itemIdentifier, recordType, locationCode, subLocationCode, iType, audiences, audiencesAsString, format, shelfLocation, collectionCode, isHoldable, isOnOrder, isEContent, marcRecord)){
+	public InclusionResult isItemPartOfScope(String itemIdentifier, String recordType, String locationCode, String subLocationCode, String iType, TreeSet<String> audiences, String audiencesAsString, String format, String shelfLocation, String collectionCode, boolean isHoldable, boolean isOnOrder, boolean isEContent, Record marcRecord, String econtentUrl, DebugLogger debugLogger){
+		if (debugLogger != null && debugLogger.isDebugEnabled()) {
+			debugLogger.addDebugMessage("Checking scope '" + facetLabel + "' for item " + itemIdentifier, 2);
+		}
+
+		if (isItemOwnedByScope(itemIdentifier, recordType, locationCode, subLocationCode, iType, audiences, audiencesAsString, format, shelfLocation, collectionCode, isHoldable, isOnOrder, isEContent, marcRecord, debugLogger)){
 			if (econtentUrl == null){
 				return includedOwnedResult;
 			}else {
@@ -94,7 +98,7 @@ public class Scope implements Comparable<Scope>{
 		}
 
 		for (InclusionRule curRule : inclusionRules) {
-			if (curRule.isItemIncluded(itemIdentifier, recordType, locationCode, subLocationCode, iType, audiences, audiencesAsString, format, shelfLocation, collectionCode, isHoldable, isOnOrder, isEContent, marcRecord)) {
+			if (curRule.isItemIncluded(itemIdentifier, recordType, locationCode, subLocationCode, iType, audiences, audiencesAsString, format, shelfLocation, collectionCode, isHoldable, isOnOrder, isEContent, marcRecord, debugLogger)) {
 				if (econtentUrl == null) {
 					return includedNonOwnedResult;
 				} else {
@@ -114,9 +118,9 @@ public class Scope implements Comparable<Scope>{
 	/**
 	 * Determine if the item is part of the current scope based on location code and other information
 	 */
-	public boolean isItemOwnedByScope(String itemIdentifier, String recordType, String locationCode, String subLocationCode, String iType, TreeSet<String> audiences, String audiencesAsString, String format, String shelfLocation, String collectionCode, boolean isHoldable, boolean isOnOrder, boolean isEContent, Record marcRecord){
+	public boolean isItemOwnedByScope(String itemIdentifier, String recordType, String locationCode, String subLocationCode, String iType, TreeSet<String> audiences, String audiencesAsString, String format, String shelfLocation, String collectionCode, boolean isHoldable, boolean isOnOrder, boolean isEContent, Record marcRecord, DebugLogger debugLogger){
 		for(InclusionRule curRule: ownershipRules){
-			if (curRule.isItemIncluded(itemIdentifier, recordType, locationCode, subLocationCode, iType, audiences, audiencesAsString, format, shelfLocation, collectionCode, isHoldable, isOnOrder, isEContent, marcRecord)){
+			if (curRule.isItemIncluded(itemIdentifier, recordType, locationCode, subLocationCode, iType, audiences, audiencesAsString, format, shelfLocation, collectionCode, isHoldable, isOnOrder, isEContent, marcRecord, debugLogger)){
 				return true;
 			}
 		}

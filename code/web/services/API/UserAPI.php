@@ -72,6 +72,7 @@ class UserAPI extends AbstractAPI {
 					'submitVdxRequest',
 					'cancelVdxRequest',
 					'submitLocalIllRequest',
+					'submitLocalIllRequestEmail',
 					'getNotificationPreference',
 					'setNotificationPreference',
 					'getNotificationPreferences',
@@ -103,7 +104,8 @@ class UserAPI extends AbstractAPI {
 					'createMaterialsRequest',
 					'cancelMaterialsRequest',
                     'deleteAspenUser',
-					'updateSortPreferences'
+					'updateSortPreferences',
+					'updateHoldPickupPreferences'
 				])) {
 					header("Cache-Control: max-age=10800");
 					require_once ROOT_DIR . '/sys/SystemLogging/APIUsage.php';
@@ -1033,9 +1035,14 @@ class UserAPI extends AbstractAPI {
 				$userData->yearInReviewName = translate(['text' => $yearInReviewName, 'isPublicFacing' => true]);
 			}
 
-            $userData->holdSortAvailable = $user->holdSortAvailable;
-            $userData->holdSortUnavailable = $user->holdSortUnavailable;
-            $userData->checkoutSort = $user->checkoutSort;
+			$aspenToLiDAAvailableHoldSortMapping = array_flip(User::$lidaToAspenAvailableHoldSortMapping);
+			$userData->holdSortAvailable = array_key_exists($user->holdSortAvailable, $aspenToLiDAAvailableHoldSortMapping) ? $aspenToLiDAAvailableHoldSortMapping[$user->holdSortAvailable] : $user->holdSortAvailable;
+
+			$aspenToLiDAUnavailableHoldSortMapping = array_flip(User::$lidaToAspenUnavailableHoldSortMapping);
+			$userData->holdSortUnavailable = array_key_exists($user->holdSortUnavailable, $aspenToLiDAUnavailableHoldSortMapping) ? $aspenToLiDAUnavailableHoldSortMapping[$user->holdSortUnavailable] : $user->holdSortUnavailable;
+
+			$aspenToLiDACheckoutSortMapping = array_flip(User::$lidaToAspenCheckoutSortMapping);
+			$userData->checkoutSort = array_key_exists($user->checkoutSort, $aspenToLiDACheckoutSortMapping) ? $aspenToLiDACheckoutSortMapping[$user->checkoutSort] : $user->checkoutSort;
 
 			return [
 				'success' => true,
@@ -1986,16 +1993,64 @@ class UserAPI extends AbstractAPI {
 						$pickupBranch = $user->_homeLocationCode;
 					}
 
+					if (isset($_REQUEST['rememberHoldPickupLocation']) && $library->allowRememberPickupLocation) {
+						$user->setRememberHoldPickupLocation($_REQUEST['rememberHoldPickupLocation']);
+					}
+
+					if ($library->allowPickupLocationUpdates && $user->rememberHoldPickupLocation) {
+						if (isset($_REQUEST['pickupBranch'])) {
+							$pickupLocation = new Location();
+							$pickupLocation->code = $_REQUEST['pickupBranch'];
+							if ($pickupLocation->find(true)) {
+								if ($pickupLocation->locationId != $user->pickupLocationId) {
+									$user->setPickupLocationId($pickupLocation->locationId);
+								}
+							}
+
+							if (isset($_REQUEST['pickupSublocation'])) {
+								require_once ROOT_DIR . '/sys/LibraryLocation/Sublocation.php';
+								$sublocation = new Sublocation();
+								$sublocation->id = $_REQUEST['pickupSublocation'];
+								if ($sublocation->find(true)) {
+									if ($pickupLocation->locationId == $sublocation->locationId) {
+										if ($sublocation->id != $user->pickupSublocationId) {
+											$user->setPickupSublocationId($sublocation->id);
+										}
+									}
+								}
+							}
+						}
+
+						$user->update();
+					}
+
 					$homeLibrary = $user->getHomeLibrary();
 
 					if (!empty($_REQUEST['cancelDate'])) {
 						$cancelDate = $_REQUEST['cancelDate'];
-					} elseif ($homeLibrary->defaultNotNeededAfterDays <= 0) {
-						$cancelDate = null;
+
+						if ($library->maxHoldCancellationDate > 0) {
+							$maxAllowedTimestamp = time() + ($library->maxHoldCancellationDate * 24 * 60 * 60);
+							$cancelDateTimestamp = strtotime($cancelDate);
+
+							if ($cancelDateTimestamp > $maxAllowedTimestamp) {
+								return [
+									'success' => false,
+									'message' => translate([
+										'text' => 'The cancellation date cannot be more than %1% days from today.',
+										1 => $library->maxHoldCancellationDate,
+										'isPublicFacing' => true,
+									]),
+								];
+							}
+						}
 					} else {
-						//Default to a date based on the default not needed after days in the library configuration.
-						$nnaDate = time() + $homeLibrary->defaultNotNeededAfterDays * 24 * 60 * 60;
-						$cancelDate = date('Y-m-d', $nnaDate);
+						if ($library->defaultNotNeededAfterDays <= 0) {
+							$cancelDate = null;
+						} else {
+							$nnaDate = time() + $library->defaultNotNeededAfterDays * 24 * 60 * 60;
+							$cancelDate = date('Y-m-d', $nnaDate);
+						}
 					}
 
 					$holdType = $_REQUEST['holdType'];
@@ -3750,6 +3805,19 @@ class UserAPI extends AbstractAPI {
 		}
 	}
 
+	function submitLocalIllRequestEmail() : array {
+		$user = $this->getUserForApiCall();
+		if ($user && !($user instanceof AspenError)) {
+			return $user->submitLocalIllRequestEmail();
+		} else {
+			return [
+				'success' => false,
+				'message' => translate(['text'=>'Login unsuccessful', 'isPublicFacing'=>true]),
+				'title' => translate(['text'=>'Error', 'isPublicFacing'=>true])
+			];
+		}
+	}
+
 	/**
 	 * Loads the reading history for the user.  Includes print, eContent, and OverDrive titles.
 	 * Note: The return of this method can be quite lengthy if the patron has a large number of items in their reading history.
@@ -3824,7 +3892,8 @@ class UserAPI extends AbstractAPI {
 				$page = $_REQUEST['page'] ?? 1;
 				$pageSize = $_REQUEST['pageSize'] ?? 25;
 				$sort = $_REQUEST['sort_by'] ?? 'checkedOut';
-				$readingHistory = $user->getReadingHistory($page, $pageSize, $sort);
+				$filter = $_REQUEST['filter'] ?? '';
+				$readingHistory = $user->getReadingHistory($page, $pageSize, $sort, $filter);
 
 				$options = [
 					'totalItems' => $readingHistory['numTitles'],
@@ -4896,6 +4965,7 @@ class UserAPI extends AbstractAPI {
 			if (empty($_REQUEST['language']) && $user !== false) {
 				global $activeLanguage;
 				global $translator;
+				require_once ROOT_DIR . '/sys/Translation/Language.php';
 				$userLanguage = new Language();
 				$userLanguage->code = $user->interfaceLanguage;
 				if ($userLanguage->find(true)) {
@@ -5535,6 +5605,14 @@ class UserAPI extends AbstractAPI {
 		}
 	}
 
+	/**
+	 * This is called from LiDA to get information about a patron's app preferences.
+	 * The same information is also available within getPatronProfile so if that data
+	 * has already been loaded, this call is redundant.
+	 *
+	 * @return array
+	 * @noinspection PhpUnused
+	 */
 	function getAppPreferencesForUser(): array {
 		$user = $this->getUserForApiCall();
 		if ($user && !($user instanceof AspenError)) {
@@ -6553,6 +6631,9 @@ class UserAPI extends AbstractAPI {
 			$materialsRequest->dateUpdated = time();
 
 			if($materialsRequest->insert()) {
+				require_once ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequestUsage.php';
+				MaterialsRequestUsage::incrementStat($materialsRequest->status, $materialsRequest->libraryId);
+
 				return [
 					'success' => true,
 					'title' => 'Success',
@@ -6671,10 +6752,158 @@ class UserAPI extends AbstractAPI {
 		];
 	}
 
-	function updateSortPreferences() {
+	/**
+	 * Updates the active account sort method for a user for account related functionality.
+	 *
+	 * @return array
+	 * @noinspection PhpUnused
+	 */
+	function updateSortPreferences() : array {
 		$user = $this->getUserForApiCall();
 		if ($user && !($user instanceof AspenError)) {
 			$user->updateSortPreferences();
+			return [
+				'success' => true,
+			];
+		} else {
+			return [
+				'success' => false,
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => 'Unable to validate user',
+					'isPublicFacing' => true,
+				]),
+			];
+		}
+	}
+
+	/**
+	 * updateHoldPickupPreferences
+	 *
+	 * @return array
+	 * @noinspection PhpUnused
+	 */
+	function updateHoldPickupPreferences(): array {
+		$user = $this->getUserForApiCall();
+		global $logger;
+		if ($user && !($user instanceof AspenError)) {
+			$library = $user->getHomeLibrary();
+
+			$message = '';
+			$errMessage = '';
+			$errCount = 0;
+
+			if (isset($_REQUEST['rememberHoldPickupLocation']) && $library->allowRememberPickupLocation) {
+				$rememberHoldPickupLocationValue = (int) filter_var($_REQUEST['rememberHoldPickupLocation'], FILTER_VALIDATE_BOOLEAN);
+				$user->setRememberHoldPickupLocation($rememberHoldPickupLocationValue);
+			}
+
+			if ($library->allowPickupLocationUpdates) {
+				if (isset($_REQUEST['pickupLocationId'])) {
+					$pickupLocation = new Location();
+					$pickupLocation->code = $_REQUEST['pickupLocationId'];
+					if ($pickupLocation->find(true)) {
+						if ($pickupLocation->locationId != $user->pickupLocationId) {
+							$user->setPickupLocationId($pickupLocation->locationId);
+						}
+					} else {
+						$errCount++;
+						$errMessage .= " " . translate([
+								'text' => 'Unable to find preferred pickup location.',
+								'isPublicFacing' => true,
+							]);
+					}
+
+					if (isset($_REQUEST['sublocation'])) {
+						require_once ROOT_DIR . '/sys/LibraryLocation/Sublocation.php';
+						$sublocation = new Sublocation();
+						$sublocation->id = $_REQUEST['sublocation'];
+						if ($sublocation->find(true)) {
+							if ($pickupLocation->locationId == $sublocation->locationId) {
+								if ($sublocation->id != $user->pickupSublocationId) {
+									$user->setPickupSublocationId($sublocation->id);
+								}
+							}
+						} else {
+							$errCount++;
+							$errMessage .= " " . translate([
+									'text' => 'Unable to find preferred pickup sublocation.',
+									'isPublicFacing' => true,
+								]);
+						}
+					}
+				}
+
+				if (isset($_REQUEST['myLocation1Id'])) {
+					$pickupLocation = new Location();
+					$pickupLocation->code = $_REQUEST['myLocation1Id'];
+					if ($pickupLocation->find(true)) {
+						if ($pickupLocation->locationId != $user->myLocation1Id) {
+							$user->setMyLocation1Id($pickupLocation->locationId);
+						}
+					} else {
+						$errCount++;
+						$errMessage .= " " . translate([
+								'text' => 'Unable to find alternative pickup location 1.',
+								'isPublicFacing' => true,
+							]);
+					}
+				}
+
+				if (isset($_REQUEST['myLocation2Id'])) {
+					$pickupLocation = new Location();
+					$pickupLocation->code = $_REQUEST['myLocation2Id'];
+					if ($pickupLocation->find(true)) {
+						if ($pickupLocation->locationId != $user->myLocation2Id) {
+							$user->setMyLocation2Id($pickupLocation->locationId);
+						}
+					} else {
+						$errCount++;
+						$errMessage .= " " . translate([
+								'text' => 'Unable to find alternative pickup location 2.',
+								'isPublicFacing' => true,
+							]);
+					}
+				}
+
+				$user->update();
+				$message = translate([
+					'text' => 'Successfully updated pickup location preferences.',
+					'isPublicFacing' => true,
+				]);
+
+				if ($errCount > 0) {
+					$message = translate([
+						'text' => 'There were some errors trying to update your preferences: %1%',
+						1 => $errMessage,
+						'isPublicFacing' => true,
+					]);
+				}
+
+				return [
+					'success' => true,
+					'title' => translate([
+						'text' => 'Success',
+						'isPublicFacing' => true,
+					]),
+					'message' => $message,
+				];
+			} else {
+				return [
+					'success' => false,
+					'title' => translate([
+						'text' => 'Error',
+						'isPublicFacing' => true,
+					]),
+					'message' => translate([
+						'text' => 'Sorry, you are not allowed to update your pickup locations.',
+						'isPublicFacing' => true,
+					]),
+				];
+			}
 		} else {
 			return [
 				'success' => false,

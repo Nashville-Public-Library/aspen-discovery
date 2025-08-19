@@ -38,6 +38,27 @@ class SelfReg extends Action {
 					$zip = '';
 					$dob = '';
 
+					//validate phone and email
+					$invalidContactInfo = false;
+					if (!empty($_REQUEST['email']) && !filter_var($_REQUEST['email'], FILTER_VALIDATE_EMAIL)) {
+						$emailMessage = translate([
+							'text' => 'Please enter a valid email address.',
+							'isPublicFacing' => true
+						]);
+						$interface->assign('emailMessage', $emailMessage);
+						$invalidContactInfo = true;
+					}
+					if (!empty($_REQUEST['phone'])) {
+						if (!SystemUtils::validatePhoneNumber($_REQUEST['phone'])) {
+							$phoneMessage = translate([
+								'text' => 'Please enter a valid phone number.',
+								'isPublicFacing' => true
+							]);
+							$interface->assign('phoneMessage', $phoneMessage);
+							$invalidContactInfo = true;
+						}
+					}
+
 					//get the correct _REQUEST names as they differ across ILSes
 					foreach ($_REQUEST as $selfRegValue => $val){
 						if (!(preg_match('/(.*?)address2(.*)|(.*?)borrower_B(.*)|(.*?)borrower_alt(.*)/', $selfRegValue))){
@@ -61,8 +82,8 @@ class SelfReg extends Action {
 							}
 						}
 					}
-					//if there's no USPS info, don't bother trying to validate
-					if ($uspsInfo){
+					//if there's no USPS info or email or phone are invalid, don't bother trying to validate
+					if ($uspsInfo && !$invalidContactInfo){
 						//Submit form to ILS if address is validated
 						if (SystemUtils::validateAddress($streetAddress, $city, $state, $zip)){
 							//Submit form to ILS if age is validated
@@ -89,21 +110,25 @@ class SelfReg extends Action {
 							$interface->assign('addressMessage', $addressMessage);
 						}
 					} else {
-						//Submit form to ILS if age is validated
+						//Submit form to ILS if age is validated and contact info is not invalid
 						if (!empty($dob)) {
 							if (SystemUtils::validateAge($library->minSelfRegAge, $dob)){
-								$result = $catalog->selfRegister();
-								$interface->assign('selfRegResult', $result);
+								if (!$invalidContactInfo) {
+									$result = $catalog->selfRegister();
+									$interface->assign('selfRegResult', $result);
+								}
 							} else {
 								$ageMessage = translate([
-									'text' => 'Age should be at least' . $library->minSelfRegAge . ' years. Please enter a valid Date of Birth.',
+									'text' => 'You must be at least ' . $library->minSelfRegAge . ' years old. Please enter a valid date of birth.',
 									'isPublicFacing' => true
 								]);
 								$interface->assign('ageMessage', $ageMessage);
 							}
 						} else {
-							$result = $catalog->selfRegister();
-							$interface->assign('selfRegResult', $result);
+							if (!$invalidContactInfo) {
+								$result = $catalog->selfRegister();
+								$interface->assign('selfRegResult', $result);
+							}
 						}
 					}
 				}
@@ -142,6 +167,7 @@ class SelfReg extends Action {
 				if ($selfRegTerms != null){
 					$interface->assign('tos', true);
 					$interface->assign("selfRegTermsID", $selfRegTerms->id);
+					$interface->assign('showTOSFirst', $selfRegTerms->showTOSFirst);
 					$tosAccept = false;
 					if (!empty($_REQUEST['tosAccept'])){
 						$tosAccept = $_REQUEST['tosAccept'];

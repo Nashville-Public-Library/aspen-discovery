@@ -40,9 +40,14 @@ class SystemVariables extends DataObject {
 	public $useOriginalCoverUrls;
 	public $lidaGitHubRepository;
 	public $numBoundlessSettingsToProcessInParallel;
+	public $disable_user_agent_logging;
+	public $logFrequentCrons;
 
 
 	static function getObjectStructure($context = ''): array {
+		require_once ROOT_DIR . '/services/Admin/CronRunner.php';
+		$frequentJobs = Admin_CronRunner::getFrequentCronJobs();
+
 		$objectStructure = [
 			'id' => [
 				'property' => 'id',
@@ -364,6 +369,21 @@ class SystemVariables extends DataObject {
 				'note' => "After changing this setting, users should clear their browser's cache to ensure updated cover URLs take effect immediately. Existing cached covers may otherwise remain visible until the cache expires.",
 				'default' => false,
 			],
+			'disable_user_agent_logging' => [
+				'property' => 'disable_user_agent_logging',
+				'type' => 'checkbox',
+				'label' => 'Disable User Agent Tracking',
+				'description' => 'When enabled, disables all user agent tracking including logging, spam detection, and blocking.',
+				'default' => false,
+			],
+			'logFrequentCrons' => [
+				'property' => 'logFrequentCrons',
+				'type' => 'checkbox',
+				'label' => 'Log Frequent Cron Jobs',
+				'description' => 'Whether or not to log frequently running cron jobs (e.g., runs every few minutes).',
+				'note' => 'Frequent jobs include: ' . implode(', ', $frequentJobs) . '.',
+				'default' => false,
+			],
 		];
 
 		if (!UserAccount::getActiveUserObj()->isAspenAdminUser()) {
@@ -441,6 +461,13 @@ class SystemVariables extends DataObject {
 			//Delete all previously stored usage stats.
 			$usageByIP = new UsageByIPAddress();
 			$usageByIP->delete(true);
+		}
+		if ($this->disable_user_agent_logging == 1) {
+			//Delete all previously stored user agent stats
+			$usageByUserAgent = new UsageByUserAgent();
+			$usageByUserAgent->delete(true);
+			$userAgent = new UserAgent();
+			$userAgent->delete(true);
 		}
 		return parent::update($context);
 	}

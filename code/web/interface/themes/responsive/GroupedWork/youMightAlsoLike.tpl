@@ -14,7 +14,7 @@
 				</div>
 				<div class="row">
 					<div class="col-tn-12" style="padding-top: 5px">
-					<a href="{$title->getLinkUrl()}" class="btn btn-primary btn-sm">{translate text="More Info" isPublicFacing=true}</a>
+					<a href="{$title->getLinkUrl()}?activeSearchSorce={$activeSearchSource}{if !empty($activeFormat)}&activeFormat={$activeFormat}{/if}" class="btn btn-primary btn-sm">{translate text="More Info" isPublicFacing=true}</a>
 					</div>
 				</div>
 			</div>

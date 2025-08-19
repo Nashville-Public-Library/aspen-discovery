@@ -16,7 +16,7 @@
 		<div class="row">
 			<div class="result-label col-sm-4 col-xs-12">{translate text="Author" isPublicFacing=true} </div>
 			<div class="result-value col-sm-8 col-xs-12">
-				<a href='/Author/Home?author="{$recordDriver->getAuthor()|escape:"url"}"'>{$recordDriver->getAuthor()|highlight}</a><br/>
+				<a href='/Author/Home?author="{$recordDriver->getAuthor()|escape:"url"}"'>{$recordDriver->getAuthor()|highlight}</a>{if !empty($recordDriver->get880Authors())} <span class="agrAuthor">({implode subject=$recordDriver->get880Authors() glue=',' removeTrailingPunctuationFromTerms=true})</span>{/if}<br/>
 			</div>
 		</div>
 	{/if}
@@ -33,14 +33,31 @@
 						{*create hidden div*}
 						<div id="additionalContributors" style="display:none">
 					{/if}
+					{if $contributor.isAgr}
+						<div class="agrContributor">
+					{else}
+						<div class="contributor">
+					{/if}
 					<a href='/Author/Home?author="{$contributor.name|trim|escape:"url"}"'>{$contributor.name|escape}</a>
 					{if !empty($contributor.roles)}
-						&nbsp;{implode subject=$contributor.roles glue=", " translate=true isPublicFacing=true}
+						&nbsp;{implode subject=$contributor.roles glue=", " translate=true isPublicFacing=true removeTrailingPunctuationFromTerms=true}
 					{/if}
 					{if !empty($contributor.title)}
 						&nbsp;<a href="/Search/Results?lookfor={$contributor.title}&amp;searchIndex=Title">{$contributor.title}</a>
 					{/if}
-				<br/>
+						{if !empty($contributor.agr)}
+							<span class="agrContributor">
+								&nbsp;({$contributor.agr.name|escape}
+								{if !empty($contributor.agr.roles)}
+									&nbsp;{implode subject=$contributor.agr.roles glue=", " translate=true isPublicFacing=true removeTrailingPunctuationFromTerms=true}
+								{/if}
+								{if !empty($contributor.agr.title)}
+									&nbsp;{$contributor.agr.title}
+								{/if}
+								)
+							</span>
+						{/if}
+					</div>
 				{/foreach}
 				{if $smarty.foreach.loop.index >= 5}
 					<div>
@@ -148,7 +165,7 @@
 	{/if}
 
 	{if !empty($showAudience) && $recordDriver->getAudience()}
-		<div class="row">
+		<div class="row result-audience result-{str_replace(" ", "-", join(" ", $recordDriver->getFormats()))|lower}">
 			<div class="result-label col-sm-4 col-xs-12">{translate text='Audience' isPublicFacing=true} </div>
 			<div class="result-value col-sm-8 col-xs-12">
 				{$recordDriver->getAudience()}

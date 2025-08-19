@@ -48,6 +48,8 @@ class InclusionRule {
 	private final boolean includeExcludeMatches;
 	private final String urlToMatch;
 	private final String urlReplacement;
+	private final String locationPatternString;
+	private final String formatPatternString;
 
 	private static final Pattern isRegexPattern = Pattern.compile("[.*?{}\\\\^\\[\\]|$]");
 	InclusionRule(String recordType, String locationCode, String subLocationCode, String locationsToExclude, String subLocationsToExclude, String iType, String iTypesToExclude, String audience, String audiencesToExclude,String format, String formatsToExclude, String shelfLocation, String shelfLocationsToExclude, String collectionCode, String collectionCodesToExclude, boolean includeHoldableOnly, boolean includeItemsOnOrder, boolean includeEContent, String marcTagToMatch, String marcValueToMatch, boolean includeExcludeMatches, String urlToMatch, String urlReplacement){
@@ -60,6 +62,7 @@ class InclusionRule {
 		if (locationCode.isEmpty()){
 			locationCode = ".*";
 		}
+		this.locationPatternString = locationCode;
 		matchAllLocations = locationCode.equals(".*");
 		if (!matchAllLocations){
 			if (isRegexPattern.matcher(locationCode).find()) {
@@ -86,7 +89,10 @@ class InclusionRule {
 		if (iType == null || iType.isEmpty()){
 			iType = ".*";
 		}
-		if (iType.equals(".*") && iTypesToExclude.isEmpty()){
+		if (iTypesToExclude == null) {
+			iTypesToExclude = "";
+		}
+		if (iType.equals(".*") && (iTypesToExclude.isEmpty())){
 			matchAlliTypes = true;
 		}
 		this.iTypePattern = Pattern.compile(iType, Pattern.CASE_INSENSITIVE);
@@ -97,6 +103,9 @@ class InclusionRule {
 		//Audience Inclusion/Exclusion Check
 		if (audience == null || audience.isEmpty()) {
 			audience = ".*";
+		}
+		if (audiencesToExclude == null) {
+			audiencesToExclude = "";
 		}
 		if (audience.equals(".*") && audiencesToExclude.isEmpty()){
 			matchAllAudiences = true;
@@ -109,6 +118,10 @@ class InclusionRule {
 		//Format Inclusion/Exclusion Check
 		if (format == null || format.isEmpty()){
 			format = ".*";
+		}
+		this.formatPatternString = format;
+		if (formatsToExclude == null) {
+			formatsToExclude = "";
 		}
 		if (format.equals(".*") && formatsToExclude.isEmpty()){
 			matchAllFormats = true;
@@ -160,23 +173,36 @@ class InclusionRule {
 	HashMap<String, Boolean> inclusionCache = new HashMap<>();
 
 	//TODO: We can potentially just pass in the ItemInfo object instead of all or most of these parameters
-	boolean isItemIncluded(String itemIdentifier, String recordType, String locationCode, String subLocationCode, String iType, TreeSet<String> audiences, String audiencesAsString, String format, String shelfLocation, String collectionCode, boolean isHoldable, boolean isOnOrder, boolean isEContent, org.marc4j.marc.Record marcRecord){
+	//		This would likely require creating an interface for ItemInfo under java_shared_libraries.
+	boolean isItemIncluded(String itemIdentifier, String recordType, String locationCode, String subLocationCode, String iType, TreeSet<String> audiences, String audiencesAsString, String format, String shelfLocation, String collectionCode, boolean isHoldable, boolean isOnOrder, boolean isEContent, org.marc4j.marc.Record marcRecord, DebugLogger debugLogger){
 		if (lastIdentifier != null && lastIdentifier.equals(itemIdentifier)){
 			return lastIdentifierResult;
 		}
 
 		lastIdentifier = itemIdentifier;
 		//Do the quick checks first
-		if (!isEContent && (includeHoldableOnly && !isHoldable)){
+		if (!isEContent && (includeHoldableOnly && !isHoldable)) {
+			if (debugLogger != null && debugLogger.isDebugEnabled()) {
+				debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because 'Include Holdable Only' is enabled but item is not holdable (holdable=" + isHoldable + ", format=" + format + ")", 3);
+			}
 			lastIdentifierResult = false;
 			return false;
-		}else if (!includeItemsOnOrder && isOnOrder){
+		} else if (!includeItemsOnOrder && isOnOrder){
+			if (debugLogger != null && debugLogger.isDebugEnabled()) {
+				debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because 'Include Items On Order' is disabled but item is on order", 3);
+			}
 			lastIdentifierResult = false;
 			return  false;
-		}else if (!includeEContent && isEContent){
+		} else if (!includeEContent && isEContent){
+			if (debugLogger != null && debugLogger.isDebugEnabled()) {
+				debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because 'Include eContent' is disabled but item is eContent", 3);
+			}
 			lastIdentifierResult = false;
 			return  false;
-		}else if (!this.recordType.equals(recordType)){
+		} else if (!this.recordType.equals(recordType)) {
+			if (debugLogger != null && debugLogger.isDebugEnabled()) {
+				debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because record type '" + recordType + "' does not match rule record type '" + this.recordType + "'", 3);
+			}
 			lastIdentifierResult = false;
 			return  false;
 		}
@@ -221,16 +247,25 @@ class InclusionRule {
 			if (!matchAllLocations) {
 				if (isLocationExactMatch) {
 					if (!locationCodeToMatch.equalsIgnoreCase(locationCode)) {
+						if (debugLogger != null && debugLogger.isDebugEnabled()) {
+							debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because location '" + locationCode + "' does not match required location '" + locationCodeToMatch + "'", 3);
+						}
 						isIncluded = false;
 					}
 				} else {
 					if (!locationCodePattern.matcher(locationCode).matches()) {
+						if (debugLogger != null && debugLogger.isDebugEnabled()) {
+							debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because location '" + locationCode + "' does not match pattern '" + locationPatternString + "'", 3);
+						}
 						isIncluded = false;
 					}
 				}
 			}
 			if (isIncluded && !locationCode.isEmpty() && locationsToExcludePattern != null) {
 				if (locationsToExcludePattern.matcher(locationCode).matches()) {
+					if (debugLogger != null && debugLogger.isDebugEnabled()) {
+						debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because location '" + locationCode + "' matches exclusion pattern", 3);
+					}
 					isIncluded = false;
 				}
 			}
@@ -252,10 +287,16 @@ class InclusionRule {
 			if (isIncluded && format != null && !format.isEmpty()){
 				if (!matchAllFormats) {
 					if (!formatPattern.matcher(format).matches()) {
+						if (debugLogger != null && debugLogger.isDebugEnabled()) {
+							debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because format '" + format + "' does not match pattern '" + formatPatternString + "'", 3);
+						}
 						isIncluded = false;
 					}
 					if (isIncluded && formatsToExcludePattern != null) {
 						if(formatsToExcludePattern.matcher(format).matches()){
+							if (debugLogger != null && debugLogger.isDebugEnabled()) {
+								debugLogger.addDebugMessage("Item " + itemIdentifier + " excluded from scope because format '" + format + "' matches exclusion pattern", 3);
+							}
 							isIncluded = false;
 						}
 					}
@@ -352,6 +393,13 @@ class InclusionRule {
 			}
 			isIncluded = hasMatch && includeExcludeMatches;
 		}
+
+		if (debugLogger != null && debugLogger.isDebugEnabled()) {
+			if (isIncluded) {
+				debugLogger.addDebugMessage("Item " + itemIdentifier + " included in scope (location='" + locationCode + "', format='" + format + "', holdable=" + isHoldable + ")", 3);
+			}
+		}
+
 		lastIdentifierResult = isIncluded;
 		return isIncluded;
 	}

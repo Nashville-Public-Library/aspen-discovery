@@ -106,13 +106,13 @@ class GroupedWorkAlternateTitle extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 		$relatedWork = new GroupedWork();
 		$relatedWork->permanent_id = $this->permanent_id;
 		if ($relatedWork->find(true)) {
 			$relatedWork->forceReindex(true);
 		}
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 }

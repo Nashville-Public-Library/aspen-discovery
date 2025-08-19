@@ -9,12 +9,12 @@
 		<h1 id="pageTitle">{$pageTitleShort}</h1>
 	</div>
 	<div class="col-xs-12 col-md-3 help-link">
-		{if !empty($instructions)}<a href="{$instructions}"><i class="fas fa-question-circle" role="presentation"></i>&nbsp;{translate text="Documentation" isAdminFacing=true}</a>{/if}
+		{if !empty($instructions)}<a href="{$instructions}" target="_blank"><i class="fas fa-question-circle" role="presentation"></i>&nbsp;{translate text="Documentation" isAdminFacing=true}</a>{/if}
 	</div>
 </div>
 
 {if !empty($updateMessage)}
-	<div class="alert {if !empty($updateMessageIsError)}alert-danger{else}alert-info{/if}">
+	<div class="alert {if !empty($updateMessageIsError)}alert-danger{else}alert-success{/if}">
 		{$updateMessage}
 	</div>
 {/if}
@@ -236,7 +236,7 @@
 	<input type='hidden' name='objectAction' id='objectAction' value='' />
 	{if !empty($canCompare)}
 		<div class="btn-group">
-			<button type='submit' value='compare' class="btn btn-default" onclick="$('#objectAction').val('compare');return AspenDiscovery.Admin.validateCompare();">{translate text='Compare' isAdminFacing=true}</button>
+			<button type='submit' value='compare' id='compareButton' class="btn btn-default" disabled onclick="$('#objectAction').val('compare');return AspenDiscovery.Admin.validateCompare();">{translate text='Compare' isAdminFacing=true}</button>
 		</div>
 	{/if}
 	{if !empty($canBatchUpdate)}
@@ -265,7 +265,7 @@
 		<div class="row" style="padding-top: 1em">
 			<div class="btn-group col-sm-12">
 				{foreach from=$customListActions item=customAction}
-					<button type='submit' value='{$customAction.action}' class="btn btn-default" onclick="$('#objectAction').val('{$customAction.action}'){if !empty($customAction.onclick)};{$customAction.onclick}{/if}">{translate text=$customAction.label isAdminFacing=true}</button>
+					<button type='submit' value='{$customAction.action}' class='btn{if !empty($customAction.class)} {$customAction.class}{else} btn-default{/if}' onclick="$('#objectAction').val('{$customAction.action}');{if !empty($customAction.onclick)}{$customAction.onclick nofilter}{/if}">{translate text=$customAction.label isAdminFacing=true}</button>
 				{/foreach}
 			</div>
 		</div>
@@ -293,6 +293,26 @@
 <script type="text/javascript">
 	{literal}
 	$("#adminTable").tablesorter({cssAsc: 'sortAscHeader', cssDesc: 'sortDescHeader', cssHeader: 'unsortedHeader', widgets:['zebra', 'filter'] });
+	{/literal}
+</script>
+{/if}
+
+{if !empty($canCompare)}
+<script type="text/javascript">
+	{literal}
+	const updateCompareButton = () => {
+		$('#compareButton').prop('disabled', $('.selectedObject:checked').length < 2);
+	};
+
+	$(() => {
+		$('.selectedObject').on('change', updateCompareButton);
+		$('button:contains("Select All"), button:contains("Deselect All")').on('click', () => {
+			setTimeout(updateCompareButton, 10);
+		});
+		updateCompareButton();
+	});
+	// Update for when the browser back button is used.
+	$(window).on('pageshow', updateCompareButton);
 	{/literal}
 </script>
 {/if}

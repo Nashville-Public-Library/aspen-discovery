@@ -280,7 +280,7 @@ class OverDriveDriver extends AbstractEContentDriver {
 				$this->apiCurlWrapper->addCustomHeaders([
 					"Content-Type: application/x-www-form-urlencoded;charset=UTF-8",
 					"Authorization: Basic " . $encodedAuthValue,
-					"User-Agent: Aspen Discovery " . $interface->getVariable('gitBranch'),
+					"User-Agent: Aspen Discovery " . $interface->getVariable('aspenVersion'),
 				], true);
 
 				$patronBarcode = urlencode($patronBarcode);
@@ -340,7 +340,7 @@ class OverDriveDriver extends AbstractEContentDriver {
 			global $interface;
 			$this->apiCurlWrapper->addCustomHeaders([
 				"Authorization: $tokenData->token_type $tokenData->access_token",
-				"User-Agent: Aspen Discovery " . $interface->getVariable('gitBranch'),
+				"User-Agent: Aspen Discovery " . $interface->getVariable('aspenVersion'),
 			], true);
 
 			$content = $this->apiCurlWrapper->curlGetPage($url);
@@ -406,7 +406,7 @@ class OverDriveDriver extends AbstractEContentDriver {
 				global $interface;
 				$this->apiCurlWrapper->addCustomHeaders([
 					"Authorization: $authorizationData",
-					"User-Agent: Aspen Discovery " . $interface->getVariable('gitBranch'),
+					"User-Agent: Aspen Discovery " . $interface->getVariable('aspenVersion'),
 					"Host: $patronApiHost",
 				], true);
 			} else {
@@ -494,12 +494,12 @@ class OverDriveDriver extends AbstractEContentDriver {
 			$patronApiHost = $this->getPatronApiHost($settings);
 			$this->apiCurlWrapper->addCustomHeaders([
 				"Authorization: $authorizationData",
-				"User-Agent: Aspen Discovery " . $interface->getVariable('gitBranch'),
+				"User-Agent: Aspen Discovery " . $interface->getVariable('aspenVersion'),
 				"Host: $patronApiHost",
 			], true);
 		} else {
 			$this->apiCurlWrapper->addCustomHeaders([
-				"User-Agent: Aspen Discovery " . $interface->getVariable('gitBranch'),
+				"User-Agent: Aspen Discovery " . $interface->getVariable('aspenVersion'),
 				"Host: {$this->getOverDriveApiHost($settings)}",
 			], true);
 		}
@@ -884,9 +884,15 @@ class OverDriveDriver extends AbstractEContentDriver {
 		}
 		$settings = $librarySettings->getOverDriveSettings();
 
-		$url = $settings->patronApiUrl . '/v1/patrons/me/holds/' . $recordId;
+		$overDriveId = $recordId;
+		if (str_contains($recordId, ':')) {
+			$parts = explode(':', $recordId);
+			$overDriveId = end($parts);
+		}
+
+		$url = $settings->patronApiUrl . '/v1/patrons/me/holds/' . $overDriveId;
 		$params = [
-			'reserveId' => $recordId,
+			'reserveId' => $overDriveId,
 			'emailAddress' => trim((empty($patron->overdriveEmail) ? $patron->email : $patron->overdriveEmail)),
 		];
 		$response = $this->_callPatronUrl($settings, $patron, $url, "placeHold", $params);
@@ -931,7 +937,7 @@ class OverDriveDriver extends AbstractEContentDriver {
 				$groupedWorkId = $recordDriver->getPermanentId();
 				require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 				$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
-				$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait();
+				$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait($recordDriver->getPrimaryFormat());
 
 				global $interface;
 				if (count($whileYouWaitTitles) > 0) {
@@ -950,7 +956,7 @@ class OverDriveDriver extends AbstractEContentDriver {
 			$patron->forceReloadOfHolds();
 		} else {
 			$holdResult['message'] = translate([
-				'text' => 'Sorry, but we could not place a hold for you on this title.',
+				'text' => 'Sorry, but we could not place a hold for you on this Overdrive title.',
 				'isPublicFacing' => true,
 			]);
 			if (isset($response->message)) {
@@ -963,7 +969,7 @@ class OverDriveDriver extends AbstractEContentDriver {
 				'isPublicFacing' => true,
 			]);
 			$holdResult['api']['message'] = translate([
-				'text' => 'Sorry, but we could not place a hold for you on this title.',
+				'text' => 'Sorry, but we could not place a hold for you on this Overdrive title.',
 				'isPublicFacing' => true,
 			]);
 
@@ -986,13 +992,15 @@ class OverDriveDriver extends AbstractEContentDriver {
 		$params = [
 			'emailAddress' => trim($patron->overdriveEmail),
 		];
+		$params['suspensionType'] = 'limited';
 		if (empty($reactivationDate)) {
-			$params['suspensionType'] = 'indefinite';
+			$params['numberOfDays'] = 365;
 		} else {
-			//OverDrive always seems to place the suspension for 2 days less than it should be
 			try {
-				$numberOfDaysToSuspend = (new DateTime())->diff(new DateTime($reactivationDate))->days + 2;
-				$params['suspensionType'] = 'limited';
+				$numberOfDaysToSuspend = (new DateTime())->diff(new DateTime($reactivationDate))->days + 1;
+				if ($numberOfDaysToSuspend > 365) {
+					$numberOfDaysToSuspend = 365;
+				}
 				$params['numberOfDays'] = $numberOfDaysToSuspend;
 			} /** @noinspection PhpUnusedLocalVariableInspection */ catch (Exception $e) {
 				return [

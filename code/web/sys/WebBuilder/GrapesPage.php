@@ -27,7 +27,7 @@ class GrapesPage extends DB_LibraryLinkedObject {
 	}
 
 	static function getObjectStructure($context = ''): array {
-		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Grapes Pages'));
+		$libraryList = Library::getLibraryListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Grapes Pages'));
 		$templateList = GrapesTemplate::getTemplateList();
 		require_once ROOT_DIR . '/services/WebBuilder/Templates.php';
 
@@ -196,9 +196,9 @@ class GrapesPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false): int {
-		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+	public function delete($useWhere = false, $hardDelete = false): int {
+		$ret = parent::delete($useWhere, $hardDelete);
+		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
 		}
 		return $ret;

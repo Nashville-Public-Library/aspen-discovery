@@ -5,6 +5,7 @@ require_once(ROOT_DIR . '/services/Admin/Admin.php');
 require_once(ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequest.php');
 require_once(ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequestStatus.php');
 require_once(ROOT_DIR . '/sys/Administration/StickyFilter.php');
+require_once ROOT_DIR . '/sys/User/PageDefaults.php';
 
 class MaterialsRequest_ManageRequests extends Admin_Admin {
 
@@ -40,7 +41,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 			$statusesToShow = $_REQUEST['statusFilter'];
 			//add filters that have been checked to default filters table for sticky filters
 			foreach ($statusesToShow as $status) {
-				$stickyFilter = new StickyFilter;
+				$stickyFilter = new StickyFilter();
 				$stickyFilter->userId = $user->id;
 				$stickyFilter->filterValue = $status;
 				$stickyFilter->filterFor = "MaterialsRequest_Status";
@@ -49,7 +50,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 				}
 			}
 			//remove filters that have been unchecked
-			$stickyFilterDeletions = new StickyFilter;
+			$stickyFilterDeletions = new StickyFilter();
 			$stickyFilterDeletions->userId = $user->id;
 			$stickyFilterDeletions->filterFor = "MaterialsRequest_Status";
 			$stickyFilterDeletions->find();
@@ -60,7 +61,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 			}
 		}
 		//check for sticky filter values saved for admin account
-		$adminStickyFilter = new StickyFilter;
+		$adminStickyFilter = new StickyFilter();
 		$adminStickyFilter->userId = $user->id;
 		$adminStickyFilter->filterFor = "MaterialsRequest_Status";
 		if ($adminStickyFilter->find()) {
@@ -77,7 +78,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 			$assigneesToShow = $_REQUEST['assigneesFilter'];
 			//add filters that have been checked to default filters table for sticky filters
 			foreach ($assigneesToShow as $assignee) {
-				$stickyFilter = new StickyFilter;
+				$stickyFilter = new StickyFilter();
 				$stickyFilter->userId = $user->id;
 				$stickyFilter->filterValue = $assignee;
 				$stickyFilter->filterFor = "MaterialsRequest_Assignee";
@@ -86,7 +87,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 				}
 			}
 			//remove filters that have been unchecked
-			$stickyFilterDeletions = new StickyFilter;
+			$stickyFilterDeletions = new StickyFilter();
 			$stickyFilterDeletions->userId = $user->id;
 			$stickyFilterDeletions->filterFor = "MaterialsRequest_Assignee";
 			$stickyFilterDeletions->find();
@@ -101,7 +102,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 		//if no filter values are passed for status/assignee Aspen defaults are used
 		if (!empty($_REQUEST['submit']) && $_REQUEST['submit'] == 'Update Filters' ) {
 			$showUnassigned = isset($_REQUEST['showUnassigned']) ? 1 : 0;
-			$stickyFilter = new StickyFilter;
+			$stickyFilter = new StickyFilter();
 			$stickyFilter->userId = $user->id;
 			$stickyFilter->filterFor = "MaterialsRequest_ShowUnassigned";
 			if (!$stickyFilter->find(true)) {
@@ -113,7 +114,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 			}
 
 			if (!isset($_REQUEST['statusFilter'])) {
-				$stickyFilterDeletions = new StickyFilter;
+				$stickyFilterDeletions = new StickyFilter();
 				$stickyFilterDeletions->userId = $user->id;
 				$stickyFilterDeletions->filterFor = "MaterialsRequest_Status";
 				$stickyFilterDeletions->find();
@@ -121,8 +122,8 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 					$stickyFilterDeletions->delete();
 				}
 			}
-			if (!isset($_REQUEST['assigneeFilter'])) {
-				$stickyFilterDeletions = new StickyFilter;
+			if (!isset($_REQUEST['assigneesFilter'])) {
+				$stickyFilterDeletions = new StickyFilter();
 				$stickyFilterDeletions->userId = $user->id;
 				$stickyFilterDeletions->filterFor = "MaterialsRequest_Assignee";
 				$stickyFilterDeletions->find();
@@ -135,7 +136,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 
 
 		//check for sticky filter values saved for admin account
-		$adminStickyFilter = new StickyFilter;
+		$adminStickyFilter = new StickyFilter();
 		$adminStickyFilter->userId = $user->id;
 		$adminStickyFilter->filterFor = "MaterialsRequest_Assignee";
 		if ($adminStickyFilter->find()) {
@@ -143,7 +144,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 				$assigneesToShow[] = $adminStickyFilter->filterValue;
 			}
 		}
-		$adminStickyFilter = new StickyFilter;
+		$adminStickyFilter = new StickyFilter();
 		$adminStickyFilter->userId = $user->id;
 		$adminStickyFilter->filterFor = "MaterialsRequest_ShowUnassigned";
 		if ($adminStickyFilter->find()) {
@@ -175,6 +176,8 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 						$materialRequest->update();
 
 						$materialRequest->sendStatusChangeEmail();
+						require_once ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequestUsage.php';
+						MaterialsRequestUsage::incrementStat($materialRequest->status, $materialRequest->libraryId);
 					}
 				}
 			}
@@ -311,7 +314,23 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 				$interface->assign('idsToShow', $idsToShow);
 			}
 
-			$materialsRequestsPerPage = isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize'])) ? $_REQUEST['pageSize'] : 30;
+			if (isset($_REQUEST['pageSize']) && (is_numeric($_REQUEST['pageSize']) || $_REQUEST['pageSize'] == 'all')) {
+				$materialsRequestsPerPage =  $_REQUEST['pageSize'];
+				PageDefaults::updatePageDefaultsForUser($user->id, 'MaterialsRequest', 'ManageRequests',null, $materialsRequestsPerPage, null);
+			} else {
+				$pageDefaults = PageDefaults::getPageDefaultsForUser($user->id, 'MaterialsRequest', 'ManageRequests',null);
+				if ($pageDefaults !== null && !empty($pageDefaults->pageSize)) {
+					$materialsRequestsPerPage =  $pageDefaults->pageSize;
+				}else{
+					$materialsRequestsPerPage = 30;
+				}
+			}
+			if($materialsRequestsPerPage == 'all') {
+				$materialsRequestsPerPage = $materialsRequests->count();
+				$interface->assign('showingAllRequests', true);
+			} else {
+				$interface->assign('showingAllRequests', false);
+			}
 			$interface->assign('materialsRequestsPerPage', $materialsRequestsPerPage);
 			$page = $_REQUEST['page'] ?? 1;
 			if (!isset($_REQUEST['exportAll'])) {
@@ -345,7 +364,8 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 					// Get Available Assignees
 					$materialsRequestManagers = new User();
 					if (count($locationsForLibrary) > 0) {
-						if ($materialsRequestManagers->query("SELECT * from user WHERE id IN (SELECT userId FROM user_roles WHERE roleId = $rolePermissions->roleId) AND homeLocationId IN (" . implode(', ', $locationsForLibrary) . ")")) {
+						//Get all user that can manage material requests based on their home library as well ad additional locations to manage
+						if ($materialsRequestManagers->query("SELECT * from user WHERE id IN (SELECT userId FROM user_roles WHERE roleId = $rolePermissions->roleId) AND ((id IN (SELECT userId from user_administration_locations WHERE locationId IN (" . implode(', ', $locationsForLibrary) . "))) OR homeLocationId IN (" . implode(', ', $locationsForLibrary) . "))")) {
 							while ($materialsRequestManagers->fetch()) {
 								if (empty($materialsRequestManagers->displayName)) {
 									$assignees[$materialsRequestManagers->id] = $materialsRequestManagers->firstname . ' ' . $materialsRequestManagers->lastname;
@@ -408,6 +428,7 @@ class MaterialsRequest_ManageRequests extends Admin_Admin {
 	function defaultColumnsToShow() : array {
 		return [
 			'id' => 'Id',
+			'source' => 'Source',
 			'title' => 'Title',
 			'author' => 'Author',
 			'format' => 'Format',

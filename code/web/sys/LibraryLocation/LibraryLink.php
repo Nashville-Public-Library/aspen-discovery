@@ -1,9 +1,11 @@
 <?php
+/** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/LibraryLocation/LibraryLinkAccess.php';
 require_once ROOT_DIR . '/sys/LibraryLocation/LibraryLinkLanguage.php';
 
 class LibraryLink extends DataObject {
 	public $__table = 'library_links';
+	public $__displayNameColumn = 'linkText';
 	public $id;
 	public $libraryId;
 	public $category;
@@ -40,17 +42,7 @@ class LibraryLink extends DataObject {
 
 	static function getObjectStructure($context = ''): array {
 		//Load Libraries for lookup values
-		$library = new Library();
-		$library->orderBy('displayName');
-		if (!UserAccount::userHasPermission('Administer All Libraries')) {
-			$homeLibrary = Library::getPatronHomeLibrary();
-			$library->libraryId = $homeLibrary->libraryId;
-		}
-		$library->find();
-		$libraryList = [];
-		while ($library->fetch()) {
-			$libraryList[$library->libraryId] = $library->displayName;
-		}
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 		$languageList = Language::getLanguageList();
 
 		$patronTypeList = PType::getPatronTypeList();
@@ -231,8 +223,8 @@ class LibraryLink extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete();
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret !== FALSE) {
 			$this->clearAccess();
 

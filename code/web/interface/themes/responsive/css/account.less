@@ -160,3 +160,26 @@
     overflow: hidden;
   }
 }
+
+// Preferences formatting //
+#preferences-accordion {
+  .panel-group .panel + .panel{
+    margin-top: 0;
+  }
+  .panel-heading{
+    padding: 5px 15px;
+  }
+  .panel-title{
+    h2{
+      margin: unset;
+      display: unset;
+    }
+  }
+  .panel-body{
+    color: @gray-dark;
+    background-color: #fcfcfc;
+    border-color: #c5c5c5;
+    border-width: 0 1px 1px 1px;
+    border-style: solid;
+  }
+}

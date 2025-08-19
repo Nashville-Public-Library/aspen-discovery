@@ -120,7 +120,14 @@ class GrapesTemplate extends DataObject {
 		$template = new GrapesTemplate();
 		$template->htmlData = $html;
 		$template->insert();
+	}
 
+	function addTemplate($templateName, $templateContent, $htmlData, $cssData){
+		$this->templateName = $templateName;
+		$this->templateContent = $templateContent;
+		$this->htmlData = $htmlData;
+		$this->cssData = $cssData;
+		$this->insert();
 	}
 
 

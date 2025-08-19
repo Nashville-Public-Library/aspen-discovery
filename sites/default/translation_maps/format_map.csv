@@ -64,6 +64,7 @@ NOOK_Periodical, Nook Periodicals, eBook,3
 Newspaper, Newspaper, Books,3
 NintendoDS, Nintendo DS, Other,3
 NintendoSwitch, Nintendo Switch, Other,3
+NintendoSwitch2, Nintendo Switch 2, Other,3
 NumericData, Numeric Data, Other,1
 Open_EPUB_eBook, EPUB eBook, eBook,9
 Open_PDF_eBook, PDF eBook, eBook,3
@@ -117,6 +118,7 @@ Video, Video, Movies,1
 VideoCartridge, Video, Movies,1
 VideoCassette, VHS, Movies,3
 VideoDisc, DVD, Movies,12
+VideoEnabledBook, Video Enabled Book, Books,3
 VideoGame, Video Game, Other,1
 VideoReel, Video, Movies,1
 VoxBooks, VOX Books, Audio Books,3

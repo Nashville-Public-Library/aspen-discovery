@@ -184,12 +184,12 @@ class IPAddress extends DataObject {
 		return parent::update();
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		global $memCache;
 		$memCache->deleteStartingWith('ipId_for_ip_');
 		$memCache->deleteStartingWith('location_for_ip_');
 		IPAddress::$ipAddressesForIP = [];
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 
 

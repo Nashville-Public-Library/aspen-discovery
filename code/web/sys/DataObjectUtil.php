@@ -11,7 +11,7 @@ class DataObjectUtil {
 	 *
 	 * @return string and HTML Snippet representing the form for display.
 	 */
-	static function getEditForm($objectStructure) {
+	static function getEditForm(array $objectStructure) : string {
 		global $interface;
 
 		//Define the structure of the object.
@@ -23,7 +23,7 @@ class DataObjectUtil {
 		return $interface->fetch('DataObjectUtil/objectEditForm.tpl');
 	}
 
-	static function getFormContentType($structure, $contentType = null) {
+	static function getFormContentType(array $structure, ?string $contentType = null) : ?string {
 		if ($contentType != null) {
 			return $contentType;
 		}
@@ -39,65 +39,14 @@ class DataObjectUtil {
 	}
 
 	/**
-	 * Save the object to the database (and optionally solr) based on the structure of the object
-	 * Takes care of determining whether the object is new or not.
-	 *
-	 * @param array $structure The structure of the data object
-	 * @param string $dataType The class of the data object
-	 * @param array $fieldLocks A list of locks that apply to the object
-	 * @return array
-	 */
-	static function saveObject($structure, $dataType, $fieldLocks) {
-		//Check to see if we have a new object or an exiting object to update
-		/** @var DataObject $object */
-		$object = new $dataType();
-		DataObjectUtil::updateFromUI($object, $structure, $fieldLocks);
-		$primaryKey = $object->__primaryKey;
-		$primaryKeySet = !empty($object->$primaryKey);
-
-		$validationResults = DataObjectUtil::validateObject($structure, $object);
-		$validationResults['object'] = $object;
-
-		if ($validationResults['validatedOk']) {
-			//Check to see if we need to insert or update the object.
-			//We can tell which to do based on whether or not the primary key is set
-
-			if ($primaryKeySet) {
-				$result = $object->update();
-				$validationResults['saveOk'] = ($result == 1);
-			} else {
-				$result = $object->insert();
-				$validationResults['saveOk'] = $result;
-			}
-			if (!$validationResults['saveOk']) {
-				$error = $object->getLastError();
-				if (isset($error)) {
-					$validationResults['errors'][] = 'Save failed ' . $error;
-				} else {
-					$validationResults['errors'][] = 'Save failed';
-				}
-			}
-		}
-		return $validationResults;
-	}
-
-	/**
-	 * Delete an object from the database (and optionally solr).
-	 *
-	 * @param $dataObject
-	 * @param $form
-	 */
-	static function deleteObject($structure, $dataType) {}
-
-	/**
 	 * Validate that the inputs for the data object are correct prior to saving the object.
 	 *
-	 * @param $dataObject
+	 * @param array $structure
 	 * @param $object - The object to validate
 	 *
 	 * @return array Results of validation
 	 */
-	static function validateObject($structure, $object) {
+	static function validateObject(array $structure, $object) : array {
 		//Setup validation return array
 		$validationResults = [
 			'validatedOk' => true,
@@ -143,7 +92,7 @@ class DataObjectUtil {
 		return $validationResults;
 	}
 
-	static function updateFromUI($object, $structure, $fieldLocks) {
+	static function updateFromUI($object, $structure, $fieldLocks) : void {
 		foreach ($structure as $property) {
 			if (($fieldLocks != null && !in_array($property['property'], $fieldLocks)) || $fieldLocks == null) {
 				DataObjectUtil::processProperty($object, $property, $fieldLocks);
@@ -151,7 +100,30 @@ class DataObjectUtil {
 		}
 	}
 
-	static function processProperty(DataObject $object, $property, $fieldLocks) {
+	static function structureContainsImagesOrFiles($structure) : bool {
+		foreach ($structure as $property) {
+			if ($property['type'] == 'image' || $property['type'] == 'file') {
+				return true;
+			}elseif ($property['type'] == 'section') {
+				if (DataObjectUtil::structureContainsImagesOrFiles($property['properties'])) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	static function updateImagesAndFilesAfterInsert($object, $structure) : void {
+		foreach ($structure as $property) {
+			if ($property['type'] == 'image' || $property['type'] == 'file') {
+				DataObjectUtil::processProperty($object, $property, null);
+			}elseif ($property['type'] == 'section') {
+				DataObjectUtil::updateImagesAndFilesAfterInsert($object, $property['properties']);
+			}
+		}
+	}
+
+	static function processProperty(DataObject $object, $property, $fieldLocks) : void {
 		global $logger;
 		$propertyName = $property['property'];
 		if ($property['type'] == 'section') {
@@ -229,8 +201,8 @@ class DataObjectUtil {
 				$object->setProperty($propertyName, strip_tags($object->$propertyName), $property);
 			} elseif ($property['type'] != 'javascript') {
 				$systemVariables = SystemVariables::getSystemVariables();
-				if ($systemVariables != false) {
-					if ($systemVariables->allowHtmlInMarkdownFields != false || $systemVariables->useHtmlEditorRatherThanMarkdown != false) {
+				if ($systemVariables) {
+					if ($systemVariables->allowHtmlInMarkdownFields || $systemVariables->useHtmlEditorRatherThanMarkdown) {
 						if (!empty($systemVariables->allowableHtmlTags)) {
 							$allowableTags = '<' . implode('><', explode('|', $systemVariables->allowableHtmlTags)) . '>';
 						} else {
@@ -240,12 +212,14 @@ class DataObjectUtil {
 						if (!empty($property['allowableTags'])) {
 							$allowableTags = $property['allowableTags'];
 						} else {
+							/** @noinspection HtmlRequiredAltAttribute */
 							$allowableTags = '<p><em><i><strong><b><a><ul><ol><li><h1><h2><h3><h4><h5><h6><h7><pre><code><hr><table><tbody><tr><th><td><caption><img><br><div><span>';
 						}
 					}
 
 				} else {
 					// set defaults if system variables do not exist
+					/** @noinspection HtmlRequiredAltAttribute */
 					$allowableTags = '<p><em><i><strong><b><a><ul><ol><li><h1><h2><h3><h4><h5><h6><h7><pre><code><hr><table><tbody><tr><th><td><caption><img><br><div><span>';
 				}
 
@@ -283,7 +257,7 @@ class DataObjectUtil {
 			$object->setProperty($propertyName, $_REQUEST[$propertyName], $property);
 		} elseif ($property['type'] == 'currency') {
 			if (preg_match('/\\$?\\d*\\.?\\d*/', $_REQUEST[$propertyName])) {
-				if (substr($_REQUEST[$propertyName], 0, 1) == '$') {
+				if (str_starts_with($_REQUEST[$propertyName], '$')) {
 					$object->setProperty($propertyName, substr($_REQUEST[$propertyName], 1), $property);
 				} else {
 					$object->setProperty($propertyName, $_REQUEST[$propertyName], $property);
@@ -306,16 +280,16 @@ class DataObjectUtil {
 			}
 
 		} elseif ($property['type'] == 'date') {
-			if (empty(strlen($_REQUEST[$propertyName])) || strlen($_REQUEST[$propertyName]) == 0 || $_REQUEST[$propertyName] == '0000-00-00') {
+			if (empty(strlen($_REQUEST[$propertyName])) || $_REQUEST[$propertyName] == '0000-00-00') {
 				$object->setProperty($propertyName, null, $property);
 			} else {
 				$dateParts = date_parse($_REQUEST[$propertyName]);
-				$time = $dateParts['year'] . '-' . $dateParts['month'] . '-' . $dateParts['day'];
+				$time = $dateParts['year'] . '-' . str_pad($dateParts['month'], 2, '0', STR_PAD_LEFT) . '-' . str_pad($dateParts['day'], 2, '0', STR_PAD_LEFT);
 				$object->setProperty($propertyName, $time, $property);
 			}
 
 		} elseif ($property['type'] == 'time') {
-			if (empty(strlen($_REQUEST[$propertyName])) || strlen($_REQUEST[$propertyName]) == 0 || $_REQUEST[$propertyName] == '00:00:00') {
+			if (empty(strlen($_REQUEST[$propertyName])) || $_REQUEST[$propertyName] == '00:00:00') {
 				$object->setProperty($propertyName, null, $property);
 			} else {
 				$dateParts = date_parse($_REQUEST[$propertyName]);
@@ -372,8 +346,53 @@ class DataObjectUtil {
 					//Copy the full image to the files directory
 					//Filename is the name of the object + the original filename
 					global $configArray;
+					$fileType = $_FILES[$propertyName]["type"];
+					$fileType = match ($fileType) {
+						'image/gif' => ".gif",
+						'image/png' => ".png",
+						'image/svg+xml' => ".svg",
+						default => ".jpg",
+					};
+					if (!empty($object->type)){
+						$objectType = $object->type;
+					} else {
+						$objectType = $property['property'];
+						$objectType = match ($objectType) {
+							'logoName' => 'discovery_logo',
+							'defaultCover' => 'default_cover',
+							'headerBackgroundImage' => 'header_background_image',
+							'footerLogo' => 'footer_logo',
+							'logoApp' => 'logo_app',
+							'headerLogoApp' => 'header_logo_app',
+							'booksImage' => 'books_image',
+							'booksImageSelected' => 'books_image_selected',
+							'eBooksImage' => 'eBooks_image',
+							'eBooksImageSelected' => 'eBooks_image_selected',
+							'audioBooksImage' => 'audioBooks_image',
+							'audioBooksImageSelected' => 'audioBooks_image_selected',
+							'musicImage' => 'music_image',
+							'musicImageSelected' => 'music_image_selected',
+							'moviesImage' => 'movies_image',
+							'moviesImageSelected' => 'movies_image_selected',
+							'catalogImage' => 'catalog_image',
+							'genealogyImage' => 'genealogy_image',
+							'articlesDBImage' => 'articles_db_image',
+							'eventsImage' => 'events_image',
+							'listsImage' => 'lists_image',
+							'seriesImage' => 'series_image',
+							'libraryWebsiteImage' => 'library_website_image',
+							'historyArchivesImage' => 'history_archives_image',
+							default => get_class($object) . '_' . $property['property'],
+						};
+						if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'Placards') {
+							$objectType = 'placard_image';
+						}
+						if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'WebResources') {
+							$objectType = 'web_resource_image';
+						}
+					}
 					if (isset($property['storagePath'])) {
-						$destFileName = $_FILES[$propertyName]["name"];
+						$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : "Temp_".$_FILES[$propertyName]["name"];
 						$destFolder = $property['storagePath'];
 						$destFullPath = $destFolder . '/' . $destFileName;
 						$copyResult = copy($_FILES[$propertyName]["tmp_name"], $destFullPath);
@@ -382,20 +401,25 @@ class DataObjectUtil {
 						$logger->log("Creating thumbnails for $propertyName", Logger::LOG_DEBUG);
 						if (isset($property['path'])) {
 							$destFolder = $property['path'];
-							$destFileName = $_FILES[$propertyName]["name"];
+							$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : "Temp_".$_FILES[$propertyName]["name"];
 							if (!file_exists($destFolder)) {
 								mkdir($destFolder, 0755, true);
 							}
 							$pathToThumbs = $destFolder . '/thumbnail';
 							$pathToMedium = $destFolder . '/medium';
 						} else {
-							$destFileName = $propertyName . $_FILES[$propertyName]["name"];
+							$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : "Temp_".$_FILES[$propertyName]["name"];
 							$destFolder = $configArray['Site']['local'] . '/files/original';
 							$pathToThumbs = $configArray['Site']['local'] . '/files/thumbnail';
 							$pathToMedium = $configArray['Site']['local'] . '/files/medium';
 						}
 
 						$destFullPath = $destFolder . '/' . $destFileName;
+						//check for previous upload that needs to be overwritten to new naming convention
+						$prevUpload = $destFolder . '/' . "Temp_" . $_FILES[$propertyName]["name"];
+						if (file_exists($prevUpload)) {
+							rename($prevUpload, $destFullPath);
+						}
 						$copyResult = copy($_FILES[$propertyName]["tmp_name"], $destFullPath);
 
 						if ($copyResult) {
@@ -442,20 +466,36 @@ class DataObjectUtil {
 							AspenError::raiseError('Incorrect file type uploaded ' . $fileType);
 						}
 					}
+					if (!empty($object->type)){
+						$objectType = $object->type;
+					} else {
+						$objectType = $property['type'];
+					};
+					$fileType = ".pdf";
 					//Copy the full image to the correct location
 					//Filename is the name of the object + the original filename
-					$destFileName = $_FILES[$propertyName]["name"];
+					$destFileName = ($object->id != null) ? $objectType."_".$object->id.$fileType : "Temp_".$_FILES[$propertyName]["name"];
 					$destFolder = $property['path'];
 					if (!file_exists($destFolder)) {
 						mkdir($destFolder, 0775, true);
 						chgrp($destFolder, 'aspen_apache');
 						chmod($destFolder, 0775);
 					}
-					if (substr($destFolder, -1) == '/') {
+					if (str_ends_with($destFolder, '/')) {
 						$destFolder = substr($destFolder, 0, -1);
 					}
 
 					$destFullPath = $destFolder . '/' . $destFileName;
+					//check for previous upload that needs to be overwritten to new naming convention
+					$prevUpload = $destFolder . '/' . "Temp_" . $_FILES[$propertyName]["name"];
+					if (file_exists($prevUpload)) {
+						rename($prevUpload, $destFullPath);
+						// Remove any old thumbnail for this PDF.
+						$thumbPath = $prevUpload . '.jpg';
+						if (file_exists($thumbPath)) {
+							@unlink($thumbPath);
+						}
+					}
 					$copyResult = copy($_FILES[$propertyName]["tmp_name"], $destFullPath);
 					if ($copyResult) {
 						$logger->log("Copied file from {$_FILES[$propertyName]["tmp_name"]} to $destFullPath", Logger::LOG_NOTICE);
@@ -521,11 +561,11 @@ class DataObjectUtil {
 				}
 				$object->setProperty($propertyName, $newValue, $property);
 			}
-		} elseif ($property['type'] == 'translatableTextBlock') {
+		} elseif ($property['type'] == 'translatableTextBlock' || $property['type'] == 'translatablePlainTextBlock') {
 			//Set all the translations for
 			$allTranslations = [];
 			foreach ($_REQUEST as $requestName => $propertyValue) {
-				if (strpos($requestName, $propertyName) === 0) {
+				if (str_starts_with($requestName, $propertyName)) {
 					$language = str_replace($property['property'] . '_', '', $requestName);
 					if ($language != 'default') {
 						$allTranslations[$language] = $propertyValue;
@@ -536,9 +576,9 @@ class DataObjectUtil {
 			$object->$privatePropertyName = $allTranslations;
 		} elseif ($property['type'] == 'oneToMany') {
 			//Check for deleted associations
-			$deletions = isset($_REQUEST[$propertyName . 'Deleted']) ? $_REQUEST[$propertyName . 'Deleted'] : [];
+			$deletions = $_REQUEST[$propertyName . 'Deleted'] ?? [];
 			//Check for changes to the sort order
-			if ($property['sortable'] == true && isset($_REQUEST[$propertyName . 'Weight'])) {
+			if ($property['sortable'] && isset($_REQUEST[$propertyName . 'Weight'])) {
 				$weights = $_REQUEST[$propertyName . 'Weight'];
 			}
 			$values = [];
@@ -568,10 +608,22 @@ class DataObjectUtil {
 					if ($deleted == 'true') {
 						if ($subObject->getPrimaryKeyValue() > 0) {
 							$object->handlePropertyChangeEffects($propertyName, $subObject, null, $property, 'deleted', 'oneToMany entry');
+							require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+							$history = new DataObjectHistory();
+							$history->objectType = get_class($object);
+							$primaryKey = $object->__primaryKey;
+							$history->objectId = $object->$primaryKey;
+							$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName);
+							$history->actionType = 3;
+							$history->oldValue = (string)$subObject;
+							$history->newValue = 'Deleted sub-object';
+							$history->changedBy = UserAccount::getActiveUserId();
+							$history->changeDate = time();
+							$history->insert();
 						}
 						$subObject->_deleteOnSave = true;
 					} else {
-						//Update properties of each associated object
+						// Update properties of each associated sub-object.
 						foreach ($subStructure as $subProperty) {
 							$requestKey = $propertyName . '_' . $subProperty['property'];
 							$subPropertyName = $subProperty['property'];
@@ -590,16 +642,60 @@ class DataObjectUtil {
 									'regularExpression',
 									'multilineRegularExpression',
 								])) {
-									$subObject->setProperty($subPropertyName, $_REQUEST[$requestKey][$id], $subProperty);
-								} elseif (in_array($subProperty['type'], ['checkbox'])) {
-									$subObject->setProperty($subPropertyName, isset($_REQUEST[$requestKey][$id]) ? 1 : 0, $subProperty);
+									$oldValue = $subObject->$subPropertyName;
+									$changed = $subObject->setProperty($subPropertyName, $_REQUEST[$requestKey][$id], $subProperty);
+									if ($changed && !empty($object->{$object->__primaryKey}) && $object->objectHistoryEnabled()) {
+										require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+										$history = new DataObjectHistory();
+										$history->objectType = get_class($object);
+										$primaryKey = $object->__primaryKey;
+										$history->objectId = $object->$primaryKey;
+										$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName . '.' . $subPropertyName);
+										$history->oldValue = (string)$oldValue;
+										$history->newValue = (string)$subObject->$subPropertyName;
+										$history->changedBy = UserAccount::getActiveUserId();
+										$history->changeDate = time();
+										$history->insert();
+									}
+								} elseif ($subProperty['type'] == 'checkbox') {
+									$oldValue = $subObject->$subPropertyName;
+									$newVal = isset($_REQUEST[$requestKey][$id]) ? 1 : 0;
+									$changed = $subObject->setProperty($subPropertyName, $newVal, $subProperty);
+									if ($changed && !empty($object->{$object->__primaryKey}) && $object->objectHistoryEnabled()) {
+										require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+										$history = new DataObjectHistory();
+										$history->objectType = get_class($object);
+										$primaryKey = $object->__primaryKey;
+										$history->objectId = $object->$primaryKey;
+										$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName . '.' . $subPropertyName);
+										$history->oldValue = (string)$oldValue;
+										$history->newValue = (string)$newVal;
+										$history->changedBy = UserAccount::getActiveUserId();
+										$history->changeDate = time();
+										$history->insert();
+									}
 								} elseif ($subProperty['type'] == 'date') {
+									$oldValue = $subObject->$subPropertyName;
 									if (strlen($_REQUEST[$requestKey][$id]) == 0 || $_REQUEST[$requestKey][$id] == '0000-00-00') {
-										$subObject->setProperty($subPropertyName, null, $subProperty);
+										$changed = $subObject->setProperty($subPropertyName, null, $subProperty);
 									} else {
 										$dateParts = date_parse($_REQUEST[$requestKey][$id]);
-										$time = $dateParts['year'] . '-' . $dateParts['month'] . '-' . $dateParts['day'];
-										$subObject->setProperty($subPropertyName, $time, $subProperty);
+										$time = $dateParts['year'] . '-' . str_pad($dateParts['month'], 2, '0', STR_PAD_LEFT) . '-' . str_pad($dateParts['day'], 2, '0', STR_PAD_LEFT);
+										$changed = $subObject->setProperty($subPropertyName, $time, $subProperty);
+									}
+
+									if (!empty($changed) && !empty($object->{$object->__primaryKey}) && $object->objectHistoryEnabled()) {
+										require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+										$history = new DataObjectHistory();
+										$history->objectType = get_class($object);
+										$primaryKey = $object->__primaryKey;
+										$history->objectId = $object->$primaryKey;
+										$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName . '.' . $subPropertyName);
+										$history->oldValue = (string)$oldValue;
+										$history->newValue = (string)($subObject->$subPropertyName ?? '');
+										$history->changedBy = UserAccount::getActiveUserId();
+										$history->changeDate = time();
+										$history->insert();
 									}
 								} elseif (!in_array($subProperty['type'], [
 									'label',
@@ -613,7 +709,7 @@ class DataObjectUtil {
 							}
 						}
 					}
-					if ($property['sortable'] == true && isset($weights)) {
+					if ($property['sortable'] && isset($weights)) {
 						$subObject->setProperty('weight', $weights[$id], null);
 					}
 
@@ -623,6 +719,111 @@ class DataObjectUtil {
 			}
 
 			$object->$propertyName = $values;
+			if (isset($existingValues)) {
+				$oldKeys = array_keys((array)$existingValues);
+				$newKeys = array_keys($values);
+				// Only log if the related IDs changed rather than logging all the time, which clutters the history.
+				if ($oldKeys !== $newKeys && !empty($object->{$object->__primaryKey}) && $object->objectHistoryEnabled()) {
+					require_once ROOT_DIR . '/sys/DB/DataObjectHistory.php';
+					$history = new DataObjectHistory();
+					$history->objectType = get_class($object);
+					$primaryKey = $object->__primaryKey;
+					$history->objectId = $object->$primaryKey;
+					$history->propertyName = DataObjectUtil::getHistoryPropertyName($object, $propertyName);
+					$history->actionType = 1;
+					// Use human-readable labels for old and new values.
+					$oldLabels = [];
+					foreach ($existingValues as $subObject) {
+						$oldLabels[] = (string)$subObject;
+					}
+					$newLabels = [];
+					foreach ($values as $subObject) {
+						$newLabels[] = (string)$subObject;
+					}
+					$history->oldValue = implode(',', $oldLabels);
+					$history->newValue = implode(',', $newLabels);
+					$history->changedBy = UserAccount::getActiveUserId();
+					$history->changeDate = time();
+					$history->insert();
+				}
+			}
 		}
+	}
+
+	/**
+	 * Get a human-readable property name for history logging.
+	 *
+	 * @param DataObject $object
+	 * @param string $propertyName
+	 * @return string formatted as "propertyName (Human Label)" or just "propertyName" if no label found.
+	 */
+	static function getHistoryPropertyName(DataObject $object, string $propertyName): string {
+		try {
+			if (!method_exists($object, 'getObjectStructure')) {
+				return $propertyName;
+			}
+
+			$objectStructure = $object->getObjectStructure();
+
+			// Handle one-to-many relationships.
+			$parts = explode('.', $propertyName);
+			if (count($parts) == 2) {
+				$parentProperty = $parts[0];
+				$childProperty = $parts[1];
+
+				$parentLabel = '';
+				$childLabel = '';
+
+				// Get parent property label.
+				if (isset($objectStructure[$parentProperty]['label'])) {
+					$parentLabel = $objectStructure[$parentProperty]['label'];
+				}
+
+				// Get child property label from subObjectType structure.
+				if (isset($objectStructure[$parentProperty]['subObjectType'])) {
+					$subObjectType = $objectStructure[$parentProperty]['subObjectType'];
+					if (class_exists($subObjectType) && method_exists($subObjectType, 'getObjectStructure')) {
+						$subStructure = $subObjectType::getObjectStructure();
+						if (isset($subStructure[$childProperty]['label'])) {
+							$childLabel = $subStructure[$childProperty]['label'];
+						}
+					}
+				}
+
+				if ($parentLabel && $childLabel) {
+					return "$propertyName ($parentLabel - $childLabel)";
+				} elseif ($childLabel) {
+					return "$propertyName ($childLabel)";
+				} elseif ($parentLabel) {
+					return "$propertyName ($parentLabel)";
+				}
+			} else {
+				// Simple property: check all sections of the structure for nested properties' labels.
+				foreach ($objectStructure as $section) {
+					if (is_array($section)) {
+						// Check if this section contains the property.
+						if (isset($section[$propertyName]['label'])) {
+							$label = $section[$propertyName]['label'];
+							return "$propertyName ($label)";
+						}
+						// Also check if section itself has properties.
+						if (isset($section['properties'][$propertyName]['label'])) {
+							$label = $section['properties'][$propertyName]['label'];
+							return "$propertyName ($label)";
+						}
+					}
+				}
+
+				// Direct property check (fallback).
+				if (isset($objectStructure[$propertyName]['label'])) {
+					$label = $objectStructure[$propertyName]['label'];
+					return "$propertyName ($label)";
+				}
+			}
+		} catch (Exception) {
+			// If anything fails, just return the original property name.
+		}
+
+		return $propertyName;
 	}
 }

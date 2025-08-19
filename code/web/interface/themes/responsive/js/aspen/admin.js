@@ -995,39 +995,79 @@ AspenDiscovery.Admin = (function () {
 				$("#propertyRowthemes").show();
 			}
 		},
-		updateMaterialsRequestFields: function () {
-			var materialRequestType = $("#enableMaterialsRequestSelect option:selected").val();
-			$("#propertyRowallowDeletingILSRequests").hide();
-			if (materialRequestType === "0" || materialRequestType === "2") {
-				$("#propertyRowexternalMaterialsRequestUrl").hide();
-				$("#propertyRowmaxRequestsPerYear").hide();
-				$("#propertyRowmaxActiveRequests").hide();
-				$("#propertyRowmaterialsRequestDaysToPreserve").hide();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").hide();
-				$("#propertyRowmaterialsRequestFormats").hide();
-				$("#propertyRowmaterialsRequestFormFields").hide();
-				if (materialRequestType === "2") {
-					$("#propertyRowallowDeletingILSRequests").show();
-				}
-			} else if (materialRequestType === "1") {
-				$("#propertyRowexternalMaterialsRequestUrl").hide();
-				$("#propertyRowmaxRequestsPerYear").show();
-				$("#propertyRowmaxActiveRequests").show();
-				$("#propertyRowmaterialsRequestDaysToPreserve").show();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").show();
-				$("#propertyRowmaterialsRequestFormats").show();
-				$("#propertyRowmaterialsRequestFormFields").show()
-			} else if (materialRequestType === "3") {
-				$("#propertyRowexternalMaterialsRequestUrl").show();
-				$("#propertyRowmaxRequestsPerYear").hide();
-				$("#propertyRowmaxActiveRequests").hide();
-				$("#propertyRowmaterialsRequestDaysToPreserve").hide();
-				$("#propertyRowmaterialsRequestFieldsToDisplay").hide();
-				$("#propertyRowmaterialsRequestFormats").hide();
-				$("#propertyRowmaterialsRequestFormFields").hide()
+		updateMaterialsRequestFields() {
+			const materialRequestType = $("#enableMaterialsRequestSelect option:selected").val();
+			const rowsToHide = [
+				"#propertyRowdisplayMaterialsRequestToPublic",
+				"#propertyRowallowDeletingILSRequests",
+				"#propertyRowallowMaterialRequestsBranchChoice",
+				"#propertyRowexternalMaterialsRequestUrl",
+				"#propertyRowmaxRequestsPerYear",
+				"#propertyRowmaxActiveRequests",
+				"#propertyRowrequestCalendarStartDate",
+				"#propertyRowmaterialsRequestDaysToPreserve",
+				"#propertyRowmaterialsRequestFieldsToDisplay",
+				"#propertyRowmaterialsRequestFormats",
+				"#propertyRowmaterialsRequestFormFields",
+				"#propertyRowmaterialsRequestSendStaffEmailOnNew",
+				"#propertyRowmaterialsRequestNewEmail",
+				"#propertyRowmaterialsRequestSendStaffEmailOnAssign",
+				"#propertyRownewMaterialsRequestSummary",
+				"#propertyRowyearlyRequestLimitType",
+				"#propertyRowcheckRequestsForExistingTitles"
+			];
+			rowsToHide.forEach(selector => $(selector).hide());
+
+			switch (materialRequestType) {
+				case "1": // Aspen Request System
+					[
+						"#propertyRowdisplayMaterialsRequestToPublic",
+						"#propertyRowmaxRequestsPerYear",
+						"#propertyRowyearlyRequestLimitType",
+						"#propertyRowmaxActiveRequests",
+						"#propertyRowrequestCalendarStartDate",
+						"#propertyRownewMaterialsRequestSummary",
+						"#propertyRowmaterialsRequestDaysToPreserve",
+						"#propertyRowmaterialsRequestFieldsToDisplay",
+						"#propertyRowmaterialsRequestFormats",
+						"#propertyRowmaterialsRequestFormFields",
+						"#propertyRowmaterialsRequestSendStaffEmailOnNew",
+						"#propertyRowmaterialsRequestNewEmail",
+						"#propertyRowmaterialsRequestSendStaffEmailOnAssign",
+						"#propertyRowcheckRequestsForExistingTitles"
+					].forEach(selector => $(selector).show());
+					break;
+				case "2": // ILS Request System
+					["#propertyRowallowDeletingILSRequests", "#propertyRowallowMaterialRequestsBranchChoice", "#propertyRowdisplayMaterialsRequestToPublic"]
+						.forEach(selector => $(selector).show());
+					break;
+				case "3": // External Request Link
+					["#propertyRowexternalMaterialsRequestUrl", "#propertyRowdisplayMaterialsRequestToPublic"]
+						.forEach(selector => $(selector).show());
+					break;
+				default: // None (0)
+					break;
 			}
+
 			return false;
 		},
+
+		updateHoldCancellationDateFields() {
+			const showCancelDateEnabled = $("#showHoldCancelDate:checked").val();
+			const fieldsToToggle = [
+				"#propertyRowdefaultNotNeededAfterDays",
+				"#propertyRowmaxHoldCancellationDate"
+			];
+
+			if (showCancelDateEnabled) {
+				fieldsToToggle.forEach(selector => $(selector).show());
+			} else {
+				fieldsToToggle.forEach(selector => $(selector).hide());
+			}
+
+			return false;
+		},
+
 		updateDonationFields: function () {
 			var donationsEnabled = $("#enableDonations");
 			var donationsEnabledValue = $("#enableDonations:checked").val()
@@ -1047,12 +1087,12 @@ AspenDiscovery.Admin = (function () {
 
 			return false;
 		},
-		validateCompare: function () {
-			var selectedObjects = $('.selectedObject:checked');
+		validateCompare() {
+			const selectedObjects = $('.selectedObject:checked');
 			if (selectedObjects.length === 2) {
 				return true;
 			} else {
-				AspenDiscovery.showMessage("Error", "Please select only two objects to compare");
+				AspenDiscovery.showMessage("Failed to Compare Objects", "Please select only two objects to compare.");
 				return false;
 			}
 		},
@@ -1333,27 +1373,139 @@ AspenDiscovery.Admin = (function () {
 			window.location.href = url + "?release=" + selectedRelease;
 			return false;
 		},
-		updateBrowseSearchForSource: function () {
-			var selectedSource = $('#sourceSelect').val();
-			if (selectedSource === 'List') {
-				$("#propertyRowsearchTerm").hide();
-				$("#propertyRowdefaultFilter").hide();
-				$("#propertyRowdefaultSort").hide();
-				$("#propertyRowsourceListId").show();
-				$("#propertyRowsourceCourseReserveId").hide();
-			} else if (selectedSource === 'CourseReserve') {
-				$("#propertyRowsearchTerm").hide();
-				$("#propertyRowdefaultFilter").hide();
-				$("#propertyRowdefaultSort").hide();
-				$("#propertyRowsourceListId").hide();
-				$("#propertyRowsourceCourseReserveId").show();
-			} else {
-				$("#propertyRowsearchTerm").show();
-				$("#propertyRowdefaultFilter").show();
-				$("#propertyRowdefaultSort").show();
-				$("#propertyRowsourceListId").hide();
-				$("#propertyRowsourceCourseReserveId").hide();
+
+		updateBrowseSearchForSource() {
+			const selectedSource = $('#sourceSelect').val();
+
+			const rowsToHide = [
+				"#propertyRowsearchTerm",
+				"#propertyRowdefaultFilter",
+				"#propertyRowdefaultSort",
+				"#propertyRowsourceListId",
+				"#propertyRowsourceCourseReserveId"
+			];
+			rowsToHide.forEach(selector => $(selector).hide());
+
+			switch (selectedSource) {
+				case 'List':
+					$("#propertyRowsourceListId").show();
+					break;
+				case 'CourseReserve':
+					$("#propertyRowsourceCourseReserveId").show();
+					break;
+				default:
+					[
+						"#propertyRowsearchTerm",
+						"#propertyRowdefaultFilter",
+						"#propertyRowdefaultSort"
+					].forEach(selector => $(selector).show());
+					break;
 			}
+
+			this.updateSortOptionsForSource(selectedSource);
+			return false;
+		},
+
+		updateSortOptionsForSource(selectedSource) {
+			if (selectedSource === 'List' || selectedSource === 'CourseReserve') return;
+
+			const sortOptionsBySource = {
+				GroupedWork: {
+					relevance: 'Best Match',
+					popularity: 'Popularity',
+					newest_to_oldest: 'Date Added',
+					author: 'Author',
+					title: 'Title',
+					user_rating: 'Rating',
+					holds: 'Number of Holds',
+					publication_year_desc: 'Publication Year Desc',
+					publication_year_asc: 'Publication Year Asc'
+				},
+				Events: {
+					relevance: 'Best Match',
+					event_date: 'Event Date',
+					title: 'Title'
+				},
+				OpenArchives: {
+					relevance: 'Best Match',
+					title: 'Title'
+				},
+				Genealogy: {
+					relevance: 'Best Match',
+					title: 'Title'
+				},
+				EbscoEds: {
+					relevance: 'Best Match'
+				},
+				Websites: {
+					relevance: 'Best Match',
+					title: 'Title'
+				},
+				CourseReserves: {
+					relevance: 'Best Match',
+					title: 'Title'
+				},
+				Lists: {
+					relevance: 'Best Match',
+					title: 'Title',
+					newest_to_oldest: 'Date Added',
+					oldest_to_newest: 'Date Added (Oldest First)',
+					newest_updated_to_oldest: 'Date Updated',
+					oldest_updated_to_newest: 'Date Updated (Oldest First)'
+				}
+			};
+
+			const $sortSelect = $('#defaultSortSelect');
+			const currentValue = $sortSelect.val();
+			$sortSelect.empty();
+
+			const sortOptions = sortOptionsBySource[selectedSource] || sortOptionsBySource.GroupedWork;
+			Object.entries(/** @type {{ [key: string]: string }} */ sortOptions).forEach(([value, label]) => {
+				$sortSelect.append(new Option(label, value));
+			});
+
+
+			if (sortOptions.hasOwnProperty(currentValue)) {
+				$sortSelect.val(currentValue);
+			} else {
+				$sortSelect.prop('selectedIndex', 0);
+			}
+		},
+
+		updateCollectionSpotlightFields() {
+			const collSpotStyle = $("#styleSelect option:selected").val();
+			const rowsToHide = [
+				"#propertyRowshowTitle",
+				"#propertyRowshowAuthor",
+				"#propertyRowshowRatings",
+				"#propertyRowautoRotate"
+			];
+			rowsToHide.forEach(selector => $(selector).hide());
+
+			switch (collSpotStyle) {
+				case "text-list":
+					// All rows already hidden.
+					break;
+				case "horizontal-carousel":
+					[
+						"#propertyRowshowTitle",
+						"#propertyRowshowAuthor",
+						"#propertyRowshowRatings"
+					].forEach(selector => $(selector).show());
+					break;
+				default:
+					// Show all for other styles.
+					rowsToHide.forEach(selector => $(selector).show());
+					break;
+			}
+
+			if ($("#showViewMoreLink").is(":checked")) {
+				$("#propertyRowviewMoreLinkMode").show();
+			} else {
+				$("#propertyRowviewMoreLinkMode").hide();
+			}
+
+			return false;
 		},
 		updateGroupedWorkDisplayFields: function () {
 			var showSearchTools = $('#showSearchTools');
@@ -1801,6 +1953,19 @@ AspenDiscovery.Admin = (function () {
 					$('#propertyRowssoUsernameAttr').hide();
 				}
 			});
+		},
+		toggleLibrarySharingOptions: function () {
+			if ($('#owningLibrarySelect').val() !== '-1'){
+				$('#propertyRowsharing').show();
+				if ($('#sharingSelect').val() === '1'){
+					$('#propertyRowsharedWithLibrary').show();
+				} else {
+					$('#propertyRowsharedWithLibrary').hide();
+				}
+			} else {
+				$('#propertyRowsharing').hide();
+				$('#propertyRowsharedWithLibrary').hide();
+			}
 		},
 		linkingSettingOptionChange: function () {
 			var url = Globals.path + "/Admin/AJAX";
@@ -2542,6 +2707,73 @@ AspenDiscovery.Admin = (function () {
 					</div>
 				`);
 			}
+		},
+
+		recycleBinDelete(scope) {
+			const selected = $('.selectedObject:checked');
+			const count = selected.length;
+			let title, body, okLabel;
+
+			if (scope === 'selected') {
+				if (!selected.length) {
+					AspenDiscovery.showMessage('Failed to Delete Selected Objects', 'Please select at least one object to delete.');
+					return false;
+				}
+			}
+			if (scope === 'all') {
+				title = 'Permanently Delete All';
+				body = 'Are you sure you want to permanently delete ALL objects? This action cannot be undone.';
+				okLabel = 'Delete All';
+			} else {
+				title = 'Permanently Delete Selected';
+				body = 'Are you sure you want to permanently delete ' + count + ' object(s)? This action cannot be undone.';
+				okLabel = 'Delete';
+			}
+
+			const confirmJs = "$(\"#objectAction\").val(\"batchHardDelete\"); $(\"#propertiesListForm\").submit();";
+
+			AspenDiscovery.confirm(title, body, okLabel, 'Cancel', true, confirmJs, 'btn-danger');
+			return false;
+		},
+
+		getNotificationDevicesForUser: function () {
+			const barcode = $("#testPatronBarcode").val();
+			if (barcode) {
+				$.getJSON(Globals.path + "/Admin/AJAX?method=getNotificationDevicesForUser&user=" + barcode, function (data) {
+					if (data.success) {
+						$("#error").html(data.message).hide();
+						$("#patronDevices").html(data.message).show();
+						$("#notificationSetup").show();
+					} else {
+						$("#patronDevices").html(data.message).hide();
+						$("#error").html(data.message).show();
+					}
+					return data;
+				});
+			}
+			return false;
+		},
+		displayDigitalRewardPlaceholderUpload: function () {
+			const placeholderImageUpload = $('#propertyRowdigitalRewardPlaceholderImage');
+			const digitalRewardControl = $('#displayDigitalRewardOnlyWhenAwarded');
+			const displayOnRewardOnlyIsChecked = digitalRewardControl.is(':checked');
+
+			if (displayOnRewardOnlyIsChecked) {
+				placeholderImageUpload.show();
+			} else {
+				placeholderImageUpload.hide();
+			}
+		},
+		highlightCampaignsOpenToEnroll: function() {
+			const highlightOpenToEnrollCampaigns = $('#propertyRowhighlightCommunityEngagementOpenToEnroll');
+			const highlightCampaigns = $('#highlightCommunityEngagement');
+			const isChecked = highlightCampaigns.is(':checked');
+
+				if (isChecked) {
+					highlightOpenToEnrollCampaigns.show();
+				} else {
+					highlightOpenToEnrollCampaigns.hide();
+				}
 		}
 	};
 }(AspenDiscovery.Admin || {}));

@@ -166,6 +166,10 @@ class BrowseCategory extends BaseBrowsable {
 	 * @see DB/DB_DataObject::insert()
 	 */
 	public function insert($context = '') {
+		// Set userId for manually created browse categories (i.e., not from searching).
+		if (empty($this->userId)) {
+			$this->userId = UserAccount::getActiveUserId();
+		}
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveSubBrowseCategories();
@@ -173,8 +177,8 @@ class BrowseCategory extends BaseBrowsable {
 		return $ret;
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->textId)) {
 			//Remove from any libraries that use it.
 			require_once ROOT_DIR . '/sys/Browse/BrowseCategoryGroupEntry.php';
@@ -372,12 +376,16 @@ class BrowseCategory extends BaseBrowsable {
 					'relevance' => 'Best Match',
 					'popularity' => 'Popularity',
 					'newest_to_oldest' => 'Date Added',
+					'oldest_to_newest' => 'Date Added (Oldest First)',
+					'newest_updated_to_oldest' => 'Date Updated',
+					'oldest_updated_to_newest' => 'Date Updated (Oldest First)',
 					'author' => 'Author',
 					'title' => 'Title',
 					'user_rating' => 'Rating',
+					'event_date' => 'Event Date',
+					'holds' => 'Number of Holds',
 					'publication_year_desc' => 'Publication Year Desc',
 					'publication_year_asc' => 'Publication Year Asc',
-					'holds' => 'Number of Holds',
 				],
 				'description' => 'The default sort for the search if none is specified',
 				'default' => 'relevance',

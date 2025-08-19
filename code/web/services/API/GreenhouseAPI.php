@@ -382,9 +382,7 @@ class GreenhouseAPI extends AbstractAPI {
 								} else {
 									$return['libraries'][] = $this->setLibrary($aspenSite, $libraryLocation, $distance);
 								}
-							}/* elseif ($aspenSite->name == "Test (ByWater)") {
-								$return['libraries'][] = $this->setLibrary($aspenSite, $libraryLocation, $distance);
-							}*/
+							}
 						}
 					}
 				}
@@ -449,7 +447,10 @@ class GreenhouseAPI extends AbstractAPI {
 			$library = new Library();
 			$library->libraryId = $location->libraryId;
 			if ($library->find(true)) {
-				$version = $interface->getVariable('gitBranch');
+				$version = $interface->getVariable('aspenVersion');
+				if (str_contains($version, ' ')) {
+					$version  = substr($version, 0, strpos($version, ' '));
+				}
 				if ($version >= "22.09.00") {
 					require_once ROOT_DIR . '/sys/AspenLiDA/LocationSetting.php';
 					$appSettings = new LocationSetting();
@@ -608,9 +609,9 @@ class GreenhouseAPI extends AbstractAPI {
 		return $thisLibrary;
 	}
 
-	public function setLibraryCache($aspenSite) {
+	public function setLibraryCache($aspenSite): void {
 		$fetchLibraryUrl = $aspenSite->baseUrl . '/API/GreenhouseAPI?method=getLibrary';
-		if ($data = file_get_contents($fetchLibraryUrl)) {
+		if ($data = @file_get_contents($fetchLibraryUrl)) {
 			$searchData = json_decode($data);
 			$libraryLocation = new AspenSiteCache();
 			$libraryLocation->siteId = $aspenSite->id;

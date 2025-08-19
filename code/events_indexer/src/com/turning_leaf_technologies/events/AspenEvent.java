@@ -142,13 +142,12 @@ class AspenEvent {
 
 	private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 	private final ZoneId zoneId = ZoneId.systemDefault();
-	private final ZoneRules rules = zoneId.getRules();
-	private final ZoneOffset zone = rules.getOffset (Instant.now());
 
 	public Date getStartDateTime(EventsIndexerLogEntry logEntry) {
 		try {
 			LocalDateTime date = LocalDateTime.parse(startDate + " " + startTime, dtf);
-			return Date.from(date.toInstant(zone));
+			ZoneOffset eventZoneOffset = zoneId.getRules().getOffset(date);
+			return Date.from(date.toInstant(eventZoneOffset));
 		} catch (DateTimeParseException e) {
 			logEntry.incErrors("Error parsing end date from " + startDate, e);
 			return null;
@@ -159,8 +158,8 @@ class AspenEvent {
 		try {
 			LocalDateTime date = LocalDateTime.parse(startDate + " " + startTime, dtf);
 			LocalDateTime end = date.plusMinutes(this.length);
-			Instant endInstant = end.toInstant(zone);
-			return Date.from(endInstant);
+			ZoneOffset eventZoneOffset = zoneId.getRules().getOffset(end);
+			return Date.from(end.toInstant(eventZoneOffset));
 		} catch (DateTimeParseException e) {
 			logEntry.incErrors("Error parsing end date from " + startDate, e);
 			return null;
@@ -184,8 +183,6 @@ class AspenEvent {
 
 		public String getFacetName() {
 			switch (this.facet) {
-				case 0:
-					return "";
 				case 1:
 					return "age_group_facet";
 				case 2:
@@ -238,6 +235,9 @@ class AspenEvent {
 					return allowableValues[Integer.parseInt(value)].trim();
 				}catch (ArrayIndexOutOfBoundsException e) {
 					//MDN 2/6/25 do additional handling and logging if we don't get a good value.
+					if (type == 2) { // Checkbox/boolean field.
+						return "0"; // Default to false/unchecked.
+					}
 					return "Unknown";
 				}
 			} else {

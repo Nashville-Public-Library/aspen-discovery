@@ -1,9 +1,11 @@
-<?php /** @noinspection PhpMissingFieldTypeInspection */
+<?php
+/** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/LibraryLocation/SublocationPatronType.php';
 
 
 class Sublocation extends DataObject {
 	public $__table = 'sublocation';
+	public $__displayNameColumn = 'name';
 	public $id;
 	public $ilsId;
 	public $name;
@@ -131,8 +133,8 @@ class Sublocation extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false): int {
-		$ret = parent::delete();
+	public function delete($useWhere = false, $hardDelete = false): int {
+		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret !== FALSE) {
 			$this->clearPatronTypes();
 

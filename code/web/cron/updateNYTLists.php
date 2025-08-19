@@ -10,8 +10,13 @@ require_once ROOT_DIR . '/sys/NYTApi.php';
 require_once ROOT_DIR . '/sys/Enrichment/NewYorkTimesSetting.php';
 require_once ROOT_DIR . '/sys/UserLists/NYTUpdateLogEntry.php';
 require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
+require_once ROOT_DIR . '/sys/CronLogEntry.php';
 
-//Create a NYTUpdateLogEntry
+$cronLogEntry = new CronLogEntry();
+$cronLogEntry->startTime = time();
+$cronLogEntry->name = 'Update New York Times Lists';
+$cronLogEntry->insert();
+
 $nytUpdateLog = new NYTUpdateLogEntry();
 $nytUpdateLog->startTime = time();
 $nytUpdateLog->insert();
@@ -33,21 +38,23 @@ if (!$nytSettings->find(true)) {
 		if ($nytUpdateLog != null) {
 			$nytUpdateLog->addError("Did not get a good response from the API");
 		}
-	}
+	} else{
+		//Record the number of lists to be processed
+		$nytUpdateLog->numLists = count($availableLists);
+		$nytUpdateLog->update();
 
-	$listAPI = new ListAPI();
-	if (!empty($availableLists)) {
+		$listAPI = new ListAPI();
 		foreach ($availableLists as $list) {
 			$listName = $list->display_name;
-			try {
-				$listAPI->createUserListFromNYT($list->list_name_encoded, $nytUpdateLog);
-			} catch (Exception $e) {
-				$nytUpdateLog->addError("Error updating $listName " . $e->getMessage());
+			if (!empty($listName)) {
+				try {
+					$listAPI->createUserListFromNYT($list->list_name_encoded, $nytUpdateLog);
+				} catch (Exception $e) {
+					$nytUpdateLog->addError("Error updating $listName " . $e->getMessage());
+				}
+				$nytUpdateLog->lastUpdate = time();
+				$nytUpdateLog->update();
 			}
-			$nytUpdateLog->lastUpdate = time();
-			$nytUpdateLog->update();
-			//Make sure we don't hit our quota.  Wait between updates
-			sleep(7);
 		}
 	}
 
@@ -57,6 +64,10 @@ if (!$nytSettings->find(true)) {
 $nytUpdateLog->addNote("Finished updating lists");
 $nytUpdateLog->endTime = time();
 $nytUpdateLog->update();
+
+$cronLogEntry->notes .= "New York Times Lists update completed (<a href='/UserLists/NYTUpdatesLog'>View detailed NYT Log</a>).";
+$cronLogEntry->endTime = time();
+$cronLogEntry->update();
 
 $nytSettings->__destruct();
 $nytSettings = null;

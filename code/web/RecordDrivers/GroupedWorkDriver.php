@@ -2240,6 +2240,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				}
 				$seriesMember->excluded = 0;
 				$seriesInfo = null;
+				$seriesMember->orderBy('priorityScore DESC');
 				$seriesMember->find();
 				$first = true;
 				while ($seriesMember->fetch()) {
@@ -2266,14 +2267,14 @@ class GroupedWorkDriver extends IndexRecordDriver {
 					}
 				}
 				$this->seriesData = $seriesInfo;
-			}else{
+			} else {
 				//Get a list of isbns from the record and existing display info if any
 				$relatedIsbns = $this->getISBNs();
 
 				if (SystemVariables::getSystemVariables()->enableNovelistSeriesIntegration) {
 					$novelist = NovelistFactory::getNovelist();
 					$novelistData = $novelist->loadBasicEnrichment($this->getPermanentId(), $relatedIsbns, $allowReload);
-				}else{
+				} else {
 					$novelistData = null;
 				}
 				$existingDisplayInfo = new GroupedWorkDisplayInfo();
@@ -2304,7 +2305,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 							'fromSeriesIndex' => false
 						];
 					}
-				} else if ($novelistData != null && !empty($novelistData->seriesTitle)) {
+				} else if ($novelistData != null && !empty($novelistData->seriesTitle) && !$this->isSeriesHidden($novelistData->seriesTitle)) {
 					$this->seriesData = [
 						'seriesTitle' => $novelistData->seriesTitle,
 						'volume' => $novelistData->volume,
@@ -2317,7 +2318,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 						$firstSeries = $seriesFromIndex[0];
 						$this->seriesData = [
 							'seriesTitle' => $firstSeries['seriesTitle'],
-							'volume' => isset($firstSeries['volume']) ? $firstSeries['volume'] : '',
+							'volume' => $firstSeries['volume'] ?? '',
 							'fromNovelist' => false,
 							'fromSeriesIndex' => false
 						];
@@ -2328,6 +2329,27 @@ class GroupedWorkDriver extends IndexRecordDriver {
 			}
 		}
 		return $this->seriesData;
+	}
+
+	/**
+	 * Check if a series title should be hidden based on the Hidden Series list.
+	 * @param string $seriesTitle The series title to check.
+	 * @return bool True if the series should be hidden, false otherwise.
+	 */
+	private function isSeriesHidden(string $seriesTitle): bool {
+		// TODO: Should this logic also apply to Grouped Work Display Info and Indexed Series above?
+		// 		It already applies to the Series module during indexing.
+		if (empty($seriesTitle)) {
+			return false;
+		}
+		
+		require_once ROOT_DIR . '/sys/Grouping/HideSeries.php';
+		$hideSeries = new HideSeries();
+		$normalizedSeriesTitle = $hideSeries->normalizeSeries($seriesTitle);
+		
+		$hideSeries = new HideSeries();
+		$hideSeries->seriesNormalized = $normalizedSeriesTitle;
+		return $hideSeries->find(true);
 	}
 
 	public function getShortTitle($useHighlighting = false) {
@@ -3562,19 +3584,30 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 	}
 
-	function getWhileYouWait() {
+	function getWhileYouWait($selectedFormat = null) : array {
 		global $library;
 		if (!$library->showWhileYouWait) {
 			return [];
 		}
+		if ($selectedFormat == null && !empty($_REQUEST['activeFormat'])){
+			$selectedFormat = $_REQUEST['activeFormat'];
+		}
 		//Load Similar titles (from Solr)
 		global $configArray;
+		global $interface;
 		require_once ROOT_DIR . '/sys/SolrConnector/GroupedWorksSolrConnector.php';
-		/** @var SearchObject_AbstractGroupedWorkSearcher $db */
+		/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */
 		$searchObject = SearchObjectFactory::initSearchObject();
 		$searchObject->init();
-		$searchObject->disableScoping();
-		$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, false, 3);
+		$selectedAvailabilityToggle = 'local';
+		$interface->assign('activeSearchSource', $selectedAvailabilityToggle);
+		if ($library->showWhileYouWait == 2 && !empty($selectedFormat)) {
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, true, 3, $selectedFormat);
+			$interface->assign('activeFormat', $selectedFormat);
+		} else{
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, false, 3);
+		}
+
 		// Send the similar items to the template; if there is only one, we need
 		// to force it to be an array or things will not display correctly.
 		if (isset($similar) && !empty($similar['response']['docs'])) {
@@ -3600,6 +3633,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 						}
 					}
 				}
+
 				$whileYouWaitTitles[] = [
 					'driver' => $similarTitleDriver,
 					'id' => $similarTitleDriver->getId(),

@@ -228,39 +228,52 @@ AspenDiscovery.WebBuilder = function () {
 			return false;
 		},
 
-		deleteCell: function (id) {
-			if (!confirm("Are you sure you want to delete this cell?")){
-				return false;
-			}
-			var url = Globals.path + '/WebBuilder/AJAX';
-			var params = {
+		deleteCell(id) {
+			AspenDiscovery.confirm('Delete Cell', `Are you sure you want to delete this cell (ID: ${id})?`, 'Delete', 'Cancel', true, `AspenDiscovery.WebBuilder.deleteCellConfirmed("${id}")`, 'btn-danger');
+			return false;
+		},
+
+		deleteCellConfirmed(id) {
+			const url = `${Globals.path}/WebBuilder/AJAX`;
+			const params = {
 				method: 'deleteCell',
-				id: id
+				id
 			};
-			$.getJSON(url, params, function (data) {
-				if (data.success){
-					$('#portalRow' + data.rowId).replaceWith(data.newRow);
+
+			$.getJSON(url, params, (data) => {
+				const { success, rowId, newRow,  message} = data || [];
+				if (success) {
+					const $targetRow = $(`#portalRow${rowId}`);
+					if ($targetRow.length) {
+						$targetRow.replaceWith(newRow);
+					}
+					AspenDiscovery.closeLightbox();
 				} else {
-					AspenDiscovery.showMessage('An error occurred', data.message);
+					AspenDiscovery.showMessage('Error Deleting Cell', data.message);
 				}
 			});
 			return false;
 		},
 
-		deleteRow: function (id) {
-			if (!confirm("Are you sure you want to delete this row?")){
-				return false;
-			}
-			var url = Globals.path + '/WebBuilder/AJAX';
-			var params = {
+		deleteRow(id) {
+			AspenDiscovery.confirm('Delete Row', `Are you sure you want to delete this row (ID: ${id})?`, 'Delete', 'Cancel', true, `AspenDiscovery.WebBuilder.deleteRowConfirmed("${id}")`, 'btn-danger');
+			return false;
+		},
+
+		deleteRowConfirmed(id) {
+			const url = `${Globals.path}/WebBuilder/AJAX`;
+			const params = {
 				method: 'deleteRow',
-				id: id
+				id
 			};
-			$.getJSON(url, params, function (data) {
-				if (data.success){
+
+			$.getJSON(url, params, (data) => {
+				const { success, message } = data;
+				if (success){
 					$("#portalRow" + id).hide();
+					AspenDiscovery.closeLightbox();
 				} else {
-					AspenDiscovery.showMessage('An error occurred', data.message);
+					AspenDiscovery.showMessage('Error Deleting Row', data.message);
 				}
 			});
 			return false;

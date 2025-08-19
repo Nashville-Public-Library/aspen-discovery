@@ -18,6 +18,9 @@ class BasicPage extends DB_LibraryLinkedObject {
 	public $teaser;
 	public $contents;
 	public $lastUpdate;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	private $_libraries;
 	private $_audiences;
@@ -32,8 +35,8 @@ class BasicPage extends DB_LibraryLinkedObject {
 	}
 
 	static function getObjectStructure($context = ''): array {
-		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Basic Pages'));
-		$locationsList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Basic Pages'));
+		$libraryList = Library::getLibraryListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Basic Pages'));
+		$locationsList = Location::getLocationListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Basic Pages'));
 		$audiencesList = WebBuilderAudience::getAudiences();
 		$categoriesList = WebBuilderCategory::getCategories();
 		$patronTypeList = PType::getPatronTypeList();
@@ -210,9 +213,9 @@ class BasicPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
+		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
 			$this->clearAudiences();
 			$this->clearCategories();
@@ -589,5 +592,9 @@ class BasicPage extends DB_LibraryLinkedObject {
 		$this->getAudiences();
 		$this->getAllowableHomeLocations();
 		$this->getAccess();
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

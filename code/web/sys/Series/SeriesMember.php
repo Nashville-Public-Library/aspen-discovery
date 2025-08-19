@@ -18,6 +18,7 @@ class SeriesMember extends DataObject {
 	public $userAdded;
 	public $excluded;
 	public $deleted;
+	public $priorityScore;
 
 	public static function getObjectStructure($context = ''): array {
 		global $configArray;
@@ -149,13 +150,13 @@ class SeriesMember extends DataObject {
 		return parent::canActiveUserEdit();
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		if (!$this->userAdded) {
 			$this->deleted = 1;
 			$this->update();
 			return 1;
 		} else {
-			return parent::delete($useWhere);
+			return parent::delete($useWhere, $hardDelete);
 		}
 	}
 

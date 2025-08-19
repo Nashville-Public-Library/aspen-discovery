@@ -7,12 +7,14 @@ require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/UserCompletedMilestone.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestone.php';
+require_once ROOT_DIR . '/services/CommunityEngagement/AJAX.php';
 
 
 
 class CommunityEngagement_AdminView extends Admin_Dashboard {
 	function launch() {
 		global $interface;
+		global $library;
 
 		$campaign = new Campaign();
 		$userCampaign = new UserCampaign();
@@ -29,7 +31,8 @@ class CommunityEngagement_AdminView extends Admin_Dashboard {
 		$upcomingCampaigns = $campaign->getUpcomingCampaigns();
 		$interface->assign('upcomingCampaigns', $upcomingCampaigns);
 
-		$users = $campaign->getAllUsersInCampaigns();
+		$campaignAjax = new CommunityEngagement_AJAX();
+		$users = $campaignAjax->fetchLibraryUsers();
 		$interface->assign('users', $users);
 
 		$userCampaigns = [];
@@ -38,6 +41,7 @@ class CommunityEngagement_AdminView extends Admin_Dashboard {
 
 		foreach ($campaigns as $campaign) {
 			$milestones = CampaignMilestone::getMilestoneByCampaign($campaign->id);
+			$extraCreditActivities = CampaignExtraCredit::getExtraCreditByCampaign($campaign->id);
 			$campaignMilestones[$campaign->id] = $milestones;
 
 			$users = $campaign->getUsersForCampaign();
@@ -78,6 +82,7 @@ class CommunityEngagement_AdminView extends Admin_Dashboard {
 		}
 		$interface->assign('userCampaigns', $userCampaigns);
 		$interface->assign('campaignMilestones', $campaignMilestones);
+		$interface->assign('library', $library);
 		$this->display('adminView.tpl', 'Admin View');
 	}
 

@@ -41,6 +41,7 @@ class AccountProfile extends DataObject {
 	public $weight;
 	public $ssoSettingId;
     public $carlXViewVersion;
+	public $enableFetchingIlsMessages;
 
 	/** @var bool|IndexingProfile|null */
 	private $_indexingProfile = false;
@@ -224,6 +225,23 @@ class AccountProfile extends DataObject {
 						'validationPattern' => "^https?:\/\/[-a-zA-Z0-9_.]*(:[0-9]{1,4})?([-\/a-zA-Z0-9_?&=.]*)$",
 						'validationMessage' => 'Please enter a valid URL. The URL may include port number.',
 						'relatedIls' => ['carlx','evergreen','evolve','koha','polaris','sierra','symphony'],
+					],
+					'accountMessagesSection' => [
+						'property' => 'accountMessagesSection',
+						'type' => 'section',
+						'label' => 'ILS Messages Information',
+						'hideInLists' => true,
+						'relatedIls' => ['koha', 'sierra'],
+						'properties' => [
+							'enableFetchingIlsMessages' => [
+								'property' => 'enableFetchingIlsMessages',
+								'type' => 'checkbox',
+								'label' => 'Enable Fetching Messages from the ILS',
+								'description' => 'Whether or not messages from the ILS will be fetched for use in notifications Discovery and LiDA',
+								'default' => false,
+								'relatedIls' => ['koha', 'sierra']
+							],
+						],
 					],
 					'databaseSection' => [
 						'property' => 'databaseSection',
@@ -470,6 +488,9 @@ class AccountProfile extends DataObject {
 		if (!array_key_exists('Single sign-on', $enabledModules)) {
 			unset($structure['authConfigurationSection']['properties']['ssoSettingId']);
 		}
+		if (!array_key_exists('Aspen LiDA', $enabledModules)) {
+			unset($structure['ilsConnectionSection']['properties']['accountMessagesSection']);
+		}
 
 		return $structure;
 	}
@@ -521,11 +542,11 @@ class AccountProfile extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false) : int {
+	function delete($useWhere = false, $hardDelete = false) : int {
 		/** @var Memcache $memCache */ global $memCache;
 		global $instanceName;
 		$memCache->delete('account_profiles_' . $instanceName);
-		return parent::delete($useWhere);
+		return parent::delete($useWhere, $hardDelete);
 	}
 
 	public function saveLibraries() : void {

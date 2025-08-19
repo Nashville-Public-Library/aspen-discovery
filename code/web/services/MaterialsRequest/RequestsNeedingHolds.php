@@ -16,6 +16,15 @@ class MaterialsRequest_RequestsNeedingHolds extends ObjectEditor {
 		$object->holdsCreated = 0;
 		//TODO: Filter by assignee as well?
 
+		$homeLibrary = Library::getPatronHomeLibrary();
+		if (is_null($homeLibrary)) {
+			global $library;
+			$homeLibrary = $library;
+		}
+		if ($homeLibrary != null) {
+			$object->libraryId = $homeLibrary->libraryId;
+		}
+
 		$object->orderBy($this->getSort());
 		$this->applyFilters($object);
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
@@ -33,6 +42,15 @@ class MaterialsRequest_RequestsNeedingHolds extends ObjectEditor {
 			$object->readyForHolds = 1;
 			$object->holdsCreated = 0;
 			//TODO: Filter by assignee as well?
+
+			$homeLibrary = Library::getPatronHomeLibrary();
+			if (is_null($homeLibrary)) {
+				global $library;
+				$homeLibrary = $library;
+			}
+			if ($homeLibrary != null) {
+				$object->libraryId = $homeLibrary->libraryId;
+			}
 
 			$this->applyFilters($object);
 			$this->_numObjects = $object->count();
@@ -176,6 +194,8 @@ class MaterialsRequest_RequestsNeedingHolds extends ObjectEditor {
 									$materialsRequest->dateUpdated = time();
 
 									$materialsRequest->sendStatusChangeEmail();
+									require_once ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequestUsage.php';
+									MaterialsRequestUsage::incrementStat($materialsRequest->status, $materialsRequest->libraryId);
 								}
 							}
 						}
@@ -246,6 +266,8 @@ class MaterialsRequest_RequestsNeedingHolds extends ObjectEditor {
 								$materialsRequest->status = $newStatus;
 								$materialsRequest->dateUpdated = time();
 								$materialsRequest->sendStatusChangeEmail();
+								require_once ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequestUsage.php';
+								MaterialsRequestUsage::incrementStat($materialsRequest->status, $materialsRequest->libraryId);
 								$materialsRequest->update();
 							}
 						}

@@ -99,12 +99,13 @@ class DefaultCoverImageBuilder {
 		}
 	}
 
-	public function getCover($title, $author, $filename, $image = null) {
+	public function getCover($title, $author, $filename, $image = null): void {
+		$script = $this->detectScript($title . $author);
+		$this->selectFontForScript($script);
+
 		$this->setForegroundAndBackgroundColors($title, $author);
 		//Create the background image
 		$imageCanvas = imagecreatetruecolor($this->imageWidth, $this->imageHeight);
-		imagesx($imageCanvas);
-		imagesy($imageCanvas);
 
 		//Define our colors
 		$white = imagecolorallocate($imageCanvas, 255, 255, 255);
@@ -117,6 +118,9 @@ class DefaultCoverImageBuilder {
 		imagefilledrectangle($imageCanvas, 0, 0, $this->imageWidth, $this->topMargin, $backgroundColor);
 
 		$artworkHeight = $this->drawArtwork($imageCanvas, $backgroundColor, $foregroundColor, $title);
+		if ($script === 'arabic') {
+			$author = $this->transliterateToArabic($author);
+		}
 		$this->drawText($imageCanvas, $title, $author, $artworkHeight);
 
 		if (!empty($this->defaultCoverImage) || !empty($image)){
@@ -141,9 +145,9 @@ class DefaultCoverImageBuilder {
 				$width = ($height * $originalWidth) / $originalHeight;
 			}
 
-			if (!empty($image)){
+			if (!empty($image)) {
 				$uploadedImage = imagecreatefromstring(file_get_contents($image));
-			}else{
+			}else {
 				$uploadedImage = imagecreatefromstring(file_get_contents($this->defaultCoverImage));
 			}
 
@@ -160,34 +164,39 @@ class DefaultCoverImageBuilder {
 		}
 	}
 
-	private function drawText($imageCanvas, $title, $author, $artworkHeight) {
+	private function drawText(GdImage|bool $imageCanvas, string $title, string $author, float $artworkHeight): void {
 		$textColor = imagecolorallocate($imageCanvas, 50, 50, 50);
-
 		$title_font_size = $this->imageWidth * 0.07;
-		//$title_height = ($this->imageHeight - $this->imageWidth - ($this->imageHeight * $this->topMargin / 100)) * 0.75;
-
 		$x = 10;
 		$y = 15;
 		$width = $this->imageWidth - (20);
 
-		$title = StringUtils::trimStringToLengthAtWordBoundary($title, 60, true);
-		/** @noinspection PhpUnusedLocalVariableInspection */
-		[
-			$totalHeight,
-			$lines,
-		] = wrapTextForDisplay($this->titleFont, $title, $title_font_size, $title_font_size * .1, $width);
-		addWrappedTextToImage($imageCanvas, $this->titleFont, $lines, $title_font_size, $title_font_size * .1, $x, $y, $textColor);
+		$titleTrimmed = StringUtils::trimStringToLengthAtWordBoundary($title, 60, true);
+		if (mb_strlen(trim(str_replace('...', '', $titleTrimmed)), 'UTF-8') === 0) {
+			// From observation, some characters in certain scripts are large enough to overlap with the artwork,
+			// so truncate at 40 characters.
+			$titleTrimmed = mb_substr($title, 0, 40, 'UTF-8') . '...';
+		}
+		$title = $titleTrimmed;
+		[, $titleLines,] = wrapTextForDisplay($this->titleFont, $title, $title_font_size, $title_font_size * .1, $width);
+		// Draw title and capture the Y position returned (bottom of drawn text).
+		$y = addWrappedTextToImage($imageCanvas, $this->titleFont, $titleLines, $title_font_size, $title_font_size * .1, $x, $y, $textColor);
+
+		// Small spacing between title and author.
+		$y += 5;
 
 		$author_font_size = $this->imageWidth * 0.055;
-
 		$width = $this->imageWidth - (2 * $this->imageHeight * $this->topMargin / 100);
 		$author = StringUtils::trimStringToLengthAtWordBoundary($author, 40, true);
-		[
-			$totalHeight,
-			$lines,
-		] = wrapTextForDisplay($this->authorFont, $author, $author_font_size, $author_font_size * .1, $width);
-		$y = $this->imageHeight - $artworkHeight - $totalHeight - 5;
-		addWrappedTextToImage($imageCanvas, $this->authorFont, $lines, $author_font_size, $author_font_size * .1, $x, $y, $textColor);
+		[$authorHeight, $authorLines] = wrapTextForDisplay($this->authorFont, $author, $author_font_size, $author_font_size * .1, $width);
+
+		// Ensure author does not overlap artwork section.
+		$minYForAuthor = $this->imageHeight - $artworkHeight - $authorHeight - 5;
+		if ($y < $minYForAuthor) {
+			$y = $minYForAuthor;
+		}
+
+		addWrappedTextToImage($imageCanvas, $this->authorFont, $authorLines, $author_font_size, $author_font_size * .1, $x, $y, $textColor);
 	}
 
 	private function drawArtwork($imageCanvas, $backgroundColor, $foregroundColor, $title) {
@@ -487,5 +496,164 @@ class DefaultCoverImageBuilder {
 		imagefilledrectangle($imageCanvas, $x, $y, $x + $width, $y + $height, $color);
 	}
 
+	/**
+	 * Detect if a string contains any non-ASCII characters.
+	 *
+	 * @param string $text The text to analyze.
+	 * @return bool True if non-ASCII characters are present, otherwise false.
+	 */
+	private function containsNonAsciiCharacters(string $text): bool {
+		return preg_match('/[^\x00-\x7F]/u', $text) === 1;
+	}
 
+	/**
+	 * Detect the primary script used in the supplied text.
+	 *
+	 * When adding new scripts, be cautious of the order of detection conditions.
+	 * Scripts with overlapping character ranges (e.g., Han used in both Chinese and Japanese)
+	 * must be placed appropriately in the if-chain to avoid incorrect classification.
+	 *
+	 * @param string $text
+	 * @return string Language
+	 */
+	private function detectScript(string $text): string {
+		$text = trim($text);
+		if ($text === '') {
+			return 'latin';
+		}
+		if (preg_match('/\p{Arabic}/u', $text)) {
+			return 'arabic';
+		}
+		if (preg_match('/\p{Armenian}/u', $text)) {
+			return 'armenian';
+		}
+		// Detect Hangul (Korean)
+		if (preg_match('/\p{Hangul}/u', $text)) {
+			return 'hangul';
+		}
+		// First check for any Han (CJK ideographs); used in Chinese & Japanese Kanji.
+		if (preg_match('/\p{Han}/u', $text)) {
+			// If Han is used along with Japanese-specific Kana (Hiragana or Katakana),
+			// it's most likely Japanese text.
+			if (preg_match('/[\p{Hiragana}\p{Katakana}]/u', $text)) {
+				return 'japanese';
+			}
+			return 'han';
+		}
+		if (preg_match('/\p{Devanagari}/u', $text)) { // Hindi
+			return 'devanagari';
+		}
+		if (preg_match('/\p{Hebrew}/u', $text)) {
+			return 'hebrew';
+		}
+		if (preg_match('/\p{Telugu}/u', $text)) {
+			return 'telugu';
+		}
+		if (preg_match('/\p{Thai}/u', $text)) {
+			return 'thai';
+		}
+		if (preg_match('/\p{Georgian}/u', $text)) {
+			return 'georgian';
+		}
+		if (preg_match('/\p{Cyrillic}/u', $text) || preg_match('/\p{Greek}/u', $text)) {
+			return 'cyrillic';
+		}
+		return 'latin';
+
+	}
+
+	/**
+	 * Select fonts tailored to the detected script if they exist.
+	 * Fonts primarily from Google Fonts (https://fonts.google.com/).
+	 *
+	 * @param string $script
+	 */
+	private function selectFontForScript(string $script): void {
+		$fontMap = [
+			'arabic'    =>  ['/fonts/NotoSansArabic-Bold.ttf', '/fonts/NotoSansArabic-Regular.ttf'],
+			'armenian'  =>  ['/fonts/NotoSansArmenian-Bold.ttf', '/fonts/NotoSansArmenian-Regular.ttf'],
+			'cyrillic'  =>  ['/fonts/NotoSans-Bold.ttf', '/fonts/NotoSans-Regular.ttf'],
+			'japanese'  =>  ['/fonts/NotoSansJP-Bold.ttf', '/fonts/NotoSansJP-Regular.ttf'],
+			'han'       =>  ['/fonts/NotoSansSC-Bold.ttf', '/fonts/NotoSansSC-Regular.ttf'],
+			'hangul'    =>  ['/fonts/NotoSansKR-Bold.ttf', '/fonts/NotoSansKR-Regular.ttf'],
+			'devanagari'=>  ['/fonts/NotoSansDevanagari-Bold.ttf', '/fonts/NotoSansDevanagari-Regular.ttf'],
+			'hebrew'    =>  ['/fonts/NotoSansHebrew-Bold.ttf', '/fonts/NotoSansHebrew-Regular.ttf'],
+			'telugu'    =>  ['/fonts/NotoSansTelugu-Bold.ttf', '/fonts/NotoSansTelugu-Regular.ttf'],
+			'thai'      =>  ['/fonts/NotoSansThai-Bold.ttf', '/fonts/NotoSansThai-Regular.ttf'],
+			'georgian'  =>  ['/fonts/NotoSansGeorgian-Bold.ttf', '/fonts/NotoSansGeorgian-Regular.ttf'],
+			'latin'     =>  ['/fonts/NotoSans-Bold.ttf', '/fonts/NotoSans-Regular.ttf'],
+		];
+
+		if ($script === 'han') {
+			$candidateSets = [
+				['/fonts/NotoSansSC-Bold.ttf', '/fonts/NotoSansSC-Regular.ttf'], // Simplified Chinese fallback.
+				['/fonts/NotoSansJP-Bold.ttf', '/fonts/NotoSansJP-Regular.ttf'], // Preferred for Japanese Kanji.
+			];
+		} else {
+			$candidateSets = [ $fontMap[$script] ];
+		}
+
+		foreach ($candidateSets as [$boldRel, $regularRel]) {
+			$boldPath = ROOT_DIR . $boldRel;
+			$regularPath = ROOT_DIR . $regularRel;
+			if (file_exists($boldPath) && file_exists($regularPath)) {
+				$this->titleFont = realpath($boldPath);
+				$this->authorFont = realpath($regularPath);
+				return;
+			}
+		}
+
+		// If nothing was found, fall back.
+		if ($this->containsNonAsciiCharacters($script)) {
+			$this->selectUnicodeFallbackFonts();
+		}
+	}
+
+	/**
+	 * Fallback font selection if specific script fonts are missing.
+	 *
+	 */
+	private function selectUnicodeFallbackFonts(): void {
+		$fontCandidates = [
+			['/fonts/NotoSans-Bold.ttf', '/fonts/NotoSans-BoldItalic.ttf'],
+			['/fonts/GothicA1-Bold.ttf', '/fonts/GothicA1-Regular.ttf'],
+		];
+		foreach ($fontCandidates as [$bold, $regular]) {
+			$boldPath = ROOT_DIR . $bold;
+			$regularPath = ROOT_DIR . $regular;
+			if (file_exists($boldPath) && file_exists($regularPath)) {
+				$this->titleFont = realpath($boldPath);
+				$this->authorFont = realpath($regularPath);
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Simplifies extended Latin characters commonly used in Arabic transliteration
+	 * (i.e., writing letters of one script using the letters of another script)
+	 * by stripping diacritics and converting variant apostrophe-like characters
+	 * into a plain ASCII apostrophe.
+	 *
+	 * This helps ensure clean rendering in Arabic contexts where transliterated
+	 * names (e.g., Ṭabbāʻ, ʿUthmān Muṣṭafá) are present, but Arabic-script fonts
+	 * do not support the Latin characters with diacritics.
+	 *
+	 * @param string $text Transliterated Arabic text using extended Latin.
+	 * @return string Cleaned text using basic ASCII equivalents.
+	 */
+	private function transliterateToArabic(string $text): string {
+		// Part of PHP intl: https://www.php.net/manual/en/class.normalizer.php
+		// Takes decomposed characters and turns them into composed (standard) characters.
+		if (class_exists('Normalizer')) {
+			$text = Normalizer::normalize($text, Normalizer::FORM_D);
+		}
+		$text = preg_replace('/\p{Mn}/u', '', $text);
+		return strtr($text, [
+			'ʻ' => "'",
+			'ʿ' => "'",
+			'ʾ' => "'",
+			'ʼ' => "'",
+		]);
+	}
 }

@@ -721,6 +721,8 @@ class ItemAPI extends AbstractAPI {
 							$action['volumeId'] = $recordAction['volumeId'] ?? null;
 							$action['volumeName'] = $recordAction['volumeName'] ?? null;
 
+							$action['message'] = $recordAction['message'] ?? null;
+
 							$actions[] = $action;
 						}
 
@@ -1014,12 +1016,21 @@ class ItemAPI extends AbstractAPI {
 			}
 		}
 
-		return [
-			'success' => true,
-			'id' => $groupedWorkId,
-			'format' => translate(['text' => $format, 'isPublicFacing' => true]),
-			'manifestation' => $relatedManifestation->getItemSummary(),
-		];
+		if ($relatedManifestation == null) {
+			return [
+				'success' => false,
+				'id' => $groupedWorkId,
+				'format' => translate(['text' => $format, 'isPublicFacing' => true]),
+				'manifestation' => [],
+			];
+		}else{
+			return [
+				'success' => true,
+				'id' => $groupedWorkId,
+				'format' => translate(['text' => $format, 'isPublicFacing' => true]),
+				'manifestation' => $relatedManifestation->getItemSummary(),
+			];
+		}
 	}
 
 	function getVariations() {
@@ -1131,10 +1142,12 @@ class ItemAPI extends AbstractAPI {
 				$actionButtons[$key]['formatId'] = $action['formatId'] ?? null;
 				$actionButtons[$key]['volumeId'] = $action['volumeId'] ?? null;
 				$actionButtons[$key]['volumeName'] = $action['volumeName'] ?? null;
+				$actionButtons[$key]['message'] = $action['message'] ?? null;
 
 				if(isset($action['redirectUrl'])) {
 					$actionButtons[$key]['redirectUrl'] = $action['redirectUrl'];
 				}
+				$actionButtons[$key]['redirectParams'] = $action['redirectParams'] ?? null;
 
 			}
 
@@ -1305,10 +1318,12 @@ class ItemAPI extends AbstractAPI {
 							$buttons[$key]['formatId'] = $actionButton['formatId'] ?? null;
 							$buttons[$key]['volumeId'] = $actionButton['volumeId'] ?? null;
 							$buttons[$key]['volumeName'] = $actionButton['volumeName'] ?? null;
+							$buttons[$key]['message'] = $actionButton['message'] ?? null;
 
 							if (isset($actionButton['redirectUrl'])) {
 								$buttons[$key]['redirectUrl'] = $actionButton['redirectUrl'];
 							}
+							$buttons[$key]['redirectParams'] = $actionButton['redirectParams'] ?? null;
 						}
 
 						if ($this->context == 'lida') {
@@ -1410,15 +1425,17 @@ class ItemAPI extends AbstractAPI {
 						$numItemsWithVolumes = 0;
 						$numItemsWithoutVolumes = 0;
 						foreach ($relatedRecord->getItems() as $item) {
-							if (empty($item->volume)) {
-								$numItemsWithoutVolumes++;
-							} else {
-								if ($item->libraryOwned || $item->locallyOwned) {
-									if (array_key_exists($item->volumeId, $volumeData)) {
-										$volumeData[$item->volumeId]->setHasLocalItems(true);
+							if ($item->holdable) {
+								if (empty($item->volume)) {
+									$numItemsWithoutVolumes++;
+								} else {
+									if ($item->libraryOwned || $item->locallyOwned) {
+										if (array_key_exists($item->volumeId, $volumeData)) {
+											$volumeData[$item->volumeId]->setHasLocalItems(true);
+										}
 									}
+									$numItemsWithVolumes++;
 								}
-								$numItemsWithVolumes++;
 							}
 						}
 						$records[$relatedRecord->id]['numItemsWithVolumes'] = $numItemsWithVolumes;
@@ -1438,7 +1455,12 @@ class ItemAPI extends AbstractAPI {
 		];
 	}
 
-	function getVolumes() {
+	/**
+	 * Return a list of all holdable volumes for a specific record id
+	 *
+	 * @return array
+	 */
+	function getVolumes() : array {
 		if (!isset($_REQUEST['id'])) {
 			return [
 				'success' => false,
@@ -1467,15 +1489,18 @@ class ItemAPI extends AbstractAPI {
 		$numItemsWithVolumes = 0;
 		$numItemsWithoutVolumes = 0;
 		foreach ($relatedRecord->getItems() as $item) {
-			if (empty($item->volume)) {
-				$numItemsWithoutVolumes++;
-			} else {
-				if ($item->libraryOwned || $item->locallyOwned) {
-					if (array_key_exists($item->volumeId, $volumeData)) {
-						$volumeData[$item->volumeId]->setHasLocalItems(true);
+			if ($item->holdable) {
+				if (empty($item->volume)) {
+					$numItemsWithoutVolumes++;
+				} else {
+					$volumeData[$item->volumeId]->addItem($item);
+					if ($item->libraryOwned || $item->locallyOwned) {
+						if (array_key_exists($item->volumeId, $volumeData)) {
+							$volumeData[$item->volumeId]->setHasLocalItems(true);
+						}
 					}
+					$numItemsWithVolumes++;
 				}
-				$numItemsWithVolumes++;
 			}
 		}
 
@@ -1490,8 +1515,10 @@ class ItemAPI extends AbstractAPI {
 			$blankVolume->relatedItems = '';
 			$blankVolume->displayOrder = '0';
 			$blankVolume->setHasLocalItems(false);
+			$blankVolume->holdableItems = [];
 			foreach ($relatedRecord->getItems() as $item) {
-				if (empty($item->volumeId)) {
+				if (empty($item->volumeId) && $item->holdable) {
+					$blankVolume->addItem($item);
 					if ($item->libraryOwned || $item->locallyOwned) {
 						$blankVolume->setHasLocalItems(true);
 					}
@@ -1527,7 +1554,11 @@ class ItemAPI extends AbstractAPI {
 
 		$volumes = [];
 		$i = 0;
-		foreach($volumeData as $volume) {
+		foreach($volumeData as $key => $volume) {
+			if (empty($volume->getItems())) {
+				unset($volumeData['key']);
+				continue;
+			}
 			$label = $volume->displayLabel;
 			if($alwaysPlaceVolumeHoldWhenVolumesArePresent && $volume->hasLocalItems()) {
 				$label .= ' (' . translate(['text' => 'Owned by %1%', 'isPublicFacing' => true, 1=>$library->displayName]) . ')';

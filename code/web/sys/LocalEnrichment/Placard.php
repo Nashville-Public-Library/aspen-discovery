@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/LibraryLocationLinkedObject.php';
 require_once ROOT_DIR . '/sys/LocalEnrichment/PlacardTrigger.php';
@@ -24,6 +24,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	public $sourceId;
 	public $generatedFromSource;
 	public $isCustomized;
+	public $deleted;
+	public $dateDeleted;
+	public $deletedBy;
 
 	/** @var PlacardTrigger[] */
 	protected $_triggers;
@@ -50,6 +53,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 			'web_resource' => 'Web Resource',
 		];
 
+		/** @noinspection HtmlRequiredAltAttribute */
 		return [
 			'id' => [
 				'property' => 'id',
@@ -185,7 +189,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	}
 
 	/**
-	 * @return int[]
+	 * @return ?int[]
 	 */
 	public function getLibraries(): ?array {
 		if (!isset($this->_libraries) && $this->id) {
@@ -201,7 +205,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	}
 
 	/**
-	 * @return int[]
+	 * @return ?int[]
 	 */
 	public function getLocations(): ?array {
 		if (!isset($this->_locations) && $this->id) {
@@ -286,9 +290,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
-		if ($ret && !empty($this->id)) {
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
+		if ($ret && $hardDelete && !empty($this->id)) {
 			$triggers = new PlacardTrigger();
 			$triggers->placardId = $this->id;
 			$triggers->delete(true);
@@ -308,7 +312,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function saveTriggers() {
+	public function saveTriggers() : void {
 		if (isset ($this->_triggers) && is_array($this->_triggers)) {
 			/** @var PlacardTrigger $trigger */
 			foreach ($this->_triggers as $trigger) {
@@ -561,5 +565,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 				}
 			}
 		}
+	}
+
+	public function supportsSoftDelete(): bool {
+		return true;
 	}
 }

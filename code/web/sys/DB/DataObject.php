@@ -37,6 +37,8 @@ abstract class DataObject implements JsonSerializable {
 
 	public $_deleteOnSave;
 
+	public bool $_includeDeleted = false; // When true, find()/count() will include deleted rows.
+
 	function objectHistoryEnabled() : bool {
 		return true;
 	}
@@ -126,6 +128,19 @@ abstract class DataObject implements JsonSerializable {
 		}
 
 		global $aspen_db;
+		if (!isset($aspen_db)) {
+			return false;
+		}
+
+		// Soft-delete support: automatically hide rows where deleted = 1 unless caller opted-in.
+		if ($this->supportsSoftDelete()) {
+			$includeDeleted = property_exists($this, '_includeDeleted') ? $this->_includeDeleted : false;
+			$deletedPropIsSet = property_exists($this, 'deleted') && ($this->deleted !== null);
+			if (!$includeDeleted && !$deletedPropIsSet) {
+				$this->whereAdd($this->__table . '.deleted = 0');
+			}
+		}
+
 		global $timer;
 		$query = $this->getSelectQuery($aspen_db);
 		$this->__lastQuery = $query;
@@ -442,6 +457,8 @@ abstract class DataObject implements JsonSerializable {
 		$encryptedFields = $this->getEncryptedFieldNames();
 		$serializedFields = $this->getSerializedFieldNames();
 		$compressedFields = $this->getCompressedColumnNames();
+		//these will be updated regardless of if they're changed or not
+		$imageUpdates = ['xLargeSizePath', 'largeSizePath', 'mediumSizePath', 'smallSizePath'];
 
 		$properties = get_object_vars($this);
 		$updates = '';
@@ -449,7 +466,7 @@ abstract class DataObject implements JsonSerializable {
 			if ($value !== null && !is_array($value) && $name[0] != '_' && $name != 'N' && $name != $this->__primaryKey) {
 				//Check to see if we are updating only selected fields and if so, only skip things that aren't changed
 				if (!empty($this->_changedFields)) {
-					if (!in_array($name, $this->_changedFields)) {
+					if (!in_array($name, $this->_changedFields) && !in_array($name, $imageUpdates)) {
 						continue;
 					}
 				}
@@ -518,6 +535,10 @@ abstract class DataObject implements JsonSerializable {
 			$logger->log($updateQuery, Logger::LOG_ERROR);
 		}
 		$timer->logTime($updateQuery);
+		
+		// Clear changed fields after update (successful or failed).
+		$this->_changedFields = [];
+		
 		return $response;
 	}
 
@@ -530,13 +551,20 @@ abstract class DataObject implements JsonSerializable {
 		return $this->find(true);
 	}
 
-	public function delete($useWhere = false) : int {
+	public function delete($useWhere = false, $hardDelete = false) : int {
 		global $aspen_db;
 		if (!isset($aspen_db)) {
 			return false;
 		}
-		//TODO: Check to see if we need to do any cascading deletes
 
+		if (!$hardDelete && $this->supportsSoftDelete()) {
+			$this->deleted = 1;
+			$this->dateDeleted = time();
+			$this->deletedBy = UserAccount::getActiveUserId();
+			return $this->update();
+		}
+
+		//TODO: Check to see if we need to do any cascading deletes
 
 		$primaryKey = $this->__primaryKey;
 
@@ -608,6 +636,16 @@ abstract class DataObject implements JsonSerializable {
 		if (!isset($aspen_db)) {
 			return false;
 		}
+
+		// Soft-delete support: automatically hide rows where deleted = 1 unless caller opted-in.
+		if ($this->supportsSoftDelete()) {
+			$includeDeleted = property_exists($this, '_includeDeleted') ? $this->_includeDeleted : false;
+			$deletedPropIsSet = property_exists($this, 'deleted') && ($this->deleted !== null);
+			if (!$includeDeleted && !$deletedPropIsSet) {
+				$this->whereAdd($this->__table . '.deleted = 0');
+			}
+		}
+
 		$query = 'SELECT COUNT(*) from ' . $this->__table;
 		foreach ($this->__joins as $join) {
 			$query .= $this->getJoinQuery($join);
@@ -830,7 +868,7 @@ abstract class DataObject implements JsonSerializable {
 		$properties = get_object_vars($this);
 		$where = '';
 		foreach ($properties as $name => $value) {
-			if ($value != null && $name[0] != '_') {
+			if ($value !== null && $name[0] != '_') {
 				if (strlen($where) != 0) {
 					$where .= ' AND ';
 				}
@@ -978,6 +1016,8 @@ abstract class DataObject implements JsonSerializable {
 			if ($name[0] == '_' && strlen($name) > 1 && $name[1] != '_') {
 				if ($name == '_data') {
 					$this->_data = [];
+				} elseif ($name == '_includeDeleted') {
+					$this->_includeDeleted = false;
 				} else {
 					$this->$name = null;
 				}
@@ -1063,7 +1103,8 @@ abstract class DataObject implements JsonSerializable {
 						$history->actionType = 2;
 						$history->objectId = $this->$primaryKey;
 						$history->oldValue = $oldValue;
-						$history->propertyName = $propertyName;
+						require_once ROOT_DIR . '/sys/DataObjectUtil.php';
+						$history->propertyName = DataObjectUtil::getHistoryPropertyName($this, $propertyName);
 						$history->newValue = $newValue;
 						$history->changedBy = UserAccount::getActiveUserId();
 						$history->changeDate = time();
@@ -1366,17 +1407,22 @@ abstract class DataObject implements JsonSerializable {
 		}
 		if ($loadDefault) {
 			$objectStructure = $this::getObjectStructure();
+			$objectStructure = $this->updateStructureForEditingObject($objectStructure);
 			$fieldDefinition = $this->getFieldDefinition($fieldName, $objectStructure);
 			if ($fieldDefinition === false) {
 				$this->_data[$key] = '';
 			} else {
-				$defaultFile = $fieldDefinition['defaultTextFile'];
+				$defaultFile = $fieldDefinition['defaultTextFile'] ?? null;
 				if (empty($defaultFile) || !file_exists(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile)) {
 					$this->_data[$key] = '';
 				}else {
-					require_once ROOT_DIR . '/sys/Parsedown/AspenParsedown.php';
-					$parsedown = AspenParsedown::instance();
-					$this->_data[$key] = $parsedown->parse(file_get_contents(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile));
+					if ($fieldDefinition['type'] == 'translatablePlainTextBlock') {
+						$this->_data[$key] = file_get_contents(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile);
+					}else{
+						require_once ROOT_DIR . '/sys/Parsedown/AspenParsedown.php';
+						$parsedown = AspenParsedown::instance();
+						$this->_data[$key] = $parsedown->parse(file_get_contents(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile));
+					}
 				}
 			}
 		}else{
@@ -1527,5 +1573,47 @@ abstract class DataObject implements JsonSerializable {
 				$logger->log("Forcing regrouping because $propertyName on $objectType ($objectId) was $operation from '$safeOldValue' to '$safeNewValue' by user $userId$additionalContext.", Logger::LOG_ALERT);
 			}
 		}
+	}
+
+	/**
+	 * Override in subclasses that support soft-deletion.
+	 *
+	 * @return bool
+	 */
+	public function supportsSoftDelete(): bool {
+		return false;
+	}
+
+	/**
+	 * Restore a previously soft-deleted record (sets deleted = 0).
+	 *
+	 * @return bool|int
+	 */
+	public function restore(): bool|int {
+		if (!$this->supportsSoftDelete()) return false;
+		$this->deleted = 0;
+		$this->dateDeleted = 0;
+		return $this->update();
+	}
+
+	/**
+	 * Permanently remove soft-deleted rows older than the given age.
+	 *
+	 * @param int $olderThanSecs
+	 * @return int
+	 *
+	 * @noinspection PhpUnused
+	 */
+	public static function purgeExpired(int $olderThanSecs = 2592000): int {
+		$obj = new static();
+		if (!$obj->supportsSoftDelete()) return 0;
+		$obj->deleted = 1;
+		$cutOff = time() - $olderThanSecs;
+		// User Lists deleted (i.e., deleted = 1) before the Object Restorations implementation will be
+		// given dateDeleted = 0 by default in 25.08.00, so make sure to avoid deleting them during purges.
+		// Technically, the dateDeleted > 0 safeguard should be unnecessary because those soft-deleted lists
+		// contain no titles anyway.
+		$obj->whereAdd("dateDeleted > 0 AND dateDeleted < $cutOff");
+		return $obj->delete(true, true);
 	}
 }

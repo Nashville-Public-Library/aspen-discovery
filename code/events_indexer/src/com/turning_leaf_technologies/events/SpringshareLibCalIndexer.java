@@ -4,6 +4,7 @@ import com.turning_leaf_technologies.strings.AspenStringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -47,6 +48,11 @@ class SpringshareLibCalIndexer {
 	private final HashMap<String, SpringshareLibCalEvent> existingEvents = new HashMap<>();
 	private final HashSet<String> librariesToShowFor = new HashSet<>();
 	private static final CRC32 checksumCalculator = new CRC32();
+	private static final RequestConfig REQUEST_CONFIG = RequestConfig.custom()
+		.setConnectTimeout(10000)
+		.setConnectionRequestTimeout(10000)
+		.setSocketTimeout(60000)
+		.build();
 
 	private PreparedStatement addEventStmt;
 	private PreparedStatement updateEventStmt;
@@ -157,23 +163,34 @@ class SpringshareLibCalIndexer {
 			return;
 		}
 
+		// Build a map of unique events (last-wins) to dedupe the LibCal feed.
+		LinkedHashMap<String, JSONObject> uniqueEvents = new LinkedHashMap<>();
+		for (int i = 0; i < libCalEvents.length(); i++) {
+			try {
+				JSONObject evt = libCalEvents.getJSONObject(i);
+				String id = Integer.toString(evt.getInt("id"));
+				if (uniqueEvents.containsKey(id)) {
+					logEntry.addNote("Duplicate event in LibCal feed; using most recent data for event with external ID: " + id + ".");
+				}
+				uniqueEvents.put(id, evt);
+			} catch (JSONException e) {
+				logEntry.incErrors("Error parsing JSON from LibCal feed at index " + i + ": ", e);
+			}
+		}
+
 		Date lastDateToIndex = new Date();
 		long numberOfDays = numberOfDaysToIndex * 24L;
 		lastDateToIndex.setTime(lastDateToIndex.getTime() + (numberOfDays * 60 * 60 * 1000));
 
-		for (int i = 0; i < libCalEvents.length(); i++){
+		for (Map.Entry<String, JSONObject> entry : uniqueEvents.entrySet()) {
 			try {
-				JSONObject curEvent = libCalEvents.getJSONObject(i);
+				String eventId = entry.getKey();
+				JSONObject curEvent = entry.getValue();
 				checksumCalculator.reset();
 				String rawResponse = curEvent.toString();
 				checksumCalculator.update(rawResponse.getBytes());
 				long checksum = checksumCalculator.getValue();
-
-				int eventIdRaw = curEvent.getInt("id");
-				String eventId = Integer.toString(eventIdRaw);
-
 				boolean eventExists = existingEvents.containsKey(eventId);
-
 				String sourceId = "libcal_" + settingsId + "_" + eventId;
 
 				//Add the event to solr
@@ -205,7 +222,7 @@ class SpringshareLibCalIndexer {
 					solrDocument.addField("event_type", eventType);
 
 					//Don't index reservations since they are restricted to staff and
-					// LibCal has space bookings, see https://bywater.libcal.com/admin/api/1.1/endpoint/space_post
+					// LibCal has space bookings, see https://{instance}.libcal.com/admin/api/1.1/endpoint/space_post
 
 					solrDocument.addField("last_indexed", new Date());
 
@@ -505,8 +522,10 @@ class SpringshareLibCalIndexer {
 	}
 
 	private JSONArray getLibCalEvents() {
-		try {
-			CloseableHttpClient httpclient = HttpClients.createDefault();
+		try (CloseableHttpClient httpclient = HttpClients.custom()
+			.setDefaultRequestConfig(REQUEST_CONFIG)
+			.build()) {
+
 			HttpRequestBase apiRequest;
 			String authTokenUrl = baseUrl + "/1.1/oauth/token";
 			ArrayList<NameValuePair> params = new ArrayList<>();
@@ -571,7 +590,10 @@ class SpringshareLibCalIndexer {
 	private JSONArray getRegistrations(Integer eventId) {
 		try {
 			JSONArray eventRegistrations;
-			try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			try (CloseableHttpClient httpclient = HttpClients.custom()
+				.setDefaultRequestConfig(REQUEST_CONFIG)
+				.build()) {
+
 				HttpRequestBase apiRequest;
 
 				eventRegistrations = new JSONArray();

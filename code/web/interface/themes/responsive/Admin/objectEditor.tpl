@@ -16,7 +16,7 @@
 				{/if}
 			</div>
 			<div class="col-xs-12 col-md-3 help-link">
-				{if !empty($instructions)}<a href="{$instructions}"><i class="fas fa-question-circle" role="presentation"></i>&nbsp;{translate text="Documentation" isAdminFacing=true}</a>{/if}
+				{if !empty($instructions)}<a href="{$instructions}" target="_blank"><i class="fas fa-question-circle" role="presentation"></i>&nbsp;{translate text="Documentation" isAdminFacing=true}</a>{/if}
 			</div>
 		</div>
 		<div class="row">
@@ -48,7 +48,7 @@
 					{/if}
 				</div>
 				<div class="btn-group" role="group">
-					{if !empty($id) && $id > 0 && $canDelete && $object->canActiveUserDelete()}<a class="btn btn-danger" href='/{$module}/{$toolName}?id={$id}&amp;objectAction=delete' onclick='return confirm("{translate text='Are you sure you want to delete this %1%?' 1=$objectType inAttribute=true isAdminFacing=true}")'><i class="fas fa-trash" role="presentation"></i> {translate text="Delete" isAdminFacing=true}</a>{/if}
+					{if !empty($id) && $id > 0 && $canDelete && $object->canActiveUserDelete()}<a class="btn btn-danger" href="#" onclick="AspenDiscovery.confirm('Delete {$objectType} #{$id}', '{translate text='Are you sure you want to delete %1% with ID %2%?' 1=$objectType 2=$id inAttribute=true isAdminFacing=true}', '{translate text='Delete' isAdminFacing=true inAttribute=true}', '{translate text='Cancel' isAdminFacing=true inAttribute=true}', true, 'window.location.href=&quot;/{$module}/{$toolName}?id={$id}&objectAction=delete&quot;', 'btn-danger'); return false;"><i class="fas fa-trash" role="presentation"></i> {translate text="Delete" isAdminFacing=true}</a>{/if}
 				</div>
 			</div>
 		</div>

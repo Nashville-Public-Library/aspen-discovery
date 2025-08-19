@@ -356,27 +356,27 @@ class CatalogConnection {
 								$smsResponse = $twilioSetting->sendMessage($body, $phone);
 								if ($smsResponse['success']) {
 									$result['message'] = translate([
-										'text' => 'An message containing your library card was sent to %1%.',
+										'text' => 'A message containing your library card was sent to %1%.',
 										'isPublicFacing' => true,
 										1 => $phone
 									]);
 								} else {
 									$result['message'] = translate([
-										'text' => 'We could not send a message to %1%, please contact the library to retrieve your library card.',
+										'text' => 'We could not send a message to %1%. Please contact the library to retrieve your library card.',
 										'isPublicFacing' => true,
 										1 => $phone
 									]);
 								}
 							} else {
 								$result['message'] = translate([
-									'text' => 'We could not send a message to %1%, please contact the library to retrieve your library card.',
+									'text' => 'We could not send a message to %1%. Please contact the library to retrieve your library card.',
 									'isPublicFacing' => true,
 									1 => $phone
 								]);
 							}
 						} else {
 							$result['message'] = translate([
-								'text' => 'We could not send a message to %1%, please contact the library to retrieve your library card.',
+								'text' => 'We could not send a message to %1%. Please contact the library to retrieve your library card.',
 								'isPublicFacing' => true,
 								1 => $phone
 							]);
@@ -961,14 +961,15 @@ class CatalogConnection {
 	 * @param string $homeLibraryCode
 	 * @return array
 	 */
-	function updateHomeLibrary($user, $homeLibraryCode) {
-		$oldHomeLibrary = $user->getHomeLocation()->locationId;
+	function updateHomeLibrary(User $user, string $homeLibraryCode): array {
 		$result = $this->driver->updateHomeLibrary($user, $homeLibraryCode);
 		if ($result['success']) {
 			$location = new Location();
 			$location->code = $homeLibraryCode;
 			if ($location->find(true)) {
-				$user->homeLocationId = $location->locationId;
+				if ($user->homeLocationId != $location->locationId) {
+					$user->__set('homeLocationId', $location->locationId);
+				}
 				$user->_homeLocationCode = $homeLibraryCode;
 				$user->_homeLocation = $location;
 				$user->update();
@@ -1679,6 +1680,10 @@ class CatalogConnection {
 	public function getWeedingReportData($location) {
 		return $this->driver->getWeedingReportData($location);
 	}
+	
+	public function getLibrarianFacebookData() {
+		return $this->driver->getLibrarianFacebookData();
+	}
 
 	/**
 	 * Loads any contact information that is not stored by Aspen Discovery from the ILS. Updates the user object.
@@ -1898,16 +1903,53 @@ class CatalogConnection {
 		return $this->driver->allowUpdatesOfPreferredName($patron);
 	}
 
-	public function hasIlsInbox(): bool {
-		return false;
+	public function supportAccountNotifications(): bool {
+		return $this->driver->supportAccountNotifications();
 	}
 
 	public function getMessageTypes(): array {
 		return $this->driver->getMessageTypes();
 	}
 
-	public function updateMessageQueue(): array {
-		return $this->driver->updateMessageQueue();
+	public function updateAccountNotifications(ILSNotificationSetting $ilsNotificationSetting): array {
+		if ($this->supportAccountNotifications()) {
+			//Get a list of all users that have account notifications turned on
+			require_once ROOT_DIR . '/sys/Account/UserNotificationToken.php';
+			$userNotificationToken = new UserNotificationToken();
+			$userNotificationToken->notifyAccount = 1;
+			$userNotificationToken->selectAdd();
+			$userNotificationToken->selectAdd('DISTINCT(userId)');
+			$userNotificationToken->find();
+			$result = [
+				'success' => true,
+				'message' => '',
+				'numUserUpdates' => 0,
+				'numFailedUserUpdates' => 0,
+				'numMessagesAdded' => 0,
+			];
+			while ($userNotificationToken->fetch()) {
+				$user = new User();
+				$user->id = $userNotificationToken->userId;
+				if ($user->find(true)) {
+					if ($user->canReceiveNotifications('notifyAccount')) {
+						$userResult = $this->driver->updateAccountNotifications($user, $ilsNotificationSetting);
+						if ($userResult['success']) {
+							$result['numUserUpdates']++;
+							$result['numMessagesAdded'] +=  $userResult['numMessagesAdded'];
+						} else {
+							$result['numFailedUserUpdates']++;
+							$result['success'] = false;
+						}
+					}
+				}
+			}
+			return $result;
+		}else{
+			return [
+				'success' => false,
+				'message' => 'This functionality has not been implemented for this ILS',
+			];
+		}
 	}
 
 	public function updateUserMessageQueue(User $patron): array {

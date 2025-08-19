@@ -654,8 +654,8 @@ class PortalCell extends DataObject {
 		return false;
 	}
 
-	public function delete($useWhere = false) : int {
-		$ret = parent::delete($useWhere);
+	public function delete($useWhere = false, $hardDelete = false) : int {
+		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret) {
 			//Reorder the rows on the page to remove the gap
 			$portalRow = new PortalRow();

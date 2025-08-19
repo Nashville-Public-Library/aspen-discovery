@@ -120,5 +120,19 @@
 0 6 * * * root php /usr/local/aspen-discovery/code/web/cron/sendCampaignEmails.php {sitename}
 0 6 * * * root php /usr/local/aspen-discovery/code/web/cron/sendCampaignEndingEmails.php {sitename}
 
+##########################################
+# Load Initial Reading History for Users #
+##########################################
+*/5 * * * * root php /usr/local/aspen-discovery/code/web/cron/loadInitialReadingHistory.php {sitename}
+
+#######################
+"# Fetch ILS Messages #
+#######################
+*/40 8-19 * * * root php /usr/local/aspen-discovery/code/web/cron/fetchILSMessages.php {sitename}
+
+#######################
+# Send ILS Messages  #
+#######################
+*/59 8-19` * * * root php /usr/local/aspen-discovery/code/web/cron/sendILSMessages.php {sitename}
 
 # Debian needs a blank line at the end of cron, make sure to add additional cron lines above this.

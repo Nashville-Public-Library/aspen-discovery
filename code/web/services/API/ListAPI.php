@@ -553,10 +553,11 @@ class ListAPI extends AbstractAPI {
 				}
 			}
 
-			$appVersion = null;
 			$isLida = $this->checkIfLiDA();
-			if($isLida) {
+			if ($isLida) {
 				$appVersion = $this->getLiDAVersion();
+			} else {
+				$appVersion = 0;
 			}
 
 			//if LiDA we don't want to include events list entries in the list count
@@ -1272,6 +1273,7 @@ class ListAPI extends AbstractAPI {
 	 * <li>username - The barcode of the user.  Can be truncated to the last 7 or 9 digits.</li>
 	 * <li>password - The pin number for the user. </li>
 	 * <li>id    - The id of the list to delete.</li>
+	 * <li>optOutOfSoftDeletion - Set to true to permanently delete the list instead of soft deletion (optional, defaults to false).</li>
 	 * </ul>
 	 *
 	 * Returns:
@@ -1281,7 +1283,7 @@ class ListAPI extends AbstractAPI {
 	 *
 	 * Sample Call:
 	 * <code>
-	 * https://aspenurl/API/ListAPI?method=deleteList&username=userbarcode&password=userpin&id=42
+	 * https://aspenurl/API/ListAPI?method=deleteList&username=userbarcode&password=userpin&id=42&optOutOfSoftDeletion=true
 	 * </code>
 	 *
 	 * Sample Response:
@@ -1310,7 +1312,8 @@ class ListAPI extends AbstractAPI {
 			if ($list->find(true)) {
 				$userCanEdit = $user->canEditList($list);
 				if ($userCanEdit) {
-					$list->delete();
+					$optOutOfSoftDeletion = !empty($_REQUEST['optOutOfSoftDeletion']) && filter_var($_REQUEST['optOutOfSoftDeletion'], FILTER_VALIDATE_BOOLEAN);
+					$list->delete(false, $optOutOfSoftDeletion);
 					return [
 						'success' => true,
 						'title' => translate(['text' => 'Success', 'isPublicFacing' => true]),

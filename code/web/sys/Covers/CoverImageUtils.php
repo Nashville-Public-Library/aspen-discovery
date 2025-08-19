@@ -1,38 +1,89 @@
 <?php
 
-function wrapTextForDisplay($font, $text, $fontSize, $lineSpacing, $maxWidth, $maxHeight = 0) {
-	if (empty($text)) {
-		return [
-			0,
-			[],
-			$fontSize,
-		];
+/**
+ * Wraps text to fit within a max width/height by adjusting font size and spacing.
+ *
+ * @param string $font Path to TTF font file.
+ * @param string $text Text to wrap.
+ * @param float $fontSize Starting font size in points.
+ * @param float $lineSpacing Spacing between lines (in pixels).
+ * @param int $maxWidth Max width in pixels.
+ * @param int $maxHeight Optional max height (0 = no limit).
+ *
+ * @return array{0: float, 1: string[], 2: float} Total height, array of lines, final font size.
+ */
+function wrapTextForDisplay(string $font, string $text, float $fontSize, float $lineSpacing, int $maxWidth, int $maxHeight = 0): array {
+	if (trim($text) === '') {
+		return [0, [], $fontSize];
 	}
-	//Get the total string length
-	$textBox = imageftbbox($fontSize, 0, $font, $text);
-	$totalTextWidth = abs($textBox[4] - $textBox[6]);
-	//Determine how many lines we will need to break the text into
-	$numLines = (float)$totalTextWidth / (float)$maxWidth;
-	$charactersPerLine = strlen($text) / $numLines;
-	//Wrap based on the number of lines
-	$lines = explode("\n", wordwrap($text, $charactersPerLine, "\n"));
 
-	$processLines = true;
-	while ($processLines) {
-		$processLines = $maxHeight > 0;
+	$maxAttempts = 20; // Replaced the potentially infinite loop; 20 should be sufficient.
+	// Determine if we should wrap by word (space-delimited scripts) or character (CJK).
+	$isSpaceDelimited = preg_match('/\p{Latin}|\p{Arabic}|\p{Cyrillic}|\p{Armenian}|\p{Hebrew}|\p{Georgian}|\p{Greek}/u', $text) && preg_match('/\s/u', $text);
+	$lines = [];
+	$totalHeight = 0;
+
+	for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+		$lines = [];
+		$currentLine = '';
+
+		if ($isSpaceDelimited) {
+			$words = preg_split('/\s+/u', $text);
+			foreach ($words as $word) {
+				$candidate = $currentLine === '' ? $word : $currentLine . ' ' . $word;
+				$bbox = imageftbbox($fontSize, 0, $font, $candidate);
+				$width = abs($bbox[4] - $bbox[6]);
+
+				if ($width > $maxWidth && $currentLine !== '') {
+					$lines[] = $currentLine;
+					$currentLine = $word;
+				} else {
+					$currentLine = $candidate;
+				}
+			}
+		}
+		else {
+			// Split the text into an array of individual Unicode characters.
+			$chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
+
+			foreach ($chars as $ch) {
+				$candidate = $currentLine . $ch;
+				// Measure how wide the current line would be with this added character.
+				$bbox = imageftbbox($fontSize, 0, $font, $candidate);
+				$candidateWidth = abs($bbox[4] - $bbox[6]);
+
+				// If the new line would exceed the allowed max width:
+				//  - Save the current line and start a new line with the character that caused the overflow.
+				//  - Else it is safe to add the character to the current line.
+				if ($candidateWidth > $maxWidth && $currentLine !== '') {
+					$lines[] = $currentLine;
+					$currentLine = $ch;
+				} else {
+					$currentLine = $candidate;
+				}
+			}
+
+		}
+		if ($currentLine !== '') {
+			$lines[] = $currentLine;
+		}
+
+		// Compute total height of wrapped lines.
 		$totalHeight = 0;
 		foreach ($lines as $line) {
-			//Get the width of this line
-			$lineBox = imageftbbox($fontSize, 0, $font, $line);
-			$lineHeight = abs($lineBox[3] - $lineBox[5]);
+			$bbox = imageftbbox($fontSize, 0, $font, $line);
+			$lineHeight = abs($bbox[3] - $bbox[5]);
 			$totalHeight += $lineHeight + $lineSpacing;
 		}
-		if ($processLines && $totalHeight > $maxHeight) {
-			$fontSize *= .95;
-			$lineSpacing *= 0.95;
-		} else {
+
+		// If it fits, break.
+		if ($maxHeight === 0 || $totalHeight <= $maxHeight) {
 			break;
 		}
+
+		// Otherwise, shrink and try again.
+		$fontSize *= 0.95;
+		$lineSpacing *= 0.95;
 	}
 
 	return [
@@ -96,6 +147,7 @@ function _clip($value, $lower, $upper) {
 }
 
 function formatImageUpload($uploadedFile, $destFullPath, $id, $recordType){
+	$result = ['success' => false];
 	$fileType = $uploadedFile["type"];
 	if ($fileType == 'image/png') {
 		if (copy($uploadedFile["tmp_name"], $destFullPath)) {

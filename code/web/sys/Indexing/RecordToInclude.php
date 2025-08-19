@@ -56,14 +56,9 @@ class RecordToInclude extends DataObject {
 	public $weight;
 
 	static function getObjectStructure($context = ''): array {
-		$indexingProfiles = [];
 		require_once ROOT_DIR . '/sys/Indexing/IndexingProfile.php';
-		$indexingProfile = new IndexingProfile();
-		$indexingProfile->orderBy('name');
-		$indexingProfile->find();
-		while ($indexingProfile->fetch()) {
-			$indexingProfiles[$indexingProfile->id] = $indexingProfile->name;
-		}
+		$indexingProfiles = IndexingProfile::getAllIndexingProfilesById();
+
 		return [
 			'id' => [
 				'property' => 'id',
@@ -97,7 +92,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Location (Regex)',
 				'description' => 'A regular expression for location codes to include',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -115,7 +110,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Sub Location (Regex)',
 				'description' => 'A regular expression for sublocation codes to include',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -133,7 +128,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'iType (Regex)',
 				'description' => 'A regular expression for item types to include',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -142,7 +137,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'iTypes to Exclude (Regex)',
 				'description' => 'A regular expression for item types to exclude',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -151,7 +146,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Audience (Regex)',
 				'description' => 'A regular expression for audiences to include',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -160,7 +155,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Audiences to Exclude (Regex)',
 				'description' => 'A regular expression for audiences to exclude',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -169,7 +164,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Format (Regex)',
 				'description' => 'A regular expression for formats to include',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -178,7 +173,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Formats to Exclude (Regex)',
 				'description' => 'A regular expression for formats to exclude',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -187,7 +182,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Shelf Location (Regex)',
 				'description' => 'A regular expression for shelf locations to include',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -196,7 +191,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Shelf Locations to Exclude (Regex)',
 				'description' => 'A regular expression for shelf locations to exclude',
-				'maxLength' => '500',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -205,7 +200,7 @@ class RecordToInclude extends DataObject {
 				'type' => 'regularExpression',
 				'label' => 'Collection Code (Regex)',
 				'description' => 'A regular expression for collection codes to include',
-				'maxLength' => '100',
+				'maxLength' => '250',
 				'required' => false,
 				'forcesReindex' => true,
 			],
@@ -221,24 +216,24 @@ class RecordToInclude extends DataObject {
 			'includeHoldableOnly' => [
 				'property' => 'includeHoldableOnly',
 				'type' => 'checkbox',
-				'label' => 'Include Holdable Only',
-				'description' => 'Whether or not non-holdable records are included',
-				'default' => false,
+				'label' => 'Include Holdable Items Only',
+				'description' => 'Whether or not non-holdable records are included.',
+				'default' => 0,
 				'forcesReindex' => true,
 			],
 			'includeItemsOnOrder' => [
 				'property' => 'includeItemsOnOrder',
 				'type' => 'checkbox',
-				'label' => 'Include Items On Order',
-				'description' => 'Whether or not order records are included',
+				'label' => 'Include On-Order Items',
+				'description' => 'Whether or not on-order records are included.',
 				'default' => 1,
 				'forcesReindex' => true,
 			],
 			'includeEContent' => [
 				'property' => 'includeEContent',
 				'type' => 'checkbox',
-				'label' => 'Include e-content Items',
-				'description' => 'Whether or not e-Content should be included',
+				'label' => 'Include E-Content Items',
+				'description' => 'Whether or not e-content should be included.',
 				'default' => 1,
 				'forcesReindex' => true,
 			],
