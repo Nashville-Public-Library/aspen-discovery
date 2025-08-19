@@ -830,17 +830,8 @@ if (!$isAJAX) {
 			$librarySystemMessage->setPreFormattedMessage($library->systemMessage);
 			$systemMessages[] = $librarySystemMessage;
 		}
-		$customSystemMessage = new SystemMessage();
-		$now = time();
-		$customSystemMessage->showOn = 0;
-		$customSystemMessage->whereAdd("startDate = 0 OR startDate <= $now");
-		$customSystemMessage->whereAdd("endDate = 0 OR endDate > $now");
-		$customSystemMessage->find();
-		while ($customSystemMessage->fetch()) {
-			if ($customSystemMessage->isValidForDisplay()) {
-				$systemMessages[] = clone $customSystemMessage;
-			}
-		}
+		$systemMessages = SystemMessage::getActiveSystemMessages();
+
 		$interface->assign('systemMessages', $systemMessages);
 	} catch (Exception $e) {
 		//This happens when system message table hasn't been added. Ignore
