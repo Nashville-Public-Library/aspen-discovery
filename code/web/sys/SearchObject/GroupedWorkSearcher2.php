@@ -401,7 +401,7 @@ class SearchObject_GroupedWorkSearcher2 extends SearchObject_AbstractGroupedWork
 			$location = new Location();
 			$numLocations = $location->count();
 			$sideload = new Sideload();
-			$numLocations = $numLocations + $sideload->count();
+			$numLocations = $numLocations + $sideload->count() + 10;
 			$this->facetOptions["f.format.facet.limit"] = $numFormats;
 			$this->facetOptions["f.available_at.facet.limit"] = $numLocations;
 			$this->facetOptions["f.owning_location.facet.limit"] = $numLocations;
@@ -883,9 +883,6 @@ class SearchObject_GroupedWorkSearcher2 extends SearchObject_AbstractGroupedWork
 						} elseif (!is_null($additionalAvailableAtLocations) && in_array($facetValue, $additionalAvailableAtLocations)) {
 							$valueKey = '3' . $valueKey;
 							$numValidRelatedLocations++;
-						} elseif ($numValidRelatedLocations > 30) {
-							$valueKey = '5' . $valueKey;
-							$numValidRelatedLocations++;
 						} else {
 							$valueKey = '4' . $valueKey;
 							$numValidRelatedLocations++;
@@ -938,10 +935,6 @@ class SearchObject_GroupedWorkSearcher2 extends SearchObject_AbstractGroupedWork
 
 			if ($doBranchProcessing || $doInstitutionProcessing) {
 				ksort($list[$field]['list']);
-			}
-
-			if ($field == 'available_at' || $field == 'owning_location') {
-				$list[$field]['list'] = array_slice($list[$field]['list'], 0, 30, true);
 			}
 
 			//How many facets should be shown by default
