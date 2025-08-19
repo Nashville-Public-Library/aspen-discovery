@@ -402,7 +402,6 @@ class UInterface extends Smarty {
 				$this->assign('extendedTheme', $theme->extendsTheme);
 			}
 
-			$this->assign('parentTheme', $theme->getParentTheme());
 			$this->assign('fullWidthTheme', $theme->fullWidth);
 			$this->assign('coverStyle', $theme->coverStyle);
 
