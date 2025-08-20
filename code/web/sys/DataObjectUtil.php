@@ -457,9 +457,8 @@ class DataObjectUtil {
 				$object->setProperty($propertyName, $_REQUEST["{$propertyName}_existing"], $property);
 			} elseif (isset($_FILES[$propertyName])) {
 				if ($_FILES[$propertyName]["error"] > 0) {
-					if ($_FILES[$propertyName]["error"] != UPLOAD_ERR_NO_FILE) {
-						$logger->log("Error uploading file: " . $_FILES[$propertyName]["error"], Logger::LOG_ERROR);
-					}
+					//return an error to the browser
+					$logger->log("Error uploading file " . $_FILES[$propertyName]["error"], Logger::LOG_ERROR);
 				} elseif (true) { //TODO: validate the file type
 					if (array_key_exists('validTypes', $property)) {
 						$fileType = $_FILES[$propertyName]["type"];
@@ -521,9 +520,8 @@ class DataObjectUtil {
 				$object->setProperty($propertyName, $_REQUEST["{$propertyName}_existing"], $property);
 			} elseif (isset($_FILES[$propertyName])) {
 				if ($_FILES[$propertyName]["error"] > 0) {
-					if ($_FILES[$propertyName]["error"] != UPLOAD_ERR_NO_FILE) {
-						$logger->log("Error uploading file: " . $_FILES[$propertyName]["error"], Logger::LOG_ERROR);
-					}
+					//return an error to the browser
+					$logger->log("Error uploading file " . $_FILES[$propertyName]["error"], Logger::LOG_ERROR);
 				} elseif (true) { //TODO: validate the file type
 					//Copy the full image to the correct location
 					//Filename is the name of the object + the original filename
