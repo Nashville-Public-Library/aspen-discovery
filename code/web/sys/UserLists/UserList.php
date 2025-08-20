@@ -1103,23 +1103,28 @@ class UserList extends DataObject {
 		return $userLists;
 	}
 
+	static $libraryIdsForUsers = [];
+
 	private function getOwningLibraryId() {
-		$owningUser = new User();
-		$owningUser->selectAdd();
-		$owningUser->selectAdd('homeLocationId');
-		$owningUser->selectAdd('libraryId');
-		$location = new Location();
-		$location->selectAdd();
-		$location->selectAdd('libraryId');
-		$location->selectAdd('locationId');
-		$owningUser->joinAdd($location, 'LEFT', 'userLocation', 'homeLocationId', 'locationId');
-		$owningUser->id = $this->user_id;
-		if ($owningUser->find(true)) {
-			/** @noinspection PhpUndefinedFieldInspection */
-			return $owningUser->libraryId;
-		}else{
-			return -1;
+		if (!isset(self::$libraryIdsForUsers[$this->user_id])){
+			$owningUser = new User();
+			$owningUser->selectAdd();
+			$owningUser->selectAdd('homeLocationId');
+			$owningUser->selectAdd('libraryId');
+			$location = new Location();
+			$location->selectAdd();
+			$location->selectAdd('libraryId');
+			$location->selectAdd('locationId');
+			$owningUser->joinAdd($location, 'LEFT', 'userLocation', 'homeLocationId', 'locationId');
+			$owningUser->id = $this->user_id;
+			if ($owningUser->find(true)) {
+				/** @noinspection PhpUndefinedFieldInspection */
+				self::$libraryIdsForUsers[$this->user_id] = $owningUser->libraryId;
+			}else{
+				self::$libraryIdsForUsers[$this->user_id] = -1;
+			}
 		}
+		return self::$libraryIdsForUsers[$this->user_id];
 	}
 
 	private function getOwningLocationId() : int {
