@@ -316,7 +316,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		if (isset ($this->_triggers) && is_array($this->_triggers)) {
 			/** @var PlacardTrigger $trigger */
 			foreach ($this->_triggers as $trigger) {
-				if ($trigger->_deleteOnSave == true) {
+				if ($trigger->_deleteOnSave) {
 					$trigger->delete();
 				} else {
 					if (isset($trigger->id) && is_numeric($trigger->id)) {
@@ -332,7 +332,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	}
 
 	/**
-	 * @return PlacardTrigger[]
+	 * @return PlacardTrigger[]|null
 	 */
 	public function getTriggers(): ?array {
 		if (!isset($this->_triggers) && $this->id) {
@@ -349,7 +349,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	}
 
 	/**
-	 * @return int[]
+	 * @return int[]|null
 	 */
 	public function getLanguages(): ?array {
 		if (!isset($this->_languages) && $this->id) {
@@ -364,7 +364,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $this->_languages;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Placards'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -384,7 +384,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Placards'));
 			foreach ($locationList as $locationId => $displayName) {
@@ -404,7 +404,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveLanguages() {
+	public function saveLanguages() : void {
 		if (isset ($this->_languages) && is_array($this->_languages)) {
 			$languageList = Language::getLanguageList();
 			foreach ($languageList as $languageId => $displayName) {
@@ -424,14 +424,14 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function isDismissed() {
+	public function isDismissed() : bool {
 		require_once ROOT_DIR . '/sys/LocalEnrichment/PlacardDismissal.php';
 		//Make sure the user has not dismissed the placard
 		if (UserAccount::isLoggedIn()) {
 			$placardDismissal = new PlacardDismissal();
 			$placardDismissal->placardId = $this->id;
 			$placardDismissal->userId = UserAccount::getActiveUserId();
-			if ($placardDismissal->find(true)) {
+			if ($placardDismissal->count() == 1) {
 				//The placard has been dismissed
 				return true;
 			}
@@ -439,7 +439,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return false;
 	}
 
-	public function isValidForScope() {
+	public function isValidForScope() : bool {
 		global $library;
 		global $locationSingleton;
 		$location = $locationSingleton->getActiveLocation();
@@ -464,7 +464,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $placardLibrary->find(true);
 	}
 
-	public function isValidForDisplay() {
+	public function isValidForDisplay() : bool {
 		$curTime = time();
 		if ($this->startDate != 0 && $this->startDate > $curTime) {
 			return false;
@@ -542,7 +542,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $result;
 	}
 
-	public function loadCopyableSubObjects() {
+	public function loadCopyableSubObjects() : void {
 		$this->getTriggers();
 		$index = -1;
 		foreach ($this->_triggers as $subObject) {
@@ -552,7 +552,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		$this->getLanguages();
 	}
 
-	private function compareLinkedObject() {
+	private function compareLinkedObject() : void {
 		if ($this->sourceType == 'web_resource') {
 			require_once ROOT_DIR . '/sys/WebBuilder/WebResource.php';
 			$webResource = new WebResource();
@@ -570,4 +570,58 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	public function supportsSoftDelete(): bool {
 		return true;
 	}
+
+	/**
+	 * @param string $triggerWord
+	 * @return Placard|null
+	 */
+	public static function getPlacardForTriggerWord(string $triggerWord) : ?Placard {
+		$trigger = new PlacardTrigger();
+		$escapedWord = $trigger->escape($triggerWord);
+		$trigger->whereAdd("CASE WHEN exactMatch = 0 THEN $escapedWord like concat('%', triggerWord, '%') ELSE $escapedWord = triggerWord END");
+		$trigger->selectAdd();
+		$trigger->selectAdd('placard_trigger.*');
+		//Pre-filter for date and scope
+		$placard = new Placard();
+		$now = time();
+		$placard->whereAdd("startDate = 0 OR startDate <= $now");
+		$placard->whereAdd("endDate = 0 OR endDate > $now");
+		global $locationSingleton;
+		global $library;
+		$location = $locationSingleton->getActiveLocation();
+		if ($location != null) {
+			$placardLocation = new PlacardLocation();
+			$placardLocation->locationId = $locationSingleton->locationId;
+			$placard->joinAdd($placardLocation, 'INNER', 'placardLocation', 'id', 'placardId');
+		}else{
+			$placardLibrary = new PlacardLibrary();
+			$placardLibrary->libraryId = $library->libraryId;
+			$placard->joinAdd($placardLibrary, 'INNER', 'placardLibrary', 'id', 'placardId');
+		}
+		//also check language
+		global $activeLanguage;
+		$placardLanguage = new PlacardLanguage();
+		$placardLanguage->languageId = $activeLanguage->id;
+		$placard->joinAdd($placardLanguage, 'INNER', 'placardLanguage', 'id', 'placardId');
+
+		$trigger->joinAdd($placard, 'INNER', 'placard', 'placardId', 'id');
+		$trigger->find();
+		$placardToDisplay = null;
+		while ($trigger->fetch()) {
+			$placardToDisplay = new Placard();
+			$placardToDisplay->id = $trigger->placardId;
+			if ($placardToDisplay->find(true)) {
+				if ($placardToDisplay->isDismissed()) {
+					$placardToDisplay = null;
+				}
+			} else {
+				$placardToDisplay = null;
+			}
+			if ($placardToDisplay != null) {
+				break;
+			}
+		}
+		return $placardToDisplay;
+	}
+
 }

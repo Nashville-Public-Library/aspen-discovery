@@ -6188,7 +6188,7 @@ class User extends DataObject {
 	}
 
 	private function loadYearInReviewInfo(): void {
-		if ($this->_hasYearInReview == null) {
+		if ($this->_hasYearInReview === null) {
 			$this->_hasYearInReview = false;
 			$this->_yearInReviewResults = false;
 			$this->_yearInReviewSetting = false;

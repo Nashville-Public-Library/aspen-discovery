@@ -1,6 +1,6 @@
 <?php
 
-function mergeItemSummary($localCopies, $itemSummary) {
+function mergeItemSummary(array $localCopies, array $itemSummary) : array {
 	foreach ($itemSummary as $key => $item) {
 		if (isset($localCopies[$key])) {
 			$localCopies[$key]['totalCopies'] += $item['totalCopies'];

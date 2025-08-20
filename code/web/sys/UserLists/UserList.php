@@ -1014,111 +1014,117 @@ class UserList extends DataObject {
 		$userListEntry = new UserListEntry();
 		$userListEntry->source = $source;
 		$userListEntry->sourceId = $sourceId;
-		$userListEntry->find();
-		while ($userListEntry->fetch()) {
-			//Check to see if the user has access to the list
-			$userList = new UserList();
-			$userList->id = $userListEntry->listId;
-			if ($userList->find(true)) {
-				$okToShow = false;
-				$key = '';
-				if (!$userList->deleted) {
-					if (UserAccount::isLoggedIn() && UserAccount::getActiveUserId() == $userList->user_id) {
-						$okToShow = true;
-						$key = 0 . strtolower($userList->title);
-					} elseif ($userList->public == 1 && $userList->searchable == 1) {
-						//Check restrictions for this list to be sure we should show it in this interface
-						$ownedByLibrary = false;
-						if ($searchLocation != null) {
-							if ($searchLocation->publicListsToInclude == 0) {
-								//Include no lists
-								/** @noinspection PhpConditionAlreadyCheckedInspection */
-								$okToShow = false;
-							}elseif ($searchLocation->publicListsToInclude == 2) {
-								//Lists from this location (no NYT)
-								$owningLocationId = $userList->getOwningLocationId();
-								$okToShow = $owningLocationId == $searchLocation->locationId;
-								$ownedByLibrary = $owningLocationId == $searchLocation->locationId;
-							}elseif ($searchLocation->publicListsToInclude == 5) {
-								//Lists from list publishers at this location Only (includes NYT)
-								$owningLocationId = $userList->getOwningLocationId();
-								$okToShow = $owningLocationId == null || $owningLocationId == -1 || $owningLocationId == $searchLocation->locationId;
-								$ownedByLibrary = $owningLocationId == $searchLocation->locationId;
-							}elseif ($searchLocation->publicListsToInclude == 1) {
-								//Lists from this library (no NYT)
-								$owningLibraryId = $userList->getOwningLibraryId();
-								$okToShow = $owningLibraryId == $searchLibrary->libraryId;
-								$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
-							}elseif ($searchLocation->publicListsToInclude == 4) {
-								//Lists from library list publishers Only (includes NYT)
-								$owningLibraryId = $userList->getOwningLibraryId();
-								$okToShow = $owningLibraryId == null || $owningLibraryId == -1 || $owningLibraryId == $searchLibrary->libraryId;
-								$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
-							}elseif ($searchLocation->publicListsToInclude == 3 || $searchLocation->publicListsToInclude == 6) {
-								//All lists
-								$owningLibraryId = $userList->getOwningLibraryId();
-								$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
-								$okToShow = true;
-							}
-						}else{
-							if ($searchLibrary->publicListsToInclude == 0) {
-								//Include no lists
-								/** @noinspection PhpConditionAlreadyCheckedInspection */
-								$okToShow = false;
-							}else if ($searchLibrary->publicListsToInclude == 1) {
-								//Lists from this library (no NYT)
-								$owningLibraryId = $userList->getOwningLibraryId();
-								$okToShow = $owningLibraryId == $searchLibrary->libraryId;
-								$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
-							}else if ($searchLibrary->publicListsToInclude == 3) {
-								//Lists from this library (includes NYT)
-								$owningLibraryId = $userList->getOwningLibraryId();
-								$okToShow = $owningLibraryId == null || $owningLibraryId == -1 || $owningLibraryId == $searchLibrary->libraryId;
-								$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
-							}else if ($searchLibrary->publicListsToInclude == 2 || $searchLibrary->publicListsToInclude == 4) {
-								//All Lists (these 2 options are equivalent since we restrict to only searchable lists)
-								$owningLibraryId = $userList->getOwningLibraryId();
-								$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
-								$okToShow = true;
-							}
-						}
-						if ($ownedByLibrary) {
-							$key = 1 . strtolower($userList->title);
-						}else{
-							$key = 2 . strtolower($userList->title);
-						}
+		$userListIds = $userListEntry->fetchAll('listId', 'listId');
 
+		//Check to see if the user has access to the list
+		$userList = new UserList();
+		$userList->whereAddIn('id', $userListIds, false);
+		$userList->find();
+		while ($userList->fetch()) {
+			$okToShow = false;
+			$key = '';
+			if (!$userList->deleted) {
+				if (UserAccount::isLoggedIn() && UserAccount::getActiveUserId() == $userList->user_id) {
+					$okToShow = true;
+					$key = 0 . strtolower($userList->title);
+				} elseif ($userList->public == 1 && $userList->searchable == 1) {
+					//Check restrictions for this list to be sure we should show it in this interface
+					$ownedByLibrary = false;
+					if ($searchLocation != null) {
+						if ($searchLocation->publicListsToInclude == 0) {
+							//Include no lists
+							/** @noinspection PhpConditionAlreadyCheckedInspection */
+							$okToShow = false;
+						}elseif ($searchLocation->publicListsToInclude == 2) {
+							//Lists from this location (no NYT)
+							$owningLocationId = $userList->getOwningLocationId();
+							$okToShow = $owningLocationId == $searchLocation->locationId;
+							$ownedByLibrary = $owningLocationId == $searchLocation->locationId;
+						}elseif ($searchLocation->publicListsToInclude == 5) {
+							//Lists from list publishers at this location Only (includes NYT)
+							$owningLocationId = $userList->getOwningLocationId();
+							$okToShow = $owningLocationId == null || $owningLocationId == -1 || $owningLocationId == $searchLocation->locationId;
+							$ownedByLibrary = $owningLocationId == $searchLocation->locationId;
+						}elseif ($searchLocation->publicListsToInclude == 1) {
+							//Lists from this library (no NYT)
+							$owningLibraryId = $userList->getOwningLibraryId();
+							$okToShow = $owningLibraryId == $searchLibrary->libraryId;
+							$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
+						}elseif ($searchLocation->publicListsToInclude == 4) {
+							//Lists from library list publishers Only (includes NYT)
+							$owningLibraryId = $userList->getOwningLibraryId();
+							$okToShow = $owningLibraryId == null || $owningLibraryId == -1 || $owningLibraryId == $searchLibrary->libraryId;
+							$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
+						}elseif ($searchLocation->publicListsToInclude == 3 || $searchLocation->publicListsToInclude == 6) {
+							//All lists
+							$owningLibraryId = $userList->getOwningLibraryId();
+							$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
+							$okToShow = true;
+						}
+					}else{
+						if ($searchLibrary->publicListsToInclude == 0) {
+							//Include no lists
+							/** @noinspection PhpConditionAlreadyCheckedInspection */
+							$okToShow = false;
+						}else if ($searchLibrary->publicListsToInclude == 1) {
+							//Lists from this library (no NYT)
+							$owningLibraryId = $userList->getOwningLibraryId();
+							$okToShow = $owningLibraryId == $searchLibrary->libraryId;
+							$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
+						}else if ($searchLibrary->publicListsToInclude == 3) {
+							//Lists from this library (includes NYT)
+							$owningLibraryId = $userList->getOwningLibraryId();
+							$okToShow = $owningLibraryId == null || $owningLibraryId == -1 || $owningLibraryId == $searchLibrary->libraryId;
+							$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
+						}else if ($searchLibrary->publicListsToInclude == 2 || $searchLibrary->publicListsToInclude == 4) {
+							//All Lists (these 2 options are equivalent since we restrict to only searchable lists)
+							$owningLibraryId = $userList->getOwningLibraryId();
+							$ownedByLibrary = $owningLibraryId == $searchLibrary->libraryId;
+							$okToShow = true;
+						}
 					}
-				}
-				if ($okToShow) {
-					$userLists[$key] = [
-						'link' => '/MyAccount/MyList/' . $userList->id,
-						'title' => $userList->title,
-					];
+					if ($ownedByLibrary) {
+						$key = 1 . strtolower($userList->title);
+					}else{
+						$key = 2 . strtolower($userList->title);
+					}
+
 				}
 			}
+			if ($okToShow) {
+				$userLists[$key] = [
+					'link' => '/MyAccount/MyList/' . $userList->id,
+					'title' => $userList->title,
+				];
+			}
 		}
+
 		ksort($userLists);
 		return $userLists;
 	}
 
+	static $libraryIdsForUsers = [];
+
 	private function getOwningLibraryId() {
-		$owningUser = new User();
-		$owningUser->selectAdd();
-		$owningUser->selectAdd('homeLocationId');
-		$owningUser->selectAdd('libraryId');
-		$location = new Location();
-		$location->selectAdd();
-		$location->selectAdd('libraryId');
-		$location->selectAdd('locationId');
-		$owningUser->joinAdd($location, 'LEFT', 'userLocation', 'homeLocationId', 'locationId');
-		$owningUser->id = $this->user_id;
-		if ($owningUser->find(true)) {
-			/** @noinspection PhpUndefinedFieldInspection */
-			return $owningUser->libraryId;
-		}else{
-			return -1;
+		if (!isset(self::$libraryIdsForUsers[$this->user_id])){
+			$owningUser = new User();
+			$owningUser->selectAdd();
+			$owningUser->selectAdd('homeLocationId');
+			$owningUser->selectAdd('libraryId');
+			$location = new Location();
+			$location->selectAdd();
+			$location->selectAdd('libraryId');
+			$location->selectAdd('locationId');
+			$owningUser->joinAdd($location, 'LEFT', 'userLocation', 'homeLocationId', 'locationId');
+			$owningUser->id = $this->user_id;
+			if ($owningUser->find(true)) {
+				/** @noinspection PhpUndefinedFieldInspection */
+				self::$libraryIdsForUsers[$this->user_id] = $owningUser->libraryId;
+			}else{
+				self::$libraryIdsForUsers[$this->user_id] = -1;
+			}
 		}
+		return self::$libraryIdsForUsers[$this->user_id];
 	}
 
 	private function getOwningLocationId() : int {

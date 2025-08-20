@@ -1,5 +1,4 @@
-<?php
-
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class PlacardTrigger extends DataObject {
 	public $__table = 'placard_trigger';
@@ -8,6 +7,7 @@ class PlacardTrigger extends DataObject {
 	public $triggerWord;
 	public $exactMatch;
 
+	/** @noinspection PhpUnusedParameterInspection */
 	static function getObjectStructure($context = ''): array {
 		return [
 			'id' => [

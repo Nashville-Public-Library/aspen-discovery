@@ -175,9 +175,8 @@ class UInterface extends Smarty {
 			$this->assign('ie8', $ie8);
 		}
 
-		$session = new Session();
-		$session->session_id = session_id();
-		if ($session->find(true)) {
+		global $session;
+		if (!empty($session->id)) {
 			$this->assign('session', session_id() . ', remember me ' . $session->remember_me);
 		} else {
 			$this->assign('session', session_id() . ' - not saved');
@@ -403,7 +402,6 @@ class UInterface extends Smarty {
 				$this->assign('extendedTheme', $theme->extendsTheme);
 			}
 
-			$this->assign('parentTheme', $theme->getParentTheme());
 			$this->assign('fullWidthTheme', $theme->fullWidth);
 			$this->assign('coverStyle', $theme->coverStyle);
 
@@ -562,42 +560,40 @@ class UInterface extends Smarty {
 					require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippetLocation.php';
 					$javascriptSnippetLocation = new JavaScriptSnippetLocation();
 					$javascriptSnippetLocation->locationId = $location->locationId;
-					$javascriptSnippetLocation->find();
-					while ($javascriptSnippetLocation->fetch()) {
-						require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippet.php';
-						$javascriptSnippet = new JavaScriptSnippet();
-						$javascriptSnippet->id = $javascriptSnippetLocation->javascriptSnippetId;
-						if ($javascriptSnippet->find(true)) {
-							if (empty($library->cookieStorageConsent) ||
-								(!empty($library->cookieStorageConsent) && empty($javascriptSnippet->containsAnalyticsCookies)) ||
-								(!empty($library->cookieStorageConsent) && !empty($javascriptSnippet->containsAnalyticsCookies) && $analyticsPref == 1)
-							) {
-								if (strlen($customJavascript) > 0) {
-									$customJavascript .= "\n";
-								}
-								$customJavascript .= trim($javascriptSnippet->snippet);
+					$javaScriptSnippetIds = $javascriptSnippetLocation->fetchAll('javascriptSnippetId', 'javascriptSnippetId');
+					require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippet.php';
+					$javascriptSnippet = new JavaScriptSnippet();
+					$javascriptSnippet->whereAddIn('id', $javaScriptSnippetIds, false);
+					$javascriptSnippet->find();
+					while ($javascriptSnippet->fetch()) {
+						if (empty($library->cookieStorageConsent) ||
+							(!empty($library->cookieStorageConsent) && empty($javascriptSnippet->containsAnalyticsCookies)) ||
+							(!empty($library->cookieStorageConsent) && !empty($javascriptSnippet->containsAnalyticsCookies) && $analyticsPref == 1)
+						) {
+							if (strlen($customJavascript) > 0) {
+								$customJavascript .= "\n";
 							}
+							$customJavascript .= trim($javascriptSnippet->snippet);
 						}
 					}
 				} else {
 					require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippetLibrary.php';
 					$javascriptSnippetLibrary = new JavaScriptSnippetLibrary();
 					$javascriptSnippetLibrary->libraryId = $library->libraryId;
-					$javascriptSnippetLibrary->find();
-					while ($javascriptSnippetLibrary->fetch()) {
-						require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippet.php';
-						$javascriptSnippet = new JavaScriptSnippet();
-						$javascriptSnippet->id = $javascriptSnippetLibrary->javascriptSnippetId;
-						if ($javascriptSnippet->find(true)) {
-							if (empty($library->cookieStorageConsent) ||
-								(!empty($library->cookieStorageConsent) && empty($javascriptSnippet->containsAnalyticsCookies)) ||
-								(!empty($library->cookieStorageConsent) && !empty($javascriptSnippet->containsAnalyticsCookies) && $analyticsPref == 1)
-							) {
-								if (strlen($customJavascript) > 0) {
-									$customJavascript .= "\n";
-								}
-								$customJavascript .= trim($javascriptSnippet->snippet);
+					$javaScriptSnippetIds = $javascriptSnippetLibrary->fetchAll('javascriptSnippetId', 'javascriptSnippetId');
+					require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippet.php';
+					$javascriptSnippet = new JavaScriptSnippet();
+					$javascriptSnippet->whereAddIn('id', $javaScriptSnippetIds, false);
+					$javascriptSnippet->find();
+					while ($javascriptSnippet->fetch()) {
+						if (empty($library->cookieStorageConsent) ||
+							(!empty($library->cookieStorageConsent) && empty($javascriptSnippet->containsAnalyticsCookies)) ||
+							(!empty($library->cookieStorageConsent) && !empty($javascriptSnippet->containsAnalyticsCookies) && $analyticsPref == 1)
+						) {
+							if (strlen($customJavascript) > 0) {
+								$customJavascript .= "\n";
 							}
+							$customJavascript .= trim($javascriptSnippet->snippet);
 						}
 					}
 				}
