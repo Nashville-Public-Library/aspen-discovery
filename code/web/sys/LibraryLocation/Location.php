@@ -1788,8 +1788,9 @@ class Location extends DataObject {
 					//get the main location for the library or if there isn't one, get the first
 					global $library;
 					//Locations for the library are sorted by main branch first and then name, we just need the first one
-					if (count($library->getLocations()) > 0) {
-						Location::$_defaultLocationForUser = reset($library->getLocations());
+					$locationsForLibrary = $library->getLocations();
+					if (count($locationsForLibrary) > 0) {
+						Location::$_defaultLocationForUser = reset($locationsForLibrary);
 					} else {
 						//There isn't anything to tie it to, leave it null
 					}
