@@ -4723,7 +4723,7 @@ class Library extends DataObject {
 	}
 
 	static function getLibraryForLocation($locationId) : ?Library {
-		if (isset($locationId)) {
+		if (isset($locationId) && $locationId > 0) {
 			$libLookup = new Library();
 			$libLookup->whereAdd('libraryId = (SELECT libraryId FROM location WHERE locationId = ' . $libLookup->escape($locationId) . ')');
 			$libLookup->find();
@@ -5798,20 +5798,24 @@ class Library extends DataObject {
 		return $this->_materialsRequestFormats;
 	}
 
+	private $_locations = null;
 	/**
 	 * @return Location[]
 	 */
 	public function getLocations(): array {
-		$locations = [];
-		$location = new Location();
-		$location->orderBy('isMainBranch desc');
-		$location->orderBy('displayName');
-		$location->libraryId = $this->libraryId;
-		$location->find();
-		while ($location->fetch()) {
-			$locations[$location->locationId] = clone($location);
+		if ($this->_locations == null) {
+			$locations = [];
+			$location = new Location();
+			$location->orderBy('isMainBranch desc');
+			$location->orderBy('displayName');
+			$location->libraryId = $this->libraryId;
+			$location->find();
+			while ($location->fetch()) {
+				$locations[$location->locationId] = clone($location);
+			}
+			$this->_locations = $locations;
 		}
-		return $locations;
+		return $this->_locations;
 	}
 
 	/**

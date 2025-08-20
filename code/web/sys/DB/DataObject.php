@@ -142,6 +142,7 @@ abstract class DataObject implements JsonSerializable {
 		}
 
 		global $timer;
+		$startTime = hrtime(true);
 		$query = $this->getSelectQuery($aspen_db);
 		$this->__lastQuery = $query;
 		$this->__queryStmt = $aspen_db->prepare($query, [PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY]);
@@ -178,7 +179,7 @@ abstract class DataObject implements JsonSerializable {
 		}
 		if (IPAddress::logAllQueries()) {
 			global $logger;
-			$logger->log($query, Logger::LOG_ERROR);
+			$logger->log('(' . str_pad((string)(hrtime(true) - $startTime)/100, 8, ' ', STR_PAD_LEFT) . ") $query", Logger::LOG_ERROR);
 		}
 		$timer->logTime($query);
 		return $this->__N > 0;
@@ -400,6 +401,7 @@ abstract class DataObject implements JsonSerializable {
 			}
 		}
 		$insertQuery .= '(' . $propertyNames . ') VALUES (' . $propertyValues . ');';
+		$startTime = hrtime(true);
 		try {
 			$response = $aspen_db->exec($insertQuery);
 		} catch (PDOException $e) {
@@ -413,7 +415,7 @@ abstract class DataObject implements JsonSerializable {
 		global $timer;
 		if (IPAddress::logAllQueries()) {
 			global $logger;
-			$logger->log($insertQuery, Logger::LOG_ERROR);
+			$logger->log('(' . str_pad((string)(hrtime(true) - $startTime)/100, 8, ' ', STR_PAD_LEFT) . ") $insertQuery", Logger::LOG_ERROR);
 		}
 		$timer->logTime($insertQuery);
 		$this->{$this->__primaryKey} = $aspen_db->lastInsertId();
@@ -519,6 +521,7 @@ abstract class DataObject implements JsonSerializable {
 		}
 		$updateQuery .= ' SET ' . $updates . ' WHERE ' . $primaryKey . ' = ' . $aspen_db->quote($this->$primaryKey);
 		$this->__lastQuery = $updateQuery;
+		$startTime = hrtime(true);
 		try {
 			$response = $aspen_db->exec($updateQuery);
 		} catch (PDOException $e) {
@@ -532,7 +535,7 @@ abstract class DataObject implements JsonSerializable {
 		global $timer;
 		if (IPAddress::logAllQueries()) {
 			global $logger;
-			$logger->log($updateQuery, Logger::LOG_ERROR);
+			$logger->log('(' . str_pad((string)(hrtime(true) - $startTime)/100, 8, ' ', STR_PAD_LEFT) . ") $updateQuery", Logger::LOG_ERROR);
 		}
 		$timer->logTime($updateQuery);
 		
@@ -581,11 +584,12 @@ abstract class DataObject implements JsonSerializable {
 		}
 		$this->__lastQuery = $deleteQuery;
 
+		$startTime = hrtime(true);
 		$result = $aspen_db->exec($deleteQuery);
 		global $timer;
 		if (IPAddress::logAllQueries()) {
 			global $logger;
-			$logger->log($deleteQuery, Logger::LOG_ERROR);
+			$logger->log('(' . str_pad((string)(hrtime(true) - $startTime)/100, 8, ' ', STR_PAD_LEFT) . ") $deleteQuery", Logger::LOG_ERROR);
 		}
 		$timer->logTime($deleteQuery);
 		if ($result && !$useWhere) {
@@ -611,11 +615,12 @@ abstract class DataObject implements JsonSerializable {
 		}
 		$deleteQuery = 'TRUNCATE TABLE ' . $this->__table;
 		$this->__lastQuery = $deleteQuery;
+		$startTime = hrtime(true);
 		$result = $aspen_db->exec($deleteQuery);
 		global $timer;
 		if (IPAddress::logAllQueries()) {
 			global $logger;
-			$logger->log($deleteQuery, Logger::LOG_ERROR);
+			$logger->log('(' . str_pad((string)(hrtime(true) - $startTime)/100, 8, ' ', STR_PAD_LEFT) . ") $deleteQuery", Logger::LOG_ERROR);
 		}
 		$timer->logTime($deleteQuery);
 		return $result;
@@ -654,6 +659,7 @@ abstract class DataObject implements JsonSerializable {
 		$query .= $this->__groupBy;
 		$this->__lastQuery = $query;
 		$this->__queryStmt = $aspen_db->prepare($query);
+		$startTime = hrtime(true);
 		try {
 			if ($this->__queryStmt->execute()) {
 				if (!empty($this->__groupBy)) {
@@ -671,7 +677,7 @@ abstract class DataObject implements JsonSerializable {
 			global $timer;
 			if (IPAddress::logAllQueries()) {
 				global $logger;
-				$logger->log($query, Logger::LOG_ERROR);
+				$logger->log('(' . str_pad((string)(hrtime(true) - $startTime)/100, 8, ' ', STR_PAD_LEFT) . ") $query", Logger::LOG_ERROR);
 			}
 			$timer->logTime($query);
 		}
@@ -693,6 +699,7 @@ abstract class DataObject implements JsonSerializable {
 		$this->__lastQuery = $query;
 		$this->__queryStmt = $aspen_db->prepare($query);
 		$this->__queryStmt->setFetchMode(PDO::FETCH_INTO, $this);
+		$startTime = hrtime(true);
 		if ($this->__queryStmt->execute()) {
 			$this->__N = $this->__queryStmt->rowCount();
 		} else {
@@ -702,7 +709,7 @@ abstract class DataObject implements JsonSerializable {
 		global $timer;
 		if (IPAddress::logAllQueries()) {
 			global $logger;
-			$logger->log($query, Logger::LOG_ERROR);
+			$logger->log('(' . str_pad((string)(hrtime(true) - $startTime)/100, 8, ' ', STR_PAD_LEFT) . ") $query", Logger::LOG_ERROR);
 		}
 		$timer->logTime($query);
 
