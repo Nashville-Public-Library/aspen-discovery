@@ -2239,6 +2239,26 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		return $relatedWorkExamples;
 	}
 
+	private $_seriesMembers = null;
+
+	/**
+	 * @return SeriesMember[]
+	 */
+	private function getSeriesMembers() : array {
+		if ($this->_seriesMembers == null) {
+			require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
+			$seriesMember = new SeriesMember();
+			$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
+			if (!empty($seriesId)) {
+				$seriesMember->seriesId = $seriesId;
+			}
+			$seriesMember->excluded = 0;
+			$seriesMember->orderBy('priorityScore DESC');
+			$this->_seriesMembers = $seriesMember->fetchAll();
+		}
+		return $this->_seriesMembers;
+	}
+
 	private $seriesData;
 
 	public function getSeries($allowReload = true, ?int $seriesId = null) : ?array {
@@ -2251,18 +2271,21 @@ class GroupedWorkDriver extends IndexRecordDriver {
 			$searchSeries = array_key_exists('Series', $enabledModules) && $library->useSeriesSearchIndex == 1;
 			if ($searchSeries) {
 				require_once ROOT_DIR . '/sys/Series/Series.php';
-				require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
-				$seriesMember = new SeriesMember();
-				$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
+				$seriesMembers = $this->getSeriesMembers();
+
 				if (!empty($seriesId)) {
-					$seriesMember->seriesId = $seriesId;
+					$tmpSeriesMembers = [];
+					foreach ($seriesMembers as $seriesMember) {
+						if ($seriesMember->seriesId == $seriesId) {
+							$tmpSeriesMembers[] = $seriesMember;
+						}
+					}
+					$seriesMembers = $tmpSeriesMembers;
 				}
-				$seriesMember->excluded = 0;
-				$seriesInfo = null;
-				$seriesMember->orderBy('priorityScore DESC');
-				$seriesMember->find();
+
 				$first = true;
-				while ($seriesMember->fetch()) {
+				$seriesInfo = [];
+				foreach ($seriesMembers as $seriesMember) {
 					$series = $seriesMember->getSeries();
 					if ($series != null) {
 						if ($first) {
@@ -2774,12 +2797,8 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		global $library;
 		$searchSeries = array_key_exists('Series', $enabledModules) && $library->useSeriesSearchIndex == 1;
 		if ($searchSeries) {
-			require_once ROOT_DIR . '/sys/Series/Series.php';
 			require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
-			$seriesMember = new SeriesMember();
-			$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
-			$seriesMember->excluded = 0;
-			if ($seriesMember->find(true)) {
+			if (count($this->getSeriesMembers()) > 0) {
 				return true;
 			}
 		}
