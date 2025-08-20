@@ -4700,7 +4700,7 @@ class Library extends DataObject {
 	}
 
 	static function getLibraryForLocation($locationId) : ?Library {
-		if (isset($locationId)) {
+		if (isset($locationId) && $locationId > 0) {
 			$libLookup = new Library();
 			$libLookup->whereAdd('libraryId = (SELECT libraryId FROM location WHERE locationId = ' . $libLookup->escape($locationId) . ')');
 			$libLookup->find();
