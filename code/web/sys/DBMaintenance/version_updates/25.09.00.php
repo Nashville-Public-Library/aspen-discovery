@@ -24,6 +24,15 @@ function getUpdates25_09_00(): array {
 				'ALTER TABLE library ADD INDEX subdomainUrl(subdomain, baseUrl)'
 			]
 		], //25_09_add_performance_indexes
+		'remove_quick_searches' => [
+			'title' => 'Remove Quick Searches',
+			'description' => 'Remove Unused Quick Search Tables',
+			'continueOnError' => false,
+			'sql' => [
+				'DROP TABLE aspen_lida_quick_search_setting',
+				'DROP TABLE aspen_lida_quick_searches'
+			]
+		], //remove_quick_searches
 
 		//katherine - Grove
 
