@@ -1787,19 +1787,11 @@ class Location extends DataObject {
 				} else {
 					//get the main location for the library or if there isn't one, get the first
 					global $library;
-					$location = new Location();
-					$location->libraryId = $library->libraryId;
-					$location->orderBy('isMainBranch desc'); // gets the main branch first or the first location
-					if ($location->find(true)) {
-						Location::$_defaultLocationForUser = $location;
+					//Locations for the library are sorted by main branch first and then name, we just need the first one
+					if (count($library->getLocations()) > 0) {
+						Location::$_defaultLocationForUser = reset($library->getLocations());
 					} else {
-						//Get the first location
-						$location = new Location();
-						if ($location->find(true)) {
-							Location::$_defaultLocationForUser = $location;
-						} else {
-							//There isn't anything to tie it to, leave it null
-						}
+						//There isn't anything to tie it to, leave it null
 					}
 				}
 			}
@@ -1969,25 +1961,33 @@ class Location extends DataObject {
 		return $this->sublocationCode;
 	}
 
+	private $_locationFacets = null;
 	/**
 	 * @param $libraryId
 	 * @return string[]
 	 */
 	function getLocationsFacetsForLibrary($libraryId): array {
-		$location = new Location();
-		$location->libraryId = $libraryId;
-		$location->find();
-		$facets = [];
-		if ($location->getNumResults() > 0) {
-			while ($location->fetch()) {
-				if (empty($location->facetLabel)) {
-					$facets[] = $location->displayName;
-				} else {
-					$facets[] = $location->facetLabel;
+		if ($this->_locationFacets == null) {
+			$location = new Location();
+			$location->selectAdd();
+			$location->selectAdd('displayName');
+			$location->selectAdd('facetLabel');
+			$location->libraryId = $libraryId;
+			$location->find();
+			$facets = [];
+			if ($location->getNumResults() > 0) {
+				while ($location->fetch()) {
+					if (empty($location->facetLabel)) {
+						$facets[] = $location->displayName;
+					} else {
+						$facets[] = $location->facetLabel;
+					}
 				}
 			}
+			$this->_locationFacets = $facets;
 		}
-		return $facets;
+
+		return $this->_locationFacets;
 	}
 
 

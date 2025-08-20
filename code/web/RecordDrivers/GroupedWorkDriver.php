@@ -2969,17 +2969,15 @@ class GroupedWorkDriver extends IndexRecordDriver {
 					//Check for the main location for the library
 					require_once ROOT_DIR . '/sys/Grouping/Scope.php';
 					//Get the scope for the main location for the library
-					$mainLocation = new Location();
-					$mainLocation->libraryId = $library->libraryId;
-					$mainLocation->isMainBranch = 1;
-
-					if ($mainLocation->find(true)) {
-						$scope = new Grouping_Scope();
-						$mainLibraryScopeName = str_replace('-', '', strtolower(!empty($mainLocation->subdomain) ? $mainLocation->subdomain : $mainLocation->code));
-						$scope->name = $mainLibraryScopeName;
-						$scope->isLocationScope = 1;
-						if ($scope->find(true)) {
-							GroupedWorkDriver::$mainLocationScopeId = $scope->id;
+					foreach ($library->getLocations() as $mainLocation) {
+						if ($mainLocation->isMainBranch) {
+							$scope = new Grouping_Scope();
+							$mainLibraryScopeName = str_replace('-', '', strtolower(!empty($mainLocation->subdomain) ? $mainLocation->subdomain : $mainLocation->code));
+							$scope->name = $mainLibraryScopeName;
+							$scope->isLocationScope = 1;
+							if ($scope->find(true)) {
+								GroupedWorkDriver::$mainLocationScopeId = $scope->id;
+							}
 						}
 					}
 					global $locationSingleton;

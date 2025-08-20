@@ -5776,20 +5776,24 @@ class Library extends DataObject {
 		return $this->_materialsRequestFormats;
 	}
 
+	private $_locations = null;
 	/**
 	 * @return Location[]
 	 */
 	public function getLocations(): array {
-		$locations = [];
-		$location = new Location();
-		$location->orderBy('isMainBranch desc');
-		$location->orderBy('displayName');
-		$location->libraryId = $this->libraryId;
-		$location->find();
-		while ($location->fetch()) {
-			$locations[$location->locationId] = clone($location);
+		if ($this->_locations == null) {
+			$locations = [];
+			$location = new Location();
+			$location->orderBy('isMainBranch desc');
+			$location->orderBy('displayName');
+			$location->libraryId = $this->libraryId;
+			$location->find();
+			while ($location->fetch()) {
+				$locations[$location->locationId] = clone($location);
+			}
+			$this->_locations = $locations;
 		}
-		return $locations;
+		return $this->_locations;
 	}
 
 	/**
