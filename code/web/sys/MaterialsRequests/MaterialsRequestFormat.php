@@ -43,18 +43,21 @@ class MaterialsRequestFormat extends DataObject {
 				'type' => 'text',
 				'label' => 'Format',
 				'description' => 'internal value for format, please use camelCase and no spaces ie. cdAudio',
+				'required' => true,
 			],
 			'formatLabel' => [
 				'property' => 'formatLabel',
 				'type' => 'text',
 				'label' => 'Format Label',
 				'description' => 'Label for the format that will be displayed to users.',
+				'required' => true,
 			],
 			'authorLabel' => [
 				'property' => 'authorLabel',
 				'type' => 'text',
 				'label' => 'Author Label',
 				'description' => 'Label for the author field associated with this format that will be displayed to users.',
+				'required' => true,
 			],
 			'specialFields' => [
 				'property' => 'specialFields',
