@@ -727,45 +727,11 @@ class Search_Results extends ResultsAction {
 			require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
 			require_once ROOT_DIR . '/sys/LocalEnrichment/PlacardTrigger.php';
 
-			$trigger = new PlacardTrigger();
-			$trigger->whereAdd($trigger->escape($_REQUEST['lookfor']) . " like concat('%', triggerWord, '%')");
-			$trigger->find();
-			while ($trigger->fetch()) {
-				if ($trigger->exactMatch == 0 || (strcasecmp($trigger->triggerWord, $_REQUEST['lookfor']) === 0)) {
-					$placardToDisplay = new Placard();
-					$placardToDisplay->id = $trigger->placardId;
-					if ($placardToDisplay->find(true)) {
-						if (!$placardToDisplay->isValidForDisplay()) {
-							$placardToDisplay = null;
-						}
-					} else {
-						$placardToDisplay = null;
-					}
-					if ($placardToDisplay != null) {
-						break;
-					}
-				}
-			}
+			$placardToDisplay = Placard::getPlacardForTriggerWord($_REQUEST['lookfor']);
+
 			if ($placardToDisplay == null && !empty($_REQUEST['replacementTerm'])) {
-				$trigger = new PlacardTrigger();
-				$trigger->whereAdd($trigger->escape($_REQUEST['replacementTerm']) . " like concat('%', triggerWord, '%')");
-				//$trigger->triggerWord = $_REQUEST['replacementTerm'];
-				$trigger->find();
-				while ($trigger->fetch()) {
-					if ($trigger->exactMatch == 0 || (strcasecmp($trigger->triggerWord, $_REQUEST['replacementTerm']) === 0)) {
-						$placardToDisplay = new Placard();
-						$placardToDisplay->id = $trigger->placardId;
-						$placardToDisplay->find(true);
-						if (!$placardToDisplay->isValidForDisplay()) {
-							$placardToDisplay = null;
-						}
-						if ($placardToDisplay != null) {
-							break;
-						}
-					}
-				}
+				$placardToDisplay = Placard::getPlacardForTriggerWord($_REQUEST['replacementTerm']);
 			}
-			//TODO: Additional fuzzy matches of the search terms
 
 			if ($placardToDisplay != null) {
 				global $interface;

@@ -7742,6 +7742,8 @@ class Koha extends AbstractIlsDriver {
 			$message .= 'Item is an onsite checkout';
 		} elseif ($code == "has_fine") {
 			$message .= 'Item has an outstanding fine';
+		} elseif ($code == "overdue") {
+			$message .= "Renewal is blocked by an overdue item";
 		} elseif (!empty($code)) {
 			$message = 'Unknown error:' . $code;
 		} else {

@@ -4,7 +4,7 @@
 class LocationTheme extends DataObject {
 	public $__table = 'location_themes';
 	public $__displayNameColumn = 'themeName';
-	public $themeName;
+	public $_themeName;
 	public $id;
 	public $locationId;
 	public $themeId;
@@ -18,6 +18,7 @@ class LocationTheme extends DataObject {
 		];
 	}
 
+	/** @noinspection PhpUnusedParameterInspection */
 	static function getObjectStructure($context = ''): array {
 		//Load Libraries for lookup values
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Locations'));
@@ -58,17 +59,21 @@ class LocationTheme extends DataObject {
 		];
 	}
 
-	public function fetch(): bool|DataObject|null {
-		$result = parent::fetch();
-		require_once ROOT_DIR . '/sys/Theming/Theme.php';
-		$theme = new Theme();
-		$theme->id = $this->themeId;
-		if ($theme->find(true)) {
-			$this->themeName = $theme->themeName;
-		} else {
-			$this->themeName = '';
+	public function __get($name) {
+		if ($name == 'themeName') {
+			if ($this->_themeName == null) {
+				require_once ROOT_DIR . '/sys/Theming/Theme.php';
+				$theme = new Theme();
+				$theme->id = $this->themeId;
+				if ($theme->find(true)) {
+					$this->_themeName = $theme->themeName;
+				} else {
+					$this->_themeName = '';
+				}
+			}
+			return $this->_themeName;
 		}
-		return $result;
+		return parent::__get($name);
 	}
 
 	public function canActiveUserEdit() : bool {

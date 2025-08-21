@@ -265,6 +265,7 @@ function updateConfigForScoping($configArray) {
 	if (!empty($_SERVER['SERVER_NAME']) && strpos($_SERVER['SERVER_NAME'], '.')) {
 		$subdomainsToTest = getSubdomainsToTestFromServerName($_SERVER['SERVER_NAME'], $subdomainsToTest);
 	}
+	$subdomainsToTest = array_unique($subdomainsToTest);
 
 	$timer->logTime('found ' . count($subdomainsToTest) . ' subdomains to test');
 
@@ -281,10 +282,9 @@ function updateConfigForScoping($configArray) {
 		//echo("Getting active library from server variable " . $_SERVER['active_library']);
 		$Library = new Library();
 		$Library->subdomain = $_SERVER['active_library'];
-		$Library->find();
-		if ($Library->getNumResults() == 1) {
+		if ($Library->count() == 1) {
 			try {
-				$Library->fetch();
+				$Library->find(true);
 				$library = $Library;
 				$timer->logTime("found the library based on active_library server variable");
 			} catch (Exception $e) {
@@ -297,9 +297,8 @@ function updateConfigForScoping($configArray) {
 		if (count($subdomainsToTest) == 0) {
 			$Library = new Library();
 			$Library->isDefault = 1;
-			$Library->find();
-			if ($Library->getNumResults() == 1) {
-				$Library->fetch();
+			if ($Library->count() == 1) {
+				$Library->find(true);
 				$library = $Library;
 			}
 			//Next check for an active_library server environment variable
@@ -310,12 +309,9 @@ function updateConfigForScoping($configArray) {
 				$Library = new Library();
 				$timer->logTime("created new library object");
 				$Library->subdomain = $subdomain;
-				$Library->find();
-				$timer->logTime("searched for library by subdomain $subdomain");
 
-				if ($Library->getNumResults() == 1) {
-					$Library->fetch();
-					//Make the library information global so we can work with it later.
+				if ($Library->count() == 1) {
+					$Library->find(true);
 					$library = $Library;
 					$timer->logTime("found the library based on subdomain");
 					break;
@@ -324,9 +320,8 @@ function updateConfigForScoping($configArray) {
 					$Location = new Location();
 					$Location->whereAdd("code = '$subdomain'");
 					$Location->whereAdd("subdomain = '$subdomain'", 'OR');
-					$Location->find();
-					if ($Location->getNumResults() == 1) {
-						$Location->fetch();
+					if ($Location->count() == 1) {
+						$Location->find(true);
 						//We found a location for the subdomain, get the library.
 						if (($Location->subdomain == $subdomain) || (empty($Location->subdomain))) {
 							global $librarySingleton;
@@ -339,9 +334,8 @@ function updateConfigForScoping($configArray) {
 
 					//Check to see if there is only one library in the system
 					$Library = new Library();
-					$Library->find();
-					if ($Library->getNumResults() == 1) {
-						$Library->fetch();
+					if ($Library->count() == 1) {
+						$Library->find(true);
 						$library = $Library;
 						$timer->logTime("there is only one library for this install");
 						break;
@@ -351,15 +345,15 @@ function updateConfigForScoping($configArray) {
 							//Get the default library
 							$Library = new Library();
 							$Library->isDefault = 1;
-							$Library->find();
-							if ($Library->getNumResults() == 1) {
-								$Library->fetch();
+							if ($Library->count() == 1) {
+								$Library->find(true);
 								$library = $Library;
 								$timer->logTime("found the library based on the default");
 							} else {
 								//Just grab the first library sorted alphabetically by subdomain
 								$library = new Library();
 								$library->orderBy('subdomain');
+								$library->limit(0, 1);
 								$library->find(true);
 							}
 						}
@@ -406,9 +400,19 @@ function getSubdomainsToTestFromServerName($fullServerName, array $subdomainsToT
 	$serverComponents = explode('.', $fullServerName);
 	$tempSubdomain = '';
 	if (count($serverComponents) >= 3) {
-		//URL is probably of the form subdomain.librarysite.org or subdomain.opac.librarysite.org
-		$subdomainsToTest[] = $serverComponents[0];
-		$tempSubdomain = $serverComponents[0];
+		// Handle multi-level subdomains by extracting all subdomain combinations.
+		// For discover.kids.library.org, test: discover.kids, kids, discover.
+		$subdomainParts = array_slice($serverComponents, 0, -2);
+
+		// Add all possible subdomain combinations, starting from the most specific.
+		for ($i = 0; $i < count($subdomainParts); $i++) {
+			$subdomainToTest = implode('.', array_slice($subdomainParts, $i));
+			$subdomainsToTest[] = $subdomainToTest;
+			if ($i == 0) {
+				// Use the full subdomain for test indicator processing.
+				$tempSubdomain = $subdomainToTest;
+			}
+		}
 	} elseif (count($serverComponents) == 2) {
 		//URL could be either subdomain.localhost or librarysite.org. Only use the subdomain
 		//If the second component is localhost.

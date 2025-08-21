@@ -3651,14 +3651,14 @@ class Theme extends DataObject {
 		return $structure;
 	}
 
-	protected $_defaultTheme = null;
+	protected static $_defaultTheme = null;
 
 	/**
 	 * Get the default theme or, failing that, get the first theme stored in the database
 	 */
 	public function getDefaultTheme( bool $resetTheme = false ): Theme {
-		if ($this->_defaultTheme != null && !$resetTheme) {
-			return $this->_defaultTheme;
+		if (self::$_defaultTheme != null && !$resetTheme) {
+			return self::$_defaultTheme;
 		}
 
 		$defaultTheme = new Theme;
@@ -3669,9 +3669,9 @@ class Theme extends DataObject {
 			$defaultTheme->find(true);
 		}
 
-		$this->_defaultTheme = clone $defaultTheme;
+		self::$_defaultTheme = clone $defaultTheme;
 
-		return $this->_defaultTheme;
+		return self::$_defaultTheme;
 	}
 
 	public static function updateCssForAllThemes() : void {

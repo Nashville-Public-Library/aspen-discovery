@@ -2424,18 +2424,14 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 			}
 		} else {
 			require_once ROOT_DIR . '/sys/ILS/IlsHoldSummary.php';
-			$holdSummary = new IlsHoldSummary();
-			$holdSummary->ilsId = $this->getUniqueID();
-			if ($holdSummary->find(true)) {
+			$holdSummary = IlsHoldSummary::getHoldSummaryForRecord($this->getRecordType(), $this->getUniqueID());
+			if ($holdSummary != null) {
 				$this->numHolds = $holdSummary->numHolds;
 			} else {
 				$this->numHolds = 0;
 			}
-			$holdSummary->__destruct();
-			$holdSummary = null;
 		}
 
-		$timer->logTime("Loaded number of holds");
 		return $this->numHolds;
 	}
 
@@ -2960,26 +2956,21 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 		$this->_uploadedSupplementalFiles = [];
 		require_once ROOT_DIR . '/sys/ILS/RecordFile.php';
 		require_once ROOT_DIR . '/sys/File/FileUpload.php';
-		$recordFile = new RecordFile();
-		$recordFile->type = $this->getRecordType();
-		$recordFile->identifier = $this->getUniqueID();
-		if ($recordFile->find()) {
-			while ($recordFile->fetch()) {
-				$fileUpload = new FileUpload();
-				$fileUpload->id = $recordFile->fileId;
-				if ($fileUpload->find(true)) {
-					if (file_exists($fileUpload->fullPath)) {
-						if ($fileUpload->type == 'RecordPDF') {
-							$this->_uploadedPDFs[] = $fileUpload;
-						} elseif ($fileUpload->type == 'RecordSupplementalFile') {
+		$relatedFiles = RecordFile::getFilesForRecord($this->getRecordType(), $this->getUniqueID());
+		foreach ($relatedFiles as $recordFile) {
+			$fileUpload = new FileUpload();
+			$fileUpload->id = $recordFile->fileId;
+			if ($fileUpload->find(true)) {
+				if (file_exists($fileUpload->fullPath)) {
+					if ($fileUpload->type == 'RecordPDF') {
+						$this->_uploadedPDFs[] = $fileUpload;
+					} elseif ($fileUpload->type == 'RecordSupplementalFile') {
 
-							$this->_uploadedSupplementalFiles[] = $fileUpload;
-						}
+						$this->_uploadedSupplementalFiles[] = $fileUpload;
 					}
 				}
 			}
 		}
-		$timer->logTime("Loaded uploaded file info");
 	}
 
 	/**

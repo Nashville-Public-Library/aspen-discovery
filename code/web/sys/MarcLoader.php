@@ -31,8 +31,6 @@ class MarcLoader {
 	private static $loadedMarcRecords = [];
 
 	public static function loadMarcRecordByILSId($id, $recordType = 'marc') {
-		global $indexingProfiles;
-		global $sideLoadSettings;
 		if (strpos($id, ':') !== false) {
 			$recordInfo = explode(':', $id);
 			$recordType = $recordInfo[0];
@@ -76,8 +74,6 @@ class MarcLoader {
 	 * @return int
 	 */
 	public static function lastModificationTimeForIlsId($id) {
-		global $indexingProfiles;
-		global $sideLoadSettings;
 		if (strpos($id, ':') !== false) {
 			$recordInfo = explode(':', $id);
 			$recordType = $recordInfo[0];
@@ -111,8 +107,6 @@ class MarcLoader {
 	 * @return boolean
 	 */
 	public static function marcExistsForILSId($id) {
-		global $indexingProfiles;
-		global $sideLoadSettings;
 		if (strpos($id, ':') !== false) {
 			$recordInfo = explode(':', $id, 2);
 			$recordType = $recordInfo[0];

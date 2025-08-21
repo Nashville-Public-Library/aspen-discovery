@@ -398,7 +398,13 @@ class SearchObject_GroupedWorkSearcher2 extends SearchObject_AbstractGroupedWork
 			require_once ROOT_DIR . "/sys/Indexing/IndexedFormat.php";
 			$indexedFormat = new IndexedFormat();
 			$numFormats = $indexedFormat->count();
+			$location = new Location();
+			$numLocations = $location->count();
+			$sideload = new Sideload();
+			$numLocations = $numLocations + $sideload->count() + 10;
 			$this->facetOptions["f.format.facet.limit"] = $numFormats;
+			$this->facetOptions["f.available_at.facet.limit"] = $numLocations;
+			$this->facetOptions["f.owning_location.facet.limit"] = $numLocations;
 			$this->facetOptions["f.availability_toggle.facet.method"] = 'enum';
 			$this->facetOptions["f.local_time_since_added_$solrScope.facet.method"] = 'enum';
 			$this->facetOptions["f.owning_library.facet.method"] = 'enum';
@@ -908,24 +914,24 @@ class SearchObject_GroupedWorkSearcher2 extends SearchObject_AbstractGroupedWork
 					'url' => null,
 				];
 			}
-			if (!$foundBranch && $doBranchProcessing && !empty($activeLocationFacet)) {
-				$list[$field]['list']['1' . $activeLocationFacet] = [
-					'value' => $translate ? translate([
-						'text' => $activeLocationFacet,
-						'isPublicFacing' => true,
-						'escape' => true
-					]) : htmlentities($activeLocationFacet),
-					'display' => $translate ? translate([
-						'text' => $activeLocationFacet,
-						'isPublicFacing' => true,
-						'escape' => true
-					]) : htmlentities($activeLocationFacet),
-					'count' => 0,
-					'isApplied' => false,
-					'url' => null,
-				];
-				$numValidRelatedLocations++;
-			}
+//			if (!$foundBranch && $doBranchProcessing && !empty($activeLocationFacet)) {
+//				$list[$field]['list']['1' . $activeLocationFacet] = [
+//					'value' => $translate ? translate([
+//						'text' => $activeLocationFacet,
+//						'isPublicFacing' => true,
+//						'escape' => true
+//					]) : htmlentities($activeLocationFacet),
+//					'display' => $translate ? translate([
+//						'text' => $activeLocationFacet,
+//						'isPublicFacing' => true,
+//						'escape' => true
+//					]) : htmlentities($activeLocationFacet),
+//					'count' => 0,
+//					'isApplied' => false,
+//					'url' => null,
+//				];
+//				$numValidRelatedLocations++;
+//			}
 
 			if ($doBranchProcessing || $doInstitutionProcessing) {
 				ksort($list[$field]['list']);
