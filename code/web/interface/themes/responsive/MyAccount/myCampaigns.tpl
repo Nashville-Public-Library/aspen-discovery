@@ -209,17 +209,19 @@
 															{if $extraCreditActivity.displayName}
 																<div>{$extraCreditActivity.rewardName}</div>
 															{/if}
-															{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardExists}
-																<div id="extraCrdeitRewardImageYourCampaigns">
-																	<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" />
-																</div>
-															{/if}
 															{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardGiven || $extraCreditActivity.rewardType ==1 && $extraCreditActivity.isComplete && $extraCreditActivity.awardAutomatically}
+																{if $extraCreditActivity.rewardExists}
+																	<div id="extraCrdeitRewardImageYourCampaigns">
+																		<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" />
+																	</div>
+																{/if}
 																<div id="extraCreditRewardShareLinkYourCampaigns">
 																	<a href="/Search/ShareCampaigns?rewardName={$extraCreditActivity.rewardName}&rewardImage={$extraCreditActivity.rewardImage}&rewardId={$extraCreditActivity.rewardId}">
 																		{translate text="Share on Social Media" isPublicFacing=true}
 																	</a>
 																</div>
+															{else}
+																{include file="MyAccount/rewardImage.tpl" imageProperty="rewardImage" campaign=$extraCreditActivity}
 															{/if}
 														</td>
 														<td>
@@ -431,8 +433,14 @@
 															{if $extraCreditActivity.displayName}
 																<div>{$extraCreditActivity.rewardName}</div>
 															{/if}
-															{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardExists}
-																<div><img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" /></div>
+															{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardGiven || $extraCreditActivity.rewardType ==1 && $extraCreditActivity.isComplete && $extraCreditActivity.awardAutomatically}
+																{if $extraCreditActivity.rewardExists}
+																	<div id="extraCrdeitRewardImageYourCampaigns">
+																		<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" />
+																	</div>
+																{/if}
+															{else}
+																{include file="MyAccount/rewardImage.tpl" imageProperty="rewardImage" campaign=$extraCreditActivity}
 															{/if}
 														</td>
 														<td>
@@ -584,9 +592,7 @@
 														{if $extraCredit.displayName}
 															<div>{$extraCredit.rewardName}</div>
 														{/if}
-														{if $extraCredit.rewardType == 1 && $extraCredit.rewardExists}
-															<div><img src="{$extraCredit.rewardImage}" alt="{$extraCredit.rewardName}" style="width:100px; height:100px;" /></div>
-														{/if}
+														{include file="MyAccount/rewardImage.tpl" imageProperty="rewardImage" campaign=$extraCredit}
 													</td>
 												</tr>
 											{/foreach}
@@ -703,9 +709,7 @@
 														{if $extraCreditActivity.displayName}
 															<div>{$extraCreditActivity.rewardName}</div>
 														{/if}
-														{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardExists}
-															<div><img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" /></div>
-														{/if}
+														{include file="MyAccount/rewardImage.tpl" imageProperty="rewardImage" campaign=$extraCreditActivity}
 													</td>
 												</tr>
 											{/foreach}
@@ -799,9 +803,7 @@
 													{if $extraCredit.displayName}
 														<div>{$extraCredit.rewardName}</div>
 													{/if}
-													{if $extraCredit.rewardType == 1 && $extraCredit.rewardExists}
-														<div><img src="{$extraCredit.rewardImage}" alt="{$extraCredit.rewardName}" style="width:100px; height:100px;" /></div>
-													{/if}
+													{include file="MyAccount/rewardImage.tpl" imageProperty="rewardImage" campaign=$extraCredit}
 												</td>
 											</tr>
 										{/foreach}
@@ -956,8 +958,14 @@
 														{if $extraCreditActivity.displayName}
 															<div>{$extraCreditActivity.rewardName}</div>
 														{/if}
-														{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardExists}
-															<div><img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" /></div>
+														{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardGiven || $extraCreditActivity.rewardType ==1 && $extraCreditActivity.isComplete && $extraCreditActivity.awardAutomatically}
+															{if $extraCreditActivity.rewardExists}
+																<div id="extraCrdeitRewardImageYourCampaigns">
+																	<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" />
+																</div>
+															{/if}
+														{else}
+															{include file="MyAccount/rewardImage.tpl" imageProperty="rewardImage" campaign=$extraCreditActivity}
 														{/if}
 													</td>
 													<td>
