@@ -18,7 +18,7 @@
 									<div style="display: flex; flex-direction: column; align-items: center;">
 										<span>{$milestone->rewardName}</span><br/>
 										{if $milestone->rewardExists}
-											<img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+											<img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="width:100px; height:100px; padding:10px;" />
 										{/if}
 										<p>{$milestone->rewardDescription}</p>
 									</div>
@@ -32,7 +32,7 @@
 								<div style="display: flex; flex-direction: column; align-items: center;">
 									<span>{$campaignRewardName}</span><br/>
 									{if $campaignRewardExists}
-										<img src="{$campaignRewardImage}" alt="{$campaignRewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+										<img src="{$campaignRewardImage}" alt="{$campaignRewardName}" style="width:100px; height:100px; padding:10px;" />
 									{/if}
 									<p>{$campaignRewardDescription}</p>
 								</div>

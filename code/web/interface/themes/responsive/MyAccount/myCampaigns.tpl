@@ -50,7 +50,7 @@
 									{if $campaign->rewardType == 1}
 										{if $campaign->campaignRewardGiven || $campaign->awardAutomatically ==1 && $campaign->isComplete}
 											{if $campaign->rewardExists}
-												<img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+												<img src="{$campaign->badgeImage}" alt="{$campaign->rewardName}" style="width:100px; height:100px; padding:10px;" />
 											{/if}
 											<a href="/Search/ShareCampaigns?rewardName={$campaign->rewardName}&rewardImage={$campaign->badgeImage}&rewardId={$campaign->rewardId}">
 												{translate text="Share on Social Media" isPublicFacing=true}
@@ -131,7 +131,7 @@
 														{/if}
 														{if $milestone->rewardType == 1 && $milestone->rewardGiven || $milestone->rewardType ==1 && $milestone->milestoneComplete && $milestone->awardAutomatically}
 															{if $milestone->rewardExists}
-																<img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+																<img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="width:100px; height:100px; padding:10px;" />
 															{/if}
 															<a href="/Search/ShareCampaigns?rewardName={$milestone->rewardName}&rewardImage={$milestone->rewardImage}&rewardId={$milestone->rewardId}">
 																{translate text="Share on Social Media" isPublicFacing=true}
@@ -212,7 +212,7 @@
 															{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardGiven || $extraCreditActivity.rewardType ==1 && $extraCreditActivity.isComplete && $extraCreditActivity.awardAutomatically}
 																{if $extraCreditActivity.rewardExists}
 																	<div id="extraCrdeitRewardImageYourCampaigns">
-																		<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" />
+																		<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px; padding:10px;"/>
 																	</div>
 																{/if}
 																<div id="extraCreditRewardShareLinkYourCampaigns">
@@ -302,7 +302,7 @@
 											{if $campaign.campaignReward.rewardType == 1}
 												{if $campaign.rewardGiven || $campaign.campaignReward.awardAutomatically == 1 && $campaign.isComplete}
 													{if $campaign.campaignReward.rewardExists}
-														<img src="{$campaign.campaignReward.badgeImage}" alt="{$campaign.campaignReward.rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+														<img src="{$campaign.campaignReward.badgeImage}" alt="{$campaign.campaignReward.rewardName}" style="width:100px; height:100px; padding:10px;" />
 													{/if}
 												{else}
 													{include file="MyAccount/rewardImage.tpl" imageProperty="badgeImage" campaign=$campaign.campaignReward}
@@ -353,7 +353,7 @@
 															{if $milestone.rewardType == 1}
 																{if $milestone.rewardGiven || $milestone.awardAutomatically == 1 && $milestone.milestoneComplete}
 																	{if $milestone.rewardExists}
-																		<img src="{$milestone.badgeImage}" alt="{$milestone.rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+																		<img src="{$milestone.badgeImage}" alt="{$milestone.rewardName}" style="width:100px; height:100px; padding:10px;" />
 																	{/if}
 																{else}
 																	{include file="MyAccount/rewardImage.tpl" imageProperty="badgeImage" campaign=$milestone}
@@ -436,7 +436,7 @@
 															{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardGiven || $extraCreditActivity.rewardType ==1 && $extraCreditActivity.isComplete && $extraCreditActivity.awardAutomatically}
 																{if $extraCreditActivity.rewardExists}
 																	<div id="extraCrdeitRewardImageYourCampaigns">
-																		<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" />
+																		<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px; padding:10px;" />
 																	</div>
 																{/if}
 															{else}
@@ -856,7 +856,7 @@
 										{if $campaign->rewardType == 1}
 											{if $campaign->campaignRewardGiven ||$campaign->awardAutomatically == 1 && $campaign->isComplete}
 												{if $campaign->rewardExists}
-													<img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+													<img src="{$campaign->rewardImage}" alt="{$campaign->rewardName}" style="width:100px; height:100px; padding:10px;" />
 												{/if}<br>
 												<a href="/Search/ShareCampaigns?rewardName={$campaign->rewardName}&rewardImage={$campaign->rewardImage}&rewardId={$campaign->rewardId}">
 													{translate text="Share on Social Media" isPublicFacing=true}
@@ -920,7 +920,7 @@
 												{if $milestone->rewardType == 1}
 														{if $milestone->rewardGiven || $milestone->awardAutomatically && $milestone->isComplete}
 															{if $milestone->rewardExists}
-																<img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="max-width:100px; max-height:100px; padding:10px;" />
+																<img src="{$milestone->rewardImage}" alt="{$milestone->rewardName}" style="width:100px; height:100px; padding:10px;" />
 															{/if}<br>
 															<a href="/Search/ShareCampaigns?rewardName={$milestone->rewardName}&rewardImage={$milestone->rewardImage}&rewardId={$milestone->rewardId}">
 																{translate text="Share on Social Media" isPublicFacing=true}
@@ -961,7 +961,7 @@
 														{if $extraCreditActivity.rewardType == 1 && $extraCreditActivity.rewardGiven || $extraCreditActivity.rewardType ==1 && $extraCreditActivity.isComplete && $extraCreditActivity.awardAutomatically}
 															{if $extraCreditActivity.rewardExists}
 																<div id="extraCrdeitRewardImageYourCampaigns">
-																	<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px;" />
+																	<img src="{$extraCreditActivity.rewardImage}" alt="{$extraCreditActivity.rewardName}" style="width:100px; height:100px; padding:10px;" />
 																</div>
 															{/if}
 														{else}
