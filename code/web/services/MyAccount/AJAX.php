@@ -9802,6 +9802,8 @@ class MyAccount_AJAX extends JSON_Action {
 		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 		require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneProgressEntry.php';
 		require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneUsersProgress.php';
+		require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignExtraCreditActivityUsersProgress.php';
+
 
 
 		$campaignId = $_GET['campaignId'] ?? null;
@@ -9856,6 +9858,11 @@ class MyAccount_AJAX extends JSON_Action {
 					$milestoneProgress->userId = $userId;
 					$milestoneProgress->ce_campaign_id = $campaignId;
 					$milestoneProgress->delete(true);
+
+					$extraCreditProgress = new CampaignExtraCreditActivityUsersProgress();
+					$extraCreditProgress->userId = $userId;
+					$extraCreditProgress->ce_campaign_id = $campaignId;
+					$extraCreditProgress->delete(true);
 					//Increase unenrollment counter
 					$campaign->unenrollmentCounter++;
 					$campaign->currentEnrollments--;
