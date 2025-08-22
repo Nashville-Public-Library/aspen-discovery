@@ -1,6 +1,5 @@
-<?php
-/** @noinspection SpellCheckingInspection */
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection SpellCheckingInspection */
+/** @noinspection PhpMissingFieldTypeInspection */
 
 class IPAddress extends DataObject {
 	public $__table = 'ip_lookup';    //	table name
@@ -35,7 +34,12 @@ class IPAddress extends DataObject {
 		return ['ip'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		//Look lookup information for display in the user interface
 		$location = new Location();
 		$location->selectAdd();
@@ -159,14 +163,16 @@ class IPAddress extends DataObject {
 		if (!array_key_exists('EBSCOhost', $enabledModules)) {
 			unset ($structure['authenticatedForEBSCOhost']);
 		}
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	function label() {
 		return $this->location;
 	}
 
-	function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->calcIpRange();
 		global $memCache;
 		$memCache->deleteStartingWith('ipId_for_ip_');
@@ -175,7 +181,7 @@ class IPAddress extends DataObject {
 		return parent::insert();
 	}
 
-	function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->calcIpRange();
 		global $memCache;
 		$memCache->deleteStartingWith('ipId_for_ip_');
@@ -184,7 +190,7 @@ class IPAddress extends DataObject {
 		return parent::update();
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		global $memCache;
 		$memCache->deleteStartingWith('ipId_for_ip_');
 		$memCache->deleteStartingWith('location_for_ip_');
@@ -482,7 +488,7 @@ class IPAddress extends DataObject {
 
 	public static $activeIp = null;
 
-	public static function getActiveIp() {
+	public static function getActiveIp() : string {
 		if (!is_null(IPAddress::$activeIp)) {
 			return IPAddress::$activeIp;
 		}
@@ -570,7 +576,7 @@ class IPAddress extends DataObject {
 		}
 	}
 
-	public static function allowSSOAccessForClientIP() {
+	public static function allowSSOAccessForClientIP() : bool {
 		global $library;
 		$isSSORestricted = $library->getSSORestrictionStatus();
 		if(!$isSSORestricted) {
@@ -606,7 +612,7 @@ class IPAddress extends DataObject {
 
 	static $_logTimingInformation = null;
 
-	public static function logTimingInformation() {
+	public static function logTimingInformation() : bool {
 		if (IPAddress::$_logTimingInformation === null) {
 			$clientIP = IPAddress::getClientIP();
 			$ipInfo = IPAddress::getIPAddressForIP($clientIP);
@@ -673,7 +679,7 @@ class IPAddress extends DataObject {
 		return $result;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (empty($jsonData['locationCode'])) {
 			$this->locationid = -1;
