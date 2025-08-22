@@ -1,7 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
-
 class MaterialsRequestFormatMapping extends DataObject {
 	public $__table = 'materials_request_format_mapping';
 	public $id;
@@ -9,8 +7,12 @@ class MaterialsRequestFormatMapping extends DataObject {
 	public $materialsRequestFormatId;
 	public $catalogFormat;
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = [];
 		$tmpLibrary = new Library();
 		$tmpLibrary->orderBy('displayName');
@@ -40,7 +42,7 @@ class MaterialsRequestFormatMapping extends DataObject {
 			}
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -69,6 +71,9 @@ class MaterialsRequestFormatMapping extends DataObject {
 				'description' => 'The format for the materials request.',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public static function loadActiveFormats(int $activeLibraryId) : void {
