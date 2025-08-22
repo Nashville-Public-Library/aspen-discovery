@@ -31,7 +31,6 @@ $interface = new UInterface();
 $timer->logTime('Create interface');
 
 //Check to see if we need to end masquerade mode
-/** SessionInterface $session */
 global $session;
 $activeSessionObject = $session::$activeSessionObject;
 if ($activeSessionObject != null) {
