@@ -167,7 +167,6 @@ function importUsers($startTime, $exportPath, &$existingUsers, &$missingUsers, $
 					$aspen_db->query("UPDATE user_open_archives_usage set userId = $userFromCSV->id WHERE userId = $existingUserId");
 					$aspen_db->query("UPDATE user_overdrive_usage set userId = $userFromCSV->id WHERE userId = $existingUserId");
 					$aspen_db->query("UPDATE user_payments set userId = $userFromCSV->id WHERE userId = $existingUserId");
-					$aspen_db->query("UPDATE user_rbdigital_usage set userId = $userFromCSV->id WHERE userId = $existingUserId");
 					$aspen_db->query("UPDATE user_reading_history_work set userId = $userFromCSV->id WHERE userId = $existingUserId");
 					$aspen_db->query("UPDATE user_roles set userId = $userFromCSV->id WHERE userId = $existingUserId");
 					$aspen_db->query("UPDATE user_sideload_usage set userId = $userFromCSV->id WHERE userId = $existingUserId");
@@ -266,7 +265,6 @@ function loadUserInfoFromCSV(?array $userRow, User $existingUser = null): User {
 	$userFromCSV->hooplaCheckOutConfirmation = $userRow[$curCol];
 
 	//Set defaults
-	$userFromCSV->rbdigitalId = -1;
 	$userFromCSV->interfaceLanguage = 'en';
 	$userFromCSV->searchPreferenceLanguage = -1;
 	$userFromCSV->rememberHoldPickupLocation = 0;
@@ -1132,7 +1130,6 @@ function flipUserIds() {
 	$aspen_db->query("UPDATE user_open_archives_usage set userId = -userId WHERE userId > 1");
 	$aspen_db->query("UPDATE user_overdrive_usage set userId = -userId WHERE userId > 1");
 	$aspen_db->query("UPDATE user_payments set userId = -userId WHERE userId > 1");
-	$aspen_db->query("UPDATE user_rbdigital_usage set userId = -userId WHERE userId > 1");
 	$aspen_db->query("UPDATE user_reading_history_work set userId = -userId WHERE userId > 1");
 	$aspen_db->query("UPDATE user_roles set userId = -userId WHERE userId > 1");
 	$aspen_db->query("UPDATE user_sideload_usage set userId = -userId WHERE userId > 1");
