@@ -14,7 +14,11 @@ class LibraryCloudLibraryScope extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		require_once ROOT_DIR . '/sys/CloudLibrary/CloudLibraryScope.php';
 		$cloudLibraryScope = new CloudLibraryScope();
 		$cloudLibraryScope->orderBy('name');
@@ -40,7 +44,7 @@ class LibraryCloudLibraryScope extends DataObject {
 			$libraryList[$library->libraryId] = $library->displayName;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -65,9 +69,13 @@ class LibraryCloudLibraryScope extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/CloudLibrary/Scopes?objectAction=edit&id=' . $this->scopeId;
 	}
 }
