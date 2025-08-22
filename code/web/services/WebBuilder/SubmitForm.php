@@ -71,7 +71,7 @@ class WebBuilder_SubmitForm extends Action {
 					$introText = '';
 				}
 				$htmlData .= $serializedData->getPrintableHtmlData($structure);
-				$data = $serializedData->getAllData($structure);
+				$data = $serializedData->getAllData();
 
 				//Save the form values to the database
 				global $library;
