@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class CourseReserveEntry extends DataObject {
 	public $__table = 'course_reserve_entry';     // table name
@@ -11,7 +10,7 @@ class CourseReserveEntry extends DataObject {
 	public $dateAdded;                       // timestamp(19)  not_null unsigned zerofill binary timestamp
 	public $title;
 
-	public function getRecordDriver() {
+	public function getRecordDriver() : ?RecordInterface{
 		if ($this->source == 'GroupedWork') {
 			require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 			$recordDriver = new GroupedWorkDriver($this->sourceId);
@@ -21,8 +20,7 @@ class CourseReserveEntry extends DataObject {
 			return $recordDriver;
 		} elseif ($this->source == 'OpenArchives') {
 			require_once ROOT_DIR . '/RecordDrivers/OpenArchivesRecordDriver.php';
-			$recordDriver = new OpenArchivesRecordDriver($this->sourceId);
-			return $recordDriver;
+			return new OpenArchivesRecordDriver($this->sourceId);
 		} elseif ($this->source == 'Lists') {
 			require_once ROOT_DIR . '/RecordDrivers/ListsRecordDriver.php';
 			$recordDriver = new ListsRecordDriver($this->sourceId);
@@ -33,12 +31,10 @@ class CourseReserveEntry extends DataObject {
 			}
 		} elseif ($this->source == 'Genealogy') {
 			require_once ROOT_DIR . '/RecordDrivers/PersonRecord.php';
-			$recordDriver = new PersonRecord($this->sourceId);
-			return $recordDriver;
+			return new PersonRecord($this->sourceId);
 		} elseif ($this->source == 'EbscoEds') {
 			require_once ROOT_DIR . '/RecordDrivers/EbscoRecordDriver.php';
-			$recordDriver = new EbscoRecordDriver($this->sourceId);
-			return $recordDriver;
+			return new EbscoRecordDriver($this->sourceId);
 		} else {
 			return null;
 		}
