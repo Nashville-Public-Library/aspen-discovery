@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/LibraryEventsSetting.php';
 require_once ROOT_DIR . '/sys/Events/EventsBranchMapping.php';
 
@@ -11,6 +11,7 @@ class SpringshareLibCalSetting extends DataObject {
 	public $id;
 	public $name;
 	public $baseUrl;
+	/** @noinspection PhpUnused */
 	public $calId;
 	public /** @noinspection PhpUnused */
 		$clientId;
@@ -27,11 +28,16 @@ class SpringshareLibCalSetting extends DataObject {
 	private $_libraries;
 	private $_locationMap;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Springshare LibCal Settings'));
 
 		$branchMapStructure = EventsBranchMapping::getObjectStructure($context);
 
+		/** @noinspection HtmlRequiredAltAttribute */
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -151,7 +157,9 @@ class SpringshareLibCalSetting extends DataObject {
 				],
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**
@@ -159,7 +167,7 @@ class SpringshareLibCalSetting extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -173,7 +181,7 @@ class SpringshareLibCalSetting extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -199,7 +207,7 @@ class SpringshareLibCalSetting extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$this->clearLibraries();
@@ -207,7 +215,7 @@ class SpringshareLibCalSetting extends DataObject {
 		return $ret;
 	}
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new LibraryEventsSetting();
@@ -220,10 +228,10 @@ class SpringshareLibCalSetting extends DataObject {
 		}
 		return $this->_libraries;
 	}
-	public function getLocationMap() {
-		if (!isset($this->_locationmap)) {
+	public function getLocationMap() : array {
+		if (!isset($this->_locationMap)) {
 			//Get the list of translation maps
-			$this->_locationmap = [];
+			$this->_locationMap = [];
 			$locationMap = new EventsBranchMapping();
 			$locationMap->orderBy('id');
 			$locationMap->find();
@@ -234,7 +242,7 @@ class SpringshareLibCalSetting extends DataObject {
 		return $this->_locationMap;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -250,7 +258,7 @@ class SpringshareLibCalSetting extends DataObject {
 		}
 	}
 
-	public function saveLocationMap() {
+	public function saveLocationMap() : void {
 		if (isset($this->_locationMap)) {
 			foreach ($this->_locationMap as $location) {
 				$locationMap = new EventsBranchMapping();
@@ -264,11 +272,11 @@ class SpringshareLibCalSetting extends DataObject {
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryEventSetting = new LibraryEventsSetting();
 		$libraryEventSetting->settingSource = 'springshare';
 		$libraryEventSetting->settingId = $this->id;
-		return $libraryEventSetting->delete(true);
+		$libraryEventSetting->delete(true);
 	}
 }

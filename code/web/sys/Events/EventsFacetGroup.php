@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/LibraryEventsSetting.php';
 require_once ROOT_DIR . '/sys/Events/LibraryEventsFacetSetting.php';
 require_once ROOT_DIR . '/sys/Events/EventsFacet.php';
@@ -12,15 +12,19 @@ class EventsFacetGroup extends DataObject {
 	public $_facets;
     private $_libraries;
 
-	static function getObjectStructure($context = ''): array {
-        $libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Events Facet Settings'));
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Events Facet Settings'));
 
 		$facetSettingStructure = EventsFacet::getObjectStructure($context);
 		unset($facetSettingStructure['weight']);
 		unset($facetSettingStructure['facetGroupId']);
 		unset($facetSettingStructure['showAsDropDown']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -71,26 +75,29 @@ class EventsFacetGroup extends DataObject {
                 'values' => $libraryList,
             ],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveFacets();
-            $this->saveLibraries();
+			$this->saveLibraries();
 		}
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveFacets();
-            $this->saveLibraries();
+			$this->saveLibraries();
 		}
 		return $ret;
 	}
 
-	public function saveFacets() {
+	public function saveFacets() : void {
 		if (isset ($this->_facets) && is_array($this->_facets)) {
 			$this->saveOneToManyOptions($this->_facets, 'facetGroupId');
 			unset($this->facets);
@@ -117,7 +124,7 @@ class EventsFacetGroup extends DataObject {
 		}
 	}
 
-	/** @return EventsFacet[] */
+	/** @return ?EventsFacet[] */
 	public function getFacets(): ?array {
 		if (!isset($this->_facets) && $this->id) {
 			$this->_facets = [];
@@ -132,30 +139,17 @@ class EventsFacetGroup extends DataObject {
 		return $this->_facets;
 	}
 
-	public function getFacetByIndex($index): ?EventsFacet {
-		$facets = $this->getFacets();
-
-		$i = 0;
-		foreach ($facets as $value) {
-			if ($i == $index) {
-				return $value;
-			}
-			$i++;
-		}
-		return NULL;
-	}
-
-	public function setFacets($value) {
+	public function setFacets($value) : void {
 		$this->_facets = $value;
 	}
 
-	public function clearFacets() {
+	public function clearFacets() : void {
 		$this->clearOneToManyOptions('EventsFacet', 'facetGroupId');
 		/** @noinspection PhpUndefinedFieldInspection */
 		$this->facets = [];
 	}
 
-    public function getLibraries() {
+    public function getLibraries() : ?array {
         if (!isset($this->_libraries) && $this->id) {
             $this->_libraries = [];
             $library = new LibraryEventsFacetSetting();
@@ -167,7 +161,7 @@ class EventsFacetGroup extends DataObject {
         }
         return $this->_libraries;
     }
-    private function clearLibraries() {
+    private function clearLibraries() : void {
         //Delete links to the libraries
         $libraryEventSetting = new LibraryEventsFacetSetting();
         $libraryEventSetting->eventsFacetGroupId = $this->id;
@@ -176,7 +170,7 @@ class EventsFacetGroup extends DataObject {
             $libraryEventSetting->delete();
         }
     }
-    public function saveLibraries() {
+    public function saveLibraries() : void {
         if (isset($this->_libraries) && is_array($this->_libraries)) {
             $this->clearLibraries();
 
@@ -198,6 +192,5 @@ class EventsFacetGroup extends DataObject {
 		];
 
 		return $objectActions;
-//        return [];
 	}
 }
