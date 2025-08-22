@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class GroupedWorkAlternateTitle extends DataObject {
@@ -11,8 +11,12 @@ class GroupedWorkAlternateTitle extends DataObject {
 	public $addedBy;
 	public $dateAdded;
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -29,19 +33,19 @@ class GroupedWorkAlternateTitle extends DataObject {
 			'alternateGroupingCategory' => [
 				'property' => 'alternateGroupingCategory',
 				'type' => 'text',
-				'label' => 'Alternate Grouping Category',
+				'label' => 'Grouping Category',
 				'description' => 'The grouping category of the original work'
 			],
 			'alternateTitle' => [
 				'property' => 'alternateTitle',
 				'type' => 'text',
-				'label' => 'Alternate Title',
+				'label' => 'Title Variant',
 				'description' => 'The alternate title from the original work',
 			],
 			'alternateAuthor' => [
 				'property' => 'alternateAuthor',
 				'type' => 'text',
-				'label' => 'Alternate Author',
+				'label' => 'Author Variant',
 				'description' => 'An alternate author from the original work',
 			],
 			'addedByName' => [
@@ -59,6 +63,9 @@ class GroupedWorkAlternateTitle extends DataObject {
 				'readOnly' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	private static $usersById = [];
@@ -84,7 +91,7 @@ class GroupedWorkAlternateTitle extends DataObject {
 		return $this->_data[$name] ?? null;
 	}
 
-	function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 		$relatedWork = new GroupedWork();
@@ -95,7 +102,7 @@ class GroupedWorkAlternateTitle extends DataObject {
 		return $ret;
 	}
 
-	function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 		$relatedWork = new GroupedWork();
@@ -106,7 +113,7 @@ class GroupedWorkAlternateTitle extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 		$relatedWork = new GroupedWork();
 		$relatedWork->permanent_id = $this->permanent_id;
