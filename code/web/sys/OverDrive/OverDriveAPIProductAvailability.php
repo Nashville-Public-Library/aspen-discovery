@@ -46,6 +46,7 @@ class OverDriveAPIProductAvailability extends DataObject {
 		return $this->_settingName;
 	}
 
+	/** @noinspection PhpUnused */
 	function getSettingDescription() : string {
 		if (empty($this->_settingName)) {
 			require_once ROOT_DIR . '/sys/OverDrive/OverDriveSetting.php';

@@ -17,6 +17,7 @@ class OverDriveAPIProductMetaData extends DataObject {
 	/** @noinspection PhpUnused */
 	public $shortDescription;
 	public $fullDescription;
+	/** @noinspection PhpUnused */
 	public $popularity;
 	public $rawData;
 	public $thumbnail;
