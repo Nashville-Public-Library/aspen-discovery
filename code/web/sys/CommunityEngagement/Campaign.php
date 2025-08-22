@@ -1491,7 +1491,9 @@ class Campaign extends DataObject {
 	}
 
 	public static function setDisplayImageForArray(&$item, $settings, $rewardGiven, $awardAutomatically, $isComplete) {
-		$itemType = isset($item['campaignId']) ? 'CAMPAIGN' : (isset($item['id']) ? 'MILESTONE' : 'UNKNOWN');
+		$itemType = isset($item['campaignId']) ? 'CAMPAIGN' : 
+			(isset($item['id']) && isset($item['type']) && $item['type'] === 'milestone' ? 'MILESTONE' :
+			(isset($item['id']) && isset($item['type']) && $item['type'] === 'activity' ? 'EXTRACREDIT' : 'UNKNOWN'));
 		$itemId = $item['campaignId'] ?? $item['id'] ?? 'NO_ID';
 
 		$rewardGivenBool = (bool)$rewardGiven;

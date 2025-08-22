@@ -7015,6 +7015,19 @@ class UserAPI extends AbstractAPI {
 							return $milestoneArray;
 						}, $campaign['milestones']);
 					}
+					if (isset($campaign['extraCreditActivities']) && is_array($campaign['extraCreditActivities'])) {
+						foreach ($campaign['extraCreditActivities'] as &$activity) {
+							if (is_array($activity)) {
+								$activity['type'] = 'activity';
+								$activity['badgeImage'] = $activity['rewardImage'] ?? null;
+								Campaign::setDisplayImageForArray($activity, $imageSettings, 
+									$activity['rewardGiven'] ?? false, 
+									$activity['awardAutomatically'] ?? false, 
+									$activity['isComplete'] ?? false);
+							}
+						}
+						unset($activity);
+					}
 					return $campaign;
 				}, $paginated);
 				return [
@@ -7097,6 +7110,24 @@ class UserAPI extends AbstractAPI {
 						Campaign::setDisplayImageForArray($m, $imageSettings, $milestone->rewardGiven ?? false, $milestone->awardAutomatically ?? false, $m['isComplete']);
 						return $m;
 					}, $campaign->milestones);
+				}
+
+				if (isset($campaign->extraCreditActivities) && is_array($campaign->extraCreditActivities)) {
+					$base['extraCreditActivities'] = [];
+					foreach ($campaign->extraCreditActivities as $activity) {
+						$a = is_object($activity) ? get_object_vars($activity) : $activity;
+						if (is_array($a)) {
+							$a['type'] = 'activity';
+							$a['badgeImage'] = $a['rewardImage'] ?? $a['badgeImage'] ?? null;
+							Campaign::setDisplayImageForArray($a, $imageSettings, 
+								$a['rewardGiven'] ?? false, 
+								$a['awardAutomatically'] ?? false, 
+								$a['isComplete'] ?? false);
+						}
+						$base['extraCreditActivities'][] = $a;
+					}
+				} else if (isset($campaign->extraCreditActivities)) {
+					$base['extraCreditActivities'] = $campaign->extraCreditActivities;
 				}
 				return $base;
 		}, $paginated);
