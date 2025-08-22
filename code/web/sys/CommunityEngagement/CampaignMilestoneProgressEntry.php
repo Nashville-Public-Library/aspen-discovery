@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/CommunityEngagement/Milestone.php';
 
 class CampaignMilestoneProgressEntry extends DataObject
@@ -28,7 +28,7 @@ class CampaignMilestoneProgressEntry extends DataObject
 	 * 
 	 * @return void
 	 */
-	public function initialize(CampaignMilestone $campaignMilestone, $args = null)
+	public function initialize(CampaignMilestone $campaignMilestone, $args = null) : void
 	{
 
 		$this->ce_milestone_id = $campaignMilestone->milestoneId;
