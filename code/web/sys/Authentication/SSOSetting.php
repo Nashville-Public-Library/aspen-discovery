@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Authentication/SSOMapping.php';
 
@@ -90,7 +90,11 @@ class SSOSetting extends DataObject {
 	private $_libraries;
 	private $_dataMapping;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		global $serverName;
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 		$patronLocationList = Location::getLocationList(false, true);
@@ -141,7 +145,7 @@ class SSOSetting extends DataObject {
 			'sort2' => 'Sort 2',
 		];
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -938,6 +942,9 @@ class SSOSetting extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -999,7 +1006,7 @@ class SSOSetting extends DataObject {
 		return $this->_dataMapping;
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		/* We process the SSO additional work before the DB is updated because we set 
 			a value on this object which needs to be persisted to the DB */
 		if($this->ssoXmlUrl) {
@@ -1019,7 +1026,7 @@ class SSOSetting extends DataObject {
 		return true;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -1051,7 +1058,7 @@ class SSOSetting extends DataObject {
 		}
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -1273,7 +1280,7 @@ class SSOSetting extends DataObject {
 	}
 
 	/** @noinspection PhpUnused */
-	function resetDataMappingToDefault() {
+	function resetDataMappingToDefault() : void {
 		$dataMapping = new SSOMapping();
 		$ssoSettingsId = $_REQUEST['id'];
 		$dataMapping->ssoSettingId = $ssoSettingsId;
@@ -1286,12 +1293,12 @@ class SSOSetting extends DataObject {
 		die();
 	}
 
-	public function clearExistingDataMapping() {
+	public function clearExistingDataMapping() : void {
 		$this->clearOneToManyOptions('SSOMapping', 'ssoSettingId');
 		$this->_dataMapping = [];
 	}
 
-	function setDataMappingValues($value) {
+	function setDataMappingValues($value) : void {
 		$this->_dataMapping = $value;
 	}
 
