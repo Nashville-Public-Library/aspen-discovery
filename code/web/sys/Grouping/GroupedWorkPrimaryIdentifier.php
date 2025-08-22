@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class GroupedWorkPrimaryIdentifier extends DataObject {
 	public $__table = 'grouped_work_primary_identifiers';    // table name
