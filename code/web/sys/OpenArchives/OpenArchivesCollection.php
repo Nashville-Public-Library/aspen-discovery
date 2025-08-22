@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/OpenArchives/LibraryOpenArchivesCollection.php';
 require_once ROOT_DIR . '/sys/OpenArchives/LocationOpenArchivesCollection.php';
 
@@ -10,13 +9,16 @@ class OpenArchivesCollection extends DataObject {
 	public $name;
 	public $baseUrl;
 	public $setName;
+	/** @noinspection PhpUnused */
 	public $indexAllSets;
 	public $subjects;
 	public $defaultCover;
 	public /** @noinspection PhpUnused */
 		$subjectFilters;
 	public $imageRegex;
+	/** @noinspection PhpUnused */
 	public $metadataFormat;
+	/** @noinspection PhpUnused */
 	public $dateFormatting;
 	public /** @noinspection PhpUnused */
 		$fetchFrequency;
@@ -28,11 +30,16 @@ class OpenArchivesCollection extends DataObject {
 	public $_libraries;
 	public $_locations;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Open Archives'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer Open Archives'));
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -163,6 +170,9 @@ class OpenArchivesCollection extends DataObject {
 				'values' => $locationList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -185,7 +195,7 @@ class OpenArchivesCollection extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		//Allow last fetched to be overridden
 		if (!empty($this->_changedFields) && !in_array('lastFetched', $this->_changedFields)) {
 			$this->lastFetched = 0;
@@ -200,7 +210,7 @@ class OpenArchivesCollection extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->clearDefaultCovers();
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
@@ -210,7 +220,7 @@ class OpenArchivesCollection extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$this->clearLibraries();
 		$this->clearLocations();
 		$this->clearDefaultCovers();
@@ -218,7 +228,7 @@ class OpenArchivesCollection extends DataObject {
 		return $this->update();
 	}
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new LibraryOpenArchivesCollection();
@@ -231,7 +241,7 @@ class OpenArchivesCollection extends DataObject {
 		return $this->_libraries;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -246,14 +256,14 @@ class OpenArchivesCollection extends DataObject {
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryOpenArchivesCollection = new LibraryOpenArchivesCollection();
 		$libraryOpenArchivesCollection->collectionId = $this->id;
-		return $libraryOpenArchivesCollection->delete(true);
+		$libraryOpenArchivesCollection->delete(true);
 	}
 
-	public function getLocations() {
+	public function getLocations() : ?array {
 		if (!isset($this->_locations) && $this->id) {
 			$this->_locations = [];
 			$location = new LocationOpenArchivesCollection();
@@ -266,7 +276,7 @@ class OpenArchivesCollection extends DataObject {
 		return $this->_locations;
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset($this->_locations) && is_array($this->_locations)) {
 			$this->clearLocations();
 
@@ -281,14 +291,14 @@ class OpenArchivesCollection extends DataObject {
 		}
 	}
 
-	private function clearLocations() {
+	private function clearLocations() : void {
 		//Delete links to the libraries
 		$locationOpenArchivesCollection = new LocationOpenArchivesCollection();
 		$locationOpenArchivesCollection->collectionId = $this->id;
-		return $locationOpenArchivesCollection->delete(true);
+		$locationOpenArchivesCollection->delete(true);
 	}
 
-	private function clearDefaultCovers() {
+	private function clearDefaultCovers() : void {
 		require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
 		$covers = new BookCoverInfo();
 		$covers->reloadAllDefaultCovers();
