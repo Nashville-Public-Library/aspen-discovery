@@ -5829,7 +5829,7 @@ class MyAccount_AJAX extends JSON_Action {
 					$stripeSettings->id = $paymentLibrary->stripeSettingId;
 					if ($stripeSettings->find(true)) {
 						//header('Location: ' . $configArray['Site']['url'] . '/Donations/DonationCompleted?id=' . $payment->id);
-						return $stripeSettings->submitTransaction(null, $payment, $paymentMethodId, $transactionType);
+						return $stripeSettings->submitTransaction($payment, $paymentMethodId, $transactionType);
 					} else {
 						return [
 							'success' => false,
@@ -5860,7 +5860,7 @@ class MyAccount_AJAX extends JSON_Action {
 				$stripeSettings = new StripeSetting();
 				$stripeSettings->id = $paymentLibrary->stripeSettingId;
 				if ($stripeSettings->find(true)) {
-					return $stripeSettings->submitTransaction($patron, $payment, $paymentMethodId, $transactionType);
+					return $stripeSettings->submitTransaction($payment, $paymentMethodId, $transactionType);
 				} else {
 					return [
 						'success' => false,
