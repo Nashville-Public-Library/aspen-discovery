@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class GrapesTemplate extends DataObject {
 	public $__table = 'grapes_templates';
@@ -15,9 +15,12 @@ class GrapesTemplate extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
-
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -52,9 +55,12 @@ class GrapesTemplate extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function findById($id) {
+	public function findById($id) : bool {
 		$this->id = $id;
 		return $this->find(true);
 	}
@@ -105,7 +111,7 @@ class GrapesTemplate extends DataObject {
 		return $templateList;
 	}
 
-	function getTemplateById($id) {
+	function getTemplateById($id) : bool {
 		$template = new GrapesTemplate();
 		$template->id = $id;
 		if ($template->find()) {
@@ -114,7 +120,7 @@ class GrapesTemplate extends DataObject {
 		return false;
 	}
 
-	function saveAsTemplate() {
+	function saveAsTemplate() : void {
 		$newGrapesTemplate = json_decode(file_get_contents("php://input"), true);
 		$html = $newGrapesTemplate['html'];
 		$template = new GrapesTemplate();
@@ -122,7 +128,7 @@ class GrapesTemplate extends DataObject {
 		$template->insert();
 	}
 
-	function addTemplate($templateName, $templateContent, $htmlData, $cssData){
+	function addTemplate($templateName, $templateContent, $htmlData, $cssData) : void {
 		$this->templateName = $templateName;
 		$this->templateContent = $templateContent;
 		$this->htmlData = $htmlData;
