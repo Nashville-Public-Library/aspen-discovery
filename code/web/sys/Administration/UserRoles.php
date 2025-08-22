@@ -1,6 +1,4 @@
-<?php
-
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class UserRoles extends DataObject {
 
@@ -47,7 +45,7 @@ class UserRoles extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (array_key_exists('user', $jsonData)) {
 			$username = $jsonData['user'];
@@ -63,16 +61,6 @@ class UserRoles extends DataObject {
 			if ($role->find(true)) {
 				$this->roleId = $role->roleId;
 			}
-		}
-	}
-
-	public function getRoleName() : string {
-		$role = new Role();
-		$role->roleId = $this->roleId;
-		if ($role->find(true)) {
-			return $role->name;
-		} else {
-			return "Unknown";
 		}
 	}
 }
