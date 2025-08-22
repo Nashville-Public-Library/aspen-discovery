@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/User/ExpirationInformation.php';
 class User extends DataObject {
 	public $__table = 'user'; // table name
@@ -320,7 +319,7 @@ class User extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false): int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret) {
 			// delete browse_category_dismissal
@@ -752,10 +751,8 @@ class User extends DataObject {
 	function getLinkedUsers() {
 		if (is_null($this->linkedUsers)) {
 			$this->linkedUsers = [];
-			/* var Library $library */ global $library;
-			global $memCache;
-			global $serverName;
-			global $logger;
+			/* var Library $library */
+			global $library;
 			if ($this->id && $library->allowLinkedAccounts) {
 				require_once ROOT_DIR . '/sys/Account/UserLink.php';
 				$userLink = new UserLink();
@@ -821,7 +818,7 @@ class User extends DataObject {
 		return $this->linkedUserObjects;
 	}
 
-	public function setParentUser($user) {
+	public function setParentUser($user) : void {
 		$this->parentUser = $user;
 	}
 
@@ -1157,7 +1154,7 @@ class User extends DataObject {
 	/**
 	 * @return int|bool
 	 */
-	function update($context = '') {
+	public function update(string $context = '') : bool|int {
 		if (empty($this->created)) {
 			$this->__set('created', date('Y-m-d'));
 		}
@@ -1171,7 +1168,7 @@ class User extends DataObject {
 		return $result;
 	}
 
-	function insert($context = '') : int {
+	public function insert(string $context = '') : int|bool {
 		if ($this->firstname === null) {
 			$this->firstname = '';
 		}
@@ -1231,7 +1228,12 @@ class User extends DataObject {
 		return in_array($roleName, $myRoles);
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		//Lookup the available roles in the system
 		require_once ROOT_DIR . '/sys/Administration/Role.php';
 		$roleList = Role::getLookup();
@@ -1363,7 +1365,9 @@ class User extends DataObject {
 			unset($structure['email']);
 		}
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+
+		return self::$_objectStructure[$context];
 	}
 
 	function hasRatings() {
@@ -4325,7 +4329,7 @@ class User extends DataObject {
 			'Administer All Grouped Work Display Settings',
 			'Administer Library Grouped Work Display Settings',
 		]);
-		$sections['cataloging']->addAction(new AdminAction('Manual Grouping Authorities', 'View a list of all title author/authorities that have been added to Aspen to merge works.', '/Admin/AlternateTitles'), 'Manually Group and Ungroup Works');
+		$sections['cataloging']->addAction(new AdminAction('Manual Grouping Title/Author Variants', 'View a list of all title/author variants that have been added to Aspen to merge works.', '/Admin/AlternateTitles'), 'Manually Group and Ungroup Works');
 		$sections['cataloging']->addAction(new AdminAction('Author Authorities', 'Create and edit authorities for authors.', '/Admin/AuthorAuthorities'), 'Manually Group and Ungroup Works');
 		$sections['cataloging']->addAction(new AdminAction('Records To Not Group', 'Lists records that should not be grouped.', '/Admin/NonGroupedRecords'), 'Manually Group and Ungroup Works');
 		$sections['cataloging']->addAction(new AdminAction('Replacement Costs', 'Define default replacement costs by format.', '/Admin/ReplacementCosts'), 'Administer Replacement Costs');
@@ -4657,14 +4661,6 @@ class User extends DataObject {
 			]);
 			$sections['palace_project']->addAction(new AdminAction('CollectionReport', 'View collection report for Palace Project.', '/PalaceProject/CollectionReport'), [
 				'Administer Palace Project',
-				'View System Reports',
-			]);
-		}
-
-		if (array_key_exists('RBdigital', $enabledModules)) {
-			$sections['rbdigital'] = new AdminSection('RBdigital');
-			$sections['rbdigital']->addAction(new AdminAction('Dashboard', 'View the usage dashboard for RBdigital integration.', '/RBdigital/Dashboard'), [
-				'View Dashboards',
 				'View System Reports',
 			]);
 		}
@@ -5359,7 +5355,7 @@ class User extends DataObject {
 		return true;
 	}
 
-	protected function clearRuntimeDataVariables() {
+	protected function clearRuntimeDataVariables() : void {
 		if ($this->_accountProfile != null) {
 			$this->_accountProfile->__destruct();
 			$this->_accountProfile = null;
@@ -5693,7 +5689,7 @@ class User extends DataObject {
 		return $return;
 	}
 
-	public function loadObjectPropertiesFromJSON($jsonData, $mappings) {
+	public function loadObjectPropertiesFromJSON($jsonData, $mappings) : void {
 		$encryptedFields = $this->getEncryptedFieldNames();
 		$sourceEncryptionKey = isset($mappings['passkey']) ? $mappings['passkey'] : '';
 		foreach ($jsonData as $property => $value) {
@@ -5738,7 +5734,7 @@ class User extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		$allLocations = Location::getLocationListAsObjects(false);
 		if (empty($jsonData['homeLocationId'])) {

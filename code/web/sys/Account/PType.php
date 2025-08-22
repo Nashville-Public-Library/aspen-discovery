@@ -1,7 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
-
 class PType extends DataObject {
 	public $__table = 'ptype';   // table name
 	public $id;
@@ -20,6 +18,7 @@ class PType extends DataObject {
 	public $enableReadingHistory;
 	public $canSuggestMaterials;
 	public $canRenewOnline;
+	/** @noinspection PhpUnused */
 	public $enableYearInReview;
 
 	public function getNumericColumnNames(): array {
@@ -38,7 +37,11 @@ class PType extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$roles = [];
 		$roles[-1] = 'None';
 		$role = new Role();
@@ -198,7 +201,9 @@ class PType extends DataObject {
 		if (!UserAccount::userHasPermission('Administer Permissions')) {
 			unset($structure['assignedRoleId']);
 		}
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+
+		return self::$_objectStructure[$context];
 	}
 
 	public function updateStructureForEditingObject($structure) : array {
@@ -262,7 +267,7 @@ class PType extends DataObject {
 		}
 	}
 
-	public function update($context = '') : bool|int {
+	public function update(string $context = '') : int|bool {
 		if ($this->accountLinkingSetting != 0) {
 			$user = new User();
 			$user->patronType = $this->pType;
