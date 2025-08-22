@@ -49,6 +49,14 @@ function getUpdates25_09_00(): array {
 				"DELETE FROM permissions where name = 'Administer RBdigital'",
 			]
 		], //remove_rbdigital_tables
+		'remove_redwood_tables' => [
+			'title' => 'Remove Redwood tables',
+			'description' => 'Remove Unused Redwood Table',
+			'continueOnError' => false,
+			'sql' => [
+				'DROP TABLE redwood_user_contribution'
+			]
+		], //remove_redwood_tables
 
 		//katherine - Grove
 
