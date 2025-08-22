@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class EBSCOhostFacet extends DataObject {
 	public $__table = 'ebscohost_facet';
