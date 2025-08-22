@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class RecordToInclude extends DataObject {
 	public $id;
@@ -55,11 +54,16 @@ class RecordToInclude extends DataObject {
 
 	public $weight;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		require_once ROOT_DIR . '/sys/Indexing/IndexingProfile.php';
 		$indexingProfiles = IndexingProfile::getAllIndexingProfilesById();
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -286,5 +290,8 @@ class RecordToInclude extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

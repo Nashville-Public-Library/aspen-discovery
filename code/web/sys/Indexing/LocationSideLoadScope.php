@@ -9,7 +9,12 @@ class LocationSideLoadScope extends DataObject {
 	public $locationId;
 	public $sideLoadScopeId;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$sideLoadScopes = [];
 		require_once ROOT_DIR . '/sys/Indexing/SideLoadScope.php';
 		$sideLoadScope = new SideLoadScope();
@@ -25,7 +30,7 @@ class LocationSideLoadScope extends DataObject {
 		}else{
 			$locationsList = $allLocationsList;
 		}
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -50,6 +55,9 @@ class LocationSideLoadScope extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function fetch(): bool|DataObject|null {
@@ -65,7 +73,8 @@ class LocationSideLoadScope extends DataObject {
 		return $result;
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/SideLoads/Scopes?objectAction=edit&id=' . $this->sideLoadScopeId;
 	}
 }
