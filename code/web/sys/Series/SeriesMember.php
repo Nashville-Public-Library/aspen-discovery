@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class SeriesMember extends DataObject {
 	public $__table = 'series_member';
@@ -18,9 +17,15 @@ class SeriesMember extends DataObject {
 	public $userAdded;
 	public $excluded;
 	public $deleted;
+	/** @noinspection PhpUnused */
 	public $priorityScore;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		global $configArray;
 		$coverPath = $configArray['Site']['coverPath'];
 		$structure = [
@@ -108,10 +113,12 @@ class SeriesMember extends DataObject {
 				'description' => "If excluded, this title won't show up as a member of the series",
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if ($this->groupedWorkPermanentId) {
 			$this->isPlaceholder = false;
 		} else {
@@ -120,7 +127,7 @@ class SeriesMember extends DataObject {
 		return parent::update();
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if ($this->groupedWorkPermanentId) {
 			$this->isPlaceholder = false;
 		} else {
@@ -139,7 +146,8 @@ class SeriesMember extends DataObject {
 		];
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Series/SeriesMembers?objectAction=edit&id=' . $this->id;
 	}
 
@@ -150,7 +158,7 @@ class SeriesMember extends DataObject {
 		return parent::canActiveUserEdit();
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		if (!$this->userAdded) {
 			$this->deleted = 1;
 			$this->update();
