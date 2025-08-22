@@ -791,7 +791,7 @@ class CatalogConnection {
 			$patron->update();
 			$result['success'] = true;
 			$result['message'] = translate([
-				'text' => 'You have been opted out of tracking Reading History',
+				'text' => 'You have opted out of tracking Reading History',
 				'isPublicFacing' => true,
 			]);
 		} elseif ($action == 'optIn') {
@@ -801,7 +801,7 @@ class CatalogConnection {
 
 			$result['success'] = true;
 			$result['message'] = translate([
-				'text' => 'You have been opted out in to tracking Reading History',
+				'text' => 'You have opted in to tracking Reading History.',
 				'isPublicFacing' => true,
 			]);
 		}
@@ -814,7 +814,19 @@ class CatalogConnection {
 				$performIlsAction = $homeLibrary->optOutOfReadingHistoryUpdatesILS;
 			}
 			if ($performIlsAction) {
-				$this->driver->doReadingHistoryAction($patron, $action, $selectedTitles);
+				$ilsResult = $this->driver->doReadingHistoryAction($patron, $action, $selectedTitles);
+				if (is_array($ilsResult)) {
+					// If the ILS action returned a result, merge it with our main result
+					if (!$ilsResult['success']) {
+						$result['success'] = false;
+						$result['message'] = $ilsResult['message'];
+					} else {
+						// Append ILS success message to existing message if both succeeded
+						if ($result['success'] && !empty($ilsResult['message'])) {
+							$result['message'] .= ' ' . $ilsResult['message'];
+						}
+					}
+				}
 			}
 		}
 		return $result;

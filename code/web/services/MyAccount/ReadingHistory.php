@@ -59,7 +59,12 @@ class ReadingHistory extends MyAccount {
 				//Perform the requested action
 				$selectedTitles = $_REQUEST['selected'] ?? [];
 				$readingHistoryAction = $_REQUEST['readingHistoryAction'];
-				$patron->doReadingHistoryAction($readingHistoryAction, $selectedTitles);
+				$result = $patron->doReadingHistoryAction($readingHistoryAction, $selectedTitles);
+				if (isset($result['message'])) {
+					session_start();
+					$_SESSION['readingHistoryMessage'] = $result['message'];
+					$_SESSION['readingHistoryMessageIsError'] = !$result['success'];
+				}
 
 				//redirect back to the current location without the action.
 				$newLocation = "/MyAccount/ReadingHistory";
@@ -75,6 +80,14 @@ class ReadingHistory extends MyAccount {
 				}
 				header("Location: $newLocation");
 				die();
+			}
+
+			session_start();
+			if (isset($_SESSION['readingHistoryMessage'])) {
+				$interface->assign('updateMessage', $_SESSION['readingHistoryMessage']);
+				$interface->assign('updateMessageIsError', $_SESSION['readingHistoryMessageIsError']);
+				unset($_SESSION['readingHistoryMessage']);
+				unset($_SESSION['readingHistoryMessageIsError']);
 			}
 		}
 

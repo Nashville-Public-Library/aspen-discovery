@@ -1501,14 +1501,14 @@ class Koha extends AbstractIlsDriver {
 		return true;
 	}
 
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles) : void {
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): null|array {
 		$doUpdate = false;
 		if ($action == 'optIn') {
 			$doUpdate = true;
 			$newPrivacySetting = 0; // Keep reading history forever
 		}elseif ($action == 'optOut') {
 			$doUpdate = true;
-			$newPrivacySetting = 2; // Never keey reading history
+			$newPrivacySetting = 2; // Never keep reading history
 		}
 		if ($doUpdate) {
 			$this->initDatabaseConnection();
@@ -1527,7 +1527,7 @@ class Koha extends AbstractIlsDriver {
 				//We could not connect to the database, don't update, so we don't corrupt the DB
 				global $logger;
 				$logger->log("Could not load existing user information from the DB during doReadingHistoryAction", Logger::LOG_ERROR);
-				return;
+				return null;
 			}
 
 			$postVariables = [
@@ -1567,6 +1567,7 @@ class Koha extends AbstractIlsDriver {
 				}
 			}
 		}
+		return null;
 	}
 
 	/**
