@@ -174,6 +174,7 @@ class IPAddress extends DataObject {
 
 	public function insert(string $context = '') : int|bool {
 		$this->calcIpRange();
+		/** @var $memCache Memcache */
 		global $memCache;
 		$memCache->deleteStartingWith('ipId_for_ip_');
 		$memCache->deleteStartingWith('location_for_ip_');
@@ -183,6 +184,7 @@ class IPAddress extends DataObject {
 
 	public function update(string $context = '') : int|bool {
 		$this->calcIpRange();
+		/** @var $memCache Memcache */
 		global $memCache;
 		$memCache->deleteStartingWith('ipId_for_ip_');
 		$memCache->deleteStartingWith('location_for_ip_');
@@ -191,6 +193,7 @@ class IPAddress extends DataObject {
 	}
 
 	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
+		/** @var $memCache Memcache */
 		global $memCache;
 		$memCache->deleteStartingWith('ipId_for_ip_');
 		$memCache->deleteStartingWith('location_for_ip_');
