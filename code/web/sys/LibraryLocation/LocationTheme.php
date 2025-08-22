@@ -18,9 +18,13 @@ class LocationTheme extends DataObject {
 		];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
-		//Load Libraries for lookup values
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+			//Load Libraries for lookup values
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Locations'));
 		$allLocationList = Location::getLocationList(false);
 
@@ -33,7 +37,7 @@ class LocationTheme extends DataObject {
 			$availableThemes[$theme->id] = $theme->themeName;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -57,6 +61,9 @@ class LocationTheme extends DataObject {
 				'permissions' => ['Library Theme Configuration'],
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -85,7 +92,7 @@ class LocationTheme extends DataObject {
 		}
 	}
 
-	function getEditLink($context): string {
+	public function getEditLink(string $context): string {
 		if ($context == 'locations') {
 			return '/Admin/Locations?objectAction=edit&id=' . $this->locationId;
 		} else {
