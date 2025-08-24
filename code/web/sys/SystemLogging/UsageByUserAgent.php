@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class UsageByUserAgent extends DataObject {
 	public $__table = 'usage_by_user_agent';

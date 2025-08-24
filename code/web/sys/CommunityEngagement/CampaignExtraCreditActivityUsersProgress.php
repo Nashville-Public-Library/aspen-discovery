@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
+
 class CampaignExtraCreditActivityUsersProgress extends DataObject {
 
 	public $__table = 'ce_campaign_extra_credit_activity_users_progress';

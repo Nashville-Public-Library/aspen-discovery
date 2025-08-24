@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class IndexedRecordSource extends DataObject {
 	public $__table = 'indexed_record_source';

@@ -5,6 +5,21 @@ require_once ROOT_DIR . '/services/Admin/ObjectEditor.php';
 require_once ROOT_DIR . '/sys/Theming/Theme.php';
 
 class Admin_Themes extends ObjectEditor {
+	function viewIndividualObject($structure) {
+		global $interface;
+		if (isset($_REQUEST['id'])) {
+			$id = $_REQUEST['id'];
+			/** @var Theme $existingObject */
+			$existingObject = $this->getExistingObjectById($id);
+			$parentTheme = $existingObject->getParentTheme();
+			if ($parentTheme == null) {
+				//Get the default theme
+				$parentTheme = $existingObject->getDefaultTheme();
+			}
+			$interface->assign('parentTheme', $existingObject->getParentTheme());
+		}
+		parent::viewIndividualObject($structure);
+	}
 	function getObjectType(): string {
 		return 'Theme';
 	}

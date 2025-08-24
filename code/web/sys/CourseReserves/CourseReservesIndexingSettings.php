@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/CourseReserves/CourseReserveLibraryMapValue.php';
 
@@ -6,13 +6,19 @@ class CourseReservesIndexingSettings extends DataObject {
 	public $__table = 'course_reserves_indexing_settings';    // table name
 	public $id;
 	public $runFullUpdate;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfChangedCourseReserves;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfAllCourseReserves;
 	/** @var CourseReserveLibraryMapValue[] */
 	public $_libraryMappings;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -58,6 +64,9 @@ class CourseReservesIndexingSettings extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -98,10 +107,10 @@ class CourseReservesIndexingSettings extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret === FALSE) {
-			return $ret;
+			return false;
 		} else {
 			$this->saveLibraryMappings();
 		}
@@ -113,20 +122,20 @@ class CourseReservesIndexingSettings extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret === FALSE) {
-			return $ret;
+			return false;
 		} else {
 			$this->saveLibraryMappings();
 		}
 		return true;
 	}
 
-	public function saveLibraryMappings() {
+	public function saveLibraryMappings() : void {
 		if (isset ($this->_libraryMappings)) {
 			foreach ($this->_libraryMappings as $value) {
-				if ($value->_deleteOnSave == true) {
+				if ($value->_deleteOnSave) {
 					$value->delete();
 				} else {
 					if (isset($value->id) && is_numeric($value->id)) {

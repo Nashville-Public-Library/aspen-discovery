@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class AspenError extends DataObject {
 	public $__table = 'errors';
@@ -17,10 +16,10 @@ class AspenError extends DataObject {
 	 * Create a new Aspen Error.  For new Errors raised by the system, message should be filled out.
 	 * For searching old errors, provide no parameters
 	 *
-	 * @param null $message
-	 * @param null $backtrace
+	 * @param ?string $message
+	 * @param ?array $backtrace
 	 */
-	public function __construct($message = null, $backtrace = null) {
+	public function __construct(?string $message = null, ?array $backtrace = null) {
 		if ($message != null) {
 			if (isset($_SERVER['REQUEST_URI'])) {
 				$this->url = $_SERVER['REQUEST_URI'];
@@ -65,8 +64,12 @@ class AspenError extends DataObject {
 		}
 	}
 
-	public static function getObjectStructure($context = ''): array {
-		$structure = [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure =  [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -116,18 +119,20 @@ class AspenError extends DataObject {
 				'description' => 'When the error occurred',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function getMessage() {
+	public function getMessage() : ?string {
 		return $this->message;
 	}
 
-	public function getRawBacktrace() {
+	public function getRawBacktrace() : ?array {
 		return $this->_rawBacktrace;
 	}
 
-	public function toString() {
+	public function toString() : string {
 		return $this->message;
 	}
 
@@ -136,7 +141,7 @@ class AspenError extends DataObject {
 	 *
 	 * @param string|AspenError $error
 	 */
-	static function raiseError($error) {
+	static function raiseError(mixed $error) : void {
 		if (is_string($error)) {
 			$error = new AspenError($error);
 		}
@@ -147,10 +152,8 @@ class AspenError extends DataObject {
 	 * Handle an error raised by aspen
 	 *
 	 * TODO: When we are loading AJAX information, we should return a JSON formatted error rather than an HTML page
-	 *
-	 * @return null
 	 */
-	function handleAspenError() {
+	function handleAspenError() : void {
 		global $errorHandlingEnabled;
 		if (isset($errorHandlingEnabled) && ($errorHandlingEnabled < 0)) {
 			return;
@@ -194,7 +197,7 @@ class AspenError extends DataObject {
 
 		// Display an error screen to the user:
 		global $interface;
-		if (!isset($interface) || $interface == false) {
+		if (!isset($interface) || !$interface) {
 			require_once ROOT_DIR . '/sys/Interface.php';
 			$interface = new UInterface();
 		}
@@ -223,17 +226,22 @@ class AspenError extends DataObject {
 				$interface->setTemplate('error.tpl');
 			}
 			$interface->setPageTitle('An Error has occurred');
-			$interface->display('layout.tpl');
+			try {
+				$interface->display('layout.tpl');
+			} catch (Exception $e) {
+				echo $e->getMessage();
+				die();
+			}
 		}
 
 		// Exceptions we don't want to log
 		$doLog = true;
 		// Microsoft Web Discussions Toolbar polls the server for these two files
 		//    it's not script kiddie hacking, just annoying in logs, ignore them.
-		if (strpos($_SERVER['REQUEST_URI'], "cltreq.asp") !== false) {
+		if (str_contains($_SERVER['REQUEST_URI'], "cltreq.asp")) {
 			$doLog = false;
 		}
-		if (strpos($_SERVER['REQUEST_URI'], "owssvr.dll") !== false) {
+		if (str_contains($_SERVER['REQUEST_URI'], "owssvr.dll")) {
 			$doLog = false;
 		}
 		// If we found any exceptions, finish here
@@ -253,7 +261,7 @@ class AspenError extends DataObject {
 		if (!empty($this->backtrace)) {
 			if (is_array($this->backtrace)) {
 				foreach ($this->backtrace as $line) {
-					$basicBacktrace .= (isset($line['file']) ? $line['file'] : 'none') . "  line " . (isset($line['line']) ? $line['line'] : 'none') . " - " . "class = " . (isset($line['class']) ? $line['class'] : 'none') . ", function = " . (isset($line['function']) ? $line['function'] : 'none') . "\n";
+					$basicBacktrace .= ($line['file'] ?? 'none') . "  line " . ($line['line'] ?? 'none') . " - " . "class = " . ($line['class'] ?? 'none') . ", function = " . ($line['function'] ?? 'none') . "\n";
 				}
 			} else {
 				$basicBacktrace .= $this->backtrace;

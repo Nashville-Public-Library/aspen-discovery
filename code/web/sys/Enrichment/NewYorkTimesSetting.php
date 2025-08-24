@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class NewYorkTimesSetting extends DataObject {
@@ -6,7 +6,11 @@ class NewYorkTimesSetting extends DataObject {
 	public $id;
 	public $booksApiKey;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -24,6 +28,8 @@ class NewYorkTimesSetting extends DataObject {
 				'forcesListReindex' => true,
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

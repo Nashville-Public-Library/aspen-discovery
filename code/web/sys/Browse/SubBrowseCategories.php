@@ -1,6 +1,4 @@
-<?php
-
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class SubBrowseCategories extends DataObject {
 	public $__table = 'browse_category_subcategories';
@@ -17,9 +15,13 @@ class SubBrowseCategories extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$browseCategoryList = self::listBrowseCategories();
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -47,9 +49,12 @@ class SubBrowseCategories extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	static function listBrowseCategories() {
+	static function listBrowseCategories() : array {
 		$browseCategoryList = [];
 		require_once ROOT_DIR . '/sys/Browse/BrowseCategory.php';
 
@@ -98,7 +103,8 @@ class SubBrowseCategories extends DataObject {
 		return $browseCategoryList;
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Admin/BrowseCategories?objectAction=edit&id=' . $this->subCategoryId;
 	}
 
@@ -122,7 +128,7 @@ class SubBrowseCategories extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): void  {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (isset($jsonData)) {
 			if (isset($jsonData['subCategory'])) {
@@ -146,11 +152,5 @@ class SubBrowseCategories extends DataObject {
 			}
 		}
 		return false;
-	}
-
-	function getNumSubCategories() {
-		$subCategory = new SubBrowseCategories();
-		$subCategory->browseCategoryId = $this->browseCategoryId;
-		return $subCategory->count();
 	}
 }

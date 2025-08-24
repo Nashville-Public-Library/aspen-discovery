@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Browse/BaseBrowsable.php';
 require_once ROOT_DIR . '/sys/Browse/SubBrowseCategories.php';
@@ -42,7 +42,7 @@ class BrowseCategory extends BaseBrowsable {
 	 *
 	 * @return SubBrowseCategories[]
 	 */
-	public function getSubCategories() {
+	public function getSubCategories() : array {
 		global $module;
 		if (!isset($this->_subBrowseCategories) && $this->id) {
 			$this->_subBrowseCategories = [];
@@ -142,7 +142,7 @@ class BrowseCategory extends BaseBrowsable {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveSubBrowseCategories();
@@ -154,9 +154,9 @@ class BrowseCategory extends BaseBrowsable {
 	 * call this method when updating the browse categories views statistics, so that all the other functionality
 	 * in update() is avoided (and isn't needed)
 	 *
-	 * @return int
+	 * @return int|bool
 	 */
-	public function update_stats_only() {
+	public function update_stats_only() : int|bool {
 		return parent::update();
 	}
 
@@ -165,7 +165,7 @@ class BrowseCategory extends BaseBrowsable {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		// Set userId for manually created browse categories (i.e., not from searching).
 		if (empty($this->userId)) {
 			$this->userId = UserAccount::getActiveUserId();
@@ -177,7 +177,7 @@ class BrowseCategory extends BaseBrowsable {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->textId)) {
 			//Remove from any libraries that use it.
@@ -202,7 +202,7 @@ class BrowseCategory extends BaseBrowsable {
 	}
 
 
-	public function saveSubBrowseCategories() {
+	public function saveSubBrowseCategories() : void {
 		if (isset ($this->_subBrowseCategories) && is_array($this->_subBrowseCategories)) {
 			/** @var SubBrowseCategories[] $subBrowseCategories */
 			/** @var SubBrowseCategories $subCategory */
@@ -222,7 +222,11 @@ class BrowseCategory extends BaseBrowsable {
 		}
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		// Get All User Lists
 		require_once ROOT_DIR . '/sys/UserLists/UserList.php';
 		$sourceLists = UserList::getSourceListsForBrowsingAndCarousels();
@@ -239,7 +243,7 @@ class BrowseCategory extends BaseBrowsable {
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Browse Categories'));
 		$libraryList[-1] = 'No Library Selected';
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -410,14 +414,18 @@ class BrowseCategory extends BaseBrowsable {
 				'description' => 'The number of times users have dismissed this category',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Admin/BrowseCategories?objectAction=edit&id=' . $this->id;
 	}
 
 	/** @noinspection PhpUnused */
-	function validateTextId() {
+	function validateTextId() : array {
 		//Setup validation return array
 		$validationResults = [
 			'validatedOk' => true,
@@ -450,7 +458,7 @@ class BrowseCategory extends BaseBrowsable {
 		return $validationResults;
 	}
 
-	public function isValidForDisplay($appUser = null, $checkDismiss = true) {
+	public function isValidForDisplay($appUser = null, $checkDismiss = true) : bool {
 		$curTime = time();
 		if ($this->startDate != 0 && $this->startDate > $curTime) {
 			return false;
@@ -543,7 +551,7 @@ class BrowseCategory extends BaseBrowsable {
 		return true;
 	}
 
-	function isDismissed($user) {
+	function isDismissed($user) : bool {
 		if (!empty($user)) {
 			require_once ROOT_DIR . '/sys/Browse/BrowseCategoryDismissal.php';
 			$browseCategoryDismissal = new BrowseCategoryDismissal();
@@ -556,7 +564,7 @@ class BrowseCategory extends BaseBrowsable {
 		return false;
 	}
 
-	function allSubCategoriesDismissed($user) {
+	function allSubCategoriesDismissed($user) : bool {
 		$count = 0;
 		if (!empty($user)) {
 			$subCategories = $this->getSubCategories();
@@ -580,7 +588,7 @@ class BrowseCategory extends BaseBrowsable {
 		return false;
 	}
 
-	function allUserListsDismissed() {
+	function allUserListsDismissed() : bool {
 		$count = 0;
 		if (UserAccount::isLoggedIn()) {
 			$user = UserAccount::getActiveUserObj();
@@ -650,8 +658,8 @@ class BrowseCategory extends BaseBrowsable {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
-		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting');
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
+		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
 		if (isset($jsonData['library'])) {
 			$allLibraries = Library::getLibraryListAsObjects(false);
@@ -676,7 +684,7 @@ class BrowseCategory extends BaseBrowsable {
 		}
 	}
 
-	public function loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting'): bool {
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
 		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (isset($jsonData['subCategories'])) {
 			$subCategories = [];

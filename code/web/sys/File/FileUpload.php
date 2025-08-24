@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class FileUpload extends DataObject {
 	public $__table = 'file_uploads';
@@ -18,7 +18,11 @@ class FileUpload extends DataObject {
 		return ['id'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$allSharingOptions = [
 			0 => 'Not Shared',
 			1 => 'Selected Library',
@@ -41,7 +45,7 @@ class FileUpload extends DataObject {
 
 		$libraryListForSharing = $libraryListForSharing + $libraryList;
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -103,21 +107,21 @@ class FileUpload extends DataObject {
 				'readOnly' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function getFileName() {
+	public function getFileName() : string {
 		return basename($this->fullPath);
 	}
 
-	function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->makeThumbnail();
 		return parent::insert();
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	function update($context = '') {
+	public function update(string $context = '') : bool|int {
 		$this->makeThumbnail();
 		return parent::update();
 	}
@@ -196,14 +200,7 @@ class FileUpload extends DataObject {
 		return true;
 	}
 
-	/**
-	 * When doing a hard delete ($useWhere = true),
-	 * remove the physical file and thumbnail before deleting the DB row.
-	 *
-	 * @param bool $useWhere
-	 * @return int
-	 */
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		if ($hardDelete) {
 			if (!empty($this->fullPath) && file_exists($this->fullPath)) {
 				@unlink($this->fullPath);

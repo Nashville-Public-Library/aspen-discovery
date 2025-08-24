@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class RecaptchaSetting extends DataObject {
@@ -7,8 +7,12 @@ class RecaptchaSetting extends DataObject {
 	public $publicKey;
 	public $privateKey;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -29,9 +33,12 @@ class RecaptchaSetting extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public static function validateRecaptcha() {
+	public static function validateRecaptcha() : bool {
 		$recaptcha = new RecaptchaSetting();
 		if ($recaptcha->find(true) && !empty($recaptcha->publicKey)) {
 			$resp = recaptcha_check_answer($recaptcha->privateKey, $_SERVER["REMOTE_ADDR"], $_POST["g-recaptcha-response"]);

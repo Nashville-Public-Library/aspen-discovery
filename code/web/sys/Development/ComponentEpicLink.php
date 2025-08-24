@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class ComponentEpicLink extends DataObject {
 	public $__table = 'component_development_epic_link';
@@ -6,7 +6,11 @@ class ComponentEpicLink extends DataObject {
 	public $epicId;
 	public $componentId;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$componentList = [];
 		require_once ROOT_DIR . '/sys/Support/TicketComponentFeed.php';
 		$component = new TicketComponentFeed();
@@ -26,7 +30,7 @@ class ComponentEpicLink extends DataObject {
 			$epicList[$epic->id] = $epic->name;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -50,9 +54,12 @@ class ComponentEpicLink extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getEditLink($context): string {
+	public function getEditLink(string $context): string {
 		if ($context == 'relatedEpics') {
 			return '/Development/Epics?objectAction=edit&id=' . $this->epicId;
 		} else {

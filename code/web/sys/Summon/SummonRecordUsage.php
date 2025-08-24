@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class SummonRecordUsage extends DataObject {
 	public $__table = 'summon_usage';

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/EventsFacetGroup.php';
 
 class LibraryEventsFacetSetting extends DataObject {
@@ -10,14 +10,14 @@ class LibraryEventsFacetSetting extends DataObject {
 	private $_facetGroup = false;
 
 	/** @return EventsFacet[] */
-	public function getFacets() {
+	public function getFacets() : array {
 		try {
 			if (!is_null($this->getFacetGroup())) {
 				return $this->getFacetGroup()->getFacets();
 			} else {
 				return [];
 			}
-		} catch (Exception $e) {
+		} catch (Exception) {
 			return [];
 		}
 	}
@@ -32,7 +32,7 @@ class LibraryEventsFacetSetting extends DataObject {
 				}
 			}
 			return $this->_facetGroup;
-		} catch (Exception $e) {
+		} catch (Exception) {
 			return null;
 		}
 	}

@@ -1,4 +1,5 @@
 <?php
+/** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestone.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneUsersProgress.php';
@@ -14,12 +15,17 @@ class Milestone extends DataObject {
 	public $campaignId;
 	public $conditionalOperator;
 	public $progressBeyondOneHundredPercent;
+	/** @noinspection PhpUnused */
 	public $allowPatronProgressInput;
 	public $description;
 
-  
 
-	public static function getObjectStructure($context = ''): array {
+
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 	 
 		$structure = [
 			'id' => [
@@ -103,7 +109,9 @@ class Milestone extends DataObject {
 				'default' => false,
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	} 
 
 

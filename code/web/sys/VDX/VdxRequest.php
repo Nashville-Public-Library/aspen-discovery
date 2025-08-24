@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class VdxRequest extends DataObject {
 	public $__table = 'user_vdx_request';

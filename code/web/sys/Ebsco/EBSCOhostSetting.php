@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Ebsco/EBSCOhostSearchSetting.php';
 
 /**
@@ -17,7 +17,11 @@ class EBSCOhostSetting extends DataObject {
 		return ['profilePwd'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$ebscoHostSearchSettingStructure = EBSCOhostSearchSetting::getObjectStructure($context);
 
 		$structure = [
@@ -67,7 +71,8 @@ class EBSCOhostSetting extends DataObject {
 			],
 		];
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -79,7 +84,7 @@ class EBSCOhostSetting extends DataObject {
 	}
 
 	/**
-	 * @return EBSCOhostSearchSetting[]
+	 * @return ?EBSCOhostSearchSetting[]
 	 */
 	public function getSearchSettings(): ?array {
 		if (!isset($this->_searchSettings) && $this->id) {
@@ -102,7 +107,7 @@ class EBSCOhostSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveSearchSettings();
@@ -110,7 +115,7 @@ class EBSCOhostSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			if (empty($this->_searchSettings)) {
@@ -126,14 +131,14 @@ class EBSCOhostSetting extends DataObject {
 		return $ret;
 	}
 
-	public function saveSearchSettings() {
+	public function saveSearchSettings(): void {
 		if (isset ($this->_searchSettings) && is_array($this->_searchSettings)) {
 			$this->saveOneToManyOptions($this->_searchSettings, 'settingId');
 			unset($this->_searchSettings);
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret) {
 			$this->clearSearchSettings();
@@ -141,7 +146,7 @@ class EBSCOhostSetting extends DataObject {
 		return $ret;
 	}
 
-	public function clearSearchSettings() {
+	public function clearSearchSettings() : void {
 		$searchSettings = $this->getSearchSettings();
 		foreach ($searchSettings as $searchSetting) {
 			$searchSetting->delete();

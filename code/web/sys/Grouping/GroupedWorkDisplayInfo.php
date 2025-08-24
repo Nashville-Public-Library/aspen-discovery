@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class GroupedWorkDisplayInfo extends DataObject {
@@ -12,7 +12,7 @@ class GroupedWorkDisplayInfo extends DataObject {
 	public $addedBy;
 	public $dateAdded;
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if (empty($this->seriesDisplayOrder)) {
 			$this->seriesDisplayOrder = 0;
 		}
@@ -25,7 +25,7 @@ class GroupedWorkDisplayInfo extends DataObject {
 		return parent::insert();
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if (empty($this->seriesDisplayOrder)) {
 			$this->seriesDisplayOrder = 0;
 		}
@@ -38,7 +38,7 @@ class GroupedWorkDisplayInfo extends DataObject {
 		return parent::update();
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
 		$groupedWork = new GroupedWork();
 		$groupedWork->permanent_id = $this->permanent_id;

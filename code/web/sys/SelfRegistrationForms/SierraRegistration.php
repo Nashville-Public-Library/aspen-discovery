@@ -1,13 +1,18 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 class SierraRegistration extends DataObject {
 	public $__table = 'self_registration_sierra';
 	public $id;
 	public $patronId;
 	public $_name;
+	/** @noinspection PhpUnused */
 	public $_address;
+	/** @noinspection PhpUnused */
 	public $_phone;
+	/** @noinspection PhpUnused */
 	public $_email;
+	/** @noinspection PhpUnused */
 	public $_birthDate;
+	/** @noinspection PhpUnused */
 	public $_expirationDate;
 	public $barcode;
 	public $sierraPType;
@@ -24,7 +29,12 @@ class SierraRegistration extends DataObject {
 	protected $_sierraData;
 	protected $_sierraUpdate = [];
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$sierraPTypes[''] = "None";
 		$pCode1Options[''] = "None";
 		$pCode2Options[''] = "None";
@@ -47,7 +57,7 @@ class SierraRegistration extends DataObject {
 			$pCode4Options = $pCode4Options + $metadataOptions['pcode4'];
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -187,9 +197,12 @@ class SierraRegistration extends DataObject {
 				'hiddenByDefault' => true,
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->approved = 1;
 		$this->_changedFields[] = 'approved';
 		if (!empty($this->_newBarcode)) {
@@ -220,11 +233,10 @@ class SierraRegistration extends DataObject {
 			$this->setSierraData('note', $this->_note);
 			$this->updatePatronInSierra();
 		}
-		$ret = parent::update();
-		return $ret;
+		return parent::update();
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		// Delete from Sierra first
 		global $library;
 		$accountProfile = $library->getAccountProfile();
@@ -345,7 +357,7 @@ class SierraRegistration extends DataObject {
 		return '';
 	}
 
-	private function setSierraData($name, $value) {
+	private function setSierraData($name, $value) : void {
 		if ($name == "barcode") {
 			$this->_sierraUpdate['barcodes'] = [$value];
 		}
@@ -389,7 +401,7 @@ class SierraRegistration extends DataObject {
 		}
 	}
 
-	private function updatePatronInSierra() {
+	private function updatePatronInSierra() : void {
 		global $library;
 		$accountProfile = $library->getAccountProfile();
 		$catalogDriverName = trim($accountProfile->driver);
@@ -398,9 +410,7 @@ class SierraRegistration extends DataObject {
 			$catalogDriver = CatalogFactory::getCatalogConnectionInstance($catalogDriverName, $accountProfile);
 		}
 		if ($catalogDriver->driver instanceof Sierra) {
-			return $catalogDriver->driver->updatePatronRegistration($this->_sierraUpdate, $this->_sierraData->id);
-		} else {
-			return [];
+			$catalogDriver->driver->updatePatronRegistration($this->_sierraUpdate, $this->_sierraData->id);
 		}
 	}
 

@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/Greenhouse/AspenSite.php';
 
 class ScheduledUpdate extends DataObject {
@@ -14,10 +13,16 @@ class ScheduledUpdate extends DataObject {
 	public $notes;
 	public $siteId;
 	public $greenhouseId;
+	/** @noinspection PhpUnused */
 	public $currentVersion;
 	public $remoteUpdate;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		global $interface;
 		$currentRelease = $interface->getVariable('aspenVersion');
 		if (str_contains($currentRelease, ' ')) {
@@ -165,7 +170,9 @@ class ScheduledUpdate extends DataObject {
 			// only force dropdown if trying to add new update
 			$structure['updateToVersion']['type'] = 'text';
 		}
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	function __get($name) {

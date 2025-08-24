@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class HideSeries extends DataObject {
 	public $__table = 'hide_series';
@@ -9,8 +8,12 @@ class HideSeries extends DataObject {
 	public $seriesNormalized;
 	public $dateAdded;
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -33,27 +36,29 @@ class HideSeries extends DataObject {
 				'readOnly' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->seriesNormalized = $this->normalizeSeries($this->seriesTerm);
 		return parent::insert();
 	}
 
-	public function update($context = '') {
-        $this->__set("seriesNormalized", $this->normalizeSeries($this->seriesTerm));
-        return parent::update();
+	public function update(string $context = '') : int|bool {
+		$this->__set("seriesNormalized", $this->normalizeSeries($this->seriesTerm));
+		return parent::update();
 	}
 
 	public function normalizeSeries($seriesTerm): string {
-        $seriesTerm = rtrim($seriesTerm, '- .,;');
-        $seriesTerm = preg_replace('/[#|]\s*\d+$/','',$seriesTerm);
-        $seriesTerm = preg_replace('/ & /', ' and ', $seriesTerm);
-        $seriesTerm = preg_replace('/--/',' ',$seriesTerm);
-        $seriesTerm = preg_replace('/,\s+(the|an)$/','',$seriesTerm);
-        $seriesTerm = preg_replace('/[:,]\s/','',$seriesTerm);
-        $seriesTerm = preg_replace('/(?i)\s+series$/','',$seriesTerm);
-        $seriesTerm = rtrim($seriesTerm, '- .,;');
-        return $seriesTerm;
+		$seriesTerm = rtrim($seriesTerm, '- .,;');
+		$seriesTerm = preg_replace('/[#|]\s*\d+$/','',$seriesTerm);
+		$seriesTerm = preg_replace('/ & /', ' and ', $seriesTerm);
+		$seriesTerm = preg_replace('/--/',' ',$seriesTerm);
+		$seriesTerm = preg_replace('/,\s+(the|an)$/','',$seriesTerm);
+		$seriesTerm = preg_replace('/[:,]\s/','',$seriesTerm);
+		$seriesTerm = preg_replace('/(?i)\s+series$/','',$seriesTerm);
+		return rtrim($seriesTerm, '- .,;');
 	}
 }

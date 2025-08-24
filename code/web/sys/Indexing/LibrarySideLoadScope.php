@@ -9,7 +9,12 @@ class LibrarySideLoadScope extends DataObject {
 	public $libraryId;
 	public $sideLoadScopeId;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Side Loads'));
 		$allLibraryList = Library::getLibraryList(false);
 
@@ -27,7 +32,7 @@ class LibrarySideLoadScope extends DataObject {
 			$sideLoadScopes[$sideLoadScopeData['id']] = $sideLoadScopeData['scope_name'] . ' - ' . $sideLoadScopeData['name'];
 			$sideLoadScopeData = $sideLoadScope->fetchAssoc();
 		}
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -51,6 +56,9 @@ class LibrarySideLoadScope extends DataObject {
 				'description' => 'The id of a library',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function fetch(): bool|DataObject|null {
@@ -66,7 +74,8 @@ class LibrarySideLoadScope extends DataObject {
 		return $result;
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/SideLoads/Scopes?objectAction=edit&id=' . $this->sideLoadScopeId;
 	}
 }

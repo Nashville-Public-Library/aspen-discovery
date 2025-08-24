@@ -14,9 +14,12 @@ class BackgroundProcess extends DataObject {
 		return ['owningUserId', 'startTime', 'endTime', 'isRunning'];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -67,6 +70,9 @@ class BackgroundProcess extends DataObject {
 				'hideInLists' => true
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	private static $usersById = [];
@@ -119,7 +125,7 @@ class BackgroundProcess extends DataObject {
 		$this->update();
 	}
 
-	public function update($context = '') : int|bool {
+	public function update(string $context = '') : int|bool {
 		if ($this->isRunning == 0) {
 			//Create a user message
 			require_once ROOT_DIR . '/sys/Account/UserMessage.php';

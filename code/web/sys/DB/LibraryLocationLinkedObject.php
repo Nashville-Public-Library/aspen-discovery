@@ -4,7 +4,7 @@ require_once ROOT_DIR . '/sys/DB/LibraryLinkedObject.php';
 
 abstract class DB_LibraryLocationLinkedObject extends DB_LibraryLinkedObject {
 	/**
-	 * @return int[]
+	 * @return ?int[]
 	 */
 	public abstract function getLocations(): ?array;
 
@@ -36,12 +36,12 @@ abstract class DB_LibraryLocationLinkedObject extends DB_LibraryLinkedObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings);
-		if (array_key_exists('locations', $jsonLinks)) {
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings);
+		if (array_key_exists('locations', $jsonData)) {
 			$allLocations = Location::getLocationListAsObjects(false);
 			$locations = [];
-			foreach ($jsonLinks['locations'] as $ilsCode) {
+			foreach ($jsonData['locations'] as $ilsCode) {
 				if (array_key_exists($ilsCode, $mappings['locations'])) {
 					$ilsCode = $mappings['locations'][$ilsCode];
 				}

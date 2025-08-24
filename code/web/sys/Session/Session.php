@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class Session extends DataObject {
 	public $__table = 'session';
@@ -22,7 +21,7 @@ class Session extends DataObject {
 		];
 	}
 
-	function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if ($this->data == null) {
 			$this->data = '';
 		}
@@ -34,7 +33,7 @@ class Session extends DataObject {
 		return $ret;
 	}
 
-	function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if ($this->data == null) {
 			$this->data = '';
 		}

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class BasicPageHomeLocationAccess extends DataObject {

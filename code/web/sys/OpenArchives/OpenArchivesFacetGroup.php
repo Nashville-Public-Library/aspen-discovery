@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/LibraryLocation/Library.php';
 require_once ROOT_DIR . '/sys/OpenArchives/OpenArchivesFacet.php';
 
@@ -12,9 +12,13 @@ class OpenArchivesFacetGroup extends DataObject
     private $_libraries;
     private $_locations;
 
-    static function getObjectStructure($context = ''): array
-    {
-        $libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Open Archives Facet Settings'));
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Open Archives Facet Settings'));
         $locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Open Archives Facet Settings'));
 
         $facetSettingStructure = OpenArchivesFacet::getObjectStructure($context);
@@ -22,7 +26,7 @@ class OpenArchivesFacetGroup extends DataObject
         unset($facetSettingStructure['facetGroupId']);
         unset($facetSettingStructure['showAsDropDown']);
 
-        return [
+		$structure = [
             'id' => [
                 'property' => 'id',
                 'type' => 'label',
@@ -70,10 +74,12 @@ class OpenArchivesFacetGroup extends DataObject
                 'values' => $locationList,
             ],
         ];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
     }
 
-    public function update($context = '')
-    {
+    public function update(string $context = '') : int|bool {
         $ret = parent::update();
         if ($ret !== FALSE) {
             $this->saveFacets();
@@ -83,8 +89,7 @@ class OpenArchivesFacetGroup extends DataObject
         return $ret;
     }
 
-    public function insert($context = '')
-    {
+    public function insert(string $context = '') : int|bool {
         $ret = parent::insert();
         if ($ret !== FALSE) {
             $this->saveFacets();
@@ -94,8 +99,7 @@ class OpenArchivesFacetGroup extends DataObject
         return $ret;
     }
 
-    public function saveFacets()
-    {
+    public function saveFacets() : void  {
         if (isset ($this->_facets) && is_array($this->_facets)) {
             $this->saveOneToManyOptions($this->_facets, 'facetGroupId');
             unset($this->facets);
@@ -132,7 +136,7 @@ class OpenArchivesFacetGroup extends DataObject
         }
     }
 
-    /** @return OpenArchivesFacet[] */
+    /** @return ?OpenArchivesFacet[] */
     public function getFacets(): ?array
     {
         if (!isset($this->_facets) && $this->id) {
@@ -148,34 +152,17 @@ class OpenArchivesFacetGroup extends DataObject
         return $this->_facets;
     }
 
-    public function getFacetByIndex($index): ?OpenArchivesFacet
-    {
-        $facets = $this->getFacets();
-
-        $i = 0;
-        foreach ($facets as $value) {
-            if ($i == $index) {
-                return $value;
-            }
-            $i++;
-        }
-        return NULL;
-    }
-
-    public function setFacets($value)
-    {
+    public function setFacets($value) : void {
         $this->_facets = $value;
     }
 
-    public function clearFacets()
-    {
+    public function clearFacets(): void {
         $this->clearOneToManyOptions('OpenArchivesFacet', 'facetGroupId');
         /** @noinspection PhpUndefinedFieldInspection */
         $this->facets = [];
     }
 
-    public function getLibraries()
-    {
+    public function getLibraries(): ?array {
         if (!isset($this->_libraries) && $this->id) {
             $this->_libraries = [];
             $library = new Library();
@@ -188,8 +175,7 @@ class OpenArchivesFacetGroup extends DataObject
         return $this->_libraries;
     }
 
-    public function getLocations()
-    {
+    public function getLocations(): ?array {
         if (!isset($this->_locations) && $this->id) {
             $this->_locations = [];
             $location = new Location();
@@ -202,8 +188,7 @@ class OpenArchivesFacetGroup extends DataObject
         return $this->_locations;
     }
 
-    public function saveLibraries()
-    {
+    public function saveLibraries(): void {
         if (isset ($this->_libraries) && is_array($this->_libraries)) {
             $libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Open Archives Facet Settings'));
             foreach ($libraryList as $libraryId => $displayName) {
@@ -228,7 +213,7 @@ class OpenArchivesFacetGroup extends DataObject
         }
     }
 
-    public function saveLocations() {
+    public function saveLocations() : void {
         if (isset ($this->_locations) && is_array($this->_locations)) {
             $locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Open Archives Facet Settings'));
             /**

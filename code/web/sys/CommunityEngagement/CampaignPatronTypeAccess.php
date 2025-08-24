@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class CampaignPatronTypeAccess extends DataObject {

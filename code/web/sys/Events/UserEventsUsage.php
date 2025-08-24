@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class UserEventsUsage extends DataObject {
@@ -29,9 +29,6 @@ class UserEventsUsage extends DataObject {
 
 	public function okToExport(array $selectedFilters): bool {
 		$okToExport = parent::okToExport($selectedFilters);
-		if (in_array($this->instance, $selectedFilters['instances'])) {
-			$okToExport = true;
-		}
 		if ($okToExport) {
 			$okToExport = false;
 			$user = new User();
@@ -55,7 +52,7 @@ class UserEventsUsage extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (isset($jsonData['user'])) {
 			$username = $jsonData['user'];
