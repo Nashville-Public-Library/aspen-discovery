@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpMissingFieldTypeInspection */
+<?php
+/** @noinspection PhpMissingFieldTypeInspection */
 /** @noinspection RequiredAttributes */
 /** @noinspection HtmlRequiredAltAttribute */
 
@@ -29,8 +30,10 @@ require_once ROOT_DIR . '/sys/Events/EventsBranchMapping.php';
 
 
 class Location extends DataObject {
-	const int DEFAULT_AUTOLOGOUT_TIME = 90;
-	const int DEFAULT_AUTOLOGOUT_TIME_LOGGED_OUT = 450;
+	/** @noinspection PhpMissingClassConstantTypeInspection */
+	public const DEFAULT_AUTOLOGOUT_TIME = 90;
+	/** @noinspection PhpMissingClassConstantTypeInspection */
+	public const DEFAULT_AUTOLOGOUT_TIME_LOGGED_OUT = 450;
 
 	public $__table = 'location';   // table name
 	public $__primaryKey = 'locationId';
