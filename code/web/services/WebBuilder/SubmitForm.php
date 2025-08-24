@@ -24,6 +24,7 @@ class WebBuilder_SubmitForm extends Action {
 
 		global $interface;
 		$interface->assign('formTitle', $this->form->title);
+		$interface->assign('id', $id);
 		if (isset($_REQUEST['submit'])) {
 			$processForm = true;
 			if (!UserAccount::isLoggedIn()) {
@@ -70,7 +71,7 @@ class WebBuilder_SubmitForm extends Action {
 					$introText = '';
 				}
 				$htmlData .= $serializedData->getPrintableHtmlData($structure);
-				$data = $serializedData->getAllData($structure);
+				$data = $serializedData->getAllData();
 
 				//Save the form values to the database
 				global $library;

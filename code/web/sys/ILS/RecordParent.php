@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class RecordParent extends DataObject {
 	public $__table = 'record_parents';

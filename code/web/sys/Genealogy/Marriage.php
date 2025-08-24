@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class Marriage extends DataObject {
 	public $__table = 'marriage';    // table name
@@ -8,10 +7,14 @@ class Marriage extends DataObject {
 	public $marriageId;
 	public $personId;
 	public $spouseName;
+	/** @noinspection PhpUnused */
 	public $spouseId;
 	public $marriageDate;
+	/** @noinspection PhpUnused */
 	public $marriageDateDay;
+	/** @noinspection PhpUnused */
 	public $marriageDateMonth;
+	/** @noinspection PhpUnused */
 	public $marriageDateYear;
 	public $comments;
 
@@ -27,11 +30,15 @@ class Marriage extends DataObject {
 		];
 	}
 
-	function label() {
+	function label() : string {
 		return $this->spouseName . (isset($this->marriageDate) ? (' - ' . $this->marriageDate) : '');
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			[
 				'property' => 'marriageId',
@@ -76,10 +83,12 @@ class Marriage extends DataObject {
 				'hideInLists' => true,
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		//Load the person this is for, and update solr
 		if ($this->personId) {
@@ -92,7 +101,7 @@ class Marriage extends DataObject {
 		return $ret;
 	}
 
-	function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		//Load the person this is for, and update solr
 		if ($this->personId) {
@@ -105,7 +114,7 @@ class Marriage extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$personId = $this->personId;
 		$ret = parent::delete($useWhere, $hardDelete);
 		//Load the person this is for, and update solr

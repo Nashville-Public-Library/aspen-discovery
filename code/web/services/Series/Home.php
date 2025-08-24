@@ -92,10 +92,16 @@ class Series_Home extends Action {
 			$queryParamsTmp = explode("&", $queryParams);
 			$queryParams = [];
 			foreach ($queryParamsTmp as $param) {
-				[
-					$name,
-					$value,
-				] = explode("=", $param);
+				if (str_contains($param, '=')) {
+					[
+						$name,
+						$value,
+					] = explode("=", $param);
+				}else{
+					$name = $param;
+					$value = '';
+				}
+
 				$queryParams[$name] = $value;
 			}
 		}

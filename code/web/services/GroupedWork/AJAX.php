@@ -336,7 +336,6 @@ class GroupedWork_AJAX extends JSON_Action {
 
 		$id = $_REQUEST['id'];
 		$format = $_REQUEST['activeFormat'];
-		$interface->assign('activeFormat', $format);
 
 		global $library;
 		if (!$library->showYouMightAlsoLike) {
@@ -347,28 +346,27 @@ class GroupedWork_AJAX extends JSON_Action {
 			//Load Similar titles (from Solr)
 			require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 			require_once ROOT_DIR . '/sys/SolrConnector/GroupedWorksSolrConnector.php';
-			/** @var SearchObject_AbstractGroupedWorkSearcher $db */
+			/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */
 			$searchObject = SearchObjectFactory::initSearchObject();
-			if ($library->showYouMightAlsoLike == 1) {
-				$searchObject->init();
-				$searchObject->disableScoping();
-				$interface->assign('activeSearchSource', 'global');
+			$searchObject->init();
+			if ($library->showYouMightAlsoLike == 1 || $library->showYouMightAlsoLike == 4) {
+				$selectedAvailabilityToggle = 'global';
 			} else {
-				$searchObject->init('local');
-				$interface->assign('activeSearchSource', 'local');
+				$selectedAvailabilityToggle = 'local';
 			}
+			$interface->assign('activeSearchSource', $selectedAvailabilityToggle);
 			UserAccount::getActiveUserObj();
-			if ($library->showYouMightAlsoLike == 3 && !empty($_REQUEST['activeFormat'])) {
+			if (($library->showYouMightAlsoLike == 3 || $library->showYouMightAlsoLike == 4) && !empty($_REQUEST['activeFormat'])) {
 				$format = $_REQUEST['activeFormat'];
 				$interface->assign('activeFormat', $format);
-				$similar = $searchObject->getMoreLikeThis($id, false, true, 3, $format);
+				$similar = $searchObject->getMoreLikeThis($id, $selectedAvailabilityToggle, false, true, 3, $format);
 			} else{
-				$similar = $searchObject->getMoreLikeThis($id, false, false, 3);
+				$similar = $searchObject->getMoreLikeThis($id, $selectedAvailabilityToggle, false, false, 3);
 			}
 			$memoryWatcher->logMemory('Loaded More Like This data from Solr');
 			// Send the similar items to the template; if there is only one, we need
 			// to force it to be an array or things will not display correctly.
-			if (isset($similar) && count($similar['response']['docs']) > 0) {
+			if (isset($similar['response']) && count($similar['response']['docs']) > 0) {
 				$youMightAlsoLikeTitles = [];
 				foreach ($similar['response']['docs'] as $similarTitle) {
 					$similarTitleDriver = new GroupedWorkDriver($similarTitle);

@@ -1,16 +1,20 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class UserAgent extends DataObject {
 	public $__table = 'user_agent';
 	public $id;
 	public $userAgent;
+	/** @noinspection PhpUnused */
 	public $isBot;
 	public $blockAccess;
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -38,6 +42,9 @@ class UserAgent extends DataObject {
 				'default' => false,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function objectHistoryEnabled(): bool {

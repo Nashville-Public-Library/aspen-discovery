@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class CronProcessLogEntry extends DataObject {
 	public $__table = 'cron_process_log';   // table name

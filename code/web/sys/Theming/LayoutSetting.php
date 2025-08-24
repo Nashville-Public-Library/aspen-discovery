@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class LayoutSetting extends DataObject {
@@ -7,6 +7,7 @@ class LayoutSetting extends DataObject {
 	public $name;
 
 	public $useHomeLinkInBreadcrumbs;
+	/** @noinspection PhpUnused */
 	public $useHomeLinkForLogo;
 	public $homeLinkText;
 	public $browseLinkText;
@@ -18,13 +19,18 @@ class LayoutSetting extends DataObject {
 	public $dismissPlacardButtonIcon;
 	public $contrastRatio;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$contrastOptions = [
 			'4.50' => '4.5 (Default, WCAG 2.0 AA compliance)',
 			'7.00' => '7.0 (WCAG 2.1 AAA compliance)',
 		];
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -111,5 +117,8 @@ class LayoutSetting extends DataObject {
 				'default' => 4.50,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

@@ -132,10 +132,11 @@ function loadSearchInformation() {
 
 	//Load indexing profiles
 	require_once ROOT_DIR . '/sys/Indexing/IndexingProfile.php';
-	/** @var $indexingProfiles IndexingProfile[] */ global $sideLoadSettings;
+	/** @var $indexingProfiles IndexingProfile[] */
 	global $indexingProfiles;
 	$indexingProfiles = IndexingProfile::getAllIndexingProfiles();
 	require_once ROOT_DIR . '/sys/Indexing/SideLoad.php';
+	global $sideLoadSettings;
 	$sideLoadSettings = [];
 	try {
 		$sideLoadSetting = new SideLoad();

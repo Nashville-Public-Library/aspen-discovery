@@ -560,6 +560,7 @@ class SirsiDynixROA extends HorizonAPI {
 			$selfRegistrationForm = null;
 			$formFields = null;
 			if ($library->selfRegistrationFormId > 0){
+				require_once ROOT_DIR . '/sys/SelfRegistrationForms/SelfRegistrationForm.php';
 				$selfRegistrationForm = new SelfRegistrationForm();
 				$selfRegistrationForm->id = $library->selfRegistrationFormId;
 				if ($selfRegistrationForm->find(true)) {
@@ -600,7 +601,6 @@ class SirsiDynixROA extends HorizonAPI {
 				'resource' => '/policy/userProfile',
 				'key' => $selfRegistrationForm->selfRegistrationUserProfile,
 			];
-			//$formFields = (new SelfRegistrationFormValues)->getFormFieldsInOrder($library->selfRegistrationFormId);
 
 			if ($formFields != null) {
 				foreach ($formFields as $fieldObj){

@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/AspenLiDA/SelfCheckBarcode.php';
 
 class AspenLiDASelfCheckSetting extends DataObject {
@@ -13,7 +12,11 @@ class AspenLiDASelfCheckSetting extends DataObject {
 	private $_locations;
 	private $_barcodeStyles;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$locationsList = [];
 		$location = new Location();
 		$location->selectAdd();
@@ -112,10 +115,11 @@ class AspenLiDASelfCheckSetting extends DataObject {
 			unset($structure['locations']);
 		}
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationsList = [];
 			$location = new Location();
@@ -181,7 +185,7 @@ class AspenLiDASelfCheckSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLocations();
@@ -190,7 +194,7 @@ class AspenLiDASelfCheckSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLocations();
@@ -199,7 +203,7 @@ class AspenLiDASelfCheckSetting extends DataObject {
 		return $ret;
 	}
 
-	public function getBarcodeStyles() {
+	public function getBarcodeStyles() : array {
 		if (!isset($this->_barcodeStyles) && $this->id) {
 			$this->_barcodeStyles = [];
 
@@ -215,7 +219,7 @@ class AspenLiDASelfCheckSetting extends DataObject {
 		return $this->_barcodeStyles;
 	}
 
-	public function saveBarcodeStyles() {
+	public function saveBarcodeStyles() : void {
 		if (isset ($this->_barcodeStyles) && is_array($this->_barcodeStyles)) {
 			$this->saveOneToManyOptions($this->_barcodeStyles, 'selfCheckSettingsId');
 			unset($this->_barcodeStyles);
@@ -226,7 +230,7 @@ class AspenLiDASelfCheckSetting extends DataObject {
 	 * @param string $locationId The location code for the active location
 	 * @return false|int
 	 */
-	public function getCheckoutLocationSetting($locationId) {
+	public function getCheckoutLocationSetting(string $locationId) : false|int {
 		$location = new Location();
 		$location->code = $locationId;
 		if ($location->find(true)) {
@@ -240,7 +244,8 @@ class AspenLiDASelfCheckSetting extends DataObject {
 		return false;
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/AspenLiDA/SelfCheckSettings?objectAction=edit&id=' . $this->id;
 	}
 }

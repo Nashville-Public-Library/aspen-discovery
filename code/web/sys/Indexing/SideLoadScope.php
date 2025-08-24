@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Indexing/SideLoad.php';
 
@@ -27,7 +27,12 @@ class SideLoadScope extends DataObject {
 	private $_libraries;
 	private $_locations;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$sideLoad = new SideLoad();
 		$sideLoad->orderBy('name');
 		$allSideLoads = $sideLoad->fetchAll('id', 'name');
@@ -46,7 +51,7 @@ class SideLoadScope extends DataObject {
 		$locationSideLoadScopeStructure = LocationSideLoadScope::getObjectStructure($context);
 		unset($locationSideLoadScopeStructure['sideLoadScopeId']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -193,6 +198,9 @@ class SideLoadScope extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function updateStructureForEditingObject($structure) : array {
@@ -211,7 +219,8 @@ class SideLoadScope extends DataObject {
 		return $structure;
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/SideLoads/Scopes?objectAction=edit&id=' . $this->id;
 	}
 
@@ -257,7 +266,7 @@ class SideLoadScope extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -266,7 +275,7 @@ class SideLoadScope extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -275,7 +284,7 @@ class SideLoadScope extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret !== FALSE) {
 			$this->clearLocations(true);
@@ -298,21 +307,21 @@ class SideLoadScope extends DataObject {
 		}
 	}
 
-	/** @return LibrarySideLoadScope[] */
-	public function getLibraries() {
-		return $this->_libraries;
+	/** @return ?LibrarySideLoadScope[] */
+	public function getLibraries() : ?array {
+		return $this->__get('libraries');
 	}
 
-	/** @return LocationSideLoadScope[] */
-	public function getLocations() {
-		return $this->_locations;
+	/** @return ?LocationSideLoadScope[] */
+	public function getLocations() : ?array {
+		return $this->__get('locations');
 	}
 
-	public function setLibraries($val) {
+	public function setLibraries($val): void  {
 		$this->_libraries = $val;
 	}
 
-	public function setLocations($val) {
+	public function setLocations($val) : void {
 		$this->_locations = $val;
 	}
 
@@ -378,7 +387,7 @@ class SideLoadScope extends DataObject {
 		}
 	}
 
-	public function canActiveUserDelete() {
+	public function canActiveUserDelete() : bool {
 		return !$this->isReadOnly();
 	}
 

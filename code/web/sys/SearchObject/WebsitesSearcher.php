@@ -62,7 +62,7 @@ class SearchObject_WebsitesSearcher extends SearchObject_SolrSearcher {
 	 */
 	public function init($searchSource = null) {
 		// Call the standard initialization routine in the parent:
-		parent::init('website_pages');
+		parent::init('websites');
 
 		//********************
 		// Check if we have a saved search to restore -- if restored successfully,
@@ -179,6 +179,7 @@ class SearchObject_WebsitesSearcher extends SearchObject_SolrSearcher {
             $facetConfig = [];
             $facets = [];
             $searchLibrary = Library::getActiveLibrary();
+			/** @var Location $locationSingleton */
             global $locationSingleton;
             $searchLocation = $locationSingleton->getActiveLocation();
             if ($searchLocation != null) {

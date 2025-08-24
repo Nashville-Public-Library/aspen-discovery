@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/SelfRegistrationForms/SelfRegistrationFormValues.php';
 require_once ROOT_DIR . '/sys/SelfRegistrationForms/SelfRegistrationTerms.php';
 
@@ -19,7 +19,12 @@ class SelfRegistrationForm extends DataObject {
 	private $_fields;
 	private $_libraries;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
 		$selfRegistrationTerms = [];
@@ -34,7 +39,7 @@ class SelfRegistrationForm extends DataObject {
 		unset($fieldValuesStructure['weight']);
 		unset($fieldValuesStructure['selfRegistrationFormId']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -137,8 +142,11 @@ class SelfRegistrationForm extends DataObject {
 				'values' => $libraryList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveFields();
@@ -147,7 +155,7 @@ class SelfRegistrationForm extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveFields();
@@ -176,7 +184,7 @@ class SelfRegistrationForm extends DataObject {
 		}
 	}
 
-	/** @return SelfRegistrationFormValues[] */
+	/** @return ?SelfRegistrationFormValues[] */
 	public function getFields(): ?array {
 		if (!isset($this->_fields) && $this->id) {
 			$this->_fields = [];
@@ -191,20 +199,14 @@ class SelfRegistrationForm extends DataObject {
 		return $this->_fields;
 	}
 
-	public function clearFields() {
-		$this->clearOneToManyOptions('SelfRegistrationFormValues', 'selfRegistrationFormId');
-		/** @noinspection PhpUndefinedFieldInspection */
-		$this->fields = [];
-	}
-
-	public function saveFields() {
+	public function saveFields() : void {
 		if (isset ($this->_fields) && is_array($this->_fields)) {
 			$this->saveOneToManyOptions($this->_fields, 'selfRegistrationFormId');
 			unset($this->fields);
 		}
 	}
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new Library();
@@ -217,7 +219,7 @@ class SelfRegistrationForm extends DataObject {
 		return $this->_libraries;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
@@ -242,7 +244,7 @@ class SelfRegistrationForm extends DataObject {
 		}
 	}
 
-	public function loadCopyableSubObjects() {
+	public function loadCopyableSubObjects() : void {
 		$this->getFields();
 		$index = -1;
 		foreach ($this->_fields as $subObject) {

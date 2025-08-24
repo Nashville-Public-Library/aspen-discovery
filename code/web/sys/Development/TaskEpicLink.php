@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class TaskEpicLink extends DataObject {
 	public $__table = 'development_task_epic_link';
@@ -9,7 +9,11 @@ class TaskEpicLink extends DataObject {
 
 	private $_task;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$taskList = [];
 		require_once ROOT_DIR . '/sys/Development/DevelopmentTask.php';
 		$task = new DevelopmentTask();
@@ -28,7 +32,7 @@ class TaskEpicLink extends DataObject {
 			$epicList[$epic->id] = $epic->name;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -59,6 +63,9 @@ class TaskEpicLink extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getTask(): ?DevelopmentTask {
@@ -71,7 +78,8 @@ class TaskEpicLink extends DataObject {
 		return $this->_task;
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Development/Tasks?objectAction=edit&id=' . $this->taskId;
 	}
 }

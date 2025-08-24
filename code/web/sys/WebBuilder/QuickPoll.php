@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/WebBuilder/QuickPollOption.php';
 require_once ROOT_DIR . '/sys/WebBuilder/LibraryQuickPoll.php';
@@ -16,6 +16,7 @@ class QuickPoll extends DB_LibraryLinkedObject {
 	public $introText;
 	public $submissionResultText;
 	public $allowSuggestingNewOptions;
+	/** @noinspection PhpUnused */
 	public $allowMultipleSelections;
 	public $status;
 
@@ -34,11 +35,16 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		return ['requireLogin'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$quickPollOptionStructure = QuickPollOption::getObjectStructure($context);
 		unset ($quickPollOptionStructure['weight']);
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Quick Polls'));
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -164,9 +170,12 @@ class QuickPoll extends DB_LibraryLinkedObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -175,7 +184,7 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		return $ret;
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -204,7 +213,7 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
@@ -226,7 +235,7 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		return $this->_libraries;
 	}
 
-	public function getPollOptions() {
+	public function getPollOptions() : ?array {
 		if (!isset($this->_pollOptions) && $this->id) {
 			$this->_pollOptions = [];
 			$pollOption = new QuickPollOption();
@@ -240,7 +249,7 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		return $this->_pollOptions;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -255,28 +264,28 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function savePollOptions() {
+	public function savePollOptions() : void {
 		if (isset($this->_pollOptions) && is_array($this->_pollOptions)) {
 			$this->saveOneToManyOptions($this->_pollOptions, 'pollId');
 			unset($this->_pollOptions);
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryLink = new LibraryQuickPoll();
 		$libraryLink->pollId = $this->id;
-		return $libraryLink->delete(true);
+		$libraryLink->delete(true);
 	}
 
-	private function clearPollOptions() {
+	private function clearPollOptions() : void {
 		//Delete links to the libraries
 		$pollOption = new QuickPollOption();
 		$pollOption->pollId = $this->id;
-		return $pollOption->delete(true);
+		$pollOption->delete(true);
 	}
 
-	public function getFormattedPoll() {
+	public function getFormattedPoll() : string {
 		global $interface;
 
 		if (!UserAccount::isLoggedIn()) {
@@ -322,12 +331,12 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting);
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
-		if (array_key_exists('pollOptions', $jsonLinks)) {
+		if (array_key_exists('pollOptions', $jsonData)) {
 			$formFields = [];
-			foreach ($jsonLinks['pollOptions'] as $pollOption) {
+			foreach ($jsonData['pollOptions'] as $pollOption) {
 				$pollOptionObj = new QuickPollOption();
 				$pollOptionObj->pollId = $this->id;
 				unset($pollOption['pollId']);
@@ -341,7 +350,8 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		return $result;
 	}
 
-	public function getPollResults() {
+	/** @noinspection PhpUnused */
+	public function getPollResults() : array {
 		$results = [];
 		$obj = new QuickPollSubmission();
 		$obj->pollId = $this->id;
@@ -352,7 +362,7 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		return $results;
 	}
 
-	public function getPollResultsForGraph() {
+	public function getPollResultsForGraph() : array {
 		$results = [];
 		$pollOptions = $this->getPollOptions();
 
@@ -409,6 +419,7 @@ class QuickPoll extends DB_LibraryLinkedObject {
 		return $canViewResults;
 	}
 
+	/** @noinspection PhpUnused */
 	public function userCanAccess(): bool {
 		if(!UserAccount::isLoggedIn()) {
 			return false;

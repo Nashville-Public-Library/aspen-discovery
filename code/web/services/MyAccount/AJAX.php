@@ -1768,6 +1768,7 @@ class MyAccount_AJAX extends JSON_Action {
 	function getLoginForm() {
 		global $interface;
 		global $library;
+		/** @var Location $locationSingleton */
 		global $locationSingleton;
 		global $configArray;
 
@@ -1782,7 +1783,7 @@ class MyAccount_AJAX extends JSON_Action {
 		$interface->assign('enableSelfRegistration', $library->enableSelfRegistration);
 		$interface->assign('selfRegistrationUrl', $library->selfRegistrationUrl);
 		$interface->assign('checkRememberMe', 0);
-		if ($library->defaultRememberMe && $locationSingleton->getOpacStatus() == false) {
+		if ($library->defaultRememberMe && !$locationSingleton->getOpacStatus()) {
 			$interface->assign('checkRememberMe', 1);
 		}
 		$interface->assign('usernameLabel', $library->loginFormUsernameLabel ? $library->loginFormUsernameLabel : 'Your Name');
@@ -5850,7 +5851,7 @@ class MyAccount_AJAX extends JSON_Action {
 					$stripeSettings->id = $paymentLibrary->stripeSettingId;
 					if ($stripeSettings->find(true)) {
 						//header('Location: ' . $configArray['Site']['url'] . '/Donations/DonationCompleted?id=' . $payment->id);
-						return $stripeSettings->submitTransaction(null, $payment, $paymentMethodId, $transactionType);
+						return $stripeSettings->submitTransaction($payment, $paymentMethodId, $transactionType);
 					} else {
 						return [
 							'success' => false,
@@ -5881,7 +5882,7 @@ class MyAccount_AJAX extends JSON_Action {
 				$stripeSettings = new StripeSetting();
 				$stripeSettings->id = $paymentLibrary->stripeSettingId;
 				if ($stripeSettings->find(true)) {
-					return $stripeSettings->submitTransaction($patron, $payment, $paymentMethodId, $transactionType);
+					return $stripeSettings->submitTransaction($payment, $paymentMethodId, $transactionType);
 				} else {
 					return [
 						'success' => false,

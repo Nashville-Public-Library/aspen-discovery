@@ -1,8 +1,8 @@
-<?php
-	require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestone.php';
-	require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
-	require_once ROOT_DIR . '/sys/CommunityEngagement/Milestone.php';
-	require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneUsersProgress.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
+require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestone.php';
+require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
+require_once ROOT_DIR . '/sys/CommunityEngagement/Milestone.php';
+require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneUsersProgress.php';
 
 class UserCampaign extends DataObject {
 	public $__table = 'ce_user_campaign';
@@ -17,8 +17,12 @@ class UserCampaign extends DataObject {
 	public $optInToCampaignEmailNotifications;
 	public $campaignCompleteEmailSent;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -76,6 +80,9 @@ class UserCampaign extends DataObject {
 				'description' => 'Whether or not to opt in to email notifications for this campaign',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	//Check if the user has completed the campaign

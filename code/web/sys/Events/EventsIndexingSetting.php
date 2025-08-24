@@ -1,21 +1,25 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/LocationEventsSetting.php';
 class EventsIndexingSetting extends DataObject {
 	public $__table = 'events_indexing_settings';    // table name
 	public $id;
 	public $name;
 	public $runFullUpdate;
+	/** @noinspection PhpUnused */
 	public $numberOfDaysToIndex;
 
 	private $_libraries;
 	private $_locations;
-//	public $lastUpdateOfAllEvents;
-//	public $lastUpdateOfChangedEvents;
-	public static function getObjectStructure($context = ''): array {
+
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Events for All Locations'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -71,6 +75,9 @@ class EventsIndexingSetting extends DataObject {
 				'values' => $locationList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**
@@ -78,7 +85,7 @@ class EventsIndexingSetting extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -92,7 +99,7 @@ class EventsIndexingSetting extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -121,7 +128,7 @@ class EventsIndexingSetting extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$this->clearLibraries();
@@ -130,7 +137,7 @@ class EventsIndexingSetting extends DataObject {
 		return $ret;
 	}
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new LibraryEventsSetting();
@@ -144,7 +151,7 @@ class EventsIndexingSetting extends DataObject {
 		return $this->_libraries;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -160,15 +167,15 @@ class EventsIndexingSetting extends DataObject {
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryEventSetting = new LibraryEventsSetting();
 		$libraryEventSetting->settingSource = 'aspenEvents';
 		$libraryEventSetting->settingId = $this->id;
-		return $libraryEventSetting->delete(true);
+		$libraryEventSetting->delete(true);
 	}
 
-	public function getLocations() {
+	public function getLocations() : ?array {
 		if (!isset($this->_locations) && $this->id) {
 			$this->_locations = [];
 			$location = new LocationEventsSetting();
@@ -181,7 +188,7 @@ class EventsIndexingSetting extends DataObject {
 		return $this->_locations;
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset($this->_locations) && is_array($this->_locations)) {
 			$this->clearLocations();
 
@@ -196,11 +203,10 @@ class EventsIndexingSetting extends DataObject {
 		}
 	}
 
-	private function clearLocations() {
+	private function clearLocations() : void {
 		//Delete links to the libraries
 		$libraryEventSetting = new LocationEventsSetting();
-		$libraryEventSetting->settingSource = 'aspenEvents';
 		$libraryEventSetting->settingId = $this->id;
-		return $libraryEventSetting->delete(true);
+		$libraryEventSetting->delete(true);
 	}
 }

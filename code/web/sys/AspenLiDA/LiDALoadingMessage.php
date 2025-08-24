@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class LiDALoadingMessage extends DataObject {
 	public $__table = 'lida_loading_messages';
@@ -6,9 +6,12 @@ class LiDALoadingMessage extends DataObject {
 	public $brandedAppSettingId;
 	public $message;
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -24,5 +27,8 @@ class LiDALoadingMessage extends DataObject {
 				'maxLength' => 255
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }
