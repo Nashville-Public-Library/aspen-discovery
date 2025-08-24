@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class SharedContent extends DataObject {
 	public $__table = 'shared_content';
@@ -14,8 +14,12 @@ class SharedContent extends DataObject {
 	public $description;
 	public $data;
 
-	public static function getObjectStructure($context) {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -91,9 +95,12 @@ class SharedContent extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if ($this->approved && empty($this->approvalDate)) {
 			$this->approvalDate = time();
 			$this->approvedBy = UserAccount::getActiveUserId();

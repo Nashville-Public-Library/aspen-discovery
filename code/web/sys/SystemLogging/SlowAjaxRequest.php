@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class SlowAjaxRequest extends DataObject {
 	public $__table = 'slow_ajax_request';
@@ -26,7 +25,7 @@ class SlowAjaxRequest extends DataObject {
 		];
 	}
 
-	function setSlowness(float $elapsedTime) {
+	function setSlowness(float $elapsedTime) : void {
 		if ($elapsedTime < 0.5) {
 			$this->timesFast++;
 		} elseif ($elapsedTime < 1) {

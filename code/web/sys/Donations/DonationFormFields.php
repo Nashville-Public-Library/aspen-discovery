@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class DonationFormFields extends DataObject {
 	public $__table = 'donations_form_fields';
@@ -19,7 +18,11 @@ class DonationFormFields extends DataObject {
 		'checkbox' => 'Checkbox (Yes/No)',
 	];
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -70,6 +73,8 @@ class DonationFormFields extends DataObject {
 				'description' => 'Whether or not the field is required.',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

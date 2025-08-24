@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/ECommerce/HeyCentricUrlParameterSetting.php'; 
 require_once ROOT_DIR . '/sys/ECommerce/HeyCentricUrlParameter.php'; 
@@ -18,7 +18,11 @@ class HeyCentricSetting extends DataObject {
 		return ['privateKey'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Locations'));
 		$urlParameterSettingFields = HeyCentricUrlParameterSetting::getObjectStructure();
@@ -87,7 +91,9 @@ class HeyCentricSetting extends DataObject {
 		if (!UserAccount::userHasPermission('Library eCommerce Options')) {
 			unset($structure['libraries']);
 		}
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name): array|null {
@@ -155,7 +161,7 @@ class HeyCentricSetting extends DataObject {
 		}
 	}
 
-	public function update($context = ''): bool {
+	public function update(string $context = ''): int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -165,7 +171,7 @@ class HeyCentricSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = ''): int|bool {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();

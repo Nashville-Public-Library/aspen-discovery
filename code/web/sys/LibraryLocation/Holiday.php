@@ -1,7 +1,6 @@
 <?php
 /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class Holiday extends DataObject {
 	public $__table = 'holiday';
@@ -13,7 +12,11 @@ class Holiday extends DataObject {
 	public $name;                  // varchar(100)
 
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$libraryList = Library::getLibraryList(false);
 
 		$structure = [
@@ -44,7 +47,9 @@ class Holiday extends DataObject {
 				'description' => 'The name of a holiday',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function fetch(): bool|DataObject|null {

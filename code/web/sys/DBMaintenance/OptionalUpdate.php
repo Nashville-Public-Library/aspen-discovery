@@ -1,10 +1,11 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class OptionalUpdate extends DataObject {
 	public $__table = 'optional_updates';
 	public $id;
 	public $name;
 	public $descriptionFile;
+	/** @noinspection PhpUnused */
 	public $versionIntroduced;
 	public $status;
 
@@ -12,8 +13,12 @@ class OptionalUpdate extends DataObject {
 		return ['status'];
 	}
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -54,9 +59,12 @@ class OptionalUpdate extends DataObject {
 				'readOnly' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function getDescription() {
+	public function getDescription() : string {
 		$optionalUpdatesPath = ROOT_DIR . '/optionalUpdates';
 		require_once ROOT_DIR . '/sys/Parsedown/AspenParsedown.php';
 		$parsedown = AspenParsedown::instance();
@@ -68,15 +76,19 @@ class OptionalUpdate extends DataObject {
 		}
 	}
 
-	public function applyUpdate() {
+	public function applyUpdate() : void {
 		global $aspen_db;
 		if ($this->name == 'moveSearchToolsToTop') {
+			/** @noinspection SqlWithoutWhere */
 			$aspen_db->exec('UPDATE grouped_work_display_settings set showSearchToolsAtTop=1');
 		}elseif ($this->name == 'useFloatingCoverStyle') {
+			/** @noinspection SqlWithoutWhere */
 			$aspen_db->exec("UPDATE themes set coverStyle='floating'");
 		}elseif ($this->name == 'displayCoversForEditions') {
+			/** @noinspection SqlWithoutWhere */
 			$aspen_db->exec("UPDATE grouped_work_display_settings set showEditionCovers=1");
 		}elseif ($this->name == 'enableNewBadge') {
+			/** @noinspection SqlWithoutWhere */
 			$aspen_db->exec("UPDATE grouped_work_display_settings set alwaysFlagNewTitles=1");
 		}
 		$this->status = 2;

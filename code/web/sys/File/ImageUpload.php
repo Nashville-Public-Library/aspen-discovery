@@ -1,4 +1,5 @@
 <?php
+/** @noinspection PhpMissingFieldTypeInspection */
 
 
 class ImageUpload extends DataObject {
@@ -31,7 +32,11 @@ class ImageUpload extends DataObject {
 		return ['id'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		global $serverName;
 		$allSharingOptions = [
 			0 => 'Not Shared',
@@ -55,7 +60,7 @@ class ImageUpload extends DataObject {
 
 		$libraryListForSharing = $libraryListForSharing + $libraryList;
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -197,9 +202,12 @@ class ImageUpload extends DataObject {
 				'validTypes' => ['image/gif', 'image/jpeg', 'image/png', 'image/svg+xml']
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getDisplayUrl($property) {
+	function getDisplayUrl($property) : string {
 		if (empty($this->id)) {
 			return '';
 		}
@@ -217,17 +225,17 @@ class ImageUpload extends DataObject {
 		return '/WebBuilder/ViewImage?size=' . $size . '&id=' . $this->id;
 	}
 
-	function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->generateDerivatives();
 		return parent::insert();
 	}
 
-	function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->generateDerivatives();
 		return parent::update();
 	}
 
-	private function generateDerivatives() {
+	private function generateDerivatives() : void {
 		if (!empty($this->fullSizePath) && !empty($this->id)) {
 			global $serverName;
 			require_once ROOT_DIR . '/sys/Covers/CoverImageUtils.php';
@@ -354,14 +362,7 @@ class ImageUpload extends DataObject {
 		return true;
 	}
 
-	/**
-	 * When doing a hard delete ($useWhere = true),
-	 * remove all image variants from disk before deleting the DB row.
-	 *
-	 * @param bool $useWhere
-	 * @return int
-	 */
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		global $serverName;
 		if ($hardDelete) {
 			$baseDir = '/data/aspen-discovery/' . $serverName . '/uploads/web_builder_image';

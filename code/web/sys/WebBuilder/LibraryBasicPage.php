@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class LibraryBasicPage extends DataObject {
 	public $__table = 'library_web_builder_basic_page';

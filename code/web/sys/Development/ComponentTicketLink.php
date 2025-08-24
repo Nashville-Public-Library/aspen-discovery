@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class ComponentTicketLink extends DataObject {
 	public $__table = 'component_ticket_link';
@@ -6,7 +6,11 @@ class ComponentTicketLink extends DataObject {
 	public $ticketId;
 	public $componentId;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$componentList = [];
 		require_once ROOT_DIR . '/sys/Support/TicketComponentFeed.php';
 		$component = new TicketComponentFeed();
@@ -20,7 +24,7 @@ class ComponentTicketLink extends DataObject {
 		require_once ROOT_DIR . '/sys/Support/Ticket.php';
 		$ticket = new Ticket();
 		$ticket->whereAdd('status <> "Closed"');
-		$ticket->whereAdd("queue IN ('Development', 'Bugs')", 'AND');
+		$ticket->whereAdd("queue IN ('Development', 'Bugs')");
 
 		$ticket->orderBy('ticketId + 0 DESC');
 		$ticket->find();
@@ -28,7 +32,7 @@ class ComponentTicketLink extends DataObject {
 			$ticketList[$ticket->id] = $ticket->ticketId . ': ' . $ticket->title;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -52,9 +56,12 @@ class ComponentTicketLink extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getEditLink($context): string {
+	public function getEditLink(string $context): string {
 		if ($context == 'relatedTickets') {
 			return '/Greenhouse/Tickets?objectAction=edit&id=' . $this->ticketId;
 		} else {

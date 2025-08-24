@@ -1,11 +1,13 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class SpringshareLibCalEvent extends DataObject {
 	public $__table = 'springshare_libcal_events';
 	public $id;
+	/** @noinspection PhpUnused */
 	public $settingsId;
 	public $externalId;
 	public $title;
+	/** @noinspection PhpUnused */
 	public $rawChecksum;
 	public $rawResponse;
 	public $deleted;

@@ -1,14 +1,18 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectSetting.php';
 
 class PalaceProjectCollection extends DataObject {
 	public $__table = 'palace_project_collections';    // table name
 	public $id;
 	public $settingId;
+	/** @noinspection PhpUnused */
 	public $palaceProjectName;
 	public $displayName;
+	/** @noinspection PhpUnused */
 	public $hasCirculation;
+	/** @noinspection PhpUnused */
 	public $includeInAspen;
+	/** @noinspection PhpUnused */
 	public $lastIndexed;
 
 	public function getUniquenessFields(): array {
@@ -24,7 +28,12 @@ class PalaceProjectCollection extends DataObject {
 		];
 	}
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$palaceProjectSettings = [];
 		$palaceProjectSetting = new PalaceProjectSetting();
 		$palaceProjectSetting->find();
@@ -57,7 +66,7 @@ class PalaceProjectCollection extends DataObject {
 				'property' => 'displayName',
 				'type' => 'text',
 				'label' => 'Aspen Display Name',
-				'description' => 'The name of the collection for display within Asepn',
+				'description' => 'The name of the collection for display within Aspen',
 				'forcesReindex' => true,
 			],
 			'hasCirculation' => [
@@ -81,6 +90,8 @@ class PalaceProjectCollection extends DataObject {
 				'description' => 'When the collection was indexed last.  Collections without circulation will index every 24 hours',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class LibraryWebsiteIndexing extends DataObject {
 	public $__table = 'library_website_indexing';

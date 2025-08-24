@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/EventFieldSetField.php';
 
 class EventField extends DataObject {
@@ -12,7 +11,11 @@ class EventField extends DataObject {
 	public $defaultValue;
 	public $facetName;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -80,10 +83,12 @@ class EventField extends DataObject {
 				'default' => '0',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$fieldSet = new EventFieldSetField();
 		$fieldSet->eventFieldId = $this->id;
 		if ($fieldSet->count() == 0) {

@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class CronLogEntry extends DataObject {
 	public $__table = 'cron_log';
@@ -64,7 +63,7 @@ class CronLogEntry extends DataObject {
 	 * Override insert to check if this is a frequent cron job with logging disabled.
 	 * If so, sets skipLogging flag and prevents database insertion.
 	 */
-	function insert($context = ''): bool|int {
+	public function insert(string $context = '') : int|bool {
 		if (!empty($this->name)) {
 			require_once ROOT_DIR . '/services/Admin/CronRunner.php';
 			require_once ROOT_DIR . '/sys/SystemVariables.php';
@@ -86,7 +85,7 @@ class CronLogEntry extends DataObject {
 	 * Override update to prevent database operations when logging is disabled.
 	 * This handles cases where cron jobs call update() after insert() returned early.
 	 */
-	function update($context = ''): bool|int {
+	public function update(string $context = '') : bool|int {
 		if ($this->skipLogging) {
 			return true;
 		}

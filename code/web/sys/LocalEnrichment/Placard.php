@@ -40,7 +40,12 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return ['title'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$placardTriggerStructure = PlacardTrigger::getObjectStructure($context);
 		unset($placardTriggerStructure['placardId']);
 
@@ -54,7 +59,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		];
 
 		/** @noinspection HtmlRequiredAltAttribute */
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -186,6 +191,9 @@ class Placard extends DB_LibraryLocationLinkedObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**
@@ -255,7 +263,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '', $savingOnObjectPage = true) {
+	public function update(string $context = '', $savingOnObjectPage = true) : int|bool {
 		if ($this->sourceType != 'none' && $savingOnObjectPage) {
 			$this->compareLinkedObject();
 		}
@@ -272,7 +280,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -290,7 +298,7 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && $hardDelete && !empty($this->id)) {
 			$triggers = new PlacardTrigger();
@@ -511,12 +519,12 @@ class Placard extends DB_LibraryLocationLinkedObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings);
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings);
 
-		if (array_key_exists('triggers', $jsonLinks)) {
+		if (array_key_exists('triggers', $jsonData)) {
 			$triggers = [];
-			foreach ($jsonLinks['triggers'] as $trigger) {
+			foreach ($jsonData['triggers'] as $trigger) {
 				$triggerObj = new PlacardTrigger();
 				$triggerObj->placardId = $this->id;
 				//Make sure we don't overwrite the placard id we just set
@@ -527,10 +535,10 @@ class Placard extends DB_LibraryLocationLinkedObject {
 			$this->_triggers = $triggers;
 			$result = true;
 		}
-		if (array_key_exists('languages', $jsonLinks)) {
+		if (array_key_exists('languages', $jsonData)) {
 			$languages = [];
 			$languageIds = Language::getLanguageIdsByCode();
-			foreach ($jsonLinks['languages'] as $language) {
+			foreach ($jsonData['languages'] as $language) {
 				if (array_key_exists($language, $languageIds)) {
 					$languageId = $languageIds[$language];
 					$languages[$languageId] = $languageId;

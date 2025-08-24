@@ -1,5 +1,4 @@
-<?php
-
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class CampaignLibraryAccess extends DataObject {
 	public $__table = 'ce_campaign_library_access';

@@ -1,23 +1,18 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/LibraryLocation/FacetSetting.php';
 
 class LibraryFacetSetting extends FacetSetting {
 	public $__table = 'library_facet_setting';    // table name
 	public $libraryId;
 
-	static function getObjectStructure(array $availableFacets = null) {
-		$library = new Library();
-		$library->orderBy('displayName');
-		if (!UserAccount::userHasPermission('Administer All Libraries')) {
-			$homeLibrary = Library::getPatronHomeLibrary();
-			$library->libraryId = $homeLibrary->libraryId;
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
 		}
-		$library->find();
-		while ($library->fetch()) {
-			$libraryList[$library->libraryId] = $library->displayName;
-		}
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
-		$structure = parent::getObjectStructure($availableFacets);
+		$structure = parent::getBaseObjectStructure($context, self::getAvailableFacets());
 		$structure['libraryId'] = [
 			'property' => 'libraryId',
 			'type' => 'enum',
@@ -26,15 +21,17 @@ class LibraryFacetSetting extends FacetSetting {
 			'description' => 'The id of a library',
 		];
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Admin/LibraryFacetSettings?objectAction=edit&id=' . $this->id;
 	}
 
 	/** @return string[] */
-	public static function getAvailableFacets() {
+	public static function getAvailableFacets() : array {
 		return [];
 	}
 }

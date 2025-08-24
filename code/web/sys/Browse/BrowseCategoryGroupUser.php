@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Browse/BrowseCategoryGroup.php';
 
@@ -15,7 +15,11 @@ class BrowseCategoryGroupUser extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		//Get a list of users that have permissions to edit browse categories
 		$groups = new BrowseCategoryGroup();
 		$groups->orderBy('name');
@@ -32,9 +36,9 @@ class BrowseCategoryGroupUser extends DataObject {
 		if ($permission->find(true)) {
 			$permissionId = $permission->id;
 			require_once ROOT_DIR . '/sys/Administration/RolePermissions.php';
-			$rolePermssions = new RolePermissions();
-			$rolePermssions->permissionId = $permissionId;
-			$roleIds = $rolePermssions->fetchAll('roleId');
+			$rolePermissions = new RolePermissions();
+			$rolePermissions->permissionId = $permissionId;
+			$roleIds = $rolePermissions->fetchAll('roleId');
 
 			if (count($roleIds) > 0) {
 				require_once ROOT_DIR . '/sys/Administration/UserRoles.php';
@@ -53,7 +57,7 @@ class BrowseCategoryGroupUser extends DataObject {
 			}
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -76,13 +80,16 @@ class BrowseCategoryGroupUser extends DataObject {
 				'description' => 'The User who can edit the browse category group ',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function canActiveUserChangeSelection() {
+	public function canActiveUserChangeSelection() : bool {
 		return UserAccount::userHasPermission('Administer All Browse Categories');
 	}
 
-	public function canActiveUserDelete() {
+	public function canActiveUserDelete() : bool {
 		return  UserAccount::userHasPermission('Administer All Browse Categories');
 	}
 
@@ -99,12 +106,16 @@ class BrowseCategoryGroupUser extends DataObject {
 	}
 
 	private $_userDisplayName = null;
-	public function getUserDisplayName() {
+
+	/** @noinspection PhpUnused */
+	public function getUserDisplayName() : string {
 		if ($this->_userDisplayName == null) {
 			$user = new User;
 			$user->id = $this->userId;
 			if ($user->find(true)) {
 				$this->_userDisplayName = "$user->displayName (" . $user->getBarcode() . ")";
+			}else{
+				$this->_userDisplayName = 'Unknown';
 			}
 		}
 		return $this->_userDisplayName;

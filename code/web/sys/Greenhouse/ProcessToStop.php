@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class ProcessToStop extends DataObject {
 	public $__table = 'processes_to_stop';
@@ -10,7 +10,8 @@ class ProcessToStop extends DataObject {
 	public $stopResults;
 	public $dateSet;
 
-	public function getFormattedDateSet() {
+	/** @noinspection PhpUnused */
+	public function getFormattedDateSet() : false|string {
 		return date("Y-m-d H:i:s", $this->dateSet);
 	}
 }

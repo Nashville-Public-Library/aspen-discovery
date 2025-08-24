@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/WebBuilder/CustomFormField.php';
 require_once ROOT_DIR . '/sys/WebBuilder/LibraryCustomForm.php';
@@ -31,11 +31,16 @@ class CustomForm extends DB_LibraryLinkedObject {
 		return ['requireLogin'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$formFieldStructure = CustomFormField::getObjectStructure($context);
 		unset ($formFieldStructure['weight']);
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Custom Forms'));
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -121,9 +126,12 @@ class CustomForm extends DB_LibraryLinkedObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -132,7 +140,7 @@ class CustomForm extends DB_LibraryLinkedObject {
 		return $ret;
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -161,7 +169,7 @@ class CustomForm extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
@@ -183,7 +191,7 @@ class CustomForm extends DB_LibraryLinkedObject {
 		return $this->_libraries;
 	}
 
-	public function getFormFields() {
+	public function getFormFields() : ?array {
 		if (!isset($this->_formFields) && $this->id) {
 			$this->_formFields = [];
 			$formField = new CustomFormField();
@@ -197,7 +205,7 @@ class CustomForm extends DB_LibraryLinkedObject {
 		return $this->_formFields;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -212,28 +220,28 @@ class CustomForm extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveFormFields() {
+	public function saveFormFields() : void {
 		if (isset($this->_formFields) && is_array($this->_formFields)) {
 			$this->saveOneToManyOptions($this->_formFields, 'formId');
 			unset($this->_formFields);
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryLink = new LibraryCustomForm();
 		$libraryLink->formId = $this->id;
-		return $libraryLink->delete(true);
+		$libraryLink->delete(true);
 	}
 
-	private function clearFormFields() {
+	private function clearFormFields() : void {
 		//Delete links to the libraries
 		$field = new CustomFormField();
 		$field->formId = $this->id;
-		return $field->delete(true);
+		$field->delete(true);
 	}
 
-	public function getFormStructure() {
+	public function getFormStructure() : array {
 		$fields = $this->getFormFields();
 		$structure = [];
 		foreach ($fields as $field) {
@@ -255,7 +263,7 @@ class CustomForm extends DB_LibraryLinkedObject {
 		return $structure;
 	}
 
-	public function getFormattedFields() {
+	public function getFormattedFields() : string {
 		$structure = $this->getFormStructure();
 		global $interface;
 		$interface->assign('submitUrl', '/WebBuilder/SubmitForm?id=' . $this->id);
@@ -319,12 +327,12 @@ class CustomForm extends DB_LibraryLinkedObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting);
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
-		if (array_key_exists('formFields', $jsonLinks)) {
+		if (array_key_exists('formFields', $jsonData)) {
 			$formFields = [];
-			foreach ($jsonLinks['formFields'] as $formField) {
+			foreach ($jsonData['formFields'] as $formField) {
 				$formFieldObj = new CustomFormField();
 				$formFieldObj->formId = $this->id;
 				unset($formField['formId']);

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class WebResourceCategory extends DataObject {
@@ -10,7 +10,7 @@ class WebResourceCategory extends DataObject {
 	/**
 	 * @return bool|WebBuilderCategory
 	 */
-	public function getCategory() {
+	public function getCategory() : WebResourceCategory|false {
 		$category = new WebBuilderCategory();
 		$category->id = $this->categoryId;
 		if ($category->find(true)) {

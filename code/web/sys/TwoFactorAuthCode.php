@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class TwoFactorAuthCode extends DataObject {
 	public $__table = 'two_factor_auth_codes';   // table name
@@ -12,9 +11,12 @@ class TwoFactorAuthCode extends DataObject {
 	public $dateSent;
 	public $status;
 
-	/** @noinspection PhpUnusedParameterInspection */
-	public static function getObjectStructure($context = '') : array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -57,6 +59,9 @@ class TwoFactorAuthCode extends DataObject {
 				'readOnly' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function createCode($num = 1, $backup = false) : bool {

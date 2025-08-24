@@ -1,4 +1,4 @@
-<?php /** @noinspection PhpUnused */
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 abstract class CombinedResultSection extends DataObject {
 	public $__displayNameColumn = 'displayName';
@@ -6,9 +6,15 @@ abstract class CombinedResultSection extends DataObject {
 	public $displayName;
 	public $weight;
 	public $source;
+	/** @noinspection PhpUnused */
 	public $numberOfResultsToShow;
 
-	static function getObjectStructure($context = ''): array {
+	/**
+	 * Get the base object structure, do not cache since it is cached by the child object
+	 * @param string $context
+	 * @return array
+	 */
+	static function getObjectStructure(string $context = ''): array {
 		global $enabledModules;
 		global $library;
 		$validResultSources = [];

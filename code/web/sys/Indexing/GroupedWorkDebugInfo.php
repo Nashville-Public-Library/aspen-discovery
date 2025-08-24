@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class GroupedWorkDebugInfo extends DataObject {
 	public $__table = 'grouped_work_debug_info';

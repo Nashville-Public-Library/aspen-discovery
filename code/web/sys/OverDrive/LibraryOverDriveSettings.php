@@ -27,8 +27,12 @@ class LibraryOverDriveSettings extends DataObject {
 		return ['clientSecret'];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$overdriveSettings = [];
 		require_once ROOT_DIR . '/sys/OverDrive/OverDriveSetting.php';
 		$overdriveSetting = new OverDriveSetting();
@@ -39,7 +43,7 @@ class LibraryOverDriveSettings extends DataObject {
 
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -127,10 +131,12 @@ class LibraryOverDriveSettings extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	function getEditLink($context): string {
+	public function getEditLink(string $context): string {
 		if ($context == 'libraries') {
 			return '/Admin/Libraries?objectAction=edit&id=' . $this->libraryId . '#propertyRowoverDriveScopes';
 		} else {

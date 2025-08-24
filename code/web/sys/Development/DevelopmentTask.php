@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class DevelopmentTask extends DataObject {
@@ -33,7 +33,11 @@ class DevelopmentTask extends DataObject {
 		return ['taskType', 'dueDate', 'releaseId', 'status', 'storyPoints', 'suggestedForCommunityDev'];
 	}
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$taskTypes = [
 			0 => 'Not Set',
 			1 => 'Bug',
@@ -124,7 +128,7 @@ class DevelopmentTask extends DataObject {
 		unset($qaLink['taskId']);
 
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -352,9 +356,13 @@ class DevelopmentTask extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Development/Tasks?objectAction=edit&id=' . $this->id;
 	}
 
@@ -418,10 +426,7 @@ class DevelopmentTask extends DataObject {
 		}
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveRelatedEpic();
@@ -435,7 +440,7 @@ class DevelopmentTask extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveRelatedEpic();
@@ -449,7 +454,7 @@ class DevelopmentTask extends DataObject {
 		return $ret;
 	}
 
-	private function saveRelatedEpic() {
+	private function saveRelatedEpic() : void {
 		if ($this->id) {
 			require_once ROOT_DIR . '/sys/Development/TaskEpicLink.php';
 			if ($this->_epicId === 0) {
@@ -470,7 +475,7 @@ class DevelopmentTask extends DataObject {
 		}
 	}
 
-	private function saveRelatedSprint() {
+	private function saveRelatedSprint() : void {
 		if ($this->id) {
 			require_once ROOT_DIR . '/sys/Development/TaskSprintLink.php';
 			if ($this->_sprintId === 0) {
@@ -491,35 +496,35 @@ class DevelopmentTask extends DataObject {
 		}
 	}
 
-	public function saveRelatedTickets() {
+	public function saveRelatedTickets() : void {
 		if (isset ($this->_relatedTickets) && is_array($this->_relatedTickets)) {
 			$this->saveOneToManyOptions($this->_relatedTickets, 'taskId');
 			unset($this->_relatedTickets);
 		}
 	}
 
-	public function saveRelatedComponents() {
+	public function saveRelatedComponents() : void {
 		if (isset ($this->_relatedComponents) && is_array($this->_relatedComponents)) {
 			$this->saveOneToManyOptions($this->_relatedComponents, 'taskId');
 			unset($this->_relatedComponents);
 		}
 	}
 
-	public function saveRequestingPartners() {
+	public function saveRequestingPartners() : void {
 		if (isset ($this->_requestingPartners) && is_array($this->_requestingPartners)) {
 			$this->saveOneToManyOptions($this->_requestingPartners, 'taskId');
 			unset($this->_requestingPartners);
 		}
 	}
 
-	public function saveAssignedDevelopers() {
+	public function saveAssignedDevelopers() : void {
 		if (isset ($this->_assignedDeveloper) && is_array($this->_assignedDeveloper)) {
 			$this->saveOneToManyOptions($this->_assignedDeveloper, 'taskId');
 			unset($this->_assignedDeveloper);
 		}
 	}
 
-	public function saveAssignedQA() {
+	public function saveAssignedQA() : void {
 		if (isset ($this->_assignedQA) && is_array($this->_assignedQA)) {
 			$this->saveOneToManyOptions($this->_assignedQA, 'taskId');
 			unset($this->_assignedQA);
@@ -527,7 +532,7 @@ class DevelopmentTask extends DataObject {
 	}
 
 	/**
-	 * @return TaskTicketLink[]
+	 * @return ?TaskTicketLink[]
 	 */
 	private function getRelatedTickets(): ?array {
 		if (!isset($this->_relatedTickets) && $this->id) {
@@ -547,12 +552,12 @@ class DevelopmentTask extends DataObject {
 	 * @param TaskTicketLink[] $relatedTickets
 	 * @return void
 	 */
-	public function setRelatedTickets(array $relatedTickets) {
+	public function setRelatedTickets(array $relatedTickets) : void {
 		$this->_relatedTickets = $relatedTickets;
 	}
 
 	/**
-	 * @return ComponentTaskLink[]
+	 * @return ?ComponentTaskLink[]
 	 */
 	private function getRelatedComponents(): ?array {
 		if (!isset($this->_relatedComponents) && $this->id) {
@@ -572,12 +577,12 @@ class DevelopmentTask extends DataObject {
 	 * @param ComponentTaskLink[] $relatedComponents
 	 * @return void
 	 */
-	public function setRelatedComponents(array $relatedComponents) {
+	public function setRelatedComponents(array $relatedComponents) : void {
 		$this->_relatedComponents = $relatedComponents;
 	}
 
 	/**
-	 * @return TaskPartnerLink[]
+	 * @return ?TaskPartnerLink[]
 	 */
 	private function getRequestingPartners(): ?array {
 		if (!isset($this->_requestingPartners) && $this->id) {
@@ -597,12 +602,12 @@ class DevelopmentTask extends DataObject {
 	 * @param TaskPartnerLink[] $requestingPartners
 	 * @return void
 	 */
-	public function setRequestingPartners(array $requestingPartners) {
+	public function setRequestingPartners(array $requestingPartners) : void {
 		$this->_requestingPartners = $requestingPartners;
 	}
 
 	/**
-	 * @return TaskDeveloperLink[]
+	 * @return ?TaskDeveloperLink[]
 	 */
 	private function getAssignedDevelopers(): ?array {
 		if (!isset($this->_assignedDeveloper) && $this->id) {
@@ -619,7 +624,7 @@ class DevelopmentTask extends DataObject {
 	}
 
 	/**
-	 * @return TaskQALink[]
+	 * @return ?TaskQALink[]
 	 */
 	private function getAssignedQA(): ?array {
 		if (!isset($this->_assignedQA) && $this->id) {

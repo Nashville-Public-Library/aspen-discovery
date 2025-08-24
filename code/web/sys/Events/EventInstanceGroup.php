@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/Event.php';
 require_once ROOT_DIR . '/sys/Events/EventInstance.php';
 
@@ -9,12 +9,16 @@ class EventInstanceGroup extends DataObject {
 	public $startDate;
 	public $_instances;
 	public $deleted;
-	
-	static function getObjectStructure($context = ''): array {
+
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 
 		$instanceStructure = EventInstance::getObjectStructure($context);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -55,8 +59,11 @@ class EventInstanceGroup extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveInstances();
@@ -64,7 +71,7 @@ class EventInstanceGroup extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveInstances();
@@ -72,7 +79,7 @@ class EventInstanceGroup extends DataObject {
 		return $ret;
 	}
 
-	public function saveInstances() {
+	public function saveInstances() : void {
 		if (isset ($this->_instances) && is_array($this->_instances)) {
 			$this->saveOneToManyOptions($this->_instances, 'eventId');
 			unset($this->_instances);
@@ -102,7 +109,7 @@ class EventInstanceGroup extends DataObject {
 		}
 	}
 
-	/** @return EventInstance[] */
+	/** @return ?EventInstance[] */
 	public function getFutureInstances(): ?array {
 		if (!isset($this->_instances) && $this->id) {
 			$this->_instances = [];
@@ -120,7 +127,7 @@ class EventInstanceGroup extends DataObject {
 		return $this->_instances;
 	}
 
-	/** @return EventInstance[] */
+	/** @return ?EventInstance[] */
 	public function getAllInstances(): ?array {
 		if (!isset($this->_instances) && $this->id) {
 			$this->_instances = [];
@@ -135,13 +142,7 @@ class EventInstanceGroup extends DataObject {
 		return $this->_instances;
 	}
 
-	public function setInstances($value) {
+	public function setInstances($value) : void {
 		$this->_instances = $value;
-	}
-
-	public function clearInstances() {
-		$this->clearOneToManyOptions('EventInstance', 'eventId');
-		/** @noinspection PhpUndefinedFieldInspection */
-		$this->_instances = [];
 	}
 }

@@ -2,7 +2,6 @@
 /** @noinspection RequiredAttributes */
 /** @noinspection HtmlRequiredAltAttribute */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/LibraryLocation/LocationHours.php';
 require_once ROOT_DIR . '/sys/LibraryLocation/LocationCombinedResultSection.php';
 require_once ROOT_DIR . '/sys/LibraryLocation/LocationTheme.php';
@@ -30,8 +29,8 @@ require_once ROOT_DIR . '/sys/Events/EventsBranchMapping.php';
 
 
 class Location extends DataObject {
-	const DEFAULT_AUTOLOGOUT_TIME = 90;
-	const DEFAULT_AUTOLOGOUT_TIME_LOGGED_OUT = 450;
+	const int DEFAULT_AUTOLOGOUT_TIME = 90;
+	const int DEFAULT_AUTOLOGOUT_TIME_LOGGED_OUT = 450;
 
 	public $__table = 'location';   // table name
 	public $__primaryKey = 'locationId';
@@ -186,7 +185,7 @@ class Location extends DataObject {
 	}
 
 	static $_objectStructure = [];
-	static function getObjectStructure($context = ''): array {
+	static function getObjectStructure(string $context = ''): array {
 		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
 			return self::$_objectStructure[$context];
 		}
@@ -1529,6 +1528,7 @@ class Location extends DataObject {
 		}
 
 		//Set up our query to get the correct locations from the location table.
+		/** @noinspection PhpIfWithCommonPartsInspection */
 		if (isset($homeLibrary) && $homeLibrary->inSystemPickupsOnly == 1) {
 			/** The user can only pick up within their home system */
 			if (strlen($homeLibrary->validPickupSystems) > 0) {
@@ -1570,7 +1570,7 @@ class Location extends DataObject {
 		/** @var Location[] $tmpLocations */
 		$tmpLocations = $this->fetchAll();
 
-		// Load the locations and sort them based on the user profile information as well as their physical location..
+		// Load the locations and sort them based on the user profile information as well as their physical location.
 		$physicalLocation = $this->getPhysicalLocation();
 		$locationList = [];
 		foreach ($tmpLocations as $tmpLocation) {
@@ -1660,7 +1660,7 @@ class Location extends DataObject {
 	 * @param ?int $locationId The location to get sublocations for - don't limit by location if null
 	 * @return Sublocation[]
 	 */
-	static function getEventSublocations($locationId): array {
+	static function getEventSublocations(?int $locationId): array {
 		require_once ROOT_DIR . '/sys/LibraryLocation/Sublocation.php';
 		$sublocations = [];
 		$object = new Sublocation();
@@ -2045,7 +2045,7 @@ class Location extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveHours();
@@ -2068,7 +2068,7 @@ class Location extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveHours();
@@ -2086,7 +2086,7 @@ class Location extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false): int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$locationMap = new EventsBranchMapping();
@@ -2227,7 +2227,7 @@ class Location extends DataObject {
 			}
 
 			// get the day of the week (0=Sunday to 6=Saturday)
-			$dayOfWeekToday = strftime('%w', $timeToCheck);
+			$dayOfWeekToday = date('w', $timeToCheck);
 
 			// find library hours for the above day of the week
 			$hours = new LocationHours();
@@ -2288,8 +2288,8 @@ class Location extends DataObject {
 						$daysChecked++;
 					}
 
-					$nextDayOfWeek = strftime('%a', $nextDay);
-					if (isset($nextDayHours['closed']) && $nextDayHours['closed'] == true) {
+					$nextDayOfWeek = date('a', $nextDay);
+					if (isset($nextDayHours['closed']) && $nextDayHours['closed']) {
 						if (isset($closureReason)) {
 							if ($simpleOutput) {
 								$libraryHoursMessage = translate([
@@ -2349,9 +2349,9 @@ class Location extends DataObject {
 					}
 				} else {
 					//Library is open
-					$currentHour = strftime('%H', $today);
-					$openHour = strftime('%H', strtotime($todaysLibraryHours[0]['open']));
-					$closeHour = strftime('%H', strtotime($todaysLibraryHours[sizeof($todaysLibraryHours) - 1]['close']));
+					$currentHour = date('H', $today);
+					$openHour = date('H', strtotime($todaysLibraryHours[0]['open']));
+					$closeHour = date('H', strtotime($todaysLibraryHours[sizeof($todaysLibraryHours) - 1]['close']));
 					if ($closeHour == 0 && $closeHour < $openHour) {
 						$closeHour = 24;
 					}
@@ -2480,7 +2480,7 @@ class Location extends DataObject {
 		return $formattedMessage;
 	}
 
-	public function getRecordsToInclude() {
+	public function getRecordsToInclude() : array {
 		if (!isset($this->_recordsToInclude)) {
 			$this->_recordsToInclude = [];
 			if (!empty($this->locationId)) {
@@ -2496,7 +2496,7 @@ class Location extends DataObject {
 		return $this->_recordsToInclude;
 	}
 
-	public function saveRecordsToInclude() {
+	public function saveRecordsToInclude() : void {
 		if (isset ($this->_recordsToInclude) && is_array($this->_recordsToInclude)) {
 			$this->saveOneToManyOptions($this->_recordsToInclude, 'locationId');
 			unset($this->_recordsToInclude);
@@ -2521,7 +2521,7 @@ class Location extends DataObject {
 		return $this->_sideLoadScopes;
 	}
 
-	public function saveSideLoadScopes() {
+	public function saveSideLoadScopes() : void {
 		if (isset ($this->_sideLoadScopes) && is_array($this->_sideLoadScopes)) {
 			$this->saveOneToManyOptions($this->_sideLoadScopes, 'locationId');
 			unset($this->_sideLoadScopes);
@@ -2533,6 +2533,7 @@ class Location extends DataObject {
 
 	/**
 	 * @return OverDriveScope[]
+	 * @noinspection PhpUnused
 	 */
 	public function getOverdriveScopeObjects(): array {
 		if ($this->_overdriveScopes == null) {
@@ -2575,7 +2576,7 @@ class Location extends DataObject {
 		}
 	}
 
-	public function saveCoordinates() {
+	public function saveCoordinates() : void {
 		if ($this->address && empty($this->latitude) && empty($this->longitude)) {
 			$address = str_replace("\r\n", ",", $this->address);
 			$address = str_replace(" ", "+", $address);
@@ -2652,7 +2653,7 @@ class Location extends DataObject {
 	private $_opacStatus = null;
 
 	/**
-	 * Check whether or not the system is an opac station.
+	 * Check whether the system is an opac station.
 	 * - First check to see if an opac parameter has been passed.  If so, use that information and set a cookie for future pages.
 	 * - Next check the cookie to see if we have overridden the value
 	 * - Finally check to see if we have an active location based on the IP address.  If we do, use that to determine if this is an opac station
@@ -2674,7 +2675,7 @@ class Location extends DataObject {
 				$activeIP = IPAddress::getActiveIp();
 				require_once ROOT_DIR . '/sys/IP/IPAddress.php';
 				$subnet = IPAddress::getIPAddressForIP($activeIP);
-				if ($subnet != false) {
+				if ($subnet !== false) {
 					$this->_opacStatus = $subnet->isOpac;
 				} else {
 					$this->_opacStatus = false;
@@ -2760,13 +2761,14 @@ class Location extends DataObject {
 		return $this->_websiteFacetSettings;
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Admin/Locations?objectAction=edit&id=' . $this->libraryId;
 	}
 
 	protected $_parentLibrary = null;
 
-	/** @return Library */
+	/** @return ?Library */
 	public function getParentLibrary(): ?Library {
 		if ($this->_parentLibrary == null) {
 			$this->_parentLibrary = new Library();
@@ -2774,11 +2776,6 @@ class Location extends DataObject {
 			$this->_parentLibrary->find(true);
 		}
 		return $this->_parentLibrary;
-	}
-
-	public function setGroupedWorkDisplaySettings(GroupedWorkDisplaySetting $newGroupedWorkDisplaySettings) {
-		$this->_groupedWorkDisplaySettings = $newGroupedWorkDisplaySettings;
-		$this->groupedWorkDisplaySettingId = $newGroupedWorkDisplaySettings->id;
 	}
 
 	static $_locationList = [];
@@ -2931,10 +2928,10 @@ class Location extends DataObject {
 		return $this->_themes;
 	}
 
-	public function saveThemes() {
+	public function saveThemes() : void {
 		if (isset ($this->_themes) && is_array($this->_themes)) {
 			foreach ($this->_themes as $obj) {
-				/** @var DataObject $obj */
+				/** @var LocationTheme $obj */
 				if ($obj->_deleteOnSave) {
 					$obj->delete();
 				} else {
@@ -2968,7 +2965,7 @@ class Location extends DataObject {
 		}
 	}
 
-	public function saveEventMapping() {
+	public function saveEventMapping() : void {
 		$locationMap = new EventsBranchMapping();
 		$locationMap->locationId = $this->locationId;
 		if ($locationMap->find(true)) {
@@ -3025,7 +3022,7 @@ class Location extends DataObject {
 		} else {
 			$apiInfo['homeLink'] = $this->homeLink;
 		}
-		if ((empty($this->contactEmail) || $this->contactEmail == null)) {
+		if (empty($this->contactEmail)) {
 			if ($parentLibrary == null) {
 				$apiInfo['email'] = null;
 			} else {
@@ -3096,7 +3093,7 @@ class Location extends DataObject {
 		return $apiInfo;
 	}
 
-	public function loadCopyableSubObjects() {
+	public function loadCopyableSubObjects() : void {
 		if (empty($_REQUEST['aspenLida'])) {
 			$this->lidaLocationSettingId = -1;
 			$this->lidaSelfCheckSettingId = -1;
@@ -3113,16 +3110,8 @@ class Location extends DataObject {
 		if (empty($_REQUEST['eContent'])) {
 			$this->axis360ScopeId = -1;
 			$this->hooplaScopeId = -1;
-			$this->overDriveScopeId = -1;
 			$this->palaceProjectScopeId = -1;
 		} else {
-			$this->getCloudLibraryScope();
-			$index = -1;
-			foreach ($this->_cloudLibraryScopes as $subObject) {
-				$subObject->id = $index;
-				unset($subObject->locationId);
-				$index--;
-			}
 			$this->getSideLoadScopes();
 			$index = -1;
 			foreach ($this->_sideLoadScopes as $subObject) {
@@ -3202,7 +3191,7 @@ class Location extends DataObject {
 						}
 					}
 				}
-			} catch (Exception $e) {
+			} catch (Exception) {
 				//This happens if the tables aren't setup, ignore
 			}
 		}
@@ -3228,7 +3217,7 @@ class Location extends DataObject {
 		return $this->_sublocations;
 	}
 
-	public function saveSublocations() {
+	public function saveSublocations() : void {
 		if (isset ($this->_sublocations) && is_array($this->_sublocations)) {
 			$this->saveOneToManyOptions($this->_sublocations, 'locationId');
 			unset($this->_sublocations);

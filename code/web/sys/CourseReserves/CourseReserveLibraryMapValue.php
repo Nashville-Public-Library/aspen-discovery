@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class CourseReserveLibraryMapValue extends DataObject {
@@ -12,8 +12,12 @@ class CourseReserveLibraryMapValue extends DataObject {
 		return "$this->value => $this->translation";
 	}
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -45,5 +49,8 @@ class CourseReserveLibraryMapValue extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/BaseLogEntry.php';
 
@@ -12,5 +12,6 @@ class HooplaExportLogEntry extends BaseLogEntry {
 	public $numDeleted;
 	public $numUpdated;
 	public $numSkipped;
+	/** @noinspection PhpUnused */
 	public $numInvalidRecords;
 }
