@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class DevelopmentSprint extends DataObject {
 	public $__table = 'development_sprint';
@@ -12,12 +12,16 @@ class DevelopmentSprint extends DataObject {
 	public $_totalStoryPoints;
 
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		require_once ROOT_DIR . '/sys/Development/TaskSprintLink.php';
 		$taskSprintLinkStructure = TaskSprintLink::getObjectStructure($context);
 		unset($taskSprintLinkStructure['sprintId']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -77,6 +81,9 @@ class DevelopmentSprint extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -104,10 +111,7 @@ class DevelopmentSprint extends DataObject {
 		}
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveRelatedTasks();
@@ -115,7 +119,7 @@ class DevelopmentSprint extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveRelatedTasks();
@@ -123,7 +127,7 @@ class DevelopmentSprint extends DataObject {
 		return $ret;
 	}
 
-	public function saveRelatedTasks() {
+	public function saveRelatedTasks() : void {
 		if (isset ($this->_relatedTasks) && is_array($this->_relatedTasks)) {
 			$this->saveOneToManyOptions($this->_relatedTasks, 'sprintId');
 			unset($this->_relatedTasks);
@@ -131,7 +135,7 @@ class DevelopmentSprint extends DataObject {
 	}
 
 	/**
-	 * @return TaskEpicLink[]
+	 * @return ?TaskEpicLink[]
 	 */
 	private function getRelatedTasks(): ?array {
 		if (!isset($this->_relatedTasks) && $this->id) {

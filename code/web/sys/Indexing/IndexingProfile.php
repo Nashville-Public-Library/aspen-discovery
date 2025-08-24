@@ -256,7 +256,11 @@ class IndexingProfile extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 
 		$translationMapStructure = TranslationMap::getObjectStructure($context);
 		unset($translationMapStructure['indexingProfileId']);
@@ -1579,7 +1583,8 @@ class IndexingProfile extends DataObject {
 
 		}
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function updateStructureForEditingObject($structure) : array {
@@ -1717,7 +1722,7 @@ class IndexingProfile extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') : bool|int {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret === FALSE) {
 			global $logger;
@@ -1791,7 +1796,7 @@ class IndexingProfile extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') : int {
+	public function insert(string $context = '') : int|bool {
 		global $serverName;
 		$sanitizedName = strtolower(preg_replace('/\W/', ' ', $this->name));
 		//Because we are doing this in 2 steps, first setting the indexing class and then setting everything else, we can set reasonable defaults

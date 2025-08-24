@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class LocationWebsiteIndexing extends DataObject {
 	public $__table = 'location_website_indexing';

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class ExternalRequestLogEntry extends DataObject {
@@ -13,8 +13,12 @@ class ExternalRequestLogEntry extends DataObject {
 	public $response;
 	public $requestTime;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -81,6 +85,9 @@ class ExternalRequestLogEntry extends DataObject {
 				'readOnly' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**
@@ -93,7 +100,7 @@ class ExternalRequestLogEntry extends DataObject {
 	 * @param string|null $response
 	 * @param string[] $dataToSanitize
 	 */
-	static function logRequest(string $requestType, string $method, string $url, $headers, string $body, string $responseCode, ?string $response, array $dataToSanitize) {
+	static function logRequest(string $requestType, string $method, string $url, mixed $headers, string $body, string $responseCode, ?string $response, array $dataToSanitize) : void {
 		try {
 			if (IPAddress::showDebuggingInformation() || self::getForceDebuggingLogStatus($requestType)) {
 				require_once ROOT_DIR . '/sys/SystemLogging/ExternalRequestLogEntry.php';
@@ -126,19 +133,19 @@ class ExternalRequestLogEntry extends DataObject {
 
 	/**
 	 * Get the status of the toggle 'Force Debugging Log' for an object related with a request type.
-	 * Example : getForceDebuggingLogStatus should return the status for an specific vendor as it is related with the request type "fine_payment".
+	 * Example : getForceDebuggingLogStatus should return the status for a specific vendor as it is related with the request type "fine_payment".
 	 *
 	 *
 	 * @return  bool     True if 'Force Debugging Log' is enabled for that object or False if not.
 	 * @access  private
 	 */
-	private static function getForceDebuggingLogStatus(string $requestType){
+	private static function getForceDebuggingLogStatus(string $requestType) : bool {
 
 		$status = false;
 
 		if(str_starts_with($requestType,"fine_payment")){
 			$status = self::getForcePaymentDebugLogging();
-		};
+		}
 
 		return $status;
 	}
@@ -149,7 +156,7 @@ class ExternalRequestLogEntry extends DataObject {
 	 * @return  bool     True if 'Force Debugging Log' is enabled for that ecommerce or False if not.
 	 * @access  private
 	 */
-	private static function getForcePaymentDebugLogging(){
+	private static function getForcePaymentDebugLogging() : bool {
 
 		//Array of [finePaymentType, vendorId, vendorClass]
 		$eCommerceOptions = [
@@ -186,7 +193,7 @@ class ExternalRequestLogEntry extends DataObject {
 		return $status;
 	}
 
-	private static function sanitize($field, $dataToSanitize) {
+	private static function sanitize($field, $dataToSanitize) : string {
 		$sanitizedField = $field;
 		foreach ($dataToSanitize as $dataFieldName => $value) {
 			$sanitizedField = str_replace($value, "**$dataFieldName**", $sanitizedField);

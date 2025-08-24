@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class UserPaymentLine extends DataObject {
 	public $__table = 'user_payment_lines';

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class TalpaSettings extends DataObject {
@@ -19,7 +19,12 @@ class TalpaSettings extends DataObject {
 	public $includeTalpaOtherResultsSwitch;
 	public $talpaOtherResultsExplainerText;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$buttonOptions = [
 			0 => 'None',
 			1 => 'Plain Text (custom)',
@@ -28,7 +33,8 @@ class TalpaSettings extends DataObject {
 			4 => 'Talpa Button 3 (dark theme)',
 		];
 
-		return [
+		/** @noinspection HtmlRequiredAltAttribute */
+		$structure = [
 
 			'id' => [
 				'property' => 'id',
@@ -163,6 +169,9 @@ class TalpaSettings extends DataObject {
 				],
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }
 

@@ -14,8 +14,12 @@ class LibraryOverDriveScope extends DataObject {
 		];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		require_once ROOT_DIR . '/sys/OverDrive/OverDriveScope.php';
 		$overDriveScopes = [];
 		$overDriveScopes[-1] = translate([
@@ -28,7 +32,7 @@ class LibraryOverDriveScope extends DataObject {
 
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -52,26 +56,16 @@ class LibraryOverDriveScope extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	function getEditLink($context): string {
+	public function getEditLink(string $context): string {
 		if ($context == 'libraries') {
 			return '/Admin/Libraries?objectAction=edit&id=' . $this->libraryId . '#propertyRowoverDriveScopes';
 		}else{
 			return '/OverDrive/Scopes?objectAction=edit&id=' . $this->scopeId;
 		}
-	}
-
-	private $_overDriveScope = null;
-	public function getOverDriveScope() : OverDriveScope {
-		if ($this->_overDriveScope == null) {
-			$this->_overDriveScope = new OverDriveScope();
-			$this->_overDriveScope->id = $this->scopeId;
-			if (!$this->_overDriveScope->find(true)){
-				$this->_overDriveScope = null;
-			}
-		}
-		return $this->_overDriveScope;
 	}
 }

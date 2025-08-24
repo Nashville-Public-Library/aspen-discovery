@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class UserPayment extends DataObject {
@@ -23,12 +23,15 @@ class UserPayment extends DataObject {
 	public $aciToken;
 	public $deluxeRemittanceId;
 	public $deluxeSecurityId;
-	public $ncrTransactionId;
 	public $heyCentricPaymentReferenceNumber;
 	public $requestingUrl;
 
-	public static function getObjectStructure($context = '') {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -149,6 +152,9 @@ class UserPayment extends DataObject {
 				'readOnly' => true,
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/** @var User[] */
@@ -1247,7 +1253,7 @@ class UserPayment extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (isset($jsonData['user'])) {
 			$username = $jsonData['user'];

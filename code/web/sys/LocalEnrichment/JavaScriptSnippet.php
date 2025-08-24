@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/LibraryLocationLinkedObject.php';
 require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippetLibrary.php';
@@ -14,11 +14,16 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 	protected $_libraries;
 	protected $_locations;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All JavaScript Snippets'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All JavaScript Snippets'));
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -38,12 +43,6 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 				'label' => 'Snippet (include script tags)',
 				'description' => 'The JavaScript Snippet to add to pages',
 				'hideInLists' => true,
-			],
-			'containsAnalyticsCookies' => [
-				'property' => 'containsAnalyticsCookies',
-				'type' => 'checkbox',
-				'label' => 'Contains Analytics Cookies',
-				'description' => 'This snippet contains analytics cookies',
 			],
 			'libraries' => [
 				'property' => 'libraries',
@@ -72,6 +71,9 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 				'description' => 'This snippet contains analytics cookies',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**
@@ -86,7 +88,7 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -95,7 +97,7 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -104,7 +106,7 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$javascriptSnippetLibrary = new JavaScriptSnippetLibrary();
@@ -129,7 +131,7 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 	}
 
 	/**
-	 * @return int[]
+	 * @return ?int[]
 	 */
 	public function getLibraries(): ?array {
 		if (!isset($this->_libraries) && $this->id) {
@@ -145,7 +147,7 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 	}
 
 	/**
-	 * @return int[]
+	 * @return ?int[]
 	 */
 	public function getLocations(): ?array {
 		if (!isset($this->_locations) && $this->id) {
@@ -170,7 +172,7 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All JavaScript Snippets'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -190,7 +192,7 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All JavaScript Snippets'));
 			foreach ($locationList as $locationId => $displayName) {
@@ -208,9 +210,5 @@ class JavaScriptSnippet extends DB_LibraryLocationLinkedObject {
 				}
 			}
 		}
-	}
-
-	public function okToExport(array $selectedFilters): bool {
-		return parent::okToExport($selectedFilters);
 	}
 }

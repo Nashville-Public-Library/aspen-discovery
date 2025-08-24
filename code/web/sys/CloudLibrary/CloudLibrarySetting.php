@@ -13,15 +13,21 @@ class CloudLibrarySetting extends DataObject {
 	public $accountKey;
 	public $runFullUpdate;
 	public $useAlternateLibraryCard;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfChangedRecords;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfAllRecords;
 
 	private $_scopes;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$cloudLibraryScopeStructure = CloudLibraryScope::getObjectStructure($context);
 		unset($cloudLibraryScopeStructure['settingId']);
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -112,16 +118,16 @@ class CloudLibrarySetting extends DataObject {
 				'additionalOneToManyActions' => [],
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __toString() {
 		return $this->libraryId . " - " . $this->userInterfaceUrl;
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveScopes();
@@ -129,7 +135,7 @@ class CloudLibrarySetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			if (empty($this->_scopes)) {
@@ -144,7 +150,7 @@ class CloudLibrarySetting extends DataObject {
 		return $ret;
 	}
 
-	public function saveScopes() {
+	public function saveScopes() : void {
 		if (isset ($this->_scopes) && is_array($this->_scopes)) {
 			$this->saveOneToManyOptions($this->_scopes, 'settingId');
 			unset($this->_scopes);

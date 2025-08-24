@@ -14,8 +14,13 @@ class LibraryYearInReview extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
-		//Load Libraries for lookup values
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+			//Load Libraries for lookup values
 		$allLibraryList = Library::getLibraryList(false);
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
@@ -28,7 +33,7 @@ class LibraryYearInReview extends DataObject {
 			$availableYearInReviewSettings[$yearInReview->id] = $yearInReview->name;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -52,5 +57,8 @@ class LibraryYearInReview extends DataObject {
 				'permissions' => ['Administer Year in Review for All Libraries', 'Administer Year in Review for Home Library'],
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

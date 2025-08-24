@@ -17,11 +17,15 @@ class LocalIllForm extends DataObject {
 
 	protected $_locations;
 
-	/** @noinspection PhpUnusedParameterInspection */
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Local ILL Forms'));
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -91,6 +95,9 @@ class LocalIllForm extends DataObject {
 				'hideInLists' => false,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**
@@ -105,7 +112,7 @@ class LocalIllForm extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLocations();
@@ -113,7 +120,7 @@ class LocalIllForm extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLocations();
@@ -121,7 +128,7 @@ class LocalIllForm extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false): int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$location = new Location();
@@ -143,7 +150,7 @@ class LocalIllForm extends DataObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Local ILL Forms'));
 			foreach ($locationList as $locationId => $displayName) {
@@ -164,7 +171,6 @@ class LocalIllForm extends DataObject {
 			}
 			unset($this->_locations);
 		}
-		return $this->_locations;
 	}
 
 	public function __set($name, $value) {

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/CourseReserves/CourseReserveLibraryMapValue.php';
 
@@ -6,11 +6,17 @@ class SeriesIndexingSettings extends DataObject {
 	public $__table = 'series_indexing_settings';    // table name
 	public $id;
 	public $runFullUpdate;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfChangedSeries;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfAllSeries;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -39,5 +45,8 @@ class SeriesIndexingSettings extends DataObject {
 				'default' => 0,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

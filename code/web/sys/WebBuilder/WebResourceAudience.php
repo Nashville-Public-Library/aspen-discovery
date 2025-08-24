@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class WebResourceAudience extends DataObject {
@@ -7,7 +7,7 @@ class WebResourceAudience extends DataObject {
 	public $webResourceId;
 	public $audienceId;
 
-	public function getAudience() {
+	public function getAudience() : WebBuilderAudience|false {
 		$audience = new WebBuilderAudience();
 		$audience->id = $this->audienceId;
 		if ($audience->find(true)) {

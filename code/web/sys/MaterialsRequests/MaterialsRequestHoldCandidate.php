@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class MaterialsRequestHoldCandidate extends DataObject {
 	public $__table = 'materials_request_hold_candidate';
@@ -9,7 +9,7 @@ class MaterialsRequestHoldCandidate extends DataObject {
 
 	protected $_recordDriver;
 
-	public function getTitle() {
+	public function getTitle() : string {
 		$recordDriver = $this->getRecordDriver();
 		if ($recordDriver !== false) {
 			return $recordDriver->getTitle();
@@ -18,24 +18,33 @@ class MaterialsRequestHoldCandidate extends DataObject {
 		}
 	}
 
-	public function getAuthor() {
+	public function getAuthor() : string {
 		$recordDriver = $this->getRecordDriver();
 		if ($recordDriver !== false) {
-			return $recordDriver->getAuthor();
+			if (method_exists($recordDriver, 'getAuthor')) {
+				return $recordDriver->getAuthor();
+			}else{
+				return '';
+			}
 		}else{
 			return '';
 		}
 	}
 
-	public function getFormat() {
+	public function getFormat() : string {
 		$recordDriver = $this->getRecordDriver();
 		if ($recordDriver !== false) {
-			return $recordDriver->getPrimaryFormat();
+			if (method_exists($recordDriver, 'getPrimaryFormat')) {
+				return $recordDriver->getPrimaryFormat();
+			}else{
+				return '';
+			}
 		}else{
 			return 'Unknown';
 		}
 	}
 
+	/** @noinspection PhpUnused */
 	public function getLink() : string {
 		$recordDriver = $this->getRecordDriver();
 		if ($recordDriver !== false) {
@@ -48,7 +57,7 @@ class MaterialsRequestHoldCandidate extends DataObject {
 	public function getBookcoverUrl() : string {
 		$recordDriver = $this->getRecordDriver();
 		if ($recordDriver !== false) {
-			return $recordDriver->getBookcoverUrl('small');
+			return $recordDriver->getBookcoverUrl();
 		}else{
 			return '';
 		}
@@ -58,7 +67,7 @@ class MaterialsRequestHoldCandidate extends DataObject {
 		return $this->source . ':' . $this->sourceId . ' ' . $this->getTitle() . ' ' . $this->getAuthor() . ' (' . $this->getFormat() . ')';
 	}
 
-	public function getRecordDriver() {
+	public function getRecordDriver() : RecordInterface|false {
 		if ($this->_recordDriver == null) {
 			if ($this->source == 'ils') {
 				require_once ROOT_DIR . '/RecordDrivers/MarcRecordDriver.php';

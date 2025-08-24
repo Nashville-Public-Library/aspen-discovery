@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class IlsVolumeInfo extends DataObject {
 	public $__table = 'ils_volume_info';    // table name

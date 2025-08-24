@@ -9,6 +9,7 @@ class LibraryLink extends DataObject {
 	public $id;
 	public $libraryId;
 	public $category;
+	/** @noinspection PhpUnused */
 	public $iconName;
 	public $linkText;
 	public $url;
@@ -16,7 +17,9 @@ class LibraryLink extends DataObject {
 	public /** @noinspection PhpUnused */
 		$htmlContents;
 	public $showToLoggedInUsersOnly;
+	/** @noinspection PhpUnused */
 	public $showInTopMenu;
+	/** @noinspection PhpUnused */
 	public $alwaysShowIconInTopMenu;
 	public $showExpanded;
 	public $published;
@@ -40,13 +43,18 @@ class LibraryLink extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
-		//Load Libraries for lookup values
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+			//Load Libraries for lookup values
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 		$languageList = Language::getLanguageList();
 
 		$patronTypeList = PType::getPatronTypeList();
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -171,9 +179,12 @@ class LibraryLink extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			if (empty($this->_allowAccess)) {
@@ -192,14 +203,16 @@ class LibraryLink extends DataObject {
 			}
 			$this->saveLanguages();
 		}
+		return $ret;
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveAccess();
 			$this->saveLanguages();
 		}
+		return $ret;
 	}
 
 	public function __get($name) {
@@ -223,7 +236,7 @@ class LibraryLink extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret !== FALSE) {
 			$this->clearAccess();
@@ -235,7 +248,7 @@ class LibraryLink extends DataObject {
 		return $ret;
 	}
 
-	public function getAccess() {
+	public function getAccess() : array {
 		if (!isset($this->_allowAccess) && $this->id) {
 			$this->_allowAccess = [];
 			$patronTypeLink = new LibraryLinkAccess();
@@ -248,7 +261,7 @@ class LibraryLink extends DataObject {
 		return $this->_allowAccess;
 	}
 
-	public function saveAccess() {
+	public function saveAccess() : void {
 		if (isset($this->_allowAccess) && is_array($this->_allowAccess)) {
 			$this->clearAccess();
 
@@ -263,14 +276,14 @@ class LibraryLink extends DataObject {
 		}
 	}
 
-	private function clearAccess() {
+	private function clearAccess() : void {
 		//Delete links to the patron types
 		$link = new LibraryLinkAccess();
 		$link->libraryLinkId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	public function getLanguages() {
+	public function getLanguages() : array {
 		if (!isset($this->_languages) && $this->id) {
 			$this->_languages = [];
 			try {
@@ -280,7 +293,7 @@ class LibraryLink extends DataObject {
 				while ($language->fetch()) {
 					$this->_languages[$language->languageId] = $language->languageId;
 				}
-			} catch (Exception $e) {
+			} catch (Exception) {
 				//This happens when the table is not setup yet
 				$languageList = Language::getLanguageList();
 				foreach ($languageList as $languageId => $displayName) {
@@ -291,7 +304,7 @@ class LibraryLink extends DataObject {
 		return $this->_languages;
 	}
 
-	public function saveLanguages() {
+	public function saveLanguages() : void {
 		if (isset ($this->_languages) && is_array($this->_languages)) {
 			$languageList = Language::getLanguageList();
 			foreach ($languageList as $languageId => $displayName) {
@@ -311,7 +324,7 @@ class LibraryLink extends DataObject {
 		}
 	}
 
-	public function isValidForDisplay() {
+	public function isValidForDisplay() : bool {
 		if ($this->showToLoggedInUsersOnly && !UserAccount::isLoggedIn()) {
 			return false;
 		}
@@ -349,7 +362,7 @@ class LibraryLink extends DataObject {
 						} else {
 							return true;
 						}
-					} catch (Exception $e) {
+					} catch (Exception) {
 						//This happens before the table has been defined, ignore it
 						return true;
 					}
@@ -364,7 +377,7 @@ class LibraryLink extends DataObject {
 		}
 	}
 
-	public function isValidForDisplayForApp(User $user) {
+	public function isValidForDisplayForApp(User $user)  : bool {
 		if($this->showLinkOn == 0) {
 			return false;
 		}
@@ -397,7 +410,7 @@ class LibraryLink extends DataObject {
 					} else {
 						return true;
 					}
-				} catch (Exception $e) {
+				} catch (Exception) {
 					//This happens before the table has been defined, ignore it
 					return true;
 				}
@@ -409,11 +422,13 @@ class LibraryLink extends DataObject {
 		}
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Admin/LibraryLinks?objectAction=edit&id=' . $this->id;
 	}
 
-	function getEscapedCategory() {
+	/** @noinspection PhpUnused */
+	function getEscapedCategory() : string {
 		return preg_replace('/\W/', '_', strtolower($this->category));
 	}
 }

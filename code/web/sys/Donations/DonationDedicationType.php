@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class DonationDedicationType extends DataObject {
 	public $__table = 'donations_dedicate_type';
@@ -8,7 +7,11 @@ class DonationDedicationType extends DataObject {
 	public $donationSettingId;
 	public $label;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -24,10 +27,12 @@ class DonationDedicationType extends DataObject {
 				'required' => true,
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	static function getDefaults($donationSettingId) {
+	static function getDefaults($donationSettingId) : array {
 		$defaultDedicationTypesToDisplay = [];
 
 		$defaultDedicationType = new DonationDedicationType();

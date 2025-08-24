@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class LibraryPortalPage extends DataObject {
 	public $__table = 'library_web_builder_portal_page';

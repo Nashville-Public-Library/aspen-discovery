@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class BookCoverInfo extends DataObject {
 	public $__table = 'bookcover_info';    // table name
@@ -47,7 +46,7 @@ class BookCoverInfo extends DataObject {
 		}
 	}
 
-	public function reloadOMDBCovers() {
+	public function reloadOMDBCovers() : void {
 		$this->query("UPDATE " . $this->__table . " SET thumbnailLoaded = 0, mediumLoaded = 0, largeLoaded = 0 where imageSource = 'omdb_title' OR imageSource = 'omdb_title_year'");
 	}
 

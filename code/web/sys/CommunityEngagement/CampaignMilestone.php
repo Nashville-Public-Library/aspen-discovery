@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/CommunityEngagement/Reward.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/Milestone.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneUsersProgress.php';
@@ -20,7 +20,11 @@ class CampaignMilestone extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = '') {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		require_once ROOT_DIR . '/sys/CommunityEngagement/Milestone.php';
 		$milestone = new Milestone();
 		$availableMilestones = [];
@@ -32,7 +36,7 @@ class CampaignMilestone extends DataObject {
 		$goalRange = range(1, 100);
 		$rewardList = Reward::getRewardList();
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -75,6 +79,9 @@ class CampaignMilestone extends DataObject {
 				'values' => $rewardList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 
@@ -330,7 +337,7 @@ class CampaignMilestone extends DataObject {
 	/**
 	 * Checks if a grouped work is on a certain list.
 	 *
-	 * @param $groupedWorkId The grouped work object to check.
+	 * @param string $groupedWorkId The grouped work object to check.
 	 *
 	 * @return bool true if the grouped work is on the list, false otherwise.
 	 */

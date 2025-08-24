@@ -1,9 +1,10 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class TalpaData extends DataObject
 {
 	public $id;
 	public $groupedRecordPermanentId;
+	/** @noinspection PhpUnused */
 	public $lt_workcode;
 	public $checked;
 

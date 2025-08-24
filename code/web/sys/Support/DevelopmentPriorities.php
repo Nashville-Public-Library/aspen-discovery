@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class DevelopmentPriorities extends DataObject {
 	public $__table = 'development_priorities';
@@ -7,7 +7,12 @@ class DevelopmentPriorities extends DataObject {
 	public $priority2;
 	public $priority3;
 
-	public static function getObjectStructure($context = '') {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		require_once ROOT_DIR . '/sys/Support/RequestTrackerConnection.php';
 		$supportConnections = new RequestTrackerConnection();
 		$activeTickets = [];
@@ -19,7 +24,7 @@ class DevelopmentPriorities extends DataObject {
 			$ticketsToPrioritize[$ticket['id']] = '(' . $ticket['id'] . ') ' . $ticket['title'];
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -51,5 +56,8 @@ class DevelopmentPriorities extends DataObject {
 				'default' => '-1',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

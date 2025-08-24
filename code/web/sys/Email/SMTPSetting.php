@@ -1,8 +1,6 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-use PHPMailer\PHPMailer\SMTP;
 
 class SMTPSetting extends DataObject {
 	public $__table = 'smtp_settings';
@@ -16,8 +14,12 @@ class SMTPSetting extends DataObject {
 	public $user_name;
 	public $password;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -90,9 +92,13 @@ class SMTPSetting extends DataObject {
 				'hideInLists' => true
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function sendEmail($to, $replyTo, $subject, $body, $htmlBody, $attachments){
+	/** @noinspection PhpUnusedParameterInspection */
+	function sendEmail($to, $replyTo, $subject, $body, $htmlBody, $attachments) : bool{
 
 		require_once ('PHPMailer-6.9.1/src/PHPMailer.php');
 		require_once ('PHPMailer-6.9.1/src/SMTP.php');
@@ -114,7 +120,7 @@ class SMTPSetting extends DataObject {
 
 		$mail->From = $this->from_address;
 		$mail->FromName = $this->from_name;
-		$mail->Charset = 'UTF-8';
+		$mail->CharSet = 'UTF-8';
 
 		$toAddresses = explode(';', $to);
 		foreach ($toAddresses as $toAddress) {
@@ -133,7 +139,7 @@ class SMTPSetting extends DataObject {
 
 		$mail->Subject = $subject;
 		if (!empty($htmlBody)) {
-			$mail->isHTML(true);
+			$mail->isHTML();
 			$mail->Body = $htmlBody;
 		} else {
 			$mail->isHTML(false);

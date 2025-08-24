@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class APIUsage extends DataObject {
@@ -21,7 +21,7 @@ class APIUsage extends DataObject {
 		];
 	}
 
-	static function incrementStat($module, $method) {
+	static function incrementStat($module, $method) : void {
 		try {
 			$apiUsage = new APIUsage();
 			$apiUsage->year = date('Y');
@@ -37,7 +37,7 @@ class APIUsage extends DataObject {
 				$apiUsage->numCalls = 1;
 				$apiUsage->insert();
 			}
-		} catch (PDOException $e) {
+		} catch (PDOException) {
 			//This happens if the table has not been created, ignore it
 		}
 	}

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class Translation extends DataObject {
@@ -20,7 +20,7 @@ class Translation extends DataObject {
 		];
 	}
 
-	public function setTranslation($translation, $term = null) {
+	public function setTranslation($translation, $term = null) : void {
 		if ($this->translation == $translation) {
 			//Nothing to do, exit early
 			return;
@@ -32,13 +32,13 @@ class Translation extends DataObject {
 
 		if ($term == null) {
 			$term = new TranslationTerm();
-			$term->id = $this->termId;
+			$term->setId($this->termId);
 			$term->find(true);
 		}
 		global $memCache;
 		global $activeLanguage;
-		$memCache->delete('translation_' . $activeLanguage->id . '_0_' . $term->term);
-		$memCache->delete('translation_' . $activeLanguage->id . '_1_' . $term->term);
+		$memCache->delete('translation_' . $activeLanguage->id . '_0_' . $term->getTerm());
+		$memCache->delete('translation_' . $activeLanguage->id . '_1_' . $term->getTerm());
 
 		//Send the translation to the community content server
 		require_once ROOT_DIR . '/sys/SystemVariables.php';
@@ -47,12 +47,13 @@ class Translation extends DataObject {
 			require_once ROOT_DIR . '/sys/CurlWrapper.php';
 			$curl = new CurlWrapper();
 			$body = [
-				'term' => $term->term,
+				'term' => $term->getTerm(),
 				'translation' => $translation,
 				'languageCode' => $activeLanguage->code,
 			];
+			/** @noinspection PhpUnusedLocalVariableInspection */
 			$response = $curl->curlPostPage($systemVariables->communityContentUrl . '/API/CommunityAPI?method=setTranslation', $body);
-			$response = json_decode($response);
+			//$response = json_decode($response);
 		}
 	}
 }

@@ -11,7 +11,12 @@ class TwoFactorAuthSetting extends DataObject {
 	private $_libraries;
 	private $_ptypes;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		require_once ROOT_DIR . '/sys/Account/AccountProfile.php';
 		$accountProfile = new AccountProfile();
 		$accountProfile->whereAdd("name != 'admin_sso'");
@@ -85,7 +90,8 @@ class TwoFactorAuthSetting extends DataObject {
 			];
 		}
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function updateStructureForEditingObject($structure) : array {
@@ -148,7 +154,7 @@ class TwoFactorAuthSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') : bool|int {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -157,7 +163,7 @@ class TwoFactorAuthSetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') : bool|int {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();

@@ -1,7 +1,6 @@
 <?php
 /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class LocationHours extends DataObject {
 	public $__table = 'location_hours';
@@ -33,18 +32,15 @@ class LocationHours extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
-		$location = new Location();
-		$location->selectAdd();
-		$location->selectAdd('locationId');
-		$location->selectAdd('displayName');
-		$location->orderBy('displayName');
-		$location->find();
-		$locationList = [];
-		while ($location->fetch()) {
-			$locationList[$location->locationId] = $location->displayName;
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
 		}
-		return [
+
+		$locationList = Location::getLocationList(false);
+
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -91,6 +87,9 @@ class LocationHours extends DataObject {
 				'maxLength' => 255,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function fetch(): bool|DataObject|null {

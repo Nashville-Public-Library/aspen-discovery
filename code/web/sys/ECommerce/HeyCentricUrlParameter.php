@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class HeyCentricUrlParameter extends DataObject {
 	public $__table = 'heycentric_url_parameter';
@@ -8,7 +8,7 @@ class HeyCentricUrlParameter extends DataObject {
 	public $optional;
 	public $defaultValue;
 
-	static function getHeyCentricUrlParamFields() {
+	static function getHeyCentricUrlParamFields() : array {
 		$urlParamsArr = [];
 		$urlParam = new HeyCentricUrlParameter();
 		$urlParam = $urlParam->fetchAll();

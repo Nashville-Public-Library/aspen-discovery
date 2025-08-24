@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class TicketTrendBugsBySeverity extends DataObject {
 	public $__table = 'ticket_trend_bugs_by_severity';
