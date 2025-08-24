@@ -581,21 +581,24 @@ class UInterface extends Smarty {
 					$javascriptSnippetLibrary = new JavaScriptSnippetLibrary();
 					$javascriptSnippetLibrary->libraryId = $library->libraryId;
 					$javaScriptSnippetIds = $javascriptSnippetLibrary->fetchAll('javascriptSnippetId', 'javascriptSnippetId');
-					require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippet.php';
-					$javascriptSnippet = new JavaScriptSnippet();
-					$javascriptSnippet->whereAddIn('id', $javaScriptSnippetIds, false);
-					$javascriptSnippet->find();
-					while ($javascriptSnippet->fetch()) {
-						if (empty($library->cookieStorageConsent) ||
-							(!empty($library->cookieStorageConsent) && empty($javascriptSnippet->containsAnalyticsCookies)) ||
-							(!empty($library->cookieStorageConsent) && !empty($javascriptSnippet->containsAnalyticsCookies) && $analyticsPref == 1)
-						) {
-							if (strlen($customJavascript) > 0) {
-								$customJavascript .= "\n";
+					if (count($javaScriptSnippetIds) > 0) {
+						require_once ROOT_DIR . '/sys/LocalEnrichment/JavaScriptSnippet.php';
+						$javascriptSnippet = new JavaScriptSnippet();
+						$javascriptSnippet->whereAddIn('id', $javaScriptSnippetIds, false);
+						$javascriptSnippet->find();
+						while ($javascriptSnippet->fetch()) {
+							if (empty($library->cookieStorageConsent) ||
+								(!empty($library->cookieStorageConsent) && empty($javascriptSnippet->containsAnalyticsCookies)) ||
+								(!empty($library->cookieStorageConsent) && !empty($javascriptSnippet->containsAnalyticsCookies) && $analyticsPref == 1)
+							) {
+								if (strlen($customJavascript) > 0) {
+									$customJavascript .= "\n";
+								}
+								$customJavascript .= trim($javascriptSnippet->snippet);
 							}
-							$customJavascript .= trim($javascriptSnippet->snippet);
 						}
 					}
+
 				}
 			} catch (PDOException $e) {
 				//This happens before the database update runs
