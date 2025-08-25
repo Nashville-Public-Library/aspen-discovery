@@ -40,7 +40,7 @@
 				{if !empty($issueSummary.holdings)}
 					<span id='showHoldings-{$smarty.foreach.summaryLoop.iteration}' class='btn btn-xs btn-info'>{translate text="Show Individual Issues" isPublicFacing=true}</span>
 					<script	type="text/javascript">
-						$('#showHoldings-{$smarty.foreach.summaryLoop.iteration}').click(function(){literal} { {/literal}
+						$('#showHoldings-{$smarty.foreach.summaryLoop.iteration}').on('click', function(){literal} { {/literal}
 							if (!$('#showHoldings-{$smarty.foreach.summaryLoop.iteration}').hasClass('expanded')){literal} { {/literal}
 								$('#issue-summary-holdings-{$smarty.foreach.summaryLoop.iteration}').slideDown();
 								$('#showHoldings-{$smarty.foreach.summaryLoop.iteration}').html('Hide Individual Issues');
@@ -57,7 +57,7 @@
 					&nbsp;
 					<span id='showCheckInGrid-{$smarty.foreach.summaryLoop.iteration}' class='btn btn-xs btn-info'>{translate text="Show Check-in Grid" isPublicFacing=true}</span>
 					<script	type="text/javascript">
-						$('#showCheckInGrid-{$smarty.foreach.summaryLoop.iteration}').click(function(){literal} { {/literal}
+						$('#showCheckInGrid-{$smarty.foreach.summaryLoop.iteration}').on('click', function(){literal} { {/literal}
 							AspenDiscovery.Account.ajaxLightbox('/{$activeRecordProfileModule}/{$id}/CheckInGrid?lookfor={$issueSummary.checkInGridId}', false);
 							{literal} }); {/literal}
 					</script>

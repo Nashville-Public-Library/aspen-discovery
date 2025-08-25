@@ -8,7 +8,7 @@
 	<form class="form-inline row" id="selectRoleForm" style="margin: 0; padding-bottom: 2em;">
 		<div class="form-group">
 			<label for="roleId" class="control-label">{translate text="Role to edit" isAdminFacing=true}</label>&nbsp;
-			<select id="roleId" name="roleId" class="form-control input-sm" onchange="$('#selectRoleForm').submit()">
+			<select id="roleId" name="roleId" class="form-control input-sm" onchange="$('#selectRoleForm').trigger('submit')">
 				{foreach from=$roles key=roleId item=role}
 					<option value="{$roleId}" {if $roleId == $selectedRole->roleId}selected{/if}>{$role->name}</option>
 				{/foreach}
@@ -29,7 +29,7 @@
 				<script type="text/javascript">
 					{literal}
 					$(document).ready(function() {
-						$("#searchPermissions").keydown("keydown", function (e) {
+						$("#searchPermissions").on('keydown', function (e) {
 							if (e.which === 13) {
 								e.preventDefault();
 							}

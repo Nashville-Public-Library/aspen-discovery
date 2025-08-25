@@ -149,14 +149,14 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		{/if}
 			<form class="form form-inline">
 				{if !empty($selectedLocation)}
-					{html_options name=location options=$locationLookupList selected=$selectedLocation class="form-control input-sm" onchange="this.form.submit()"}
+					{html_options name=location options=$locationLookupList selected=$selectedLocation class="form-control input-sm" onchange="$(this.form).trigger('submit')"}
 				{else}
-					{html_options name=location options=$locationLookupList class="form-control input-sm" onchange="this.form.submit()"}
+					{html_options name=location options=$locationLookupList class="form-control input-sm" onchange="$(this.form).trigger('submit')"}
 				{/if}
 				{if !empty($selectedHomeroom)}
-					{html_options name=homeroom options=$homeroomLookupList selected=$selectedHomeroom class="form-control input-sm" onchange="this.form.submit()"}
+					{html_options name=homeroom options=$homeroomLookupList selected=$selectedHomeroom class="form-control input-sm" onchange="$(this.form).trigger('submit')"}
 				{else}
-					{html_options name=homeroom options=$homeroomLookupList class="form-control input-sm" onchange="this.form.submit()"}
+					{html_options name=homeroom options=$homeroomLookupList class="form-control input-sm" onchange="$(this.form).trigger('submit')"}
 				{/if}
 				<input type="button" name="printSlips" value="Print Labels" class="btn btn-sm btn-primary" onclick="{literal}window.print();{/literal}" />
 				&nbsp;

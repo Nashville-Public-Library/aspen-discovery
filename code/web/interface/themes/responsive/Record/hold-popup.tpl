@@ -127,7 +127,7 @@
 								{$linkedUser->id}: "{$linkedUser->displayName|escape|escape:javascript} - {$linkedUser->getHomeLibrarySystemName()|escape|escape:javascript}",
 								{/foreach}
 								{rdelim};
-								$('#pickupBranch').change(function(){ldelim}
+								$('#pickupBranch').on('change', function(){ldelim}
 									var users = $('option:selected', this).data('users');
 									var options = '';
 									if (typeof(users) !== "undefined") {ldelim}
@@ -136,7 +136,7 @@
 										{rdelim});
 									{rdelim}
 									$('#userOption select').html(options);
-								{rdelim}).change(); /* trigger on initial load */
+								{rdelim}).trigger('change'); /* trigger on initial load */
 							{rdelim});
 						</script>
 					{/if}

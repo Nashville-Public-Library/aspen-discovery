@@ -193,7 +193,7 @@
 				<script type="text/javascript">
 					{* Initiate any checkbox with a data attribute set to data-switch=""  as a bootstrap switch *}
 					{literal}
-					$("#panelToggle_{/literal}{$property.property}{literal}").click(function() {
+					$("#panelToggle_{/literal}{$property.property}{literal}").on('click', function() {
 						var toggleButton = $(this);
 						$(this).toggleClass('expanded');
 						$(this).toggleClass('collapsed');
@@ -301,7 +301,7 @@
 					</div>
 					<script type="text/javascript">
 						$(document).ready(function () {ldelim}
-							$('#{$propName}-default').change(function(){ldelim}
+							$('#{$propName}-default').on('change', function(){ldelim}
 								if($('#{$propName}-default').is(':checked')) {ldelim}
 									$('#{$propName}Hex').prop('value','{$property.default|escape}');
 									$('#{$propName}').prop('value','{$property.default|escape}');
