@@ -89,7 +89,7 @@ AspenDiscovery.Events = (function(){
 						if (!eventType.titleCustomizable) {
 							$("#title").attr('readonly', 'readonly');
 						} else {
-							$("#title").removeAttr('readonly');
+							$("#title").prop('readonly', false);
 						}
 						var descriptionEditor = tinymce.get("description");
 						$("#description").text(eventType.description);
@@ -99,13 +99,13 @@ AspenDiscovery.Events = (function(){
 							descriptionEditor.setMode("readonly");
 						} else {
 							descriptionEditor.setMode("design");
-							$("#description").removeAttr('readonly');
+							$("#description").prop('readonly', false);
 						}
 						$("#importFile-label-cover").val(eventType.cover);
 						if (!eventType.coverCustomizable) {
 							$("#importFile-label-cover").attr('readonly', 'readonly');
 						} else {
-							$("#importFile-label-cover").removeAttr('readonly');
+							$("#importFile-label-cover").prop('readonly', false);
 						}
 						if (eventType.eventLength != null) {
 							var minutes = eventType.eventLength % 60;
@@ -119,9 +119,9 @@ AspenDiscovery.Events = (function(){
 							$("#eventLength_hours").attr('readonly', 'readonly');
 							$("#eventLength").attr('readonly', 'readonly');
 						} else {
-							$("#eventLength").removeAttr('readonly');
-							$("#eventLength_minutes").removeAttr('readonly');
-							$("#eventLength_hours").removeAttr('readonly');
+							$("#eventLength").prop('readonly', false);
+							$("#eventLength_minutes").prop('readonly', false);
+							$("#eventLength_hours").prop('readonly', false);
 						}
 						$("#accordion_body_Fields_for_this_Event_Type .panel-body").html(data.typeFields);
 						$('#accordion_body_Fields_for_this_Event_Type [data-toggle="tooltip"]').tooltip();

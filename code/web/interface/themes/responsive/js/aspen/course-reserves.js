@@ -58,7 +58,7 @@ AspenDiscovery.CourseReserves = (function(){
 		},
 
 		processCiteForm: function(){
-			$("#citeListForm").submit();
+			$("#citeListForm").trigger('submit');
 		},
 
 		printAction: function (){

@@ -20,7 +20,7 @@ AspenDiscovery.Lists = (function(){
 
 		submitListForm: function(action){
 			$('#myListActionHead').val(action);
-			$('#myListFormHead').submit();
+			$('#myListFormHead').trigger('submit');
 			AspenDiscovery.Account.loadListData();
 			return false;
 		},
@@ -109,7 +109,7 @@ AspenDiscovery.Lists = (function(){
 		},
 
 		processCiteListForm: function(){
-			$("#citeListForm").submit();
+			$("#citeListForm").trigger('submit');
 		},
 
 		batchAddToListAction: function (id){
@@ -118,7 +118,7 @@ AspenDiscovery.Lists = (function(){
 		},
 
 		processBulkAddForm: function(){
-			$("#bulkAddToList").submit();
+			$("#bulkAddToList").trigger('submit');
 		},
 
 		changeList: function (){

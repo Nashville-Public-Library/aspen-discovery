@@ -80,7 +80,7 @@ AspenDiscovery.Browse = (function(){
 				// TODO: when disabling the carousel feature is turned into an option, change this code to check that setting.
 
 				// attach jcarousel navigation to clicking on a category
-				browseCategoryCarousel.find('li').click(function(){
+				browseCategoryCarousel.find('li').on('click', function(){
 					$("#browse-category-carousel").jcarousel('scroll', $(this));
 				});
 
@@ -127,7 +127,7 @@ AspenDiscovery.Browse = (function(){
 				// implements functions for libraries not using the carousel functionality
 			} else {
 				// bypass jcarousel navigation on a category click
-				browseCategoryCarousel.find('li').click(function(){
+				browseCategoryCarousel.find('li').on('click', function(){
 					$(this).trigger('jcarousel:targetin');
 				});
 			}

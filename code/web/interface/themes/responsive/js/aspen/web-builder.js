@@ -404,7 +404,7 @@ AspenDiscovery.WebBuilder = function () {
 				$("#propertyRowallowableHomeLocations").hide();
 			}
 
-			$(requireLogin).click(function() {
+			$(requireLogin).on('click', function() {
 				if(requireLogin.is(":checked")){
 					$("#propertyRowallowAccess").show();
 					$("#propertyRowrequireLoginUnlessInLibrary").show();
@@ -425,7 +425,7 @@ AspenDiscovery.WebBuilder = function () {
 				$("#propertyRowallowAccessByLibrary").hide();
 			}
 
-			$(requireLogin).click(function() {
+			$(requireLogin).on('click', function() {
 				if(requireLogin.is(":checked")){
 					$("#propertyRowallowAccessByLibrary").show();
 				}else{

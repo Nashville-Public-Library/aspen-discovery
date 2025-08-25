@@ -1674,7 +1674,7 @@ AspenDiscovery.Admin = (function () {
 
 		updateMakeRowAccordion: function () {
 			var makeRowAccordion = $('#makeAccordion');
-			$(makeRowAccordion).click(function () {
+			$(makeRowAccordion).on('click', function () {
 				if (makeRowAccordion.is(":checked")) {
 					$("#rowTitle").attr('required', "true");
 				} else {
@@ -1685,7 +1685,7 @@ AspenDiscovery.Admin = (function () {
 
 		updateMakeCellAccordion: function () {
 			var makeCellAccordion = $('#makeCellAccordion');
-			$(makeCellAccordion).click(function () {
+			$(makeCellAccordion).on('click', function () {
 				if (makeCellAccordion.is(":checked")) {
 					$("#title").attr('required', "true");
 				} else {
@@ -1712,7 +1712,7 @@ AspenDiscovery.Admin = (function () {
 				$("#propertyRowallowAccess").hide();
 			}
 
-			$(requireLogin).click(function () {
+			$(requireLogin).on('click', function () {
 				if (requireLogin.is(":checked")) {
 					$("#propertyRowallowAccess").show();
 				} else {
@@ -1728,7 +1728,7 @@ AspenDiscovery.Admin = (function () {
 			} else {
 				$("#propertyRowdonationEarmarks").hide();
 			}
-			$(allowEarmarks).click(function () {
+			$(allowEarmarks).on('click', function () {
 				if (allowEarmarks.is(":checked")) {
 					$("#propertyRowdonationEarmarks").show();
 				} else {
@@ -1743,7 +1743,7 @@ AspenDiscovery.Admin = (function () {
 				$("#propertyRowdonationDedicationTypes").hide();
 			}
 
-			$(allowDedications).click(function () {
+			$(allowDedications).on('click', function () {
 				if (allowDedications.is(":checked")) {
 					$("#propertyRowdonationDedicationTypes").show();
 				} else {
@@ -1927,7 +1927,7 @@ AspenDiscovery.Admin = (function () {
 			} else {
 				$('#propertyRowssoIdAttr').hide();
 			}
-			$(userIdOption).click(function () {
+			$(userIdOption).on('click', function () {
 				if (userIdOption.is(":checked")) {
 					$('#propertyRowssoIdAttr').show();
 				} else {
@@ -1944,7 +1944,7 @@ AspenDiscovery.Admin = (function () {
 				$('#propertyRowssoUsernameFormat').show();
 				$('#propertyRowssoUsernameAttr').hide();
 			}
-			$(usernameFormat).click(function () {
+			$(usernameFormat).on('click', function () {
 				if (usernameFormat.is(":checked")) {
 					$('#propertyRowssoUsernameAttr').show();
 					$('#propertyRowssoUsernameFormat').hide();
@@ -2730,7 +2730,7 @@ AspenDiscovery.Admin = (function () {
 				okLabel = 'Delete';
 			}
 
-			const confirmJs = "$(\"#objectAction\").val(\"batchHardDelete\"); $(\"#propertiesListForm\").submit();";
+			const confirmJs = "$(\"#objectAction\").val(\"batchHardDelete\"); $(\"#propertiesListForm\").trigger('submit');";
 
 			AspenDiscovery.confirm(title, body, okLabel, 'Cancel', true, confirmJs, 'btn-danger');
 			return false;

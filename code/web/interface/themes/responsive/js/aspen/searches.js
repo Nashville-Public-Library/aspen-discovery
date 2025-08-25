@@ -25,8 +25,6 @@ AspenDiscovery.Searches = (function(){
 			if(searchTypeElement.val() == 'talpa') {
 				$('#lookfor').addClass('talpa_search_loading');
 			}
-
-			this.submit();
 		})
 	});
 	return{
@@ -172,7 +170,7 @@ AspenDiscovery.Searches = (function(){
 						select: function (event, ui) {
 							var form = $(searchTermSelector).closest('form');
 							$(searchTermSelector).val(ui.item.value);
-							if (form.attr('id') == 'searchForm') { form.submit(); }
+							if (form.attr('id') === 'searchForm') { form.trigger('submit'); }
 							return false;
 						}
 					}).data('ui-autocomplete')._renderItem = function (ul, item) {
