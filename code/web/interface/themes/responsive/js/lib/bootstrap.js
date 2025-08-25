@@ -731,7 +731,7 @@ if (typeof jQuery === "undefined") { throw new Error("Bootstrap requires jQuery"
 					.toggleClass('open')
 					.trigger('shown.bs.dropdown')
 
-			$this.focus()
+			$this.trigger("focus")
 		}
 
 		return false
@@ -751,7 +751,7 @@ if (typeof jQuery === "undefined") { throw new Error("Bootstrap requires jQuery"
 		var isActive = $parent.hasClass('open')
 
 		if (!isActive || (isActive && e.keyCode == 27)) {
-			if (e.which == 27) $parent.find(toggle).focus()
+			if (e.which == 27) $parent.find(toggle).trigger("focus")
 			return $this.click()
 		}
 
@@ -765,7 +765,7 @@ if (typeof jQuery === "undefined") { throw new Error("Bootstrap requires jQuery"
 		if (e.keyCode == 40 && index < $items.length - 1) index++                        // down
 		if (!~index)                                      index=0
 
-		$items.eq(index).focus()
+		$items.eq(index).trigger("focus")
 	}
 
 	function clearMenus() {
@@ -913,10 +913,10 @@ if (typeof jQuery === "undefined") { throw new Error("Bootstrap requires jQuery"
 			transition ?
 					that.$element.find('.modal-dialog') // wait for modal to slide in
 							.one($.support.transition.end, function () {
-								that.$element.focus().trigger(e)
+								that.$element.trigger("focus").trigger(e)
 							})
 							.emulateTransitionEnd(300) :
-					that.$element.focus().trigger(e)
+					that.$element.trigger("focus").trigger(e)
 		})
 	}
 
@@ -952,7 +952,7 @@ if (typeof jQuery === "undefined") { throw new Error("Bootstrap requires jQuery"
 				.off('focusin.bs.modal') // guard against infinite focus loop
 				.on('focusin.bs.modal', $.proxy(function (e) {
 					if (this.$element[0] !== e.target && !this.$element.has(e.target).length) {
-						this.$element.focus()
+						this.$element.trigger("focus")
 					}
 				}, this))
 	}
@@ -1068,7 +1068,7 @@ if (typeof jQuery === "undefined") { throw new Error("Bootstrap requires jQuery"
 		$target
 				.modal(option, this)
 				.one('hide', function () {
-					$this.is(':visible') && $this.focus()
+					$this.is(':visible') && $this.trigger("focus")
 				})
 	})
 
