@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class CourseReserve extends DataObject {
 	public $__table = 'course_reserve';
@@ -8,12 +7,13 @@ class CourseReserve extends DataObject {
 	public $created;
 	public $deleted;
 	public $dateUpdated;
+	/** @noinspection PhpUnused */
 	public $courseLibrary;
 	public $courseInstructor;
 	public $courseNumber;
 	public $courseTitle;
 
-	public static function getSourceListsForBrowsingAndCarousels() {
+	public static function getSourceListsForBrowsingAndCarousels() : array {
 		$courseReserves = new CourseReserve();
 		$courseReserves->deleted = 0;
 		$courseReserves->orderBy('courseNumber, courseTitle, courseInstructor');
@@ -29,7 +29,7 @@ class CourseReserve extends DataObject {
 		return $sourceLists;
 	}
 
-	public function getTitle() {
+	public function getTitle() : string {
 		return $this->courseNumber . ' ' . $this->courseTitle . ' - ' . str_replace('|',', ', $this->courseInstructor);
 	}
 
@@ -37,7 +37,7 @@ class CourseReserve extends DataObject {
 		return ['deleted'];
 	}
 
-	function numTitlesOnReserve() {
+	function numTitlesOnReserve() : int {
 		require_once ROOT_DIR . '/sys/CourseReserves/CourseReserveEntry.php';
 		$reserveEntries = new CourseReserveEntry();
 		$reserveEntries->courseReserveId = $this->id;
@@ -53,7 +53,7 @@ class CourseReserve extends DataObject {
 	/**
 	 * @return array      of list entries
 	 */
-	function getTitles() {
+	function getTitles() : array {
 		require_once ROOT_DIR . '/sys/CourseReserves/CourseReserveEntry.php';
 		$reserveEntry = new CourseReserveEntry();
 		$reserveEntry->courseReserveId = $this->id;
@@ -110,7 +110,7 @@ class CourseReserve extends DataObject {
 	/**
 	 * @param int $start position of first list item to fetch (0 based)
 	 * @param int $numItems Number of items to fetch for this result
-	 * @param string $format The format of the records, valid values are html, summary, recordDrivers, citation
+	 * @param string $format The format of the records, valid values are html, recordDrivers, citations
 	 * @param string $citationFormat How citations should be formatted
 	 * @return array     Array of HTML to display to the user
 	 */
@@ -143,8 +143,6 @@ class CourseReserve extends DataObject {
 				$records = $searchObject->getRecords($sourceIds);
 				if ($format == 'html') {
 					$listResults = $listResults + $this->getResultListHTML($records, $filteredReserveEntries, $start);
-				} elseif ($format == 'summary') {
-					$listResults = $listResults + $this->getResultListSummary($records, $filteredReserveEntries);
 				} elseif ($format == 'recordDrivers') {
 					$listResults = $listResults + $this->getResultListRecordDrivers($records, $filteredReserveEntries);
 				} elseif ($format == 'citations') {
@@ -258,32 +256,7 @@ class CourseReserve extends DataObject {
 		return $html;
 	}
 
-	private function getResultListSummary($records, $allListEntryIds) {
-		$results = [];
-		//Reorder the documents based on the list of id's
-		foreach ($allListEntryIds as $listPosition => $currentId) {
-			// use $IDList as the order guide for the html
-			/** @var CourseReservesRecordDriver|null $current */
-			$current = null; // empty out in case we don't find the matching record
-			reset($records);
-			/**
-			 * @var int $docIndex
-			 * @var CourseReservesRecordDriver $recordDriver
-			 */
-			foreach ($records as $docIndex => $recordDriver) {
-				if ($recordDriver->getId() == $currentId['sourceId']) {
-					$current = $recordDriver;
-					break;
-				}
-			}
-			if (!empty($current)) {
-				$results[$listPosition] = $current->getSummaryInformation();
-			}
-		}
-		return $results;
-	}
-
-	private function getResultListCitations($records, $allListEntryIds, $format) {
+	private function getResultListCitations($records, $allListEntryIds, $format) : array {
 		global $interface;
 		$results = [];
 		//Reorder the documents based on the list of id's
@@ -452,13 +425,6 @@ class CourseReserve extends DataObject {
 			}
 		}
 		return $html;
-	}
-
-	/**
-	 * @return array
-	 */
-	public static function getCourseReserveSortOptions() {
-		return CourseReserve::$__courseReserveSortOptions;
 	}
 
 	public function getSpotlightTitles(CollectionSpotlight $collectionSpotlight): array {

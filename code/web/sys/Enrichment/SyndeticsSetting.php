@@ -33,10 +33,14 @@ class SyndeticsSetting extends DataObject {
 		];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -141,6 +145,9 @@ class SyndeticsSetting extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -168,10 +175,7 @@ class SyndeticsSetting extends DataObject {
 		}
 	}
 
-	/**
-	 * @return bool|int
-	 */
-	public function update($context = '') : bool|int {
+	public function update(string $context = '') : bool|int {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -179,7 +183,7 @@ class SyndeticsSetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') : int {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();

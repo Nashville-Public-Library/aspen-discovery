@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/WebBuilder/LibraryCustomWebResourcePage.php';
 require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderAudience.php';
 require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderCategory.php';
@@ -23,6 +23,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 	private $_audiences;
 	private $_categories;
 	private $_allowAccess;
+	/** @noinspection PhpUnused */
 	protected $_description;
 
 	public function getNumericColumnNames(): array
@@ -33,14 +34,18 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array
-	{
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Basic Pages'));
 		$audiencesList = WebBuilderAudience::getAudiences();
 		$categoriesList = WebBuilderCategory::getCategories();
 		$patronTypeList = PType::getPatronTypeList();
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -130,10 +135,12 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 				'hideInLists' => true,
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function insert($context = '')
-	{
+	public function insert(string $context = ''): int|bool {
 		$this->lastUpdate = time();
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
@@ -146,8 +153,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		return $ret;
 	}
 
-	public function update($context = '')
-	{
+	public function update(string $context = ''): int|bool {
 		$this->lastUpdate = time();
 		$ret = parent::update();
 		if ($ret !== FALSE) {
@@ -190,7 +196,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false): int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
@@ -215,7 +221,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		return $this->_libraries;
 	}
 
-	public function getAudiences() {
+	public function getAudiences() : ?array {
 		if (!isset($this->_audiences) && $this->id) {
 			$this->_audiences = [];
 			$audienceLink = new CustomWebResourcePageAudience();
@@ -228,8 +234,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		return $this->_audiences;
 	}
 
-	public function getCategories()
-	{
+	public function getCategories() : ?array {
 		if (!isset($this->_categories) && $this->id) {
 			$this->_categories = [];
 			$categoryLink = new CustomWebResourcePageCategory();
@@ -242,7 +247,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		return $this->_categories;
 	}
 
-	public function getAccess() {
+	public function getAccess() : ?array {
 		if (!isset($this->_allowAccess) && $this->id) {
 			$this->_allowAccess = [];
 			$patronTypeLink = new CustomWebResourcePageAccess();
@@ -255,8 +260,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		return $this->_allowAccess;
 	}
 
-	public function saveLibraries()
-	{
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -271,8 +275,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveAudiences()
-	{
+	public function saveAudiences() : void {
 		if (isset($this->_audiences) && is_array($this->_audiences)) {
 			$this->clearAudiences();
 
@@ -287,8 +290,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveCategories()
-	{
+	public function saveCategories() : void {
 		if (isset($this->_categories) && is_array($this->_categories)) {
 			$this->clearCategories();
 
@@ -303,7 +305,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveAccess() {
+	public function saveAccess() : void {
 		if (isset($this->_allowAccess) && is_array($this->_allowAccess)) {
 			$this->clearAccess();
 
@@ -318,35 +320,32 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	private function clearLibraries()
-	{
+	private function clearLibraries(): void {
 		//Delete links to the libraries
 		$libraryLink = new LibraryCustomWebResourcePage();
 		$libraryLink->customResourcePageId = $this->id;
-		return $libraryLink->delete(true);
+		$libraryLink->delete(true);
 	}
 
-	private function clearAudiences()
-	{
+	private function clearAudiences(): void {
 		//Delete links to the libraries
 		$link = new CustomWebResourcePageAudience();
 		$link->customResourcePageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	private function clearCategories()
-	{
+	private function clearCategories(): void {
 		//Delete links to the libraries
 		$link = new CustomWebResourcePageCategory();
 		$link->customResourcePageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	private function clearAccess() {
+	private function clearAccess() : void {
 		//Delete links to the patron types
 		$link = new CustomWebResourcePageAccess();
 		$link->customResourcePageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 	public function getLinksForJSON(): array {
 		$links = parent::getLinksForJSON();
@@ -375,14 +374,14 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting);
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
-		if (array_key_exists('audiences', $jsonLinks)) {
+		if (array_key_exists('audiences', $jsonData)) {
 			$audiences = [];
 			$audiencesList = WebBuilderAudience::getAudiences();
 			$audiencesList = array_flip($audiencesList);
-			foreach ($jsonLinks['audiences'] as $audience) {
+			foreach ($jsonData['audiences'] as $audience) {
 				if (array_key_exists($audience, $audiencesList)) {
 					$audiences[] = $audiencesList[$audience];
 				}
@@ -390,11 +389,11 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 			$this->_audiences = $audiences;
 			$result = true;
 		}
-		if (array_key_exists('categories', $jsonLinks)) {
+		if (array_key_exists('categories', $jsonData)) {
 			$categories = [];
 			$categoriesList = WebBuilderCategory::getCategories();
 			$categoriesList = array_flip($categoriesList);
-			foreach ($jsonLinks['categories'] as $category) {
+			foreach ($jsonData['categories'] as $category) {
 				if (array_key_exists($category, $categoriesList)) {
 					$categories[] = $categoriesList[$category];
 				}
@@ -402,11 +401,11 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 			$this->_categories = $categories;
 			$result = true;
 		}
-		if (array_key_exists('allowAccess', $jsonLinks)) {
+		if (array_key_exists('allowAccess', $jsonData)) {
 			$allowAccess = [];
 			$allowAccessList = PType::getPatronTypeList();
 			$allowAccessList = array_flip($allowAccessList);
-			foreach ($jsonLinks['allowAccess'] as $pType) {
+			foreach ($jsonData['allowAccess'] as $pType) {
 				if (array_key_exists($pType, $allowAccessList)) {
 					$allowAccess[] = $allowAccessList[$pType];
 				}
@@ -431,7 +430,6 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 			if (!$user) {
 				return false;
 			} else {
-				$okToAccess = false;
 				$userPatronType = $user->patronType;
 
 				if ($userPatronType == NULL) {
@@ -464,6 +462,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
+	/** @noinspection PhpUnused */
 	public function getHiddenReason(): string {
 		global $locationSingleton;
 		$requireLogin = $this->requireLogin;
@@ -517,7 +516,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public static function getCustomPages() {
+	public static function getCustomPages() : array {
 		$customPages = [];
 		$customPage = new CustomWebResourcePage();
 		$customPage->deleted = 0;
@@ -529,7 +528,7 @@ class CustomWebResourcePage extends DB_LibraryLinkedObject {
 		return $customPages;
 	}
 
-	public function loadCopyableSubObjects() {
+	public function loadCopyableSubObjects() : void {
 		$this->getCategories();
 		$this->getAudiences();
 		$this->getAccess();

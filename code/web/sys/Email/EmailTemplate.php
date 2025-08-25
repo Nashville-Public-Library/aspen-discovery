@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/LibraryLocation/LibraryEmailTemplate.php';
 
 class EmailTemplate extends DataObject {
@@ -13,7 +13,11 @@ class EmailTemplate extends DataObject {
 
 	private $_libraries;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$isCarlX = false;
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Email Templates'));
 		foreach (UserAccount::getAccountProfiles() as $accountProfileInfo) {
@@ -118,7 +122,8 @@ class EmailTemplate extends DataObject {
 			unset($structure['instructions']);
 		}
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -147,10 +152,7 @@ class EmailTemplate extends DataObject {
 		}
 	}
 
-	/** @return int[]
-	 * @noinspection PhpUnused
-	 */
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && !empty($this->id)) {
 			$this->_libraries = [];
 			$obj = new LibraryEmailTemplate();
@@ -164,12 +166,12 @@ class EmailTemplate extends DataObject {
 	}
 
 	/** @noinspection PhpUnused */
-	public function setLibraries($val) {
+	public function setLibraries($val) : void {
 		$this->_libraries = $val;
 	}
 
 	/** @noinspection PhpUnused */
-	public function clearLibraries() {
+	public function clearLibraries() : void {
 		$this->clearOneToManyOptions('LibraryEmailTemplate', 'emailTemplateId');
 		unset($this->_libraries);
 	}
@@ -179,7 +181,7 @@ class EmailTemplate extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		//Updates to properly update settings based on the ILS
 		$ret = parent::update();
 		if ($ret !== FALSE) {
@@ -194,7 +196,7 @@ class EmailTemplate extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -202,7 +204,7 @@ class EmailTemplate extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$this->clearLibraries();
@@ -210,7 +212,7 @@ class EmailTemplate extends DataObject {
 		return $ret;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Email Templates'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -271,7 +273,7 @@ class EmailTemplate extends DataObject {
 		}
 	}
 
-	public function sendEmail($toEmail, $parameters) {
+	public function sendEmail($toEmail, $parameters) : bool {
 		if (empty($toEmail)) {
 			return false;
 		}
@@ -281,7 +283,7 @@ class EmailTemplate extends DataObject {
 
 		require_once ROOT_DIR . '/sys/Email/Mailer.php';
 		$mail = new Mailer();
-		return $mail->send($toEmail, $updatedSubject, $updatedBody, null);
+		return $mail->send($toEmail, $updatedSubject, $updatedBody);
 	}
 
 	private function applyParameters($text, $parameters) {

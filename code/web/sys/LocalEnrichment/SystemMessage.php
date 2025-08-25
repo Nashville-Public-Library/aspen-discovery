@@ -27,12 +27,16 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return ['title'];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All System Messages'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All System Messages'));
 		/** @noinspection HtmlRequiredAltAttribute */
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -134,6 +138,9 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getNumericColumnNames(): array {
@@ -196,7 +203,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -205,7 +212,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -214,7 +221,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$systemMessageLibrary = new SystemMessageLibrary();
@@ -317,7 +324,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		if ($this->endDate != 0 && $this->endDate < $curTime) {
 			return false;
 		}
-		if ($this->isDismissed(null)) {
+		if ($this->isDismissed()) {
 			return false;
 		}
 		if (!$this->isValidForScope()) {

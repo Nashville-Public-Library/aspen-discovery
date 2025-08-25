@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class LibraryEmailTemplate extends DataObject {
 	public $__table = 'library_email_template';

@@ -10,9 +10,12 @@ class MaterialsRequestHoldCandidateGenerationLogEntry extends DataObject {
 	public $numSearchErrors;
 	public $notes;
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array{
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -62,9 +65,12 @@ class MaterialsRequestHoldCandidateGenerationLogEntry extends DataObject {
 				'readOnly' => true,
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function initializeCounters() {
+	public function initializeCounters() : void {
 		$this->numRequestsChecked = 0;
 		$this->numRequestsWithNewSuggestions = 0;
 		$this->numSearchErrors = 0;

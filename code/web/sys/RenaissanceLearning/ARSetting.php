@@ -1,21 +1,34 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class ARSetting extends DataObject {
 	public $__table = 'accelerated_reading_settings';
 	public $id;
+	/** @noinspection PhpUnused */
 	public $indexSeries;
+	/** @noinspection PhpUnused */
 	public $indexSubjects;
+	/** @noinspection PhpUnused */
 	public $arExportPath;
+	/** @noinspection PhpUnused */
 	public $ftpServer;
+	/** @noinspection PhpUnused */
 	public $ftpUser;
+	/** @noinspection PhpUnused */
 	public $ftpPassword;
+	/** @noinspection PhpUnused */
 	public $lastFetched;
+	/** @noinspection PhpUnused */
 	public $updateOn;
+	/** @noinspection PhpUnused */
 	public $updateFrequency;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -98,5 +111,8 @@ class ARSetting extends DataObject {
 				'default' => 0,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

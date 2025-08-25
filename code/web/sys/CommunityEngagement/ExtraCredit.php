@@ -1,14 +1,19 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/CommunityEngagement/Reward.php';
 class ExtraCredit extends DataObject {
 	public $__table = 'ce_extra_credit';
 	public $id;
 	public $name;
 	public $description;
+	/** @noinspection PhpUnused */
 	public $allowPatronProgressInput;
 
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 
 		$structure = [
 			'id' => [
@@ -42,7 +47,9 @@ class ExtraCredit extends DataObject {
 				'default' => false,
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**

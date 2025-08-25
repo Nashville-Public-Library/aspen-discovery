@@ -73,7 +73,12 @@ class SideLoad extends DataObject {
 
 	protected $_scopes;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$translationMapStructure = TranslationMap::getObjectStructure($context);
 		unset($translationMapStructure['indexingProfileId']);
 
@@ -464,7 +469,9 @@ class SideLoad extends DataObject {
 			'additionalOneToManyActions' => [],
 			'forcesReindex' => true,
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/** @noinspection PhpUnused */
@@ -543,8 +550,8 @@ class SideLoad extends DataObject {
 		return $structure;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
-		//Delete all scopes for the sideload
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
+		//Delete all scopes for the side load
 		if (!$useWhere) {
 			if (!empty($this->id)) {
 				$sideLoadScope = new SideLoadScope();
@@ -558,7 +565,7 @@ class SideLoad extends DataObject {
 		return parent::delete($useWhere, $hardDelete);
 	}
 
-	public function update($context = '') : bool|int {
+	public function update(string $context = '') : int|bool {
 		if (!empty($this->_changedFields) && in_array('deletedRecordsIds', $this->_changedFields)) {
 			$this->runFullUpdate = true;
 		}
@@ -574,7 +581,7 @@ class SideLoad extends DataObject {
 		return true;
 	}
 
-	public function insert($context = ''): int|bool {
+	public function insert(string $context = ''): int|bool {
 		//Generate the default record url component
 		global $serverName;
 		$defaultUrlComponent = $this->name;
@@ -582,7 +589,7 @@ class SideLoad extends DataObject {
 			//Add the library code for the owning library
 			$library = new Library();
 			if ($library->get($this->owningLibrary)){
-				$libraryUrlComponent = !empty($library->subdomain) ? $library->subdomain : $library->id;
+				$libraryUrlComponent = !empty($library->subdomain) ? $library->subdomain : $library->libraryId;
 				$defaultUrlComponent .= '_' . $libraryUrlComponent;
 			}
 		}

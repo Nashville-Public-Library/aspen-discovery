@@ -2,7 +2,7 @@
 
 abstract class DB_LibraryLinkedObject extends DataObject {
 	/**
-	 * @return int[]
+	 * @return ?int[]
 	 */
 	public abstract function getLibraries(): ?array;
 
@@ -32,12 +32,12 @@ abstract class DB_LibraryLinkedObject extends DataObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings);
-		if (array_key_exists('libraries', $jsonLinks)) {
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings);
+		if (array_key_exists('libraries', $jsonData)) {
 			$allLibraries = Library::getLibraryListAsObjects(false);
 			$libraries = [];
-			foreach ($jsonLinks['libraries'] as $subdomain) {
+			foreach ($jsonData['libraries'] as $subdomain) {
 				if (array_key_exists($subdomain, $mappings['libraries'])) {
 					$subdomain = $mappings['libraries'][$subdomain];
 				}
@@ -48,6 +48,7 @@ abstract class DB_LibraryLinkedObject extends DataObject {
 					}
 				}
 			}
+			/** @noinspection PhpUndefinedFieldInspection */
 			$this->_libraries = $libraries;
 			$result = true;
 		}

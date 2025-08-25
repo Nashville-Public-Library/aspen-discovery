@@ -1,5 +1,4 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/AspenLiDA/LiDALoadingMessage.php';
 
 class BrandedAppSetting extends DataObject {
@@ -14,6 +13,7 @@ class BrandedAppSetting extends DataObject {
 	public $privacyPolicyContactAddress;
 	public $privacyPolicyContactPhone;
 	public $privacyPolicyContactEmail;
+	/** @noinspection PhpUnused */
 	public $showFavicons;
 	public $logoNotification;
 	public $appName;
@@ -36,9 +36,14 @@ class BrandedAppSetting extends DataObject {
 	public $loadingMessageType;
 	public $_loadingMessages;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$lidaLoadingMessageStructure = LiDALoadingMessage::getObjectStructure($context);
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -258,6 +263,9 @@ class BrandedAppSetting extends DataObject {
 				]
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -294,7 +302,7 @@ class BrandedAppSetting extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLoadingMessages();
@@ -302,7 +310,7 @@ class BrandedAppSetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLoadingMessages();
@@ -310,7 +318,7 @@ class BrandedAppSetting extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$loadingMessage = new LiDALoadingMessage();

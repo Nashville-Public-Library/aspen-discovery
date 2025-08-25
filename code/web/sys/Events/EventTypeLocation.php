@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class EventTypeLocation extends DataObject {
 	public $__table = 'event_type_location';

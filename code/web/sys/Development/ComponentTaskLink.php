@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class ComponentTaskLink extends DataObject {
 	public $__table = 'component_development_task_link';
@@ -6,7 +6,11 @@ class ComponentTaskLink extends DataObject {
 	public $taskId;
 	public $componentId;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$componentList = [];
 		require_once ROOT_DIR . '/sys/Support/TicketComponentFeed.php';
 		$component = new TicketComponentFeed();
@@ -24,7 +28,7 @@ class ComponentTaskLink extends DataObject {
 			$taskList[$task->id] = "$task->name ($task->storyPoints)";
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -48,11 +52,14 @@ class ComponentTaskLink extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getEditLink($context): string {
+	public function getEditLink(string $context): string {
 		if ($context == 'relatedTasks') {
-			return '/Development/Tasks?objectAction=edit&id=' . $this->ticketId;
+			return '/Development/Tasks?objectAction=edit&id=' . $this->taskId;
 		} else {
 			return '/Support/TicketComponentFeed?objectAction=edit&id=' . $this->componentId;
 		}

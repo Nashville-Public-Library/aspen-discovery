@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/LibraryLocation/Library.php';
 require_once ROOT_DIR . '/sys/WebsiteIndexing/WebsiteFacet.php';
 
@@ -12,9 +12,13 @@ class WebsiteFacetGroup extends DataObject
     private $_libraries;
     private $_locations;
 
-    static function getObjectStructure($context = ''): array
-    {
-        $libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Website Facet Settings'));
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Website Facet Settings'));
         $locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Website Facet Settings'));
 
 
@@ -23,7 +27,7 @@ class WebsiteFacetGroup extends DataObject
         unset($facetSettingStructure['facetGroupId']);
         unset($facetSettingStructure['showAsDropDown']);
 
-        return [
+		$structure = [
             'id' => [
                 'property' => 'id',
                 'type' => 'label',
@@ -71,10 +75,12 @@ class WebsiteFacetGroup extends DataObject
                 'values' => $locationList,
             ],
         ];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
     }
 
-    public function update($context = '')
-    {
+	public function update(string $context = '') : int|bool {
         $ret = parent::update();
         if ($ret !== FALSE) {
             $this->saveFacets();
@@ -84,8 +90,7 @@ class WebsiteFacetGroup extends DataObject
         return $ret;
     }
 
-    public function insert($context = '')
-    {
+    public function insert(string $context = '') : int|bool {
         $ret = parent::insert();
         if ($ret !== FALSE) {
             $this->saveFacets();
@@ -95,16 +100,14 @@ class WebsiteFacetGroup extends DataObject
         return $ret;
     }
 
-    public function saveFacets()
-    {
+    public function saveFacets() : void  {
         if (isset ($this->_facets) && is_array($this->_facets)) {
             $this->saveOneToManyOptions($this->_facets, 'facetGroupId');
             unset($this->facets);
         }
     }
 
-    public function __get($name)
-    {
+    public function __get($name) {
         if ($name == 'facets') {
             return $this->getFacets();
         }
@@ -118,8 +121,7 @@ class WebsiteFacetGroup extends DataObject
         }
     }
 
-    public function __set($name, $value)
-    {
+    public function __set($name, $value) {
         if ($name == 'facets') {
             $this->setFacets($value);
         }
@@ -133,7 +135,7 @@ class WebsiteFacetGroup extends DataObject
         }
     }
 
-    /** @return WebsiteFacet[] */
+    /** @return ?WebsiteFacet[] */
     public function getFacets(): ?array
     {
         if (!isset($this->_facets) && $this->id) {
@@ -149,34 +151,17 @@ class WebsiteFacetGroup extends DataObject
         return $this->_facets;
     }
 
-    public function getFacetByIndex($index): ?WebsiteFacet
-    {
-        $facets = $this->getFacets();
-
-        $i = 0;
-        foreach ($facets as $value) {
-            if ($i == $index) {
-                return $value;
-            }
-            $i++;
-        }
-        return NULL;
-    }
-
-    public function setFacets($value)
-    {
+    public function setFacets($value) : void {
         $this->_facets = $value;
     }
 
-    public function clearFacets()
-    {
+    public function clearFacets() : void {
         $this->clearOneToManyOptions('WebsiteFacet', 'facetGroupId');
         /** @noinspection PhpUndefinedFieldInspection */
         $this->facets = [];
     }
 
-    public function getLibraries()
-    {
+    public function getLibraries() : ?array {
         if (!isset($this->_libraries) && $this->id) {
             $this->_libraries = [];
             $library = new Library();
@@ -188,8 +173,7 @@ class WebsiteFacetGroup extends DataObject
         }
         return $this->_libraries;
     }
-    public function getLocations()
-    {
+    public function getLocations(): ?array {
         if (!isset($this->_locations) && $this->id) {
             $this->_locations = [];
             $location = new Location();
@@ -202,21 +186,7 @@ class WebsiteFacetGroup extends DataObject
         return $this->_locations;
     }
 
-    private function clearLibraries()
-    {
-        //Delete links to the libraries
-        $libraryOAFacetSetting = new Library();
-        $libraryOAFacetSetting->websiteIndexingFacetSettingId = $this->id;
-        $libraryOAFacetSetting->find();
-
-        while ($libraryOAFacetSetting->fetch()) {
-            $libraryOAFacetSetting->websiteIndexingFacetSettingId = "0";
-            $libraryOAFacetSetting->update();
-        }
-    }
-
-    public function saveLibraries()
-    {
+    public function saveLibraries() : void {
         if (isset ($this->_libraries) && is_array($this->_libraries)) {
             $libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Website Facet Settings'));
             foreach ($libraryList as $libraryId => $displayName) {
@@ -241,7 +211,7 @@ class WebsiteFacetGroup extends DataObject
         }
     }
 
-    public function saveLocations() {
+    public function saveLocations() : void {
         if (isset ($this->_locations) && is_array($this->_locations)) {
             $locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Website Facet Settings'));
             /**

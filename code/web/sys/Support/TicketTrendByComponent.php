@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class TicketTrendByComponent extends DataObject {
 	public $__table = 'ticket_trend_by_component';

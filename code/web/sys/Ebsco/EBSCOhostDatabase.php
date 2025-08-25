@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class EBSCOhostDatabase extends DataObject {
 	public $__table = 'ebscohost_database';
@@ -24,8 +24,12 @@ class EBSCOhostDatabase extends DataObject {
 		];
 	}
 
-	public static function getObjectStructure($context = '') {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -88,33 +92,32 @@ class EBSCOhostDatabase extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/EBSCO/EBSCOhostDatabases?objectAction=edit&id=' . $this->id;
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->clearDefaultCovers();
-		$ret = parent::update();
-
-		return $ret;
+		return parent::update();
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->clearDefaultCovers();
-		$ret = parent::insert();
-
-		return $ret;
+		return parent::insert();
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
-		$this->deleted = 1;
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$this->clearDefaultCovers();
 		return $this->update();
 	}
 
-	private function clearDefaultCovers() {
+	private function clearDefaultCovers() : void {
 		require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
 		$covers = new BookCoverInfo();
 		$covers->reloadAllDefaultCovers();

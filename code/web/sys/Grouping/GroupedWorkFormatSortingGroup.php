@@ -31,7 +31,11 @@ class GroupedWorkFormatSortingGroup extends DataObject {
 			'otherSortMethod',
 		];
 	}
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$formatSortStructure = GroupedWorkFormatSort::getObjectStructure($context);
 		unset($formatSortStructure['weight']);
 		unset($formatSortStructure['formatSortingGroupId']);
@@ -231,10 +235,12 @@ class GroupedWorkFormatSortingGroup extends DataObject {
 			unset($objectStructure['musicSection']);
 			unset($objectStructure['otherSection']);
 		}
-		return $objectStructure;
+
+		self::$_objectStructure[$context] = $objectStructure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveSortedFormats('book');
@@ -246,7 +252,7 @@ class GroupedWorkFormatSortingGroup extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->bookSortMethod = 1;
 		$this->comicSortMethod = 1;
 		$this->movieSortMethod = 1;
@@ -259,9 +265,8 @@ class GroupedWorkFormatSortingGroup extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false): int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
-		/** @noinspection PhpStrictComparisonWithOperandsOfDifferentTypesInspection */
 		if ($ret !== false) {
 			$sortedFormat = new GroupedWorkFormatSort();
 			$sortedFormat->formatSortingGroupId = $this->id;

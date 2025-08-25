@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class CloudLibraryProduct extends DataObject {
 	public $__table = 'cloud_library_title';
@@ -9,9 +9,12 @@ class CloudLibraryProduct extends DataObject {
 	public $subTitle;
 	public $author;
 	public $format;
+	/** @noinspection PhpUnused */
 	public $rawChecksum;
 	public $rawResponse;
+	/** @noinspection PhpUnused */
 	public $lastChange;
+	/** @noinspection PhpUnused */
 	public $dateFirstDetected;
 	public $deleted;
 }

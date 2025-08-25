@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class TaskDeveloperLink extends DataObject {
 	public $__table = 'development_task_developer_link';
@@ -6,7 +6,11 @@ class TaskDeveloperLink extends DataObject {
 	public $userId;
 	public $taskId;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$taskList = [];
 		require_once ROOT_DIR . '/sys/Development/DevelopmentTask.php';
 		$task = new DevelopmentTask();
@@ -23,7 +27,7 @@ class TaskDeveloperLink extends DataObject {
 			$userList[$user->id] = $user->displayName;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -47,5 +51,8 @@ class TaskDeveloperLink extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

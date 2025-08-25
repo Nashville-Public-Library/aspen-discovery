@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/Drivers/Sierra.php';
 
 class SierraSelfRegistrationMunicipalityValues extends DataObject {
@@ -25,25 +24,40 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 		];
 	}
 
-	static function getObjectStructure() {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$base[''] = "None";
 		$metadataOptions = self::getMetadataOptions('patronType,pcode1,pcode2,pcode3,pcode4');
 		if (!empty($metadataOptions['patronType'])) {
 			$sierraPTypes = $base + $metadataOptions['patronType'];
+		}else{
+			$sierraPTypes = $base;
 		}
 		if (!empty($metadataOptions['pcode1'])) {
 			$pCode1Options = $base + $metadataOptions['pcode1'];
+		}else{
+			$pCode1Options = $base;
 		}
 		if (!empty($metadataOptions['pcode2'])) {
 			$pCode2Options = $base + $metadataOptions['pcode2'];
+		}else{
+			$pCode2Options = $base;
 		}
 		if (!empty($metadataOptions['pcode3'])) {
 			$pCode3Options = $base + $metadataOptions['pcode3'];
+		}else{
+			$pCode3Options = $base;
 		}
 		if (!empty($metadataOptions['pcode4'])) {
 			$pCode4Options = $base + $metadataOptions['pcode4'];
+		}else{
+			$pCode4Options = $base;
 		}
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -144,6 +158,9 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 				'default' => '0',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __set($name, $value) {
@@ -159,7 +176,7 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 		parent::__set($name, $value);
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if ($this->sierraPType == '') {
 			$this->sierraPType = -1;
 		}
@@ -172,11 +189,10 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 		if ($this->sierraPCode4 == '') {
 			$this->sierraPCode4 = -1;
 		}
-		$ret = parent::update($context);
-		return $ret;
+		return parent::update($context);
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if ($this->sierraPType == '') {
 			$this->sierraPType = -1;
 		}
@@ -189,8 +205,7 @@ class SierraSelfRegistrationMunicipalityValues extends DataObject {
 		if ($this->sierraPCode4 == '') {
 			$this->sierraPCode4 = -1;
 		}
-		$ret = parent::insert($context);
-		return $ret;
+		return parent::insert($context);
 	}
 
 	public static function getMetadataOptions($field) {

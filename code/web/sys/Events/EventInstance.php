@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/Event.php';
 
 class EventInstance extends DataObject {
@@ -16,9 +15,11 @@ class EventInstance extends DataObject {
 	public $dateUpdated;
 	public $deleted;
 
-	public $_eventType;
-
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$sublocationList = Location::getEventSublocations(null);
 		$sublocationList = [""] + $sublocationList;
 		$structure = [
@@ -81,7 +82,9 @@ class EventInstance extends DataObject {
 				'hideInLists' => true,
 			]
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getNumericColumnNames(): array {
@@ -91,7 +94,7 @@ class EventInstance extends DataObject {
 		];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->dateUpdated = time();
 		if (isset($this->_changedFields) && count($this->_changedFields) > 0) {
 			$this->_changedFields[] = 'dateUpdated';
@@ -99,12 +102,12 @@ class EventInstance extends DataObject {
 		return parent::update();
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->dateUpdated = time();
 		return parent::insert();
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		if (!$useWhere) {
 			$this->deleted = 1;
 			$this->dateUpdated = time();
@@ -125,14 +128,15 @@ class EventInstance extends DataObject {
 		return $return;
 	}
 
-	function getParentEvent() {
+	function getParentEvent() : Event {
 		$event = new Event();
 		$event->id = $this->eventId;
 		$event->find(true);
 		return $event;
 	}
 
-	function getLocation() {
+	/** @noinspection PhpUnused */
+	function getLocation() : string {
 		$event = $this->getParentEvent();
 		$location = new Location();
 		$location->locationId = $event->locationId;
@@ -140,7 +144,8 @@ class EventInstance extends DataObject {
 		return $location->displayName;
 	}
 
-	function getSublocation() {
+	/** @noinspection PhpUnused */
+	function getSublocation() : string {
 		$event = $this->getParentEvent();
 		$sublocations = Location::getEventSublocations($event->locationId);
 		if ($event->sublocationId) {
@@ -149,7 +154,7 @@ class EventInstance extends DataObject {
 		return $sublocation ?? '';
 	}
 
-	function getSeries($onlyFuture = false) {
+	function getSeries($onlyFuture = false) : array {
 		$series = [];
 		$eventInstances = new EventInstance();
 		$eventInstances->eventId = $this->eventId;

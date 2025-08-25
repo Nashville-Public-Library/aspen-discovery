@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class CustomFormSubmissionSelection extends DataObject {
 	public $__table = 'web_builder_custom_form_field_submission';
@@ -7,8 +7,12 @@ class CustomFormSubmissionSelection extends DataObject {
 	public $submissionFieldId;
 	public $formFieldContent;
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -24,5 +28,7 @@ class CustomFormSubmissionSelection extends DataObject {
 			],
 		];
 
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

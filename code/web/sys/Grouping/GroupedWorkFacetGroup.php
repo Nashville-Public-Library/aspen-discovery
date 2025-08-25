@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Grouping/GroupedWorkFacet.php';
 
 class GroupedWorkFacetGroup extends DataObject {
@@ -8,13 +8,18 @@ class GroupedWorkFacetGroup extends DataObject {
 
 	public $_facets;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$facetSettingStructure = GroupedWorkFacet::getObjectStructure($context);
 		unset($facetSettingStructure['weight']);
 		unset($facetSettingStructure['facetGroupId']);
 		unset($facetSettingStructure['showAsDropDown']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -46,210 +51,12 @@ class GroupedWorkFacetGroup extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function setupDefaultFacets($type) {
-		$defaultFacets = [];
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupTopFacet('format_category', 'Format Category');
-		$facet->facetGroupId = $this->id;
-		$facet->weight = 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupTopFacet('availability_toggle', 'Search Within');
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		/** @noinspection PhpIfWithCommonPartsInspection */
-		if ($type == 'academic') {
-			$facet = new GroupedWorkFacet();
-			$facet->setupSideFacet('literary_form', 'Literary Form', true);
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$facet->canLock = true;
-			$defaultFacets[] = $facet;
-		} else {
-			$facet = new GroupedWorkFacet();
-			$facet->setupSideFacet('literary_form', 'Fiction / Non-Fiction', true);
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$facet->multiSelect = true;
-			$facet->canLock = true;
-			$defaultFacets[] = $facet;
-		}
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('target_audience', 'Reading Level', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$facet->numEntriesToShowByDefault = 8;
-		$facet->multiSelect = true;
-		$facet->canLock = true;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('available_at', 'Available Now At', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('econtent_source', 'eContent Collection', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$facet->multiSelect = true;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('format', 'Format', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$facet->multiSelect = true;
-		$facet->canLock = true;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('authorStr', 'Author', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('series_facet', 'Series', true);
-		$facet->facetGroupId = $this->id;
-		$facet->multiSelect = true;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		if ($type != 'academic') {
-			$facet = new GroupedWorkFacet();
-			$facet->setupSideFacet('accelerated_reader_interest_level', 'AR Interest Level', true);
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-
-			$facet = new GroupedWorkFacet();
-			$facet->setupSideFacet('accelerated_reader_reading_level', 'AR Reading Level', true);
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-
-			$facet = new GroupedWorkFacet();
-			$facet->setupSideFacet('accelerated_reader_point_value', 'AR Point Value', true);
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-		}
-
-		/** @noinspection PhpIfWithCommonPartsInspection */
-		if ($type == 'academic') {
-			$facet = new GroupedWorkFacet();
-			$facet->setupSideFacet('topic_facet', 'Subject', true);
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$facet->multiSelect = true;
-			$defaultFacets[] = $facet;
-
-			$facet = new GroupedWorkFacet();
-			$facet->setupAdvancedFacet('geographic_facet', 'Region');
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-
-			$facet = new GroupedWorkFacet();
-			$facet->setupAdvancedFacet('era', 'Era');
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-
-			$facet = new GroupedWorkFacet();
-			$facet->setupSideFacet('genre_facet', 'Genre', true);
-			$facet->facetGroupId = $this->id;
-			$facet->multiSelect = true;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-		} else {
-			$facet = new GroupedWorkFacet();
-			$facet->setupSideFacet('subject_facet', 'Subject', true);
-			$facet->facetGroupId = $this->id;
-			$facet->multiSelect = true;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-		}
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('time_since_added', 'Added in the Last', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupAdvancedFacet('awards_facet', 'Awards');
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupAdvancedFacet('itype', 'Item Type');
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('language', 'Language', true);
-		$facet->facetGroupId = $this->id;
-		$facet->multiSelect = true;
-		$facet->canLock = true;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupAdvancedFacet('mpaa_rating', 'Movie Rating');
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$facet->multiSelect = true;
-		$defaultFacets[] = $facet;
-
-		if ($type == 'consortium') {
-			$facet = new GroupedWorkFacet();
-			$facet->setupAdvancedFacet('owning_library', 'Owning System');
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-
-			$facet = new GroupedWorkFacet();
-			$facet->setupAdvancedFacet('owning_location', 'Owning Branch');
-			$facet->facetGroupId = $this->id;
-			$facet->weight = count($defaultFacets) + 1;
-			$defaultFacets[] = $facet;
-		}
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('publishDateSort', 'Publication Date', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('placeOfPublication', 'Place of Publication', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$facet = new GroupedWorkFacet();
-		$facet->setupSideFacet('rating_facet', 'User Rating', true);
-		$facet->facetGroupId = $this->id;
-		$facet->weight = count($defaultFacets) + 1;
-		$defaultFacets[] = $facet;
-
-		$this->_facets = $defaultFacets;
-		$this->update();
-	}
-
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveFacets();
@@ -257,7 +64,7 @@ class GroupedWorkFacetGroup extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveFacets();
@@ -265,7 +72,7 @@ class GroupedWorkFacetGroup extends DataObject {
 		return $ret;
 	}
 
-	public function saveFacets() {
+	public function saveFacets() : void {
 		if (isset ($this->_facets) && is_array($this->_facets)) {
 			$this->saveOneToManyOptions($this->_facets, 'facetGroupId');
 			unset($this->facets);
@@ -288,7 +95,7 @@ class GroupedWorkFacetGroup extends DataObject {
 		}
 	}
 
-	/** @return GroupedWorkFacet[] */
+	/** @return ?GroupedWorkFacet[] */
 	public function getFacets(): ?array {
 		if (!isset($this->_facets) && $this->id) {
 			$this->_facets = [];
@@ -303,24 +110,11 @@ class GroupedWorkFacetGroup extends DataObject {
 		return $this->_facets;
 	}
 
-	public function getFacetByIndex($index): ?GroupedWorkFacet {
-		$facets = $this->getFacets();
-
-		$i = 0;
-		foreach ($facets as $value) {
-			if ($i == $index) {
-				return $value;
-			}
-			$i++;
-		}
-		return NULL;
-	}
-
-	public function setFacets($value) {
+	public function setFacets($value) : void {
 		$this->_facets = $value;
 	}
 
-	public function clearFacets() {
+	public function clearFacets() : void {
 		$this->clearOneToManyOptions('GroupedWorkFacet', 'facetGroupId');
 		/** @noinspection PhpUndefinedFieldInspection */
 		$this->facets = [];

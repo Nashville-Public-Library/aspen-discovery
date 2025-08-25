@@ -33,6 +33,30 @@ function getUpdates25_09_00(): array {
 				'DROP TABLE aspen_lida_quick_searches'
 			]
 		], //remove_quick_searches
+		'remove_rbdigital_tables' => [
+			'title' => 'Remove RBdigital tables',
+			'description' => 'Remove Unused RBdigital Tables',
+			'continueOnError' => false,
+			'sql' => [
+				'DROP TABLE rbdigital_magazine_issue',
+				'DROP TABLE rbdigital_magazine',
+				'DROP TABLE rbdigital_magazine_usage',
+				'DROP TABLE rbdigital_title',
+				'DROP TABLE rbdigital_record_usage',
+				'DROP TABLE user_rbdigital_usage',
+				"DELETE FROM modules where name = 'RBdigital'",
+				"DELETE FROM role_permissions where permissionId = (SELECT id from permissions where name = 'Administer RBdigital')",
+				"DELETE FROM permissions where name = 'Administer RBdigital'",
+			]
+		], //remove_rbdigital_tables
+		'remove_redwood_tables' => [
+			'title' => 'Remove Redwood tables',
+			'description' => 'Remove Unused Redwood Table',
+			'continueOnError' => false,
+			'sql' => [
+				'DROP TABLE redwood_user_contribution'
+			]
+		], //remove_redwood_tables
 
 		//katherine - Grove
 
@@ -47,6 +71,14 @@ function getUpdates25_09_00(): array {
 		// Leo Stoyanov - BWS
 
 		//alexander - Open Fifth
+		'increase_location_display_name_allowed_length' => [
+			'title' => 'Increase Location Display Name Allowed Length',
+			'description' => 'Increase the allowed length for the location display name',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE location MODIFY displayName VARCHAR(100) NOT NULL'
+			],
+		], // increase_location_display_name_allowed_length
 
 		//chloe - Open Fifth
 

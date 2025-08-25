@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class ReplacementCost extends DataObject {
 	public $__table = 'replacement_costs';
@@ -8,9 +7,12 @@ class ReplacementCost extends DataObject {
 	public $catalogFormat;
 	public $replacementCost;
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -32,6 +34,9 @@ class ReplacementCost extends DataObject {
 				'description' => 'The default replacement cost for the format.',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public static function loadActiveFormats() : void {

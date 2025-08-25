@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class EbscohostRecordUsage extends DataObject {
 	public $__table = 'ebscohost_usage';

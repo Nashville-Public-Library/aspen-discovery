@@ -16,8 +16,12 @@ class StatusMapValue extends DataObject {
 	public /** @noinspection PhpUnused */
 		$inLibraryUseOnly;
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$groupedStatuses = [
 			'Currently Unavailable' => 'Currently Unavailable',
 			'On Order' => 'On Order',
@@ -29,7 +33,7 @@ class StatusMapValue extends DataObject {
 			'In Transit' => 'In Transit',
 			'On Shelf' => 'On Shelf',
 		];
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -106,5 +110,8 @@ class StatusMapValue extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

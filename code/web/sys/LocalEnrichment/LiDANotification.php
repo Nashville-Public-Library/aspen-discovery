@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/LibraryLocationLinkedObject.php';
 require_once ROOT_DIR . '/sys/LocalEnrichment/LiDANotificationLibrary.php';
@@ -26,7 +26,12 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 	protected $_locations;
 	protected $_ptypes;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Send Notifications to All Libraries'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Send Notifications to All Locations') || UserAccount::userHasPermission('Send Notifications to Home Library Locations'));
 		$ptypeList = PType::getPatronTypeList();
@@ -39,7 +44,7 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		$ctaScreens = LocationSetting::getDeepLinks();
 		$messageLimits = "<p>Character limits before being truncated</p><ul><li>iOS: 178 characters (includes both title and message)</li><li>Android (if collapsed, default): 43 characters for message, 39 characters for title</li><li>Android (if expanded): 504 characters for message, 79 characters for title</li></ul>";
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -153,6 +158,9 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 				'note' => 'Need to resend? Uncheck to trigger a new notification',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getNumericColumnNames(): array {
@@ -186,7 +194,7 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -196,7 +204,7 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -206,7 +214,7 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$this->clearLibraries();
@@ -255,7 +263,7 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		return $this->_ptypes;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -269,7 +277,7 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$this->clearLocations();
 
@@ -283,7 +291,7 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function savePatronTypes() {
+	public function savePatronTypes() : void {
 		if (isset ($this->_ptypes) && is_array($this->_ptypes)) {
 			$this->clearPatronTypes();
 
@@ -297,29 +305,25 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		$lib = new LiDANotificationLibrary();
 		$lib->lidaNotificationId = $this->id;
-		return $lib->delete(true);
+		$lib->delete(true);
 	}
 
-	private function clearLocations() {
+	private function clearLocations() : void {
 		$loc = new LiDANotificationLocation();
 		$loc->lidaNotificationId = $this->id;
-		return $loc->delete(true);
+		$loc->delete(true);
 	}
 
-	private function clearPatronTypes() {
+	private function clearPatronTypes() : void {
 		$pType = new LiDANotificationPType();
 		$pType->lidaNotificationId = $this->id;
-		return $pType->delete(true);
+		$pType->delete(true);
 	}
 
-	public function okToExport(array $selectedFilters): bool {
-		return parent::okToExport($selectedFilters);
-	}
-
-	public function getEligibleUsers() {
+	public function getEligibleUsers() : array {
 		$users = [];
 		$tokens = [];
 
@@ -365,20 +369,20 @@ class LiDANotification extends DB_LibraryLocationLinkedObject {
 		foreach($users as $user) {
 			$eligibleUser = new User();
 			$eligibleUser->id = $user;
-				if($eligibleUser->find(true)) {
-					$token = new UserNotificationToken();
-					$token->userId = $user;
-					$token->notifyCustom = 1;
-					$allUserTokens = $token->fetchAll('pushToken');
-					foreach ($allUserTokens as $userToken) {
-						$tmpToken['uid'] = $user;
-						$tmpToken['token'] = $userToken;
-						$tokens[] = $tmpToken;
-					}
-					$token->__destruct();
-					$token = null;
+			if($eligibleUser->find(true)) {
+				$token = new UserNotificationToken();
+				$token->userId = $user;
+				$token->notifyCustom = 1;
+				$allUserTokens = $token->fetchAll('pushToken');
+				foreach ($allUserTokens as $userToken) {
+					$tmpToken['uid'] = $user;
+					$tmpToken['token'] = $userToken;
+					$tokens[] = $tmpToken;
 				}
+				$token->__destruct();
+				$token = null;
 			}
+		}
 
 		return $tokens;
 	}
