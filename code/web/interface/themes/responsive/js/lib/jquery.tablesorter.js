@@ -206,13 +206,7 @@
 		// These methods can be applied on table.config instance
 		instanceMethods: {},
 
-		/*
-		▄█████ ██████ ██████ ██  ██ █████▄
-		▀█▄    ██▄▄     ██   ██  ██ ██▄▄██
-		   ▀█▄ ██▀▀     ██   ██  ██ ██▀▀▀
-		█████▀ ██████   ██   ▀████▀ ██
-		*/
-
+		// Setup
 		setup: function (table, c) {
 			// if no thead or tbody, or tablesorter is already present, quit
 			if (!table || !table.tHead || table.tBodies.length === 0 || table.hasInitialized === true) {
@@ -664,12 +658,7 @@
 			$.extend(ts.instanceMethods, methods);
 		},
 
-		/*
-		█████▄ ▄████▄ █████▄ ▄█████ ██████ █████▄ ▄█████
-		██▄▄██ ██▄▄██ ██▄▄██ ▀█▄    ██▄▄   ██▄▄██ ▀█▄
-		██▀▀▀  ██▀▀██ ██▀██     ▀█▄ ██▀▀   ██▀██     ▀█▄
-		██     ██  ██ ██  ██ █████▀ ██████ ██  ██ █████▀
-		*/
+		// Parsers
 		setupParsers: function (c, $tbodies) {
 			var rows, list, span, max, colIndex, indx, header, configHeaders,
 				noParser, parser, extractor, time, tbody, len,
@@ -885,12 +874,7 @@
 			return val;
 		},
 
-		/*
-		▄████▄ ▄████▄ ▄████▄ ██  ██ ██████
-		██  ▀▀ ██▄▄██ ██  ▀▀ ██▄▄██ ██▄▄
-		██  ▄▄ ██▀▀██ ██  ▄▄ ██▀▀██ ██▀▀
-		▀████▀ ██  ██ ▀████▀ ██  ██ ██████
-		*/
+		// Cache
 		buildCache: function (c, callback, $tbodies) {
 			var cache, val, txt, rowIndex, colIndex, tbodyIndex, $tbody, $row,
 				cols, $cells, cell, cacheTime, totalRows, rowData, prevRowData,
@@ -1097,12 +1081,7 @@
 			}
 		},
 
-		/*
-		██  ██ █████▄ █████▄ ▄████▄ ██████ ██████
-		██  ██ ██▄▄██ ██  ██ ██▄▄██   ██   ██▄▄
-		██  ██ ██▀▀▀  ██  ██ ██▀▀██   ██   ██▀▀
-		▀████▀ ██     █████▀ ██  ██   ██   ██████
-		*/
+		// Update
 		setHeadersCss: function (c) {
 			var indx, column,
 				list = c.sortList,
@@ -1557,12 +1536,7 @@
 			ts.checkResort(c, resort, callback);
 		},
 
-		/*
-		▄█████ ▄████▄ █████▄ ██████ ██ █████▄ ▄████▄
-		▀█▄    ██  ██ ██▄▄██   ██   ██ ██  ██ ██ ▄▄▄
-		   ▀█▄ ██  ██ ██▀██    ██   ██ ██  ██ ██ ▀██
-		█████▀ ▀████▀ ██  ██   ██   ██ ██  ██ ▀████▀
-		*/
+		// Sorting
 		initSort: function (c, cell, event) {
 			if (c.table.isUpdating) {
 				// let any updates complete before initializing a sort
@@ -2024,12 +1998,7 @@
 			return a - b;
 		},
 
-		/*
-		██ ██ ██ ██ █████▄ ▄████▄ ██████ ██████ ▄█████
-		██ ██ ██ ██ ██  ██ ██ ▄▄▄ ██▄▄     ██   ▀█▄
-		██ ██ ██ ██ ██  ██ ██ ▀██ ██▀▀     ██      ▀█▄
-		███████▀ ██ █████▀ ▀████▀ ██████   ██   █████▀
-		*/
+		// Widgets
 		addWidget: function (widget) {
 			if (widget.id && !ts.isEmptyObject(ts.getWidgetById(widget.id))) {
 				console.warn('"' + widget.id + '" widget was loaded more than once!');
@@ -2284,12 +2253,7 @@
 			}
 		},
 
-		/*
-		██  ██ ██████ ██ ██     ██ ██████ ██ ██████ ▄█████
-		██  ██   ██   ██ ██     ██   ██   ██ ██▄▄   ▀█▄
-		██  ██   ██   ██ ██     ██   ██   ██ ██▀▀      ▀█▄
-		▀████▀   ██   ██ ██████ ██   ██   ██ ██████ █████▀
-		*/
+		// Utilities
 		benchmark: function (diff) {
 			return (' (' + (new Date().getTime() - diff.getTime()) + ' ms)');
 		},
