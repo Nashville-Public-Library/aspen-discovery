@@ -2068,7 +2068,7 @@ class Evergreen extends AbstractIlsDriver {
 	 * @param array $selectedTitles Array of selected titles (not used for opt-in/out).
 	 * @return null|array Null for no result, or array with 'success' boolean and 'message' string.
 	 */
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): null|array {
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		$result = ['success' => false, 'message' => ''];
 
 		switch ($action) {

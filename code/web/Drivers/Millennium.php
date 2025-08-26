@@ -526,7 +526,7 @@ class Millennium extends AbstractIlsDriver {
 	 * @param array $selectedTitles The titles to do the action on if applicable
 	 * @return array|null
 	 */
-	function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): null|array {
+	function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		require_once ROOT_DIR . '/Drivers/marmot_inc/MillenniumReadingHistory.php';
 		$millenniumReadingHistory = new MillenniumReadingHistory($this);
 		$millenniumReadingHistory->doReadingHistoryAction($patron, $action, $selectedTitles);

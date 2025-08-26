@@ -114,8 +114,9 @@ class MillenniumReadingHistory {
 	 * @param User $patron
 	 * @param string $action The action to perform
 	 * @param array $selectedTitles The titles to do the action on if applicable
+	 * @return array|null
 	 */
-	function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): null|array {
+	function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		//Load the reading history page
 		$scope = $this->driver->getDefaultScope();
 		$curl_url = $this->driver->getVendorOpacUrl() . "/patroninfo~S{$scope}/" . $patron->unique_ils_id . "/readinghistory";

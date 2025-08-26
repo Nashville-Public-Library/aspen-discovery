@@ -1518,9 +1518,8 @@ class Library extends DataObject {
 					'optInToReadingHistoryUpdatesILS' => [
 						'property' => 'optInToReadingHistoryUpdatesILS',
 						'type' => 'checkbox',
-						'label' => 'Opting in to Reading History Updates ILS settings',
+						'label' => 'Opting In to Reading History Updates ILS Settings',
 						'description' => 'Whether or not the user should be opted in to reading history within the ILS when they opt in within Aspen.',
-						'note' => 'Applies to Carl.X, Evergreen, Koha, Millennium, Sierra, and Symphony Only',
 						'hideInLists' => true,
 						'default' => 0,
 						'permissions' => ['Library ILS Options'],
@@ -1528,9 +1527,8 @@ class Library extends DataObject {
 					'optOutOfReadingHistoryUpdatesILS' => [
 						'property' => 'optOutOfReadingHistoryUpdatesILS',
 						'type' => 'checkbox',
-						'label' => 'Opting out of Reading History Updates ILS settings',
+						'label' => 'Opting Out of Reading History Updates ILS Settings',
 						'description' => 'Whether or not the user should be opted out of reading history within the ILS when they opt out within Aspen.',
-						'note' => 'Applies to Carl.X, Evergreen, Koha, Millennium, Sierra, and Symphony Only',
 						'hideInLists' => true,
 						'default' => 1,
 						'permissions' => ['Library ILS Options'],

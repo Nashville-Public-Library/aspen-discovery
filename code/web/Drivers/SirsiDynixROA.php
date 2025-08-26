@@ -3265,7 +3265,7 @@ class SirsiDynixROA extends HorizonAPI {
 		return true;
 	}
 
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): null|array {
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		if ($action == 'optIn' || $action == 'optOut') {
 			$sessionToken = $this->getStaffSessionToken();
 			if ($sessionToken) {

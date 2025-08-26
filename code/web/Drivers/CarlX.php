@@ -1459,7 +1459,7 @@ class CarlX extends AbstractIlsDriver {
 		return true;
 	}
 
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): null|array {
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		if ($action == 'optIn' || $action == 'optOut') {
 			$request = $this->getSearchbyPatronIdRequest($patron);
 			if (!isset ($request->Patron)) {

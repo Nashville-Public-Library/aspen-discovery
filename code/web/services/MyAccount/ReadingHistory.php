@@ -61,7 +61,6 @@ class ReadingHistory extends MyAccount {
 				$readingHistoryAction = $_REQUEST['readingHistoryAction'];
 				$result = $patron->doReadingHistoryAction($readingHistoryAction, $selectedTitles);
 				if (isset($result['message'])) {
-					session_start();
 					$_SESSION['readingHistoryMessage'] = $result['message'];
 					$_SESSION['readingHistoryMessageIsError'] = !$result['success'];
 				}
@@ -82,7 +81,6 @@ class ReadingHistory extends MyAccount {
 				die();
 			}
 
-			session_start();
 			if (isset($_SESSION['readingHistoryMessage'])) {
 				$interface->assign('updateMessage', $_SESSION['readingHistoryMessage']);
 				$interface->assign('updateMessageIsError', $_SESSION['readingHistoryMessageIsError']);

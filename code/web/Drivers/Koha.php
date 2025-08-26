@@ -1501,7 +1501,7 @@ class Koha extends AbstractIlsDriver {
 		return true;
 	}
 
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): null|array {
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		$doUpdate = false;
 		if ($action == 'optIn') {
 			$doUpdate = true;

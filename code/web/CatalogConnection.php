@@ -791,7 +791,7 @@ class CatalogConnection {
 			$patron->update();
 			$result['success'] = true;
 			$result['message'] = translate([
-				'text' => 'You have opted out of tracking Reading History',
+				'text' => 'You have opted out of tracking Reading History.',
 				'isPublicFacing' => true,
 			]);
 		} elseif ($action == 'optIn') {
