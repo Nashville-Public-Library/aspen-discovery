@@ -816,12 +816,10 @@ class CatalogConnection {
 			if ($performIlsAction) {
 				$ilsResult = $this->driver->doReadingHistoryAction($patron, $action, $selectedTitles);
 				if (is_array($ilsResult)) {
-					// If the ILS action returned a result, merge it with our main result
 					if (!$ilsResult['success']) {
 						$result['success'] = false;
 						$result['message'] = $ilsResult['message'];
 					} else {
-						// Append ILS success message to existing message if both succeeded
 						if ($result['success'] && !empty($ilsResult['message'])) {
 							$result['message'] .= ' ' . $ilsResult['message'];
 						}
