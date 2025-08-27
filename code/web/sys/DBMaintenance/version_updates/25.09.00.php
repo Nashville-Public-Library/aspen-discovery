@@ -57,6 +57,14 @@ function getUpdates25_09_00(): array {
 				'DROP TABLE redwood_user_contribution'
 			]
 		], //remove_redwood_tables
+		'add_grouped_work_display_format_display' => [
+			'title' => 'Grouped Display Settings add Format Display Option',
+			'description' => 'Grouped Display Settings add Format Display Option',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE grouped_work_display_settings ADD COLUMN formatDisplayStyle INT DEFAULT 1'
+			]
+		], //add_grouped_work_display_format_display
 
 		//katherine - Grove
 
