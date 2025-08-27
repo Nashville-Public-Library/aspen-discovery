@@ -7712,7 +7712,12 @@ AspenDiscovery.Account = (function () {
 			}).fail(AspenDiscovery.ajaxFail);
 		},
 		handlePayPalError: function (error) {
-			AspenDiscovery.showMessage('Error', 'There was an error completing your payment. ' + error, true);
+			// Wait and check if a message is already open before showing PayPal popup errors.
+			setTimeout(function() {
+				if (!$("#modalDialog").hasClass("in")) {
+					AspenDiscovery.showMessage('Error', 'There was an error completing your payment. ' + error, true);
+				}
+			}, 300, error);
 		},
 		cancelPayPalError: function () {
 			AspenDiscovery.showMessage('Payment cancelled', 'Your payment has successfully been cancelled.', true);
@@ -18377,13 +18382,17 @@ AspenDiscovery.Wikipedia = (() => {
 				const { success, formatted_article, debugMessage } = data || {};
 				const $placeholder = $("#wikipedia_placeholder");
 				if (success && formatted_article) {
-					$placeholder.html(formatted_article).fadeIn();
-				} else if (debugMessage) {
+					$placeholder.html(formatted_article);
+				}
+				if (debugMessage) {
 					$placeholder.append(
-						'<div ' + 'class="smallText text-muted" style="font-style:italic">' +
+						'<div class="smallText text-muted" style="font-style:italic">' +
 						debugMessage +
 						'</div>'
-					).fadeIn();
+					);
+				}
+				if ((success && formatted_article) || debugMessage) {
+					$placeholder.fadeIn();
 				}
 			})
 			.fail((jqXHR, textStatus) => {

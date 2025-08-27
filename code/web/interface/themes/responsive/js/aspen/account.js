@@ -1947,7 +1947,12 @@ AspenDiscovery.Account = (function () {
 			}).fail(AspenDiscovery.ajaxFail);
 		},
 		handlePayPalError: function (error) {
-			AspenDiscovery.showMessage('Error', 'There was an error completing your payment. ' + error, true);
+			// Wait and check if a message is already open before showing PayPal popup errors.
+			setTimeout(function() {
+				if (!$("#modalDialog").hasClass("in")) {
+					AspenDiscovery.showMessage('Error', 'There was an error completing your payment. ' + error, true);
+				}
+			}, 300, error);
 		},
 		cancelPayPalError: function () {
 			AspenDiscovery.showMessage('Payment cancelled', 'Your payment has successfully been cancelled.', true);
