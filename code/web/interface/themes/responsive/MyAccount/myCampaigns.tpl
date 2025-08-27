@@ -154,11 +154,9 @@
 													{assign var="goalCount" value=0}
 
 													{foreach from=$milestone->progressData item="progressData"}
-														{if $goalCount < $goalLimit  || $milestone->progressBeyondOneHundredPercent}
+														{if !empty($progressData.title) && $goalCount < $goalLimit  || $milestone->progressBeyondOneHundredPercent}
 															<div style="padding:10px;">
-																{if isset($progressData['title'])}
-																	{$progressData['title']}
-																{/if}
+																{$progressData.title}
 															</div>
 															{assign var="goalCount" value=$goalCount+1}
 														{/if}
@@ -374,9 +372,9 @@
 														{assign var="goalCount" value=0}
 
 														{foreach from=$milestone.progressData item="progressData"}
-															{if $goalCount < $goalLimit || $milestone.progressBeyondOneHundredPercent}
+															{if !empty($progressData.title) && $goalCount < $goalLimit || $milestone.progressBeyondOneHundredPercent}
 																<div style="padding:10px;">
-																	{$progressData['title']}
+																	{$progressData.title}
 																</div>
 																{assign var="goalCount" value=$goalCount+1}
 															{/if}
