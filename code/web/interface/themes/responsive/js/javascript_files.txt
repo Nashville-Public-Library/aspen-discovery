@@ -1,7 +1,7 @@
 #A list of files to merge, can comment out lines with a #
 # jQuery files tend to have their respective version at the top of their file.
 ../../../../js/jquery-3.7.1.min.js
-lib/jquery-migrate-3.5.2.js
+#lib/jquery-migrate-3.5.2.js
 lib/jquery-ui.min.js
 lib/bootstrap.min.js
 lib/bootstrap-switch.min.js
