@@ -2006,4 +2006,8 @@ class CatalogConnection {
 	public function hasIlsConsentSupport(): bool {
 		return $this->driver->hasIlsConsentSupport();
 	}
+
+	public function isPatronAccountLocked(User $patron, $fine): bool {
+		return $this->driver->isPatronAccountLocked($patron, $fine);
+	}
 }

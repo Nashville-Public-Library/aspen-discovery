@@ -2601,6 +2601,28 @@ class Sierra extends Millennium {
 		return $result;
 	}
 
+	public function isPatronAccountLocked(User $patron, $fine) : bool {
+		// Try paying $0 towards the fine - if patron record is locked API will return 500: Patron Record is Busy
+		$payment = new stdClass();
+		$payment->amount = 0;
+		$payment->paymentType = 1;
+		$payment->invoiceNumber = (string)$fine['invoiceNumber'];
+		$payment->initials = 'aspen';
+		$paymentParams['payments'][] = $payment;
+
+		$patronId = $patron->unique_ils_id;
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId . "/fines/payment";
+
+		$makePaymentResponse = $this->_sendPage('sierra.addPayment', 'PUT', $sierraUrl, json_encode($paymentParams));
+
+		if ($this->lastResponseCode == 200 || $this->lastResponseCode == 204) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 	/** @noinspection PhpRedundantMethodOverrideInspection */
 	function importListsFromIls($patron) {
 		//There is no way to do this from the APIs so we need to resort to screen scraping.
