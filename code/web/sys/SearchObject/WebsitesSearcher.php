@@ -179,6 +179,7 @@ class SearchObject_WebsitesSearcher extends SearchObject_SolrSearcher {
             $facetConfig = [];
             $facets = [];
             $searchLibrary = Library::getActiveLibrary();
+			/** @var Location $locationSingleton */
             global $locationSingleton;
             $searchLocation = $locationSingleton->getActiveLocation();
             if ($searchLocation != null) {

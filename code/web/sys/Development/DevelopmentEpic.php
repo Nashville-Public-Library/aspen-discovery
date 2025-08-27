@@ -1,19 +1,23 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class DevelopmentEpic extends DataObject {
 	public $__table = 'development_epic';
 	public $id;
 	public $name; //public
 	public $description; //public
+	/** @noinspection PhpUnused */
 	public $linkToDesign;
+	/** @noinspection PhpUnused */
 	public $linkToRequirements;
+	/** @noinspection PhpUnused */
 	public $internalComments;
 
 	public $dueDate;
+	/** @noinspection PhpUnused */
 	public $dueDateComment;
 
 	//create public status from private status
-	//public $publicStatus; //Under Consideration, Researching, Ready for Development, In Development, Pending Release, Done!!, Won't Do
+	/** @noinspection PhpUnused */
 	public $privateStatus; //Under Consideration, Planned, Researching, Writing Requirements, In Design / User Testing, Ready for Development, In Development, Blocked, Needs Review, Pending Release, Done!!, Won't Do
 
 	public $_requestingPartners;
@@ -21,7 +25,11 @@ class DevelopmentEpic extends DataObject {
 	public $_relatedComponents;
 	public $_totalStoryPoints;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$privateStatuses = [
 			0 => 'Under Consideration',
 			1 => 'Planned, Researching',
@@ -48,7 +56,7 @@ class DevelopmentEpic extends DataObject {
 		$componentEpicLink = ComponentEpicLink::getObjectStructure($context);
 		unset($componentEpicLink['epicId']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -177,6 +185,9 @@ class DevelopmentEpic extends DataObject {
 				'description' => 'The total number of story points assigned to the release',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -212,10 +223,7 @@ class DevelopmentEpic extends DataObject {
 		}
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveRelatedTasks();
@@ -225,7 +233,7 @@ class DevelopmentEpic extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveRelatedTasks();
@@ -235,21 +243,21 @@ class DevelopmentEpic extends DataObject {
 		return $ret;
 	}
 
-	public function saveRelatedTasks() {
+	public function saveRelatedTasks() : void {
 		if (isset ($this->_relatedTasks) && is_array($this->_relatedTasks)) {
 			$this->saveOneToManyOptions($this->_relatedTasks, 'epicId');
 			unset($this->_relatedTasks);
 		}
 	}
 
-	public function saveRelatedComponents() {
+	public function saveRelatedComponents() : void {
 		if (isset ($this->_relatedComponents) && is_array($this->_relatedComponents)) {
 			$this->saveOneToManyOptions($this->_relatedComponents, 'epicId');
 			unset($this->_relatedComponents);
 		}
 	}
 
-	public function saveRequestingPartners() {
+	public function saveRequestingPartners() : void {
 		if (isset ($this->_requestingPartners) && is_array($this->_requestingPartners)) {
 			$this->saveOneToManyOptions($this->_requestingPartners, 'epicId');
 			unset($this->_requestingPartners);
@@ -257,7 +265,7 @@ class DevelopmentEpic extends DataObject {
 	}
 
 	/**
-	 * @return TaskEpicLink[]
+	 * @return ?TaskEpicLink[]
 	 */
 	private function getRelatedTasks(): ?array {
 		if (!isset($this->_relatedTasks) && $this->id) {
@@ -275,7 +283,7 @@ class DevelopmentEpic extends DataObject {
 	}
 
 	/**
-	 * @return ComponentEpicLink[]
+	 * @return ?ComponentEpicLink[]
 	 */
 	private function getRelatedComponents(): ?array {
 		if (!isset($this->_relatedComponents) && $this->id) {
@@ -292,7 +300,7 @@ class DevelopmentEpic extends DataObject {
 	}
 
 	/**
-	 * @return EpicPartnerLink[]
+	 * @return ?EpicPartnerLink[]
 	 */
 	private function getRequestingPartners(): ?array {
 		if (!isset($this->_requestingPartners) && $this->id) {

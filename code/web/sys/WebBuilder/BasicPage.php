@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/WebBuilder/LibraryBasicPage.php';
 require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderAudience.php';
 require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderCategory.php';
@@ -34,13 +34,18 @@ class BasicPage extends DB_LibraryLinkedObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Basic Pages'));
 		$locationsList = Location::getLocationListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Basic Pages'));
 		$audiencesList = WebBuilderAudience::getAudiences();
 		$categoriesList = WebBuilderCategory::getCategories();
 		$patronTypeList = PType::getPatronTypeList();
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -146,16 +151,19 @@ class BasicPage extends DB_LibraryLinkedObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function getFormattedContents() {
+	public function getFormattedContents() : string {
 		require_once ROOT_DIR . '/sys/Parsedown/AspenParsedown.php';
 		$parsedown = AspenParsedown::instance();
 		$parsedown->setBreaksEnabled(true);
 		return $parsedown->parse($this->contents);
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->lastUpdate = time();
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
@@ -168,7 +176,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		return $ret;
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->lastUpdate = time();
 		$ret = parent::update();
 		if ($ret !== FALSE) {
@@ -213,7 +221,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
@@ -238,7 +246,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		return $this->_libraries;
 	}
 
-	public function getAudiences() {
+	public function getAudiences() : ?array {
 		if (!isset($this->_audiences) && $this->id) {
 			$this->_audiences = [];
 			$audienceLink = new BasicPageAudience();
@@ -251,7 +259,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		return $this->_audiences;
 	}
 
-	public function getCategories() {
+	public function getCategories() : ?array {
 		if (!isset($this->_categories) && $this->id) {
 			$this->_categories = [];
 			$categoryLink = new BasicPageCategory();
@@ -264,7 +272,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		return $this->_categories;
 	}
 
-	public function getAccess() {
+	public function getAccess() : ?array {
 		if (!isset($this->_allowAccess) && $this->id) {
 			$this->_allowAccess = [];
 			$patronTypeLink = new BasicPageAccess();
@@ -277,7 +285,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		return $this->_allowAccess;
 	}
 
-	public function getAllowableHomeLocations() {
+	public function getAllowableHomeLocations() : ?array {
 		if (!isset($this->_allowableHomeLocations) && $this->id) {
 			$this->_allowableHomeLocations = [];
 			$homeLocationAccess = new BasicPageHomeLocationAccess();
@@ -290,7 +298,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		return $this->_allowableHomeLocations;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -305,7 +313,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveAudiences() {
+	public function saveAudiences() : void {
 		if (isset($this->_audiences) && is_array($this->_audiences)) {
 			$this->clearAudiences();
 
@@ -320,7 +328,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveCategories() {
+	public function saveCategories() : void {
 		if (isset($this->_categories) && is_array($this->_categories)) {
 			$this->clearCategories();
 
@@ -335,7 +343,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveAccess() {
+	public function saveAccess() : void {
 		if (isset($this->_allowAccess) && is_array($this->_allowAccess)) {
 			$this->clearAccess();
 
@@ -350,7 +358,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveAllowableHomeLocations() {
+	public function saveAllowableHomeLocations() : void {
 		if (isset($this->_allowableHomeLocations) && is_array($this->_allowableHomeLocations)) {
 			$this->clearAllowableHomeLocations();
 
@@ -365,39 +373,39 @@ class BasicPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryLink = new LibraryBasicPage();
 		$libraryLink->basicPageId = $this->id;
-		return $libraryLink->delete(true);
+		$libraryLink->delete(true);
 	}
 
-	private function clearAudiences() {
+	private function clearAudiences() : void {
 		//Delete links to the libraries
 		$link = new BasicPageAudience();
 		$link->basicPageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	private function clearCategories() {
+	private function clearCategories() : void {
 		//Delete links to the libraries
 		$link = new BasicPageCategory();
 		$link->basicPageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	private function clearAccess() {
+	private function clearAccess() : void {
 		//Delete links to the patron types
 		$link = new BasicPageAccess();
 		$link->basicPageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	private function clearAllowableHomeLocations() {
+	private function clearAllowableHomeLocations() : void {
 		//Delete links to the patron home locations
 		$link = new BasicPageHomeLocationAccess();
 		$link->basicPageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
 	public function getLinksForJSON(): array {
@@ -427,14 +435,14 @@ class BasicPage extends DB_LibraryLinkedObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting);
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
-		if (array_key_exists('audiences', $jsonLinks)) {
+		if (array_key_exists('audiences', $jsonData)) {
 			$audiences = [];
 			$audiencesList = WebBuilderAudience::getAudiences();
 			$audiencesList = array_flip($audiencesList);
-			foreach ($jsonLinks['audiences'] as $audience) {
+			foreach ($jsonData['audiences'] as $audience) {
 				if (array_key_exists($audience, $audiencesList)) {
 					$audiences[] = $audiencesList[$audience];
 				}
@@ -442,11 +450,11 @@ class BasicPage extends DB_LibraryLinkedObject {
 			$this->_audiences = $audiences;
 			$result = true;
 		}
-		if (array_key_exists('categories', $jsonLinks)) {
+		if (array_key_exists('categories', $jsonData)) {
 			$categories = [];
 			$categoriesList = WebBuilderCategory::getCategories();
 			$categoriesList = array_flip($categoriesList);
-			foreach ($jsonLinks['categories'] as $category) {
+			foreach ($jsonData['categories'] as $category) {
 				if (array_key_exists($category, $categoriesList)) {
 					$categories[] = $categoriesList[$category];
 				}
@@ -454,11 +462,11 @@ class BasicPage extends DB_LibraryLinkedObject {
 			$this->_categories = $categories;
 			$result = true;
 		}
-		if (array_key_exists('allowAccess', $jsonLinks)) {
+		if (array_key_exists('allowAccess', $jsonData)) {
 			$allowAccess = [];
 			$allowAccessList = PType::getPatronTypeList();
 			$allowAccessList = array_flip($allowAccessList);
-			foreach ($jsonLinks['allowAccess'] as $pType) {
+			foreach ($jsonData['allowAccess'] as $pType) {
 				if (array_key_exists($pType, $allowAccessList)) {
 					$allowAccess[] = $allowAccessList[$pType];
 				}
@@ -484,7 +492,6 @@ class BasicPage extends DB_LibraryLinkedObject {
 			if (!$user) {
 				return false;
 			} else {
-				$okToAccess = false;
 				$userPatronType = $user->patronType;
 
 				if ($userPatronType == NULL) {
@@ -587,7 +594,7 @@ class BasicPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function loadCopyableSubObjects() {
+	public function loadCopyableSubObjects() : void {
 		$this->getCategories();
 		$this->getAudiences();
 		$this->getAllowableHomeLocations();

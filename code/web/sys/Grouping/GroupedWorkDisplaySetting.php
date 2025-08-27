@@ -123,7 +123,12 @@ class GroupedWorkDisplaySetting extends DataObject {
 	private $_libraries;
 	private $_locations;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Grouped Work Display Settings'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Grouped Work Display Settings'));
 
@@ -715,7 +720,8 @@ class GroupedWorkDisplaySetting extends DataObject {
 			unset($structure['searchingSection']['properties']['searchAlgorithm']);
 		}
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**
@@ -774,7 +780,7 @@ class GroupedWorkDisplaySetting extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if (isset($this->showInSearchResultsMainDetails) && is_array($this->showInSearchResultsMainDetails)) {
 			// convert the array to string before storing in the database
 			$this->showInSearchResultsMainDetails = serialize($this->showInSearchResultsMainDetails);
@@ -799,7 +805,7 @@ class GroupedWorkDisplaySetting extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if (isset($this->showInSearchResultsMainDetails) && is_array($this->showInSearchResultsMainDetails)) {
 			// convert the array to string before storing in the database
 			$this->showInSearchResultsMainDetails = serialize($this->showInSearchResultsMainDetails);
@@ -964,17 +970,11 @@ class GroupedWorkDisplaySetting extends DataObject {
 		}
 	}
 
-	/** @return Library[]
-	 * @noinspection PhpUnused
-	 */
-	public function getLibraries() : array {
+	public function getLibraries() : ?array {
 		return $this->_libraries;
 	}
 
-	/** @return Location[]
-	 * @noinspection PhpUnused
-	 */
-	public function getLocations() : array {
+	public function getLocations() : ?array {
 		return $this->_locations;
 	}
 

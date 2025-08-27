@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class WebBuilderCategory extends DataObject {
@@ -12,8 +12,12 @@ class WebBuilderCategory extends DataObject {
 		return ['name'];
 	}
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -37,27 +41,26 @@ class WebBuilderCategory extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function insert($context = '')
-	{
-		$this->lastUpdate = time();
+	public function insert(string $context = ''): int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveTextBlockTranslations('customWebBuilderCategoryDescription');
 		}
 		return $ret;
 	}
-	public function update($context = '')
-	{
-		$this->lastUpdate = time();
+	public function update(string $context = ''): int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveTextBlockTranslations('customWebBuilderCategoryDescription');
 		}
 		return $ret;
 	}
-	public static function getCategories() {
+	public static function getCategories() : array {
 		$categories = [];
 		$category = new WebBuilderCategory();
 		$category->orderBy('name');

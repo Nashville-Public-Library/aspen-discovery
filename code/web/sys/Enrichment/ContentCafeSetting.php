@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class ContentCafeSetting extends DataObject {
@@ -12,8 +12,12 @@ class ContentCafeSetting extends DataObject {
 	public $hasExcerpt;
 	public $hasAuthorNotes;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -66,5 +70,8 @@ class ContentCafeSetting extends DataObject {
 				'description' => 'Whether or not author notes are available in the subscription',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

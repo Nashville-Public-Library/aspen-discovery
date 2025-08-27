@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/WebBuilder/LibraryGrapesPage.php';
 require_once ROOT_DIR . '/sys/DB/LibraryLinkedObject.php';
 require_once ROOT_DIR . '/sys/WebBuilder/GrapesTemplate.php';
@@ -9,6 +9,7 @@ class GrapesPage extends DB_LibraryLinkedObject {
 	public $title;
 	public $showTitleOnPage;
 	public $urlAlias;
+	/** @noinspection PhpUnused */
 	public $teaser;
 	public $templatesSelect;
 	public $grapesGenId;
@@ -26,7 +27,12 @@ class GrapesPage extends DB_LibraryLinkedObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Grapes Pages'));
 		$templateList = GrapesTemplate::getTemplateList();
 		require_once ROOT_DIR . '/services/WebBuilder/Templates.php';
@@ -124,10 +130,11 @@ class GrapesPage extends DB_LibraryLinkedObject {
 			unset($structure['templateContent']);
 		}
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function getFormattedContents() {
+	public function getFormattedContents() : string {
 		require_once ROOT_DIR . '/sys/Parsedown/AspenParsedown.php';
 		$parsedown = AspenParsedown::instance();
 		$parsedown->setBreaksEnabled(true);
@@ -141,25 +148,11 @@ class GrapesPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function findById($id) {
-		$this->id = $id;
-		return $this->find(true);
+	public function getTplFilePath() : string {
+		return 'code/web/interface/themes/responsive/WebBuilder/grapesjs.tpl';
 	}
 
-	public function updatePage($templateContent, $htmlData, $cssData) {
-		$this->templateContent = $templateContent;
-		$this->htmlData = $htmlData;
-		$this->cssData = $cssData;
-		return $this->update();
-	}
-
-	public function getTplFilePath() {
-		$relativePath = 'code/web/interface/themes/responsive/WebBuilder/grapesjs.tpl';
-		return $relativePath;
-	}
-
-	public function insert($context = '') {
-		$this->lastUpdate = time();
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -167,8 +160,7 @@ class GrapesPage extends DB_LibraryLinkedObject {
 		return $ret;
 	}
 
-	public function update($context = '') {
-		$this->lastUpdate = time();
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -196,7 +188,7 @@ class GrapesPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false): int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
@@ -217,7 +209,7 @@ class GrapesPage extends DB_LibraryLinkedObject {
 		return $this->_libraries;
 	}
 
-	public function getTemplates() {
+	public function getTemplates() : array {
 		if (is_null($this->_templates)) {
 			$this->_templates = [];
 			require_once ROOT_DIR . '/sys/WebBuilder/GrapesTemplate.php';
@@ -252,7 +244,7 @@ class GrapesPage extends DB_LibraryLinkedObject {
 	}
 
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -267,11 +259,11 @@ class GrapesPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryLink = new LibraryGrapesPage();
 		$libraryLink->grapesPageId = $this->id;
-		return $libraryLink->delete(true);
+		$libraryLink->delete(true);
 	}
 
 

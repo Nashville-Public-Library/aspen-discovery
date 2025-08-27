@@ -1,18 +1,24 @@
 <?php
 /** @noinspection PhpMissingFieldTypeInspection */
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class MaterialsRequestFieldsToDisplay extends DataObject {
 	public $__table = 'materials_request_fields_to_display';
 	public $__displayNameColumn = 'labelForColumnToDisplay';
 	public $id;
 	public $libraryId;
+	/** @noinspection PhpUnused */
 	public $columnNameToDisplay;
+	/** @noinspection PhpUnused */
 	public $labelForColumnToDisplay;
 	public $weight;
 
-	static function getObjectStructure($context = ''): array {
-		require_once ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequest.php';
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+			require_once ROOT_DIR . '/sys/MaterialsRequests/MaterialsRequest.php';
 		$materialsRequest = new MaterialsRequest();
 		$columnNames = array_keys($materialsRequest->table());
 		$columnToChooseFrom = array_combine($columnNames, $columnNames);
@@ -48,6 +54,8 @@ class MaterialsRequestFieldsToDisplay extends DataObject {
 				'description' => 'Label to put in the table header of the Manage Requests page.',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

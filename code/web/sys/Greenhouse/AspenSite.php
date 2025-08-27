@@ -104,9 +104,12 @@ class AspenSite extends DataObject {
 		];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -337,6 +340,9 @@ class AspenSite extends DataObject {
 				'default' => 0,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function updateStatus() {
@@ -563,7 +569,7 @@ class AspenSite extends DataObject {
 		return $status;
 	}
 
-	public function getCachedStatus() {
+	public function getCachedStatus() : array {
 		$status = $this->toArray();
 		if (!empty($this->baseUrl)) {
 			$status['checks'] = [];
@@ -610,7 +616,7 @@ class AspenSite extends DataObject {
 		return $status;
 	}
 
-	function getElapsedTime($time) {
+	function getElapsedTime($time) : string {
 		$elapsedTimeMin = ceil((time() - $time) / 60);
 		if ($elapsedTimeMin < 60) {
 			return $elapsedTimeMin . " min";
@@ -621,7 +627,7 @@ class AspenSite extends DataObject {
 		}
 	}
 
-	public function getCurrentVersion() {
+	public function getCurrentVersion() : string {
 		$version = translate([
 			'text' => 'Unknown',
 			'isAdminFacing' => true,
@@ -640,7 +646,7 @@ class AspenSite extends DataObject {
 						}
 					}
 				}
-			} catch (Exception $e) {
+			} catch (Exception) {
 				//Ignore for now
 			}
 		}

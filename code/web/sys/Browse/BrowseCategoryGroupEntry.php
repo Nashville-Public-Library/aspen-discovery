@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Browse/BrowseCategoryGroup.php';
 
@@ -16,7 +16,11 @@ class BrowseCategoryGroupEntry extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		//Load Groups for lookup values
 		$groups = new BrowseCategoryGroup();
 		$groups->orderBy('name');
@@ -28,21 +32,20 @@ class BrowseCategoryGroupEntry extends DataObject {
 		require_once ROOT_DIR . '/sys/Browse/BrowseCategory.php';
 		$browseCategories = new BrowseCategory();
 		$browseCategories->orderBy('label');
+		$browseCategoryList = [];
 		if (!UserAccount::userHasPermission('Administer All Browse Categories')) {
 			$library = Library::getPatronHomeLibrary(UserAccount::getActiveUserObj());
 			$libraryId = $library == null ? -1 : $library->libraryId;
 			$browseCategories->whereAdd("sharing = 'everyone'");
 			$browseCategories->whereAdd("sharing = 'library' AND libraryId = " . $libraryId, 'OR');
 			$browseCategories->find();
-			$browseCategoryList = [];
 			while ($browseCategories->fetch()) {
-				$browseCategoryList[$browseCategories->id] = $browseCategories->label . " ({$browseCategories->textId})". " - $browseCategories->id";
+				$browseCategoryList[$browseCategories->id] = $browseCategories->label . " ($browseCategories->textId)". " - $browseCategories->id";
 			}
 		} elseif (UserAccount::userHasPermission('Administer All Browse Categories')) {
 			$browseCategories->find();
-			$browseCategoryList = [];
 			while ($browseCategories->fetch()) {
-				$browseCategoryList[$browseCategories->id] = $browseCategories->label . " ({$browseCategories->textId})". " - $browseCategories->id";
+				$browseCategoryList[$browseCategories->id] = $browseCategories->label . " ($browseCategories->textId)". " - $browseCategories->id";
 			}
 		}
 		$browseCategories  = new BrowseCategory();
@@ -50,9 +53,9 @@ class BrowseCategoryGroupEntry extends DataObject {
 		$browseCategories->find();
 		$allBrowseCategoryList = [];
 		while ($browseCategories->fetch()) {
-			$allBrowseCategoryList[$browseCategories->id] = $browseCategories->label . " ({$browseCategories->textId})". " - $browseCategories->id";
+			$allBrowseCategoryList[$browseCategories->id] = $browseCategories->label . " ($browseCategories->textId)". " - $browseCategories->id";
 		}
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -82,15 +85,19 @@ class BrowseCategoryGroupEntry extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Admin/BrowseCategories?objectAction=edit&id=' . $this->browseCategoryId;
 	}
 
 	protected $_browseCategory = null;
 
-	function getBrowseCategory() {
+	function getBrowseCategory() : BrowseCategory|false {
 		if ($this->_browseCategory == null) {
 			require_once ROOT_DIR . '/sys/Browse/BrowseCategory.php';
 			$this->_browseCategory = new BrowseCategory();
@@ -102,7 +109,7 @@ class BrowseCategoryGroupEntry extends DataObject {
 		return $this->_browseCategory;
 	}
 
-	public function canActiveUserChangeSelection() {
+	public function canActiveUserChangeSelection() : bool {
 		if (UserAccount::userHasPermission('Administer Selected Browse Category Groups')) {
 			//Always allow since the only way they can get here is by editing a group they have access to
 			return true;
@@ -119,7 +126,7 @@ class BrowseCategoryGroupEntry extends DataObject {
 		return false;
 	}
 
-	public function canActiveUserDelete() {
+	public function canActiveUserDelete() : bool {
 		return  UserAccount::userHasPermission('Administer All Browse Categories') ||  UserAccount::userHasPermission('Administer Library Browse Categories') || UserAccount::userHasPermission('Administer Selected Browse Category Groups');
 	}
 
@@ -157,17 +164,14 @@ class BrowseCategoryGroupEntry extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): void {
+		parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (array_key_exists('browseCategory', $jsonData)) {
 			require_once ROOT_DIR . '/sys/Browse/BrowseCategory.php';
 			$browseCategory = new BrowseCategory();
 			$browseCategory->loadFromJSON($jsonData['browseCategory'], $mappings, $overrideExisting);
 			$this->browseCategoryId = $browseCategory->id;
-
-			$result = true;
 		}
-		return $result;
 	}
 
 	public function isDismissed(): bool {
@@ -189,7 +193,7 @@ class BrowseCategoryGroupEntry extends DataObject {
 		return false;
 	}
 
-	public function isValidForDisplay($appUser = null, $checkDismiss = true) {
+	public function isValidForDisplay($appUser = null, $checkDismiss = true) : bool {
 		require_once ROOT_DIR . '/sys/Browse/BrowseCategory.php';
 		$browseCategory = new BrowseCategory();
 		$browseCategory->id = $this->browseCategoryId;

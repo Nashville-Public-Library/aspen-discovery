@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class SystemVariables extends DataObject {
@@ -11,15 +11,20 @@ class SystemVariables extends DataObject {
 	public $currencyCode;
 	public $runNightlyFullIndex;
 	public $regroupAllRecordsDuringNightlyIndex;
+	/** @noinspection PhpUnused */
 	public $processEmptyGroupedWorks;
 	public $allowableHtmlTags;
 	public $allowHtmlInMarkdownFields;
 	public $useHtmlEditorRatherThanMarkdown;
 	public $enableGrapesEditor;
+	/** @noinspection PhpUnused */
 	public $storeRecordDetailsInSolr;
 	public $storeRecordDetailsInDatabase;
+	/** @noinspection PhpUnused */
 	public $deletionCommitInterval;
+	/** @noinspection PhpUnused */
 	public $waitAfterDeleteCommit;
+	/** @noinspection PhpUnused */
 	public $indexVersion;
 	public $searchVersion;
 	public $enableNovelistSeriesIntegration;
@@ -39,12 +44,18 @@ class SystemVariables extends DataObject {
 	public $monitorAntivirus;
 	public $useOriginalCoverUrls;
 	public $lidaGitHubRepository;
+	/** @noinspection PhpUnused */
 	public $numBoundlessSettingsToProcessInParallel;
 	public $disable_user_agent_logging;
 	public $logFrequentCrons;
 
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		require_once ROOT_DIR . '/services/Admin/CronRunner.php';
 		$frequentJobs = Admin_CronRunner::getFrequentCronJobs();
 
@@ -398,10 +409,11 @@ class SystemVariables extends DataObject {
 			unset($objectStructure['indexingSection']['properties']['numBoundlessSettingsToProcessInParallel']);
 		}
 
-		return $objectStructure;
+		self::$_objectStructure[$context] = $objectStructure;
+		return self::$_objectStructure[$context];
 	}
 
-	public static function forceNightlyIndex() {
+	public static function forceNightlyIndex() : void {
 		$variables = new SystemVariables();
 		if ($variables->find(true)) {
 			if ($variables->runNightlyFullIndex == 0) {
@@ -411,8 +423,7 @@ class SystemVariables extends DataObject {
 		}
 	}
 
-	public static function forceRegrouping(): void
-	{
+	public static function forceRegrouping(): void {
 		$variables = new SystemVariables();
 		if ($variables->find(true)) {
 			if ($variables->regroupAllRecordsDuringNightlyIndex == 0) {
@@ -428,7 +439,7 @@ class SystemVariables extends DataObject {
 	/**
 	 * @return SystemVariables|false
 	 */
-	public static function getSystemVariables() {
+	public static function getSystemVariables() : SystemVariables|bool {
 		if (SystemVariables::$_systemVariables == null) {
 			SystemVariables::$_systemVariables = new SystemVariables();
 			if (!SystemVariables::$_systemVariables->find(true)) {
@@ -438,7 +449,7 @@ class SystemVariables extends DataObject {
 		return SystemVariables::$_systemVariables;
 	}
 
-	public function getCurrencySymbol() {
+	public function getCurrencySymbol() : string {
 		$currencyCode = 'USD';
 		$systemVariables = SystemVariables::getSystemVariables();
 		if (!empty($systemVariables->currencyCode)) {
@@ -452,11 +463,13 @@ class SystemVariables extends DataObject {
 			$currencySymbol = '$';
 		} elseif ($currencyCode == 'GBP') {
 			$currencySymbol = '£';
+		} else {
+			$currencySymbol = '';
 		}
 		return $currencySymbol;
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if ($this->trackIpAddresses == 0) {
 			//Delete all previously stored usage stats.
 			$usageByIP = new UsageByIPAddress();

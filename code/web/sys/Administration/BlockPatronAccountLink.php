@@ -1,6 +1,4 @@
-<?php
-
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class BlockPatronAccountLink extends DataObject {
 
@@ -22,10 +20,10 @@ class BlockPatronAccountLink extends DataObject {
 	 * Override the fetch functionality to fetch Account BarCodes
 	 *
 	 * @param bool $includeBarCodes short-circuit the fetching of barcodes when not needed.
-	 * @return bool
+	 * @return bool|DataObject|null
 	 * @see DB/DB_DataObject::fetch()
 	 */
-	function fetch($includeBarCodes = true): bool|DataObject|null {
+	function fetch(bool $includeBarCodes = true): bool|DataObject|null {
 		$return = parent::fetch();
 		if (!is_null($return) & $includeBarCodes) {
 			// Default values (clear out any previous values
@@ -51,7 +49,7 @@ class BlockPatronAccountLink extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->getAccountIds();
 		if (!$this->primaryAccountId) {
 			$this->setLastError("Could not find a user for the blocked barcode that was provided");
@@ -69,7 +67,7 @@ class BlockPatronAccountLink extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->getAccountIds();
 		if (!$this->primaryAccountId) {
 			$this->setLastError("Could not find a user for the blocked barcode that was provided");
@@ -82,7 +80,7 @@ class BlockPatronAccountLink extends DataObject {
 		return parent::insert();
 	}
 
-	private function getAccountIds() {
+	private function getAccountIds() : void {
 		// Get Account Ids for the barcodes
 		if ($this->_primaryAccountBarCode) {
 			$user = new User();
@@ -100,8 +98,12 @@ class BlockPatronAccountLink extends DataObject {
 		}
 	}
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			[
 				'property' => 'id',
 				'type' => 'hidden',
@@ -141,6 +143,9 @@ class BlockPatronAccountLink extends DataObject {
 				'storeDb' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function okToExport(array $selectedFilters): bool {

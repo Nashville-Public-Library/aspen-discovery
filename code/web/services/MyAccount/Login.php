@@ -72,7 +72,7 @@ class MyAccount_Login extends Action {
 		$interface->assign('enableSelfRegistration', $library->enableSelfRegistration);
 		$interface->assign('selfRegistrationUrl', $library->selfRegistrationUrl);
 		$interface->assign('checkRememberMe', 0);
-		if ($library->defaultRememberMe && $locationSingleton->getOpacStatus() == false) {
+		if ($library->defaultRememberMe && !$locationSingleton->getOpacStatus()) {
 			$interface->assign('checkRememberMe', 1);
 		}
 		$interface->assign('usernameLabel', $library->loginFormUsernameLabel ? $library->loginFormUsernameLabel : 'Your Name');

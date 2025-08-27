@@ -8,7 +8,12 @@ class LibraryRecordToInclude extends RecordToInclude {
 	public $__displayNameColumn = 'location';
 	public $libraryId;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
 		$structure = parent::getObjectStructure($context);
@@ -20,6 +25,7 @@ class LibraryRecordToInclude extends RecordToInclude {
 			'description' => 'The id of a library',
 		];
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

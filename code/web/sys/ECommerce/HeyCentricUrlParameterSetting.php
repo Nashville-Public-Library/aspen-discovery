@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/ECommerce/HeyCentricUrlParameter.php'; 
 
 class HeyCentricUrlParameterSetting extends DataObject {
@@ -11,7 +11,11 @@ class HeyCentricUrlParameterSetting extends DataObject {
 	public $includeInHash;
 	public $kohaAdditionalField;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		global $library;
 		$accountProfile = $library->getAccountProfile();
 		$catalogDriverName = trim($accountProfile->driver);
@@ -67,7 +71,7 @@ class HeyCentricUrlParameterSetting extends DataObject {
 						'values' => $additionalFieldsWithDefault,
 						'hideInLists' => false,
 					],
-				]				
+				]
 			];
 			
 			if ($additionalFieldsWithDefault === ['none' => 'none']) {
@@ -75,7 +79,8 @@ class HeyCentricUrlParameterSetting extends DataObject {
 			}
 			$structure[] = $propertyStructure;
 		}
-		
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

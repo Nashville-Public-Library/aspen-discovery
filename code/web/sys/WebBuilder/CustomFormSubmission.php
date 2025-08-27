@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/WebBuilder/CustomFormSubmissionSelection.php';
 
@@ -18,7 +18,11 @@ class CustomFormSubmission extends DataObject {
 		];
 	}
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -74,7 +78,9 @@ class CustomFormSubmission extends DataObject {
 				}
 			}
 		}
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -82,7 +88,7 @@ class CustomFormSubmission extends DataObject {
 			return $this->_data[$name] ?? null;
 		} elseif ($name == 'libraryName') {
 			$library = new Library();
-			$library->id = $this->libraryId;
+			$library->libraryId = $this->libraryId;
 			if ($library->find(true)) {
 				$this->_data[$name] = $library->displayName;
 			}
@@ -96,7 +102,7 @@ class CustomFormSubmission extends DataObject {
 			}
 			$user->__destruct();
 			return $this->_data[$name] ?? null;
-		} elseif (substr($name, 0, 6) == 'field_') {
+		} elseif (str_starts_with($name, 'field_')) {
 			if (!array_key_exists($name, $this->_data)) {
 				$fieldId = str_replace('field_', '', $name);
 				$fieldSelection = new CustomFormSubmissionSelection();
@@ -146,8 +152,8 @@ class CustomFormSubmission extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
-		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting');
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
+		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
 		if (isset($jsonData['library'])) {
 			$allLibraries = Library::getLibraryListAsObjects(false);
@@ -171,38 +177,4 @@ class CustomFormSubmission extends DataObject {
 			}
 		}
 	}
-
-    public function setAdditionalFieldsToExport($structure) {
-        $submissionField = new CustomFormField();
-        $submissionField->formId = $this->formId;
-        $submissionField->find();
-        $fieldsLabels = [];
-        while($submissionField->fetch()){
-            error_log("LGM FIELD : " . print_r($submissionField,true));
-            $label = $submissionField->label;
-            $count = array_push($fieldsLabels,$label);
-        }
-        $submissionSelection = new CustomFormSubmissionSelection();
-        $submissionSelection->formSubmissionId = $this->id;
-        $submissionSelection->find();
-        $fieldsContents = [];
-        while($submissionSelection->fetch()){
-            $fieldsContents = $fieldsLabels + $submissionSelection->formFieldContent;
-        }
-
-        $structureForCSV = [];
-        for($i = 0;$i <= $count;$i++){
-            $structureForCSV = $structure;
-            $structureForCSV = $structureForCSV +
-                ["$fieldsLabels[$i]" => [
-                'property' => "$fieldsLabels[$i]",
-                'type' => 'label',
-                'label' => "$fieldsLabels[$i]",
-                'description' => 'The name of the field',
-                ],
-                    ];
-        }
-
-        return $structureForCSV;
-    }
 }

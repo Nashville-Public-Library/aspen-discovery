@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class DonationEarmark extends DataObject {
 	public $__table = 'donations_earmark';
@@ -9,7 +8,11 @@ class DonationEarmark extends DataObject {
 	public $weight;
 	public $label;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -30,16 +33,18 @@ class DonationEarmark extends DataObject {
 				'description' => 'The sort order',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	static function getDefaults($donationSettingId) {
+	static function getDefaults($donationSettingId) : array {
 		$defaultEarmarksToDisplay = [];
 
 		$defaultEarmark = new DonationEarmark();
 		$defaultEarmark->donationSettingId = $donationSettingId;
 		$defaultEarmark->label = "Where it's needed most";
-		$defaultEarmark->weight = count($defaultEarmarksToDisplay) + 1;
+		$defaultEarmark->weight = 1;
 		$defaultEarmark->insert();
 		$defaultEarmarksToDisplay[] = $defaultEarmark;
 

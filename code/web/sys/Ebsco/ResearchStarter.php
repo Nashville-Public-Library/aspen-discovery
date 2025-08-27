@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/RecordDrivers/EbscoRecordDriver.php';
 
@@ -9,7 +9,7 @@ class ResearchStarter extends DataObject {
 	public $title;
 	private $_recordDriver;
 
-	function setRecordDriver(EbscoRecordDriver $recordDriver) {
+	function setRecordDriver(EbscoRecordDriver $recordDriver) : void {
 		$this->_recordDriver = $recordDriver;
 		//Get the appropriate record
 		$this->ebscoId = $this->_recordDriver->getUniqueID();
@@ -23,7 +23,8 @@ class ResearchStarter extends DataObject {
 		}
 	}
 
-	function getDisplayHtml() {
+	/** @noinspection PhpUnused */
+	function getDisplayHtml() : string {
 		global $interface;
 		$interface->assign('id', $this->id);
 		$interface->assign('title', $this->_recordDriver->getTitle());
@@ -34,8 +35,8 @@ class ResearchStarter extends DataObject {
 		return $interface->fetch('EBSCO/researchStarter.tpl');
 	}
 
-	function isHidden() {
-		if (UserAccount::isLoggedIn() == false) {
+	function isHidden() : bool {
+		if (!UserAccount::isLoggedIn()) {
 			return false;
 		} else {
 			//Check to see if the active user hid this

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 /**
  * Class TranslationTerm
@@ -29,7 +29,7 @@ class TranslationTerm extends DataObject {
 		];
 	}
 
-	public function getDefaultText() {
+	public function getDefaultText() : string {
 		$defaultText = '';
 		$translation = new Translation();
 		$translation->termId = $this->id;

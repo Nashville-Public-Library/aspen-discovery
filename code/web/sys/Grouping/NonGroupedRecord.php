@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class NonGroupedRecord extends DataObject {
 	public $__table = 'nongrouped_records';
@@ -7,7 +7,12 @@ class NonGroupedRecord extends DataObject {
 	public $recordId;
 	public $notes;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		global $indexingProfiles;
 		global $sideLoadSettings;
 		$availableSources = [];
@@ -23,7 +28,7 @@ class NonGroupedRecord extends DataObject {
 		$availableSources['overdrive'] = 'Overdrive';
 		$availableSources['palace_project'] = 'Palace Project';
 
-		return [
+		$structure =  [
 			[
 				'property' => 'id',
 				'type' => 'label',
@@ -62,6 +67,9 @@ class NonGroupedRecord extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 }

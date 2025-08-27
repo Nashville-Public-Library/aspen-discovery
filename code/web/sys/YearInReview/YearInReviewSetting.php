@@ -25,10 +25,14 @@ class YearInReviewSetting extends DataObject {
 		];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All System Messages'));
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -102,6 +106,9 @@ class YearInReviewSetting extends DataObject {
 				'values' => $libraryList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -138,7 +145,7 @@ class YearInReviewSetting extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->__set('endDate', strtotime($this->year + 1  . '-02-01'));
 		$ret = parent::update();
 		if ($ret !== FALSE) {
@@ -148,7 +155,7 @@ class YearInReviewSetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->__set('endDate', strtotime($this->year + 1  . '-02-01'));
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
@@ -158,7 +165,7 @@ class YearInReviewSetting extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$libraryYearInReview = new LibraryYearInReview();

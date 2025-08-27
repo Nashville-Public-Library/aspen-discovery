@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class UserEventsRegistrations extends DataObject {
 	public $__table = 'user_events_registrations';
@@ -8,6 +7,7 @@ class UserEventsRegistrations extends DataObject {
 	public $userId;
 	public $barcode;
 	public $sourceId;
+	/** @noinspection PhpUnused */
 	public $waitlist;
 
 	public function getUniquenessFields(): array {

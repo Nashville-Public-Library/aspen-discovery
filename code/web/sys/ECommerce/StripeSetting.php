@@ -1,17 +1,22 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class StripeSetting extends DataObject {
 	public $__table = 'stripe_settings';
 	public $id;
 	public $name;
+	/** @noinspection PhpUnused */
 	public $forceDebugLog;
 	public $stripePublicKey;
 	public $stripeSecretKey;
 
 	private $_libraries;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
 		$structure = [
@@ -68,7 +73,9 @@ class StripeSetting extends DataObject {
 		if (!UserAccount::userHasPermission('Library eCommerce Options')) {
 			unset($structure['libraries']);
 		}
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -96,7 +103,7 @@ class StripeSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -104,7 +111,7 @@ class StripeSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -112,7 +119,7 @@ class StripeSetting extends DataObject {
 		return $ret;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -141,7 +148,7 @@ class StripeSetting extends DataObject {
 		}
 	}
 
-	private function createPaymentIntent($patron, $paymentAmount, $paymentMethodId) {
+	private function createPaymentIntent($paymentAmount, $paymentMethodId) {
 		$baseUrl = 'https://api.stripe.com';
 		require_once ROOT_DIR . '/sys/CurlWrapper.php';
 		$paymentIntentSetup = new CurlWrapper();
@@ -170,16 +177,16 @@ class StripeSetting extends DataObject {
 	}
 
 	/*
-	 * @return array|bool
+	 * @return array
 	 */
-	public function submitTransaction($patron, $payment, $paymentMethodId, $transactionType): mixed {
+	public function submitTransaction($payment, $paymentMethodId, $transactionType): array {
 		$result = ['success' => false];
 
 		$paymentAmount = $payment->totalPaid;
 		$paymentAmount = $paymentAmount * 100;
 		$paymentAmount = (int)$paymentAmount;
 
-		$paymentIntent = $this->createPaymentIntent($patron, $paymentAmount, $paymentMethodId);
+		$paymentIntent = $this->createPaymentIntent($paymentAmount, $paymentMethodId);
 		$paymentIntentId = $paymentIntent['id'];
 
 		$paymentRequest = new CurlWrapper();
@@ -248,11 +255,7 @@ class StripeSetting extends DataObject {
 				}
 			}
 		} else {
-			if(isset($paymentResponse['error']['message']['default'])) {
-				$message = $paymentResponse['error']['message']['default'];
-			} else {
-				$message = $paymentResponse['error']['message'];
-			}
+			$message = $paymentResponse['error']['message']['default'] ?? $paymentResponse['error']['message'];
 			$error = $paymentResponse['error']['status'] . ': ' . $message;
 			$payment->error = 1;
 			$payment->message = $error;

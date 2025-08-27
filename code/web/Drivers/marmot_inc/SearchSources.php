@@ -274,19 +274,6 @@ class SearchSources {
 
 			if (array_key_exists('Web Indexer', $enabledModules)) {
 				require_once ROOT_DIR . '/sys/WebsiteIndexing/WebsiteIndexSetting.php';
-				$websiteSetting = new WebsiteIndexSetting();
-				$websiteSetting->find();
-				//TODO: Need to deal with searching different collections
-				while ($websiteSetting->fetch()) {
-					if ($websiteSetting->isValidForSearching()) {
-						$searchOptions['websites'] = [
-							'name' => 'Library Website',
-							'description' => 'Library Website',
-							'catalogType' => 'websites',
-							'hasAdvancedSearch' => false,
-						];
-					}
-				}
 				//Local search, activate if we have at least one page
 				if ($library->enableWebBuilder) {
 					$searchOptions['websites'] = [
@@ -295,6 +282,23 @@ class SearchSources {
 						'catalogType' => 'websites',
 						'hasAdvancedSearch' => false,
 					];
+				} else {
+					//We may still show website searching if there are indexed websites
+					$websiteSetting = new WebsiteIndexSetting();
+					$websiteSetting->find();
+					//TODO: Need to deal with searching different collections
+					while ($websiteSetting->fetch()) {
+						if ($websiteSetting->isValidForSearching()) {
+							$searchOptions['websites'] = [
+								'name' => 'Library Website',
+								'description' => 'Library Website',
+								'catalogType' => 'websites',
+								'hasAdvancedSearch' => false,
+							];
+							//We only need the first one
+							break;
+						}
+					}
 				}
 			}
 

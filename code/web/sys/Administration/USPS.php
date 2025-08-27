@@ -1,6 +1,4 @@
-<?php
-
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class USPS extends DataObject {
 	public $__table = 'usps_settings';
@@ -15,8 +13,12 @@ class USPS extends DataObject {
 		return ['clientSecret'];
 	}
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -37,6 +39,9 @@ class USPS extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/** @var null|USPS */
@@ -45,7 +50,7 @@ class USPS extends DataObject {
 	/**
 	 * @return USPS|false
 	 */
-	public static function getUSPSInfo() {
+	public static function getUSPSInfo() : USPS|false {
 		if (USPS::$_USPS == null) {
 			USPS::$_USPS = new USPS();
 			if (!USPS::$_USPS->find(true)) {

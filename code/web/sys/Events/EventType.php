@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/EventFieldSet.php';
 require_once ROOT_DIR . '/sys/Events/EventTypeLibrary.php';
 require_once ROOT_DIR . '/sys/Events/EventTypeLocation.php';
@@ -22,7 +21,11 @@ class EventType extends DataObject {
 	public $_libraries;
 	public $_locations;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$eventSets = EventFieldSet::getEventFieldSetList();
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
@@ -123,10 +126,12 @@ class EventType extends DataObject {
 				'description' => 'An archived event type will no longer show up as an option for events but can be restored later',
 			]
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -135,7 +140,7 @@ class EventType extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -144,7 +149,7 @@ class EventType extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$event = new Event();
 		$event->eventTypeId = $this->id;
 		$event->deleted = "0";
@@ -196,15 +201,15 @@ class EventType extends DataObject {
 		}
 	}
 
-	public function setLibraries($value) {
+	public function setLibraries($value) : void {
 		$this->_libraries = $value;
 	}
 
-	public function setLocations($value) {
+	public function setLocations($value) : void {
 		$this->_locations = $value;
 	}
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new EventTypeLibrary();
@@ -217,7 +222,7 @@ class EventType extends DataObject {
 		return $this->_libraries;
 	}
 
-	public function getLocations() {
+	public function getLocations() : ?array {
 		if (!isset($this->_locations) && $this->id) {
 			$this->_locations = [];
 			$location = new EventTypeLocation();
@@ -230,7 +235,7 @@ class EventType extends DataObject {
 		return $this->_locations;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -244,7 +249,7 @@ class EventType extends DataObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset($this->_locations) && is_array($this->_locations)) {
 			$this->clearLocations();
 
@@ -259,17 +264,17 @@ class EventType extends DataObject {
 	}
 
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Unset existing library associations
 		$eventTypeLibrary = new EventTypeLibrary();
 		$eventTypeLibrary->eventTypeId= $this->id;
 		$eventTypeLibrary->find();
 		while ($eventTypeLibrary->fetch()){
-			$eventTypeLibrary->delete(true);;
+			$eventTypeLibrary->delete(true);
 		}
 	}
 
-	private function clearLocations() {
+	private function clearLocations() : void {
 		//Unset existing library associations
 		$eventTypeLocation = new EventTypeLocation();
 		$eventTypeLocation->eventTypeId= $this->id;
@@ -343,7 +348,7 @@ class EventType extends DataObject {
 
 	}
 
-	public function getFieldSetFields() {
+	public function getFieldSetFields() : array {
 		$fieldSet = new EventFieldSet();
 		if ($this->eventFieldSetId) {
 			$fieldSet->id = $this->eventFieldSetId;

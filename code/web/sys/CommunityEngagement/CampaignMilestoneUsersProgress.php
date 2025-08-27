@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
+
 class CampaignMilestoneUsersProgress extends DataObject
 {
 	public $__table = 'ce_campaign_milestone_users_progress';
@@ -10,8 +11,8 @@ class CampaignMilestoneUsersProgress extends DataObject
 	public $rewardGiven;
 	public $milestoneCompleteEmailSent;
 
-	public static function getProgressByMilestoneId($milestoneId, $campaignId, $userId) {
-		$milestoneProgress = new Self();
+	public static function getProgressByMilestoneId($milestoneId, $campaignId, $userId) : int {
+		$milestoneProgress = new CampaignMilestoneUsersProgress();
 
 		$milestoneProgress->whereAdd('ce_milestone_id = ' . intval($milestoneId));
 		$milestoneProgress->whereAdd('ce_campaign_id = ' . intval($campaignId));

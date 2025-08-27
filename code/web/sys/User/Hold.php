@@ -170,12 +170,12 @@ class Hold extends CircEntry {
 		}
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->performPreSaveChecks();
 		return parent::insert();
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->performPreSaveChecks();
 		return parent::update();
 	}

@@ -601,7 +601,6 @@ class SirsiDynixROA extends HorizonAPI {
 				'resource' => '/policy/userProfile',
 				'key' => $selfRegistrationForm->selfRegistrationUserProfile,
 			];
-			//$formFields = (new SelfRegistrationFormValues)->getFormFieldsInOrder($library->selfRegistrationFormId);
 
 			if ($formFields != null) {
 				foreach ($formFields as $fieldObj){

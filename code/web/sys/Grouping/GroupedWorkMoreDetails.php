@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class GroupedWorkMoreDetails extends DataObject {
 	public $__table = 'grouped_work_more_details';
@@ -16,10 +16,15 @@ class GroupedWorkMoreDetails extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		require_once ROOT_DIR . '/RecordDrivers/RecordInterface.php';
 		$validSources = RecordInterface::getValidMoreDetailsSources();
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -54,5 +59,8 @@ class GroupedWorkMoreDetails extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }
