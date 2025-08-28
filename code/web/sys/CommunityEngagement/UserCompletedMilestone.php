@@ -1,15 +1,21 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class UserCompletedMilestone extends DataObject {
 	public $__table = 'ce_user_completed_milestones';
 	public $id;
 	public $userId;
+	/** @noinspection PhpUnused */
 	public $milestoneId;
 	public $campaignId;
+	/** @noinspection PhpUnused */
 	public $completedAt;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure =  [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -41,10 +47,13 @@ class UserCompletedMilestone extends DataObject {
 				'description' => 'The Date of Enrollment',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	  
 	}
 
-	public static function getCompletedMilestones($userId, $campaignId) {
+	public static function getCompletedMilestones($userId, $campaignId) : array {
 		$completedMilestone = new UserCompletedMilestone();
 		$completedMilestone->userId = $userId;
 		$completedMilestone->campaignId = $campaignId;

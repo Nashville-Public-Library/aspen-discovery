@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class DonationReceipt extends DataObject {
 	public $__table = 'donation_receipt';   // table name
@@ -8,15 +7,19 @@ class DonationReceipt extends DataObject {
 	public $id;
 	public $description;
 	public $isDefault;
+	/** @noinspection PhpUnused */
 	public $sendEmailToPatron;
 	public $emailTemplate;
 	public $isOpen;
 	public $isPatronCancel;
 	public $libraryId;
 
-	static function getObjectStructure($context = ''): array {
-
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -64,6 +67,9 @@ class DonationReceipt extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 }

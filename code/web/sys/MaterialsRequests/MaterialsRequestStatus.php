@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class MaterialsRequestStatus extends DataObject {
 	public $__table = 'materials_request_status';   // table name
@@ -42,8 +41,12 @@ class MaterialsRequestStatus extends DataObject {
 		];
 	}
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = [];
 		$library = new Library();
 		$library->orderBy('displayName');
@@ -60,7 +63,7 @@ class MaterialsRequestStatus extends DataObject {
 			$libraryList[$library->libraryId] = $library->displayName;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -146,6 +149,9 @@ class MaterialsRequestStatus extends DataObject {
 				'description' => 'The id of a library',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function okToExport(array $selectedFilters): bool {
@@ -174,8 +180,8 @@ class MaterialsRequestStatus extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
-		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting');
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
+		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
 		if (isset($jsonData['library'])) {
 			$allLibraries = Library::getLibraryListAsObjects(false);

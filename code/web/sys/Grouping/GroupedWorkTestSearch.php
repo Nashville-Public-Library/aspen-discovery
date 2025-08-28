@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class GroupedWorkTestSearch extends DataObject {
 	public $__table = 'grouped_work_test_search';
@@ -18,10 +18,15 @@ class GroupedWorkTestSearch extends DataObject {
 		];
 	}
 
-	public static function getObjectStructure($context = '') {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$searchObject = SearchObjectFactory::initSearchObject();
 		$searchIndexes = $searchObject->getSearchIndexes();
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -84,9 +89,12 @@ class GroupedWorkTestSearch extends DataObject {
 				'readOnly' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function runTest() {
+	public function runTest() : void {
 		$this->status = 1;
 		$this->notes = '';
 		$this->update();
@@ -100,7 +108,7 @@ class GroupedWorkTestSearch extends DataObject {
 			$searchObject->setFieldsToReturn('id,display_title');
 			$searchObject->disableSpelling();
 			$searchObject->setPrimarySearch(false);
-			$result = $searchObject->processSearch(true, false);
+			$result = $searchObject->processSearch(true);
 			$this->notes .= $searchTerm . ': ';
 			if ($result == null) {
 				$this->status = '3';
@@ -144,7 +152,7 @@ class GroupedWorkTestSearch extends DataObject {
 		$this->update();
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if (!empty($this->_changedFields) && (in_array('searchIndex', $this->_changedFields) || in_array('searchTerm', $this->_changedFields) || in_array('expectedGroupedWorks', $this->_changedFields) || in_array('unexpectedGroupedWorks', $this->_changedFields))) {
 			$this->status = 0;
 			$this->notes = '';

@@ -1800,7 +1800,13 @@ class MarcRecordDriver extends GroupedWorkSubDriver {
 					$isbnFields = $this->getMarcRecord()->getFields('020');
 					foreach ($isbnFields as $isbnField) {
 						if ($isbnField->getSubfield('a') != null) {
-							$isbns[] = $isbnField->getSubfield('a')->getData();
+							$originalIsbn = $isbnField->getSubfield('a')->getData();
+							$isbnSubfieldQ = $isbnField->getSubfield('q');
+							if ($isbnSubfieldQ != null) {
+								$isbns[] = $originalIsbn . ' ' . $isbnSubfieldQ->getData();
+							}else{
+								$isbns[] = $originalIsbn;
+							}
 						}
 					}
 				}

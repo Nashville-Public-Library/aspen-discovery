@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/WebBuilder/PortalRow.php';
 require_once ROOT_DIR . '/sys/WebBuilder/LibraryPortalPage.php';
 require_once ROOT_DIR . '/sys/WebBuilder/WebBuilderAudience.php';
@@ -34,14 +34,19 @@ class PortalPage extends DB_LibraryLinkedObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryListWithWebBuilderStatus(!UserAccount::userHasPermission('Administer All Custom Pages'));
 		$audiencesList = WebBuilderAudience::getAudiences();
 		$categoriesList = WebBuilderCategory::getCategories();
 		$patronTypeList = PType::getPatronTypeList();
 
 		$portalRowStructure = PortalRow::getObjectStructure($context);
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -140,6 +145,9 @@ class PortalPage extends DB_LibraryLinkedObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -179,7 +187,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		//Updates to properly update settings based on the ILS
 		$this->lastUpdate = time();
 		$ret = parent::update();
@@ -199,7 +207,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->lastUpdate = time();
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
@@ -212,15 +220,15 @@ class PortalPage extends DB_LibraryLinkedObject {
 		return $ret;
 	}
 
-	public function saveRows() {
+	public function saveRows() : void {
 		if (isset ($this->_rows) && is_array($this->_rows)) {
 			$this->saveOneToManyOptions($this->_rows, 'portalPageId');
 			unset($this->_rows);
 		}
 	}
 
-	/** @return PortalRow[] */
-	public function getRows() {
+	/** @return ?PortalRow[] */
+	public function getRows() : ?array {
 		if (!isset($this->_rows) && $this->id) {
 			$this->_rows = [];
 			$obj = new PortalRow();
@@ -234,7 +242,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		return $this->_rows;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && $hardDelete && !empty($this->id)) {
 			$this->clearLibraries();
@@ -263,7 +271,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		return $this->_libraries;
 	}
 
-	public function getAudiences() {
+	public function getAudiences() : ?array {
 		if (!isset($this->_audiences) && $this->id) {
 			$this->_audiences = [];
 			$audienceLink = new PortalPageAudience();
@@ -276,7 +284,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		return $this->_audiences;
 	}
 
-	public function getCategories() {
+	public function getCategories() : ?array {
 		if (!isset($this->_categories) && $this->id) {
 			$this->_categories = [];
 			$categoryLink = new PortalPageCategory();
@@ -289,7 +297,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		return $this->_categories;
 	}
 
-	public function getAccess() {
+	public function getAccess() : ?array {
 		if (!isset($this->_allowAccess) && $this->id) {
 			$this->_allowAccess = [];
 			$patronTypeLink = new PortalPageAccess();
@@ -302,7 +310,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		return $this->_allowAccess;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -317,7 +325,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveAudiences() {
+	public function saveAudiences() : void {
 		if (isset($this->_audiences) && is_array($this->_audiences)) {
 			$this->clearAudiences();
 
@@ -332,7 +340,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveCategories() {
+	public function saveCategories() : void {
 		if (isset($this->_categories) && is_array($this->_categories)) {
 			$this->clearCategories();
 
@@ -347,7 +355,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function saveAccess() {
+	public function saveAccess() : void {
 		if (isset($this->_allowAccess) && is_array($this->_allowAccess)) {
 			$this->clearAccess();
 
@@ -362,32 +370,32 @@ class PortalPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryLink = new LibraryPortalPage();
 		$libraryLink->portalPageId = $this->id;
-		return $libraryLink->delete(true);
+		$libraryLink->delete(true);
 	}
 
-	private function clearAudiences() {
+	private function clearAudiences() : void {
 		//Delete links to the libraries
 		$link = new PortalPageAudience();
 		$link->portalPageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	private function clearCategories() {
+	private function clearCategories() : void {
 		//Delete links to the libraries
 		$link = new PortalPageCategory();
 		$link->portalPageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	private function clearAccess() {
+	private function clearAccess() : void {
 		//Delete links to the patron types
 		$link = new PortalPageAccess();
 		$link->portalPageId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
 	public function getLinksForJSON(): array {
@@ -426,14 +434,14 @@ class PortalPage extends DB_LibraryLinkedObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting);
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
-		if (array_key_exists('audiences', $jsonLinks)) {
+		if (array_key_exists('audiences', $jsonData)) {
 			$audiences = [];
 			$audiencesList = WebBuilderAudience::getAudiences();
 			$audiencesList = array_flip($audiencesList);
-			foreach ($jsonLinks['audiences'] as $audience) {
+			foreach ($jsonData['audiences'] as $audience) {
 				if (array_key_exists($audience, $audiencesList)) {
 					$audiences[] = $audiencesList[$audience];
 				}
@@ -441,11 +449,11 @@ class PortalPage extends DB_LibraryLinkedObject {
 			$this->_audiences = $audiences;
 			$result = true;
 		}
-		if (array_key_exists('categories', $jsonLinks)) {
+		if (array_key_exists('categories', $jsonData)) {
 			$categories = [];
 			$categoriesList = WebBuilderCategory::getCategories();
 			$categoriesList = array_flip($categoriesList);
-			foreach ($jsonLinks['categories'] as $category) {
+			foreach ($jsonData['categories'] as $category) {
 				if (array_key_exists($category, $categoriesList)) {
 					$categories[] = $categoriesList[$category];
 				}
@@ -453,11 +461,11 @@ class PortalPage extends DB_LibraryLinkedObject {
 			$this->_categories = $categories;
 			$result = true;
 		}
-		if (array_key_exists('allowAccess', $jsonLinks)) {
+		if (array_key_exists('allowAccess', $jsonData)) {
 			$allowAccess = [];
 			$allowAccessList = PType::getPatronTypeList();
 			$allowAccessList = array_flip($allowAccessList);
-			foreach ($jsonLinks['allowAccess'] as $pType) {
+			foreach ($jsonData['allowAccess'] as $pType) {
 				if (array_key_exists($pType, $allowAccessList)) {
 					$allowAccess[] = $allowAccessList[$pType];
 				}
@@ -465,9 +473,9 @@ class PortalPage extends DB_LibraryLinkedObject {
 			$this->_allowAccess = $allowAccess;
 			$result = true;
 		}
-		if (array_key_exists('rows', $jsonLinks)) {
+		if (array_key_exists('rows', $jsonData)) {
 			$rows = [];
-			foreach ($jsonLinks['rows'] as $row) {
+			foreach ($jsonData['rows'] as $row) {
 				$rowObj = new PortalRow();
 				$rowObj->portalPageId = $this->id;
 				unset($row['portalPageId']);
@@ -579,13 +587,13 @@ class PortalPage extends DB_LibraryLinkedObject {
 		}
 	}
 
-	public function loadCopyableSubObjects() {
+	public function loadCopyableSubObjects() : void {
 		$this->getCategories();
 		$this->getAudiences();
 		$this->getRows();
 		$index = -1;
 		foreach ($this->_rows as $subObject) {
-			$cells = $subObject->getCells(false);
+			$cells = $subObject->getCells();
 			$subObject->unsetUniquenessFields();
 
 			$subObject->id = $index;
@@ -599,7 +607,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 		$this->getAccess();
 	}
 
-	public function finishCopy($sourceId) {
+	public function finishCopy($sourceId) : void {
 		$sourcePage = new PortalPage();
 		$sourcePage->id = $sourceId;
 		if ($sourcePage->find(true)) {
@@ -612,7 +620,7 @@ class PortalPage extends DB_LibraryLinkedObject {
 					$newRow->portalPageId = $this->id;
 					$newRow->insert('finishCopy');
 
-					$sourceCells = $sourceRow->getCells(false);
+					$sourceCells = $sourceRow->getCells();
 					foreach ($sourceCells as $sourceCell) {
 						$newCell = clone $sourceCell;
 						unset ($newCell->id);

@@ -16,7 +16,12 @@ class OverDriveScope extends DataObject {
 
 
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$overdriveSettings = [];
 		$overdriveSetting = new OverDriveSetting();
 		$overdriveSetting->find();
@@ -37,7 +42,7 @@ class OverDriveScope extends DataObject {
 		unset($locationOverDriveScopeStructure['scopeId']);
 		unset($locationOverDriveScopeStructure['weight']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -102,12 +107,13 @@ class OverDriveScope extends DataObject {
 				'hideInLists' => false,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	/** @noinspection PhpUnused
-	 * @noinspection PhpUnusedParameterInspection
-	 */
-	public function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/OverDrive/Scopes?objectAction=edit&id=' . $this->id;
 	}
 
@@ -131,7 +137,7 @@ class OverDriveScope extends DataObject {
 		}
 	}
 
-	public function update($context = '') : bool|int {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -140,7 +146,7 @@ class OverDriveScope extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') : int {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();

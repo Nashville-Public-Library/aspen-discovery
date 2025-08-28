@@ -1734,6 +1734,14 @@ class CatalogConnection {
 		return $this->driver->getAllCurbsidePickups();
 	}
 
+	public function restrictValidPickupLocationsForRecordByILS(): bool {
+		return $this->driver->restrictValidPickupLocationsForRecordByILS();
+	}
+
+	public function getValidPickupLocationsForRecordFromILS(string $recordId, User $user): array {
+		return $this->driver->getValidPickupLocationsForRecordFromILS($recordId, $user);
+	}
+
 	public function isPromptForHoldNotifications(): bool {
 		return $this->driver->isPromptForHoldNotifications();
 	}

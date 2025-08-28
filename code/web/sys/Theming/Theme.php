@@ -1,5 +1,4 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class Theme extends DataObject {
 	public $__table = 'themes';
@@ -567,7 +566,12 @@ class Theme extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryThemeStructure = LibraryTheme::getObjectStructure($context);
 		unset($libraryThemeStructure['themeId']);
 		unset($libraryThemeStructure['weight']);
@@ -2490,11 +2494,12 @@ class Theme extends DataObject {
 			$objectStructure['locations']['additionalOneToManyActions'] = [];
 		}
 
-		return $objectStructure;
+		self::$_objectStructure[$context] = $objectStructure;
+		return self::$_objectStructure[$context];
 	}
 
 	/** @noinspection PhpUnused */
-	public function validateColorContrast() {
+	public function validateColorContrast() : array {
 		global $library;
 		//Setup validation return array
 		$validationResults = [
@@ -2523,7 +2528,7 @@ class Theme extends DataObject {
 
 		foreach($this as $index => $item) {
 			//Properties ending with ColorDefault are checkboxes that indicate the value from the parent should be used.
-			if(strpos($index, 'Color') != false && strpos($index, 'ColorDefault') === false) {
+			if(str_contains($index, 'Color') && !str_contains($index, 'ColorDefault')) {
 				if(is_null($item)) {
 					if($prevColors) {
 						if ($prevColors->$index) {
@@ -2710,7 +2715,7 @@ class Theme extends DataObject {
 		return $validationResults;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->__set('generatedCss', $this->generateCss());
 		$this->clearDefaultCovers();
 		$ret = parent::insert();
@@ -2721,7 +2726,7 @@ class Theme extends DataObject {
 		return $ret;
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if ($context != 'saveGeneratedCss') {
 			//No need to regenerate CSS because that is called upstream.
 			$this->generatedCss = $this->generateCss();
@@ -2794,14 +2799,14 @@ class Theme extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$this->clearLibraries();
 		$this->clearLocations();
 		$this->clearDefaultCovers();
 		return parent::delete($useWhere, $hardDelete);
 	}
 
-	public function applyDefaults() {
+	public function applyDefaults() : void {
 		require_once ROOT_DIR . '/sys/Utils/ColorUtils.php';
 		$appliedThemes = $this->getAllAppliedThemes();
 		$this->getValueForPropertyUsingDefaults('pageBackgroundColor', Theme::$defaultPageBackgroundColor, $appliedThemes);
@@ -2915,7 +2920,7 @@ class Theme extends DataObject {
 		$this->getValueForPropertyUsingDefaults('placardImageMaxHeight', Theme::$defaultPlacardImageMaxHeight, $appliedThemes);
 	}
 
-	public function getValueForPropertyUsingDefaults($propertyName, $defaultValue, $appliedThemes) {
+	public function getValueForPropertyUsingDefaults($propertyName, $defaultValue, $appliedThemes) : void {
 		foreach ($appliedThemes as $theme) {
 			$defaultPropertyName = $propertyName . 'Default';
 			if (!$theme->$defaultPropertyName) {
@@ -2929,7 +2934,7 @@ class Theme extends DataObject {
 	/**
 	 * @return string the resulting css
 	 */
-	public function generateCss($saveChanges = false) {
+	public function generateCss($saveChanges = false) : string {
 		$allAppliedThemes = $this->getAllAppliedThemes();
 		global $interface;
 		require_once ROOT_DIR . '/sys/Utils/ColorUtils.php';
@@ -3171,7 +3176,7 @@ class Theme extends DataObject {
 	/**
 	 * @return Theme[]
 	 */
-	public function getAllAppliedThemes() {
+	public function getAllAppliedThemes() : array {
 		if ($this->_allAppliedThemes == null) {
 			$allAppliedThemes = [];
 			$primaryTheme = $this;
@@ -3200,13 +3205,13 @@ class Theme extends DataObject {
 		return $this->_allAppliedThemes;
 	}
 
-	protected $_parentTheme = null;
+	protected $_parentTheme = false;
 
-	public function getParentTheme() {
-		if ($this->_parentTheme == null) {
+	public function getParentTheme() : ?Theme {
+		if ($this->_parentTheme === false) {
 			$theme = $this;
+			$this->_parentTheme = null;
 			if (strlen($theme->extendsTheme) != 0) {
-				$this->_parentTheme = null;
 				$extendsName = $theme->extendsTheme;
 				if ($extendsName != $this->themeName) {
 					$theme = new Theme();
@@ -3217,8 +3222,6 @@ class Theme extends DataObject {
 				}else{
 					$this->_parentTheme = null;
 				}
-			} else {
-				$this->_parentTheme = null;
 			}
 		}
 		return $this->_parentTheme;
@@ -3341,10 +3344,10 @@ class Theme extends DataObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			foreach($this->_locations as $obj) {
-				/** @var DataObject $obj */
+				/** @var LocationTheme $obj */
 				if($obj->_deleteOnSave) {
 					$obj->delete();
 				} else {
@@ -3412,23 +3415,23 @@ class Theme extends DataObject {
 	}
 
 	/** @noinspection PhpUnused */
-	public function setLibraries($val) {
+	public function setLibraries($val) : void {
 		$this->_libraries = $val;
 	}
 
 	/** @noinspection PhpUnused */
-	public function setLocations($val) {
+	public function setLocations($val) : void {
 		$this->_libraries = $val;
 	}
 
 	/** @noinspection PhpUnused */
-	public function clearLibraries() {
+	public function clearLibraries() : void {
 		$this->clearOneToManyOptions('LibraryTheme', 'themeId');
 		unset($this->_libraries);
 	}
 
 	/** @noinspection PhpUnused */
-	public function clearLocations() {
+	public function clearLocations() : void {
 		$this->clearOneToManyOptions('LocationTheme', 'themeId');
 		unset($this->_locations);
 	}
@@ -3469,7 +3472,7 @@ class Theme extends DataObject {
 		return $apiInfo;
 	}
 
-	public function prepareForSharingToCommunity() {
+	public function prepareForSharingToCommunity() : void {
 		parent::prepareForSharingToCommunity();
 		unset($this->logoName);
 		unset($this->_libraries);
@@ -3563,7 +3566,7 @@ class Theme extends DataObject {
 			// For each library using this theme, check if it has other themes.
 			$otherThemeCheck = new LibraryTheme();
 			$otherThemeCheck->libraryId = $libraryTheme->libraryId;
-			$otherThemeCheck->whereAdd("themeId != {$this->id}");
+			$otherThemeCheck->whereAdd("themeId != $this->id");
 			if ($otherThemeCheck->count() == 0) {
 				require_once ROOT_DIR . '/sys/LibraryLocation/Library.php';
 				$library = new Library();
@@ -3621,7 +3624,7 @@ class Theme extends DataObject {
 				$originalExtends = $this->extendsTheme;
 				$this->extendsTheme = '';
 				global $logger;
-				$logger->log("Theme {$this->themeName} was extending non-existent theme {$originalExtends}, reset to no parent.", Logger::LOG_NOTICE);
+				$logger->log("Theme $this->themeName was extending non-existent theme $originalExtends, reset to no parent.", Logger::LOG_NOTICE);
 				// No need to check for self-reference if the parent didn't exist.
 				return true;
 			}
@@ -3630,7 +3633,7 @@ class Theme extends DataObject {
 		if (!empty($this->extendsTheme) && $this->extendsTheme == $this->themeName) {
 			$this->extendsTheme = '';
 			global $logger;
-			$logger->log("Fixed self-referential theme: {$this->themeName} was extending itself.", Logger::LOG_NOTICE);
+			$logger->log("Fixed self-referential theme: $this->themeName was extending itself.", Logger::LOG_NOTICE);
 			return true;
 		}
 		return false;
@@ -3710,6 +3713,7 @@ class Theme extends DataObject {
 	 * @param Theme[] $allThemesByName an array of all themes in the system with a key of the name
 	 * @param Theme[] $existingHierarchy an array of the hierarchy that has been built so far
 	 * @return Theme[]
+	 * @noinspection PhpUnusedPrivateMethodInspection
 	 */
 	private function getThemeHierarchy(array $allThemesByName, array $existingHierarchy = []) : array {
 		if ($this->_themeHierarchy == null) {

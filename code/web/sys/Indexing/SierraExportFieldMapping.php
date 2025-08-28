@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 /**
  * Provides information for mapping fixed bib fields and variable item fields to MARC records when using the Sierra Export.
  *
@@ -38,7 +38,12 @@ class SierraExportFieldMapping extends DataObject {
 	public /** @noinspection PhpUnused */
 		$eContentExportFieldTag;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$indexingProfiles = [];
 		require_once ROOT_DIR . '/sys/Indexing/IndexingProfile.php';
 		$indexingProfile = new IndexingProfile();
@@ -47,7 +52,7 @@ class SierraExportFieldMapping extends DataObject {
 		while ($indexingProfile->fetch()) {
 			$indexingProfiles[$indexingProfile->id] = $indexingProfile->name;
 		}
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -166,5 +171,8 @@ class SierraExportFieldMapping extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

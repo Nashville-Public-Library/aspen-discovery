@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class UserListEntry extends DataObject {
 	public $__table = 'user_list_entry';     // table name
@@ -22,7 +21,7 @@ class UserListEntry extends DataObject {
 		];
 	}
 
-	function insert($context = '') : int {
+	public function insert(string $context = '') : int|bool {
 		if($this->source == "GroupedWork" && $this->title == null)
 		{
 			require_once ROOT_DIR . '/sys/Grouping/GroupedWork.php';
@@ -45,7 +44,7 @@ class UserListEntry extends DataObject {
 	 * @param string $context
 	 * @return bool|int
 	 */
-	function update($context = '') : bool|int {
+	public function update(string $context = '') : bool|int {
 		$result = parent::update();
 		global $memCache;
 		$memCache->delete('user_list_data_' . UserAccount::getActiveUserId());
@@ -55,12 +54,7 @@ class UserListEntry extends DataObject {
 		return $result;
 	}
 
-	/**
-	 * @param bool $useWhere
-	 * @param bool $hardDelete
-	 * @return int
-	 */
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$result = parent::delete($useWhere, $hardDelete);
 		global $memCache;
 		$memCache->delete('user_list_data_' . UserAccount::getActiveUserId());
@@ -81,7 +75,7 @@ class UserListEntry extends DataObject {
 		}
 	}
 
-	public function getRecordDriver() {
+	public function getRecordDriver() : ?RecordInterface {
 		if ($this->source == 'GroupedWork') {
 			require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 			$recordDriver = new GroupedWorkDriver($this->sourceId);
@@ -93,16 +87,16 @@ class UserListEntry extends DataObject {
 			require_once ROOT_DIR . '/RecordDrivers/OpenArchivesRecordDriver.php';
 			return new OpenArchivesRecordDriver($this->sourceId);
 		} elseif ($this->source == 'Events') {
-			if (preg_match('`^communico`', $this->sourceId)) {
+			if (str_starts_with($this->sourceId, 'communico')) {
 				require_once ROOT_DIR . '/RecordDrivers/CommunicoEventRecordDriver.php';
 				return new CommunicoEventRecordDriver($this->sourceId);
-			} elseif (preg_match('`^libcal`', $this->sourceId)) {
+			} elseif (str_starts_with($this->sourceId, 'libcal')) {
 				require_once ROOT_DIR . '/RecordDrivers/SpringshareLibCalEventRecordDriver.php';
 				return new SpringshareLibCalEventRecordDriver($this->sourceId);
-			} elseif (preg_match('`^lc_`', $this->sourceId)) {
+			} elseif (str_starts_with($this->sourceId, 'lc_')) {
 				require_once ROOT_DIR . '/RecordDrivers/LibraryCalendarEventRecordDriver.php';
 				return new LibraryCalendarEventRecordDriver($this->sourceId);
-			} elseif (preg_match('`^assabet`', $this->sourceId)) {
+			} elseif (str_starts_with($this->sourceId, 'assabet')) {
 				require_once ROOT_DIR . '/RecordDrivers/AssabetEventRecordDriver.php';
 				return new AssabetEventRecordDriver($this->sourceId);
 			}
@@ -129,12 +123,11 @@ class UserListEntry extends DataObject {
 		} elseif ($this->source == 'Series') {
 			require_once ROOT_DIR . '/RecordDrivers/SeriesRecordDriver.php';
 			return new SeriesRecordDriver($this->sourceId);
-		} else {
-			return null;
 		}
+		return null;
 	}
 
-	public function getNotes() {
+	public function getNotes() : ?string {
 		/** @var Library $library */
 		global $library;
 		require_once ROOT_DIR . '/sys/LocalEnrichment/BadWord.php';

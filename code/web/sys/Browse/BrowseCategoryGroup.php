@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Browse/BrowseCategoryGroupEntry.php';
 require_once ROOT_DIR . '/sys/Browse/BrowseCategoryGroupUser.php';
@@ -20,7 +20,11 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 	protected $_locations;
 	protected $_additionalEditors;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Browse Categories'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Browse Categories'));
 
@@ -31,7 +35,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		$browseCategoryUserStructure = BrowseCategoryGroupUser::getObjectStructure($context);
 		unset($browseCategoryUserStructure['browseCategoryGroupId']);
 
-		$objectStructure = [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -127,12 +131,13 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		];
 
 		if (UserAccount::userHasPermission('Administer Selected Browse Category Groups') && !(UserAccount::userHasPermission('Administer All Browse Categories') || UserAccount::userHasPermission('Administer Library Browse Categories'))) {
-			unset($objectStructure['additionalEditors']);
-			unset($objectStructure['libraries']);
-			unset($objectStructure['locations']);
+			unset($structure['additionalEditors']);
+			unset($structure['libraries']);
+			unset($structure['locations']);
 		}
 
-		return $objectStructure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**
@@ -156,7 +161,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function getAdditionalEditors() {
+	public function getAdditionalEditors() : ?array {
 		if (!isset($this->_additionalEditors) && $this->id) {
 			$this->_additionalEditors = [];
 			$browseCategoryUser = new BrowseCategoryGroupUser();
@@ -170,7 +175,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		return $this->_additionalEditors;
 	}
 
-	public function getBrowseCategories() {
+	public function getBrowseCategories() : ?array {
 		if (!isset($this->_browseCategories) && $this->id) {
 			$this->_browseCategories = [];
 			$browseCategory = new BrowseCategoryGroupEntry();
@@ -241,7 +246,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		//Updates to properly update settings based on the ILS
 		$ret = parent::update();
 		if ($ret !== FALSE) {
@@ -259,7 +264,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -270,7 +275,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function saveAdditionalEditors() {
+	public function saveAdditionalEditors() : void {
 		if (isset ($this->_additionalEditors) && is_array($this->_additionalEditors)) {
 			$uniqueUsers = [];
 			/**
@@ -290,7 +295,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveBrowseCategories() {
+	public function saveBrowseCategories() : void {
 		if (isset ($this->_browseCategories) && is_array($this->_browseCategories)) {
 			$uniqueBrowseCategories = [];
 			/**
@@ -310,7 +315,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Browse Categories'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -335,7 +340,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Browse Categories'));
 			/**
@@ -371,7 +376,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	/** @return Library[] */
+	/** @return ?Library[] */
 	public function getLibraries(): ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
@@ -385,7 +390,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		return $this->_libraries;
 	}
 
-	/** @return Location[] */
+	/** @return ?Location[] */
 	public function getLocations(): ?array {
 		if (!isset($this->_locations) && $this->id) {
 			$this->_locations = [];
@@ -399,11 +404,11 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		return $this->_locations;
 	}
 
-	public function setLibraries($val) {
+	public function setLibraries($val) : void {
 		$this->_libraries = $val;
 	}
 
-	public function setLocations($val) {
+	public function setLocations($val) : void {
 		$this->_locations = $val;
 	}
 
@@ -423,12 +428,12 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting = 'keepExisting'): bool {
-		$result = parent::loadRelatedLinksFromJSON($jsonLinks, $mappings, $overrideExisting);
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
+		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
-		if (array_key_exists('browseCategories', $jsonLinks)) {
+		if (array_key_exists('browseCategories', $jsonData)) {
 			$browseCategories = [];
-			foreach ($jsonLinks['browseCategories'] as $browseCategory) {
+			foreach ($jsonData['browseCategories'] as $browseCategory) {
 				$browseCategoryObj = new BrowseCategoryGroupEntry();
 				$browseCategoryObj->browseCategoryGroupId = $this->id;
 				$browseCategoryObj->loadFromJSON($browseCategory, $mappings, $overrideExisting);
@@ -440,7 +445,7 @@ class BrowseCategoryGroup extends DB_LibraryLocationLinkedObject {
 		return $result;
 	}
 
-	public function loadCopyableSubObjects() {
+	public function loadCopyableSubObjects() : void {
 		$this->getBrowseCategories();
 		$index = -1;
 		foreach ($this->_browseCategories as $subObject) {

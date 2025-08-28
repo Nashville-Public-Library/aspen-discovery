@@ -3,8 +3,8 @@
 require_once ROOT_DIR . '/sys/MemoryCache/CachedValue.php';
 
 class Memcache {
-	private $enableDbCache = true;
-	private $vars = [];
+	private bool $enableDbCache = true;
+	private array $vars = [];
 
 	public function __destruct() {
 		//Clear old expired memory cache entries.  This can be done VERY sporadically.
@@ -12,10 +12,10 @@ class Memcache {
 		if ($random == 1) {
 			try {
 				$cachedValue = new CachedValue();
-				$cachedValue->whereAdd(false);
+				$cachedValue->whereAdd();
 				$cachedValue->whereAdd("expirationTime <= " . time());
 				$cachedValue->delete(true);
-			} catch (Exception $e) {
+			} catch (Exception) {
 				global $logger;
 				$logger->log("Could not clear cache of old values", Logger::LOG_DEBUG);
 			}
@@ -38,7 +38,7 @@ class Memcache {
 					} else {
 						$this->vars[$name] = false;
 					}
-				} catch (Exception $e) {
+				} catch (Exception) {
 					//Table has not been created ignore
 					$this->vars[$name] = false;
 				}
@@ -49,7 +49,7 @@ class Memcache {
 		return $this->vars[$name];
 	}
 
-	public function set($name, $value, $timeout) {
+	public function set($name, $value, $timeout) : bool {
 		$this->vars[$name] = $value;
 		if ($this->enableDbCache) {
 			$valueToCache = serialize($value);
@@ -75,7 +75,7 @@ class Memcache {
 						/** @noinspection PhpUnusedLocalVariableInspection */
 						$result = $cachedValue->update();
 					}
-				} catch (Exception $e) {
+				} catch (Exception) {
 					//Table has not been created ignore
 					global $logger;
 					$logger->log("error caching data", Logger::LOG_DEBUG);
@@ -91,10 +91,9 @@ class Memcache {
 		return true;
 	}
 
-	/** @var CachedValue */
-	static $cachedValueCleaner = null;
+	static ?CachedValue $cachedValueCleaner = null;
 
-	public function delete($name) {
+	public function delete($name) : void {
 		unset($this->vars[$name]);
 		if ($this->enableDbCache) {
 			try {
@@ -105,15 +104,15 @@ class Memcache {
 				Memcache::$cachedValueCleaner->whereAdd();
 				Memcache::$cachedValueCleaner->cacheKey = $name;
 				Memcache::$cachedValueCleaner->delete(true);
-			} catch (Exception $e) {
+			} catch (Exception) {
 				//Table has not been created ignore
 			}
 		}
 	}
 
-	public function deleteStartingWith($name) {
+	public function deleteStartingWith($name) : void {
 		foreach ($this->vars as $key => $value) {
-			if (strpos($key, $name) === 0) {
+			if (str_starts_with($key, $name)) {
 				unset($this->vars[$key]);
 			}
 		}
@@ -126,7 +125,7 @@ class Memcache {
 				Memcache::$cachedValueCleaner->whereAdd();
 				Memcache::$cachedValueCleaner->whereAdd("cacheKey like '$name%'");
 				Memcache::$cachedValueCleaner->delete(true);
-			} catch (Exception $e) {
+			} catch (Exception) {
 				//Table has not been created ignore
 			}
 		}

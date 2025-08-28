@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Indexing/TranslationMapValue.php';
 
@@ -13,7 +13,12 @@ class TranslationMap extends DataObject {
 	/** @var TranslationMapValue[] */
 	private $_translationMapValues;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$indexingProfiles = [];
 		require_once ROOT_DIR . '/sys/Indexing/IndexingProfile.php';
 		$indexingProfile = new IndexingProfile();
@@ -22,7 +27,7 @@ class TranslationMap extends DataObject {
 		while ($indexingProfile->fetch()) {
 			$indexingProfiles[$indexingProfile->id] = $indexingProfile->name;
 		}
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -72,6 +77,9 @@ class TranslationMap extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -111,14 +119,12 @@ class TranslationMap extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
-		if ($ret === FALSE) {
-			return $ret;
-		} else {
+		if ($ret !== FALSE) {
 			$this->saveMapValues();
 		}
-		return true;
+		return $ret;
 	}
 
 	/**
@@ -126,20 +132,18 @@ class TranslationMap extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
-		if ($ret === FALSE) {
-			return $ret;
-		} else {
+		if ($ret !== FALSE) {
 			$this->saveMapValues();
 		}
-		return true;
+		return $ret;
 	}
 
-	public function saveMapValues() {
+	public function saveMapValues() : void {
 		if (isset ($this->_translationMapValues)) {
 			foreach ($this->_translationMapValues as $value) {
-				if ($value->_deleteOnSave == true) {
+				if ($value->_deleteOnSave) {
 					$value->delete();
 				} else {
 					if (isset($value->id) && is_numeric($value->id)) {
@@ -155,8 +159,8 @@ class TranslationMap extends DataObject {
 		}
 	}
 
-	/** @noinspection PhpUnused */
-	public function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/ILS/TranslationMaps?objectAction=edit&id=' . $this->id;
 	}
 

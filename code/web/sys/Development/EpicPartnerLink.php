@@ -1,12 +1,17 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class EpicPartnerLink extends DataObject {
 	public $__table = 'development_epic_partner_link';
 	public $id;
+	/** @noinspection PhpUnused */
 	public $partnerId;
 	public $epicId;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$epicList = [];
 		require_once ROOT_DIR . '/sys/Development/DevelopmentEpic.php';
 		$epic = new DevelopmentEpic();
@@ -28,7 +33,7 @@ class EpicPartnerLink extends DataObject {
 			$partnerList[$partner->id] = $partner->name;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -52,5 +57,8 @@ class EpicPartnerLink extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

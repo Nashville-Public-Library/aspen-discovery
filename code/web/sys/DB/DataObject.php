@@ -7,7 +7,7 @@ require_once ROOT_DIR . '/sys/Hooks/registry.php';
  * Represents a class of data that can be loaded and saved to the database.
  *
  * All properties must be public or protected to handle __get and __set properly
- * Each property that starts with __ is used to store and load data from the database (query information etc).
+ * Each property that starts with __ is used to store and load data from the database (query information etc.).
  * Each property that starts with _ is runtime data that is reset for each object
  * Each property that starts with [a-zA-Z] is a property that is saved to the database
  */
@@ -78,7 +78,7 @@ abstract class DataObject implements JsonSerializable {
 		return [];
 	}
 
-	public function unsetUniquenessFields() {
+	public function unsetUniquenessFields() : void {
 		foreach ($this->getUniquenessFields() as $field) {
 			unset($this->$field);
 		}
@@ -212,8 +212,8 @@ abstract class DataObject implements JsonSerializable {
 	 * Retrieves all objects for the current query if name and value are null
 	 * Retrieves a list of all field values if only fieldName is provided
 	 * Retrieves an associated array if both fieldName and fieldValue are provided
-	 * @param string? $fieldName
-	 * @param string? $fieldValue
+	 * @param ?string $fieldName
+	 * @param ?string $fieldValue
 	 * @param bool $lowerCaseKey - Forces the key to be lower cased
 	 * @param bool $usePrimaryKey - sets the key of the result to the primary key of the object
 	 * @return array
@@ -255,9 +255,9 @@ abstract class DataObject implements JsonSerializable {
 	}
 
 	/**
-	 * @param string[]|string $fieldsToOrder
+	 * @param null|string[]|string $fieldsToOrder
 	 */
-	public function orderBy($fieldsToOrder) {
+	public function orderBy(mixed $fieldsToOrder) : void {
 		if ($fieldsToOrder == null) {
 			$this->__orderBy = null;
 		} else {
@@ -273,9 +273,9 @@ abstract class DataObject implements JsonSerializable {
 	}
 
 	/**
-	 * @param string[]|string $fieldsToGroup
+	 * @param null|string[]|string $fieldsToGroup
 	 */
-	public function groupBy($fieldsToGroup) {
+	public function groupBy(mixed $fieldsToGroup) : void {
 		if ($fieldsToGroup == null) {
 			$this->__groupBy = null;
 		} else {
@@ -294,8 +294,8 @@ abstract class DataObject implements JsonSerializable {
 	 * @param string|bool $cond
 	 * @param string $logic
 	 */
-	public function whereAdd($cond = false, string $logic = 'AND') {
-		if ($cond == false) {
+	public function whereAdd(mixed $cond = false, string $logic = 'AND') : void {
+		if ($cond === false) {
 			$this->__where = null;
 		} else {
 			if (!empty($this->__where)) {
@@ -306,7 +306,7 @@ abstract class DataObject implements JsonSerializable {
 		}
 	}
 
-	public function whereAddIn($field, $values, $escapeValues, $logic = 'AND') {
+	public function whereAddIn($field, $values, $escapeValues, $logic = 'AND') : void {
 		if ($escapeValues) {
 			foreach ($values as $index => $value) {
 				$values[$index] = $this->escape($value);
@@ -322,9 +322,11 @@ abstract class DataObject implements JsonSerializable {
 	}
 
 	/**
+	 * @param string $context - The context of the insert operation
+	 *
 	 * @return int|bool
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		global $aspen_db;
 		if (!isset($aspen_db)) {
 			return false;
@@ -352,7 +354,7 @@ abstract class DataObject implements JsonSerializable {
 				if (in_array($name, $numericColumns)) {
 					if ($value === true) {
 						$propertyValues .= 1;
-					} elseif ($value == false) {
+					} elseif ($value === false) {
 						$propertyValues .= 0;
 					} elseif (is_numeric($value)) {
 						$propertyValues .= $value;
@@ -441,13 +443,13 @@ abstract class DataObject implements JsonSerializable {
 	}
 
 	/**
+	 * @param string $context - The context of the insert operation
 	 * @return int|bool
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$primaryKey = $this->__primaryKey;
 		if (empty($this->$primaryKey) && $this->$primaryKey !== "0") {
-			$result = $this->insert();
-			return $result;
+			return $this->insert();
 		}
 		global $aspen_db;
 		if (!isset($aspen_db)) {
@@ -478,7 +480,7 @@ abstract class DataObject implements JsonSerializable {
 				if (in_array($name, $numericColumns)) {
 					if ($value === true) {
 						$updates .= $name . ' = 1';
-					} elseif ($value == false) {
+					} elseif ($value === false) {
 						$updates .= $name . ' = 0';
 					} elseif (is_numeric($value)) {
 						$updates .= $name . ' = ' . $value;
@@ -554,15 +556,18 @@ abstract class DataObject implements JsonSerializable {
 		return $this->find(true);
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		global $aspen_db;
 		if (!isset($aspen_db)) {
 			return false;
 		}
 
 		if (!$hardDelete && $this->supportsSoftDelete()) {
+			/** @noinspection PhpUndefinedFieldInspection */
 			$this->deleted = 1;
+			/** @noinspection PhpUndefinedFieldInspection */
 			$this->dateDeleted = time();
+			/** @noinspection PhpUndefinedFieldInspection */
 			$this->deletedBy = UserAccount::getActiveUserId();
 			return $this->update();
 		}
@@ -577,7 +582,7 @@ abstract class DataObject implements JsonSerializable {
 		} else {
 			if (empty($this->$primaryKey)) {
 				AspenError::raiseError("Called Object Delete, but the primary key was not supplied.");
-				return  false;
+				return false;
 			} else {
 				$deleteQuery = 'DELETE from ' . $this->__table . ' WHERE ' . $primaryKey . ' = ' . $aspen_db->quote($this->$primaryKey);
 			}
@@ -608,7 +613,7 @@ abstract class DataObject implements JsonSerializable {
 		return $result;
 	}
 
-	public function deleteAll() {
+	public function deleteAll() : bool|int {
 		global $aspen_db;
 		if (!isset($aspen_db)) {
 			return false;
@@ -626,7 +631,7 @@ abstract class DataObject implements JsonSerializable {
 		return $result;
 	}
 
-	public function limit($start, $count) {
+	public function limit($start, $count) : void {
 		$this->__limitStart = $start;
 		$this->__limitCount = $count;
 	}
@@ -730,7 +735,7 @@ abstract class DataObject implements JsonSerializable {
 		}
 	}
 
-	public function table() {
+	public function table() : array|false {
 		global $aspen_db;
 		if (!isset($aspen_db)) {
 			return false;
@@ -747,7 +752,7 @@ abstract class DataObject implements JsonSerializable {
 		return $columns;
 	}
 
-	protected function setLastError($errorMessage) {
+	protected function setLastError($errorMessage) : void {
 		$this->__lastError = $errorMessage;
 	}
 
@@ -772,12 +777,12 @@ abstract class DataObject implements JsonSerializable {
 		$subQuery = $joinObject->getSelectQuery($aspen_db);
 
 		$mainTableField = $join['mainTableField'];
-		if (strpos($mainTableField, '.') === false) {
+		if (!str_contains($mainTableField, '.')) {
 			//Add the appropriate table name unless the field name already contains a table (signified by having a dot in the name)
 			$mainTableField = "$this->__table.$mainTableField";
 		}
 		$joinedTableField = $join['joinedTableField'];
-		if (strpos($joinedTableField, '.') === false) {
+		if (!str_contains($joinedTableField, '.')) {
 			//Add the appropriate table name unless the field name already contains a table (signified by having a dot in the name)
 			$joinedTableField = "{$join['alias']}.$joinedTableField";
 		}
@@ -900,7 +905,7 @@ abstract class DataObject implements JsonSerializable {
 		$propertiesToSerialize = [];
 		$properties = get_object_vars($this);
 		foreach ($properties as $name => $value) {
-			if ($value != null && strpos($name, '__') === false && $name != 'N') {
+			if ($value != null && !str_starts_with($name, '__') && $name != 'N') {
 				$propertiesToSerialize[] = $name;
 			}
 		}
@@ -1017,7 +1022,7 @@ abstract class DataObject implements JsonSerializable {
 		return $clone;
 	}
 
-	protected function clearRuntimeDataVariables() {
+	protected function clearRuntimeDataVariables() : void {
 		$properties = get_object_vars($this);
 		foreach ($properties as $name => $value) {
 			if ($name[0] == '_' && strlen($name) > 1 && $name[1] != '_') {
@@ -1079,9 +1084,9 @@ abstract class DataObject implements JsonSerializable {
 			$this->_changedFields[] = $propertyName;
 			$oldValue = $this->$propertyName;
 			if ($propertyStructure != null && $propertyStructure['type'] == 'checkbox') {
-				if ($newValue == 'off' || $newValue == false) {
+				if ($newValue == 'off' || $newValue === false) {
 					$newValue = 0;
-				} elseif ($newValue == 'on' || $newValue == true) {
+				} elseif ($newValue == 'on' || $newValue === true) {
 					$newValue = 1;
 				}
 			}
@@ -1126,7 +1131,7 @@ abstract class DataObject implements JsonSerializable {
 		}
 	}
 
-	protected function decryptFields() {
+	protected function decryptFields() : void {
 		$encryptedFields = $this->getEncryptedFieldNames();
 		foreach ($encryptedFields as $fieldName) {
 			$this->$fieldName = EncryptionUtils::decryptField($this->$fieldName);
@@ -1151,7 +1156,7 @@ abstract class DataObject implements JsonSerializable {
 				} else {
 					$return[$name] = $value;
 				}
-			} elseif ($includeRuntimeProperties && $name[0] == '_' && strlen($name) > 1 && $name[1] != '_') {
+			} elseif ($includeRuntimeProperties && strlen($name) > 1 && $name[1] != '_') {
 				if ($name != '_data' && $name != '_changedFields' && $name != '_deleteOnSave' && !is_object($value)) {
 					$return[substr($name, 1)] = $value;
 				}
@@ -1164,7 +1169,7 @@ abstract class DataObject implements JsonSerializable {
 		return [];
 	}
 
-	public function canActiveUserChangeSelection() {
+	public function canActiveUserChangeSelection() : bool {
 		return $this->canActiveUserEdit();
 	}
 
@@ -1172,15 +1177,11 @@ abstract class DataObject implements JsonSerializable {
 		return true;
 	}
 
-	public function canActiveUserDelete() {
+	public function canActiveUserDelete() : bool {
 		return $this->canActiveUserEdit();
 	}
 
-	public function canActiveUserCopy() {
-		return true;
-	}
-
-	public function getJSONString($includeLinks, $prettyPrint = false) {
+	public function getJSONString($includeLinks, $prettyPrint = false) : string {
 		$flags = 0;
 		if ($prettyPrint) {
 			$flags = JSON_PRETTY_PRINT;
@@ -1196,10 +1197,10 @@ abstract class DataObject implements JsonSerializable {
 		return json_encode($baseObject, $flags);
 	}
 
-	public function loadObjectPropertiesFromJSON($jsonData, $mappings) {
+	public function loadObjectPropertiesFromJSON($jsonData, $mappings) : void {
 		$encryptedFields = $this->getEncryptedFieldNames();
 		$uniquenessFields = $this->getUniquenessFields();
-		$sourceEncryptionKey = isset($mappings['passkey']) ? $mappings['passkey'] : '';
+		$sourceEncryptionKey = $mappings['passkey'] ?? '';
 		foreach ($jsonData as $property => $value) {
 			$okToLoad = true;
 			if ($property == 'links') {
@@ -1221,10 +1222,10 @@ abstract class DataObject implements JsonSerializable {
 	/**
 	 * @param $jsonData
 	 * @param $mappings
-	 * @param $overrideExisting
+	 * @param string $overrideExisting
 	 * @return bool
 	 */
-	public function loadFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting'): bool {
+	public function loadFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
 		$this->loadObjectPropertiesFromJSON($jsonData, $mappings);
 
 		if (array_key_exists('links', $jsonData)) {
@@ -1267,19 +1268,19 @@ abstract class DataObject implements JsonSerializable {
 	 * Load embedded links from json (objects where we directly store the id of the object in this object)
 	 * @param $jsonData
 	 * @param $mappings
-	 * @param $overrideExisting - keepExisting / updateExisting
+	 * @param string $overrideExisting - keepExisting / updateExisting
 	 * @return void
 	 */
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {}
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {}
 
 	/**
-	 * Load related links from json (objects where we there is an intermediary table storing our id and infromation about the other object)
+	 * Load related links from json (objects where there is an intermediary table storing our id and information about the other object)
 	 * @param $jsonData
 	 * @param $mappings
-	 * @param $overrideExisting - keepExisting / updateExisting
+	 * @param string $overrideExisting - keepExisting / updateExisting
 	 * @return boolean True/False if links were loaded
 	 */
-	public function loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting'): bool {
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
 		return false;
 	}
 
@@ -1296,11 +1297,10 @@ abstract class DataObject implements JsonSerializable {
 			foreach ($uniquenessFields as $fieldName) {
 				$tmpObject->$fieldName = $this->$fieldName;
 			}
+			$primaryField = $this->getPrimaryKey();
 			if ($tmpObject->find(true)) {
-				$primaryField = $this->getPrimaryKey();
 				$this->$primaryField = $tmpObject->getPrimaryKeyValue();
 			} else {
-				$primaryField = $this->getPrimaryKey();
 				if (count($uniquenessFields) == 1 && $uniquenessFields[0] == $primaryField) {
 					//We tricked Aspen, we are filling out the primary key, but it doesn't actually exist.
 					if (!$this->insert()) {
@@ -1324,7 +1324,7 @@ abstract class DataObject implements JsonSerializable {
 		return [];
 	}
 
-	public function prepareForSharingToCommunity() {
+	public function prepareForSharingToCommunity() : void {
 		$this->unsetUniquenessFields();
 	}
 
@@ -1367,15 +1367,11 @@ abstract class DataObject implements JsonSerializable {
 		return !empty($this->_changedFields);
 	}
 
-	public function jsonSerialize() : mixed {
+	public function jsonSerialize() : array {
 		$properties = get_object_vars($this);
-		$serializedData = [];
-		foreach ($properties as $name => $value) {
-			if ($name[0] != '_' && $name[0] != 'N') {
-				$serializedData[$name] = $value;
-			}
-		}
-		return $serializedData;
+		return array_filter($properties, function ($name) {
+			return $name[0] != '_' && $name[0] != 'N';
+		}, ARRAY_FILTER_USE_KEY);
 	}
 
 	public function finishCopy($sourceId) {
@@ -1413,25 +1409,30 @@ abstract class DataObject implements JsonSerializable {
 			}
 		}
 		if ($loadDefault) {
-			$objectStructure = $this::getObjectStructure();
-			$objectStructure = $this->updateStructureForEditingObject($objectStructure);
-			$fieldDefinition = $this->getFieldDefinition($fieldName, $objectStructure);
-			if ($fieldDefinition === false) {
-				$this->_data[$key] = '';
-			} else {
-				$defaultFile = $fieldDefinition['defaultTextFile'] ?? null;
-				if (empty($defaultFile) || !file_exists(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile)) {
+			if (method_exists($this, 'getObjectStructure')) {
+				$objectStructure = $this::getObjectStructure();
+				$objectStructure = $this->updateStructureForEditingObject($objectStructure);
+				$fieldDefinition = $this->getFieldDefinition($fieldName, $objectStructure);
+				if ($fieldDefinition === false) {
 					$this->_data[$key] = '';
-				}else {
-					if ($fieldDefinition['type'] == 'translatablePlainTextBlock') {
-						$this->_data[$key] = file_get_contents(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile);
-					}else{
-						require_once ROOT_DIR . '/sys/Parsedown/AspenParsedown.php';
-						$parsedown = AspenParsedown::instance();
-						$this->_data[$key] = $parsedown->parse(file_get_contents(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile));
+				} else {
+					$defaultFile = $fieldDefinition['defaultTextFile'] ?? null;
+					if (empty($defaultFile) || !file_exists(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile)) {
+						$this->_data[$key] = '';
+					}else {
+						if ($fieldDefinition['type'] == 'translatablePlainTextBlock') {
+							$this->_data[$key] = file_get_contents(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile);
+						}else{
+							require_once ROOT_DIR . '/sys/Parsedown/AspenParsedown.php';
+							$parsedown = AspenParsedown::instance();
+							$this->_data[$key] = $parsedown->parse(file_get_contents(ROOT_DIR . '/default_translatable_text_fields/' . $defaultFile));
+						}
 					}
 				}
+			}else{
+				$this->_data[$key] = '';
 			}
+
 		}else{
 			$this->_data[$key] = '';
 		}
@@ -1487,13 +1488,13 @@ abstract class DataObject implements JsonSerializable {
 		}
 	}
 
-	public function getFieldDefinition($fieldName, $objectStructure) {
+	public function getFieldDefinition($fieldName, $objectStructure) : array|false {
 		foreach ($objectStructure as $field) {
 			if ($field['property'] == $fieldName) {
 				return $field;
 			}elseif ($field['type'] == 'section') {
 				$subFieldDefinition = $this->getFieldDefinition($fieldName, $field['properties']);
-				if ($subFieldDefinition != false) {
+				if ($subFieldDefinition) {
 					return $subFieldDefinition;
 				}
 			}
@@ -1598,7 +1599,9 @@ abstract class DataObject implements JsonSerializable {
 	 */
 	public function restore(): bool|int {
 		if (!$this->supportsSoftDelete()) return false;
+		/** @noinspection PhpUndefinedFieldInspection */
 		$this->deleted = 0;
+		/** @noinspection PhpUndefinedFieldInspection */
 		$this->dateDeleted = 0;
 		return $this->update();
 	}
@@ -1614,6 +1617,7 @@ abstract class DataObject implements JsonSerializable {
 	public static function purgeExpired(int $olderThanSecs = 2592000): int {
 		$obj = new static();
 		if (!$obj->supportsSoftDelete()) return 0;
+		/** @noinspection PhpUndefinedFieldInspection */
 		$obj->deleted = 1;
 		$cutOff = time() - $olderThanSecs;
 		// User Lists deleted (i.e., deleted = 1) before the Object Restorations implementation will be

@@ -1,6 +1,6 @@
 <?php
-
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+/** @noinspection PhpUnused */
+/** @noinspection PhpMissingFieldTypeInspection */
 
 class AspenUsage extends DataObject {
 	public $__table = 'aspen_usage';
@@ -73,7 +73,7 @@ class AspenUsage extends DataObject {
 		return $okToExport;
 	}
 
-	public function getAspenUsageStats($instanceName, $month, $year) {
+	public function getAspenUsageStats($instanceName, $month, $year) : AspenUsage {
 		$usage = new AspenUsage();
 		if (!empty($instanceName)) {
 			$usage->instance = $instanceName;
@@ -118,11 +118,11 @@ class AspenUsage extends DataObject {
 		return $this->instance;
 	}
 
-	public function incEmailsSent() {
+	public function incEmailsSent() : void {
 		$this->__set('emailsSent', $this->emailsSent+1);
 	}
 
-	public function incEmailsFailed() {
+	public function incEmailsFailed() : void {
 		$this->__set('emailsFailed', $this->emailsFailed+1);
 	}
 }

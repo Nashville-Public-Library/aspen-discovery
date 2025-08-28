@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/WebsiteIndexing/LibraryWebsiteIndexing.php';
 require_once ROOT_DIR . '/sys/WebsiteIndexing/LocationWebsiteIndexing.php';
 
@@ -6,6 +6,7 @@ class WebsiteIndexSetting extends DataObject {
 	public $__table = 'website_indexing_settings';    // table name
 	public $id;
 	public $name;
+	/** @noinspection PhpUnused */
 	public $searchCategory;
 	public $siteUrl;
 	public $defaultCover;
@@ -35,11 +36,16 @@ class WebsiteIndexSetting extends DataObject {
 		];
 	}
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Website Indexing Settings'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer Website Indexing Settings'));
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -163,6 +169,9 @@ class WebsiteIndexSetting extends DataObject {
 				'values' => $locationList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -185,8 +194,8 @@ class WebsiteIndexSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
-		if (substr($this->siteUrl, -1) == '/') {
+	public function update(string $context = '') : int|bool {
+		if (str_ends_with($this->siteUrl, '/')) {
 			$this->siteUrl = substr($this->siteUrl, 0, -1);
 		}
 		$this->clearDefaultCovers();
@@ -199,8 +208,8 @@ class WebsiteIndexSetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
-		if (substr($this->siteUrl, -1) == '/') {
+	public function insert(string $context = '') : int|bool {
+		if (str_ends_with($this->siteUrl, '/')) {
 			$this->siteUrl = substr($this->siteUrl, 0, -1);
 		}
 		$this->clearDefaultCovers();
@@ -212,7 +221,7 @@ class WebsiteIndexSetting extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$this->deleted = 1;
 		$this->clearLibraries();
 		$this->clearLocations();
@@ -220,7 +229,7 @@ class WebsiteIndexSetting extends DataObject {
 		return $this->update();
 	}
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new LibraryWebsiteIndexing();
@@ -233,7 +242,7 @@ class WebsiteIndexSetting extends DataObject {
 		return $this->_libraries;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -248,14 +257,14 @@ class WebsiteIndexSetting extends DataObject {
 		}
 	}
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Delete links to the libraries
 		$libraryWebsiteIndexing = new LibraryWebsiteIndexing();
 		$libraryWebsiteIndexing->settingId = $this->id;
-		return $libraryWebsiteIndexing->delete(true);
+		$libraryWebsiteIndexing->delete(true);
 	}
 
-	public function getLocations() {
+	public function getLocations() : ?array {
 		if (!isset($this->_locations) && $this->id) {
 			$this->_locations = [];
 			$location = new LocationWebsiteIndexing();
@@ -268,7 +277,7 @@ class WebsiteIndexSetting extends DataObject {
 		return $this->_locations;
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset($this->_locations) && is_array($this->_locations)) {
 			$this->clearLocations();
 
@@ -283,14 +292,14 @@ class WebsiteIndexSetting extends DataObject {
 		}
 	}
 
-	private function clearLocations() {
+	private function clearLocations() : void {
 		//Delete links to the libraries
 		$locationWebsiteIndexing = new LocationWebsiteIndexing();
 		$locationWebsiteIndexing->settingId = $this->id;
-		return $locationWebsiteIndexing->delete(true);
+		 $locationWebsiteIndexing->delete(true);
 	}
 
-	public function isValidForSearching() {
+	public function isValidForSearching() : bool {
 		global $library;
 		$searchLocation = Location::getSearchLocation();
 		if ($searchLocation != null) {
@@ -311,7 +320,7 @@ class WebsiteIndexSetting extends DataObject {
 		return false;
 	}
 
-	private function clearDefaultCovers() {
+	private function clearDefaultCovers() : void {
 		require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
 		$covers = new BookCoverInfo();
 		$covers->reloadAllDefaultCovers();

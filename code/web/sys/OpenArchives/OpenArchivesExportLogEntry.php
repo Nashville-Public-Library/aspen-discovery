@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/BaseLogEntry.php';
 
@@ -7,6 +7,7 @@ class OpenArchivesExportLogEntry extends BaseLogEntry {
 	public $id;
 	public $collectionName;
 	public $notes;
+	/** @noinspection PhpUnused */
 	public $numRecords;
 	public $numErrors;
 	public $numAdded;

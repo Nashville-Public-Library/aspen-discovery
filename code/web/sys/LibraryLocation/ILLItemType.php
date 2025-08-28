@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class ILLItemType extends DataObject {
 	public $__table = 'library_ill_item_type';
@@ -9,7 +8,12 @@ class ILLItemType extends DataObject {
 	public $code;
 
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(false);
 
 		$structure = [
@@ -33,6 +37,8 @@ class ILLItemType extends DataObject {
 				'description' => 'The item type code in the ILS',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

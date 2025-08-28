@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Account/PType.php';
 
@@ -7,15 +7,5 @@ class LiDANotificationPType extends DataObject {
 	public $id;
 	public $lidaNotificationId;
 	public $patronTypeId;
-
-	public function getPtypeById($id) {
-		$ptype = new PType();
-		$ptype->id = $id;
-		if ($ptype->find(true)) {
-			return $ptype->pType;
-		}
-
-		return null;
-	}
 
 }

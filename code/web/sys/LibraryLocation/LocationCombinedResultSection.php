@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/LibraryLocation/CombinedResultSection.php';
 
@@ -6,21 +6,13 @@ class LocationCombinedResultSection extends CombinedResultSection {
 	public $__table = 'location_combined_results_section';    // table name
 	public $locationId;
 
-	static function getObjectStructure($context = ''): array {
-		$location = new Location();
-		$location->selectAdd();
-		$location->selectAdd('locationId');
-		$location->selectAdd('displayName');
-		$location->orderBy('displayName');
-		if (!UserAccount::userHasPermission('Administer All Locations')) {
-			$homeLibrary = Library::getPatronHomeLibrary();
-			$location->libraryId = $homeLibrary->libraryId;
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
 		}
-		$location->find();
-		$locationList = [];
-		while ($location->fetch()) {
-			$locationList[$location->locationId] = $location->displayName;
-		}
+
+		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Locations'));
 
 		$structure = parent::getObjectStructure($context);
 		$structure['locationId'] = [
@@ -31,6 +23,7 @@ class LocationCombinedResultSection extends CombinedResultSection {
 			'description' => 'The id of a location',
 		];
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

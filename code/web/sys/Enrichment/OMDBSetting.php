@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class OMDBSetting extends DataObject {
@@ -7,8 +7,12 @@ class OMDBSetting extends DataObject {
 	public $apiKey;
 	public $fetchCoversWithoutDates;
 
-	public static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -31,12 +35,12 @@ class OMDBSetting extends DataObject {
 				'default' => 1,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$result = parent::update();
 		if (in_array('fetchCoversWithoutDates', $this->_changedFields)) {
 			require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';

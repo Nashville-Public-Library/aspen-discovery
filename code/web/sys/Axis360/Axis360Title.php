@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class Axis360Title extends DataObject {
 	public $__table = 'axis360_title';

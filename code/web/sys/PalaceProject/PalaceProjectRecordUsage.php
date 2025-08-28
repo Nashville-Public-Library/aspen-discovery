@@ -1,11 +1,11 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class PalaceProjectRecordUsage extends DataObject {
 	public $__table = 'palace_project_record_usage';
 	public $id;
 	public $instance;
-	public $hooplaId;
+	public $palaceProjectId;
 	public $year;
 	public $month;
 	public $timesHeld;
@@ -14,7 +14,7 @@ class PalaceProjectRecordUsage extends DataObject {
 	public function getUniquenessFields(): array {
 		return [
 			'instance',
-			'hooplaId',
+			'palaceProjectId',
 			'year',
 			'month',
 		];
