@@ -128,7 +128,7 @@ class MarcLoader {
 		$ilsRecord = IlsRecord::getIlsRecordForId($recordType, $ilsId);
 
 		if ($ilsRecord != null) {
-			$hasMarc = !empty($ilsRecord->soureData);
+			$hasMarc = !empty($ilsRecord->sourceData);
 		} else {
 			$hasMarc = false;
 		}
