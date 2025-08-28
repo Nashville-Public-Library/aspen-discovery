@@ -77,6 +77,14 @@ function getUpdates25_09_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'add_self_reg_note_setting' => [
+			'title' => 'Add Self Registration Note Setting',
+			'description' => 'Add setting to control whether self-registration note is added to Sierra patron records.',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN addSelfRegNote TINYINT DEFAULT 1'
+			],
+		], // add_self_reg_note_setting
 
 		//alexander - Open Fifth
 		'increase_location_display_name_allowed_length' => [
