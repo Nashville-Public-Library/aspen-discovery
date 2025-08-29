@@ -1315,7 +1315,6 @@ public class PolarisExportMain {
 		//Get the bib record
 		//noinspection SpellCheckingInspection
 		String getBibUrl = "/PAPIService/REST/protected/v1/1033/100/1/" + accessToken + "/synch/bibs/MARCXML?bibids=" + bibNumber;
-		logger.error("getBibUrl: " + getBibUrl);
 		ProcessBibRequestResponse response = processGetBibsRequest(getBibUrl, marcFactory, lastExtractTime, incrementProductsInLog);
 		return response.numChanges;
 	}
