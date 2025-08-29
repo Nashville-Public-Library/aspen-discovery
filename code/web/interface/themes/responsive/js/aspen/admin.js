@@ -1012,6 +1012,7 @@ AspenDiscovery.Admin = (function () {
 				"#propertyRowmaterialsRequestSendStaffEmailOnNew",
 				"#propertyRowmaterialsRequestNewEmail",
 				"#propertyRowmaterialsRequestSendStaffEmailOnAssign",
+				"#propertyRownewMaterialsRequestSummary",
 				"#propertyRowyearlyRequestLimitType",
 				"#propertyRowcheckRequestsForExistingTitles"
 			];
@@ -1025,6 +1026,7 @@ AspenDiscovery.Admin = (function () {
 						"#propertyRowyearlyRequestLimitType",
 						"#propertyRowmaxActiveRequests",
 						"#propertyRowrequestCalendarStartDate",
+						"#propertyRownewMaterialsRequestSummary",
 						"#propertyRowmaterialsRequestDaysToPreserve",
 						"#propertyRowmaterialsRequestFieldsToDisplay",
 						"#propertyRowmaterialsRequestFormats",
