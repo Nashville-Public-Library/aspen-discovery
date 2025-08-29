@@ -1242,6 +1242,7 @@ public class PolarisExportMain {
 			List<String> batch = bibsNumber.subList(i, Math.min(i + batchSize, bibsNumber.size()));
 			String bibIds = String.join(",", batch);
 			numChanges += updateBibFromPolaris(bibIds, marcFactory, lastExtractTime, false);
+			logEntry.setCurrentId(batch.get(batch.size() - 1));
 		}
 
 		logEntry.addNote("Finished updating bibs");
