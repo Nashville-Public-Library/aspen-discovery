@@ -77,6 +77,14 @@ function getUpdates25_09_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'increase_browse_category_label_length' => [
+			'title' => 'Increase Browse Category Label Length',
+			'description' => 'Increase the allowed length for browse category labels from 50 to 100 characters.',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE browse_category MODIFY label VARCHAR(100) NOT NULL'
+			],
+		], // increase_browse_category_label_length
 
 		//alexander - Open Fifth
 		'increase_location_display_name_allowed_length' => [
