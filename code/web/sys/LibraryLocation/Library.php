@@ -4727,17 +4727,22 @@ class Library extends DataObject {
 		}
 	}
 
+	private static $_librariesByLocationId = [];
 	static function getLibraryForLocation($locationId) : ?Library {
-		if (isset($locationId) && $locationId > 0) {
-			$libLookup = new Library();
-			$libLookup->whereAdd('libraryId = (SELECT libraryId FROM location WHERE locationId = ' . $libLookup->escape($locationId) . ')');
-			$libLookup->find();
-			if ($libLookup->getNumResults() > 0) {
-				$libLookup->fetch();
-				return clone $libLookup;
+		if (!isset(self::$_librariesByLocationId[$locationId])) {
+			self::$_librariesByLocationId[$locationId] = null;
+			if (isset($locationId) && $locationId > 0) {
+				$libLookup = new Library();
+				$libLookup->whereAdd('libraryId = (SELECT libraryId FROM location WHERE locationId = ' . $libLookup->escape($locationId) . ')');
+				$libLookup->find();
+				if ($libLookup->getNumResults() > 0) {
+					$libLookup->fetch();
+					self::$_librariesByLocationId[$locationId] = clone $libLookup;
+				}
 			}
 		}
-		return null;
+
+		return self::$_librariesByLocationId[$locationId];
 	}
 
 	public function __get($name) {

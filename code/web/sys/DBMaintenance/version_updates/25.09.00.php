@@ -57,6 +57,14 @@ function getUpdates25_09_00(): array {
 				'DROP TABLE redwood_user_contribution'
 			]
 		], //remove_redwood_tables
+		'add_grouped_work_display_format_display' => [
+			'title' => 'Grouped Display Settings add Format Display Option',
+			'description' => 'Grouped Display Settings add Format Display Option',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE grouped_work_display_settings ADD COLUMN formatDisplayStyle INT DEFAULT 1'
+			]
+		], //add_grouped_work_display_format_display
 
 		//katherine - Grove
 
@@ -69,6 +77,14 @@ function getUpdates25_09_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'increase_browse_category_label_length' => [
+			'title' => 'Increase Browse Category Label Length',
+			'description' => 'Increase the allowed length for browse category labels from 50 to 100 characters.',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE browse_category MODIFY label VARCHAR(100) NOT NULL'
+			],
+		], // increase_browse_category_label_length
 
 		//alexander - Open Fifth
 		'increase_location_display_name_allowed_length' => [
