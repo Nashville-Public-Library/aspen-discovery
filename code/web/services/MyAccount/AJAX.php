@@ -4998,6 +4998,17 @@ class MyAccount_AJAX extends JSON_Action {
 			$fines = $patron->getFines(false);
 			$useOutstanding = $patron->getCatalogDriver()->showOutstandingFines();
 
+			// For Sierra, check if user's account is locked
+			if (!empty($fines) && $patron->getCatalogDriver()->isPatronAccountLocked($patron, reset($fines[$patronId]))) {
+				return [
+					'success' => false,
+					'message' => translate([
+						'text' => 'This account is currently in use by staff.  Fine payments cannot be made at this time.  Please try again after a few moments or contact the library if this issue persists.',
+						'isPublicFacing' => true,
+					]),
+				];
+			}
+
 			$finesPaid = '';
 			$purchaseUnits = [];
 			$purchaseUnits['items'] = [];
