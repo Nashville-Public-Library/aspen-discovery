@@ -2308,6 +2308,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 
 				$first = true;
 				$seriesInfo = [];
+				$allHidden = true;
 				foreach ($seriesMembers as $seriesMember) {
 					$series = $seriesMember->getSeries();
 					if ($series != null) {
@@ -2317,7 +2318,8 @@ class GroupedWorkDriver extends IndexRecordDriver {
 								'seriesId' => $series->id,
 								'volume' => $seriesMember->volume,
 								'fromNovelist' => false,
-								'fromSeriesIndex' => true
+								'fromSeriesIndex' => true,
+								'hidden' => !$series->isIndexed,
 							];
 							$first = false;
 						} else {
@@ -2326,11 +2328,16 @@ class GroupedWorkDriver extends IndexRecordDriver {
 								'seriesId' => $series->id,
 								'volume' => $seriesMember->volume,
 								'fromNovelist' => false,
-								'fromSeriesIndex' => true
+								'fromSeriesIndex' => true,
+								'hidden' => !$series->isIndexed,
 							];
+						}
+						if ($series->isIndexed) {
+							$allHidden = false;
 						}
 					}
 				}
+				$seriesInfo['allHidden'] = $allHidden;
 				$this->seriesData = $seriesInfo;
 			} else {
 				//Get a list of isbns from the record and existing display info if any
