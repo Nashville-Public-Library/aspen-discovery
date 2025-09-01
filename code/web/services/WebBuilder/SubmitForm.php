@@ -97,7 +97,17 @@ class WebBuilder_SubmitForm extends Action {
 				//Save form fields content to the database
 				$this->saveFieldsContent($data,$submission->id);
 
-				if (!empty($this->form->emailResultsTo)) {
+				//Get per library emailResultsTo
+				$emailResultsTo = $this->form->emailResultsTo;
+				$libraryList = $this->form->getLibraries();
+				foreach ($libraryList as $librarySelected) {
+					if ($librarySelected->libraryId == $library->libraryId) {
+						$emailResultsTo = $librarySelected->emailResultsTo;
+						break;
+					}
+				}
+
+				if (!empty($emailResultsTo)) {
 					global $interface;
 					require_once ROOT_DIR . '/sys/Email/Mailer.php';
 					if (UserAccount::isLoggedIn()) {
@@ -111,7 +121,7 @@ class WebBuilder_SubmitForm extends Action {
 					$interface->assign('introductoryText', $introText);
 
 					$emailBody = $interface->fetch('WebBuilder/customFormSubmissionEmail.tpl');
-					$emailResult = $mail->send($this->form->emailResultsTo, $this->form->title . ' Submission', null, null, $emailBody);
+					$emailResult = $mail->send($emailResultsTo, $this->form->title . ' Submission', null, null, $emailBody);
 					global $logger;
 					if ($emailResult === false) {
 						$logger->log('Could not email form submission due to an unknown error.', Logger::LOG_ERROR);
