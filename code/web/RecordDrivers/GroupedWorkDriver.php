@@ -1393,9 +1393,10 @@ class GroupedWorkDriver extends IndexRecordDriver {
 	 *
 	 * @access  public
 	 * @param int $seriesId ID of the series that this work is contained on
+	 * @param array $instance Metadata about this specific list entry
 	 * @return  string              Name of Smarty template file to display.
 	 */
-	public function getSeriesEntry(?int $seriesId = null) {
+	public function getSeriesEntry(?int $seriesId = null, ?array $instance = null) {
 		global $interface;
 		global $timer;
 
@@ -1443,13 +1444,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		//Description
 		$interface->assign('summDescription', $this->getDescriptionFast());
 		$timer->logTime('Finished Loading Description');
-		if ($this->hasCachedSeries()) {
-			$interface->assign('ajaxSeries', false);
-			$interface->assign('summSeries', $this->getSeries(false, $seriesId));
-		} else {
-			$interface->assign('ajaxSeries', true);
-			$interface->assign('summSeries', '');
-		}
+		$interface->assign('summVolume', $instance['volume'] ?? '');
 
 		$interface->assign('summPubDate', $this->getEarliestPublicationDate());
 
@@ -2308,6 +2303,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 
 				$first = true;
 				$seriesInfo = [];
+				$allHidden = true;
 				foreach ($seriesMembers as $seriesMember) {
 					$series = $seriesMember->getSeries();
 					if ($series != null) {
@@ -2317,7 +2313,8 @@ class GroupedWorkDriver extends IndexRecordDriver {
 								'seriesId' => $series->id,
 								'volume' => $seriesMember->volume,
 								'fromNovelist' => false,
-								'fromSeriesIndex' => true
+								'fromSeriesIndex' => true,
+								'hidden' => !$series->isIndexed,
 							];
 							$first = false;
 						} else {
@@ -2326,11 +2323,16 @@ class GroupedWorkDriver extends IndexRecordDriver {
 								'seriesId' => $series->id,
 								'volume' => $seriesMember->volume,
 								'fromNovelist' => false,
-								'fromSeriesIndex' => true
+								'fromSeriesIndex' => true,
+								'hidden' => !$series->isIndexed,
 							];
+						}
+						if ($series->isIndexed) {
+							$allHidden = false;
 						}
 					}
 				}
+				$seriesInfo['allHidden'] = $allHidden;
 				$this->seriesData = $seriesInfo;
 			} else {
 				//Get a list of isbns from the record and existing display info if any

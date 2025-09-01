@@ -4998,6 +4998,17 @@ class MyAccount_AJAX extends JSON_Action {
 			$fines = $patron->getFines(false);
 			$useOutstanding = $patron->getCatalogDriver()->showOutstandingFines();
 
+			// For Sierra, check if user's account is locked
+			if (!empty($fines) && $patron->getCatalogDriver()->isPatronAccountLocked($patron, reset($fines[$patronId]))) {
+				return [
+					'success' => false,
+					'message' => translate([
+						'text' => 'This account is currently in use by staff.  Fine payments cannot be made at this time.  Please try again after a few moments or contact the library if this issue persists.',
+						'isPublicFacing' => true,
+					]),
+				];
+			}
+
 			$finesPaid = '';
 			$purchaseUnits = [];
 			$purchaseUnits['items'] = [];
@@ -9870,6 +9881,8 @@ class MyAccount_AJAX extends JSON_Action {
 		require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 		require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneProgressEntry.php';
 		require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestoneUsersProgress.php';
+		require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignExtraCreditActivityUsersProgress.php';
+
 
 
 		$campaignId = $_GET['campaignId'] ?? null;
@@ -9924,6 +9937,11 @@ class MyAccount_AJAX extends JSON_Action {
 					$milestoneProgress->userId = $userId;
 					$milestoneProgress->ce_campaign_id = $campaignId;
 					$milestoneProgress->delete(true);
+
+					$extraCreditProgress = new CampaignExtraCreditActivityUsersProgress();
+					$extraCreditProgress->userId = $userId;
+					$extraCreditProgress->ce_campaign_id = $campaignId;
+					$extraCreditProgress->delete(true);
 					//Increase unenrollment counter
 					$campaign->unenrollmentCounter++;
 					$campaign->currentEnrollments--;
