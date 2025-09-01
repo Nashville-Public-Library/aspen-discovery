@@ -33,17 +33,12 @@ AspenDiscovery.Lists = (function(){
 			return this.submitListForm('makePrivate');
 		},
 
-		deleteListAction(){
-			const messageTitle = "Delete List?";
-			const messageBody = "Are you sure you want to delete this entire list? The list and all titles within it will be soft-deleted and can be restored within 30 days.<br/><br/>" +
-				"<div>" +
-				"<input type='checkbox' id='optOutSoftDeletion' style='margin-right: 5px;'>" +
-				"<label class='form-check-label' for='optOutSoftDeletion'>Opt Out of Soft Deletion</label>" +
-				"</div>";
-
-			let buttons = "<button id='confirmDeleteList' class='tool btn btn-danger' onclick='AspenDiscovery.Lists.doDeleteList()'><span class='fas fa-spinner fa-spin' style='display:none; margin-right: 4px;'></span>Yes</button>";
-			buttons += "<button id='cancelDeleteList' class='tool btn btn-default' onclick='AspenDiscovery.closeLightbox()'>No</button>";
-			AspenDiscovery.showMessageWithButtons(messageTitle, messageBody, buttons, false, '', false, false, true);
+		deleteListAction() {
+			const url = Globals.path + '/MyAccount/AJAX?method=getDeleteListForm';
+			$.getJSON(url, function(data) {
+				const { title, modalBody, modalButtons } = data;
+				AspenDiscovery.showMessageWithButtons(title, modalBody, modalButtons, false, '', false, false, true);
+			}).fail(AspenDiscovery.ajaxFail);
 			return false;
 		},
 

@@ -77,6 +77,14 @@ function getUpdates25_09_00(): array {
 		//Yanjun Li - ByWater
 
 		// Leo Stoyanov - BWS
+		'add_self_reg_note_setting' => [
+			'title' => 'Add Self Registration Note Setting',
+			'description' => 'Add setting to control whether self-registration note is added to Sierra patron records.',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE self_registration_form_sierra ADD COLUMN addSelfRegNote TINYINT DEFAULT 1'
+			],
+		], // add_self_reg_note_setting
 		'increase_browse_category_label_length' => [
 			'title' => 'Increase Browse Category Label Length',
 			'description' => 'Increase the allowed length for browse category labels from 50 to 100 characters.',
@@ -95,6 +103,13 @@ function getUpdates25_09_00(): array {
 				'ALTER TABLE location MODIFY displayName VARCHAR(100) NOT NULL'
 			],
 		], // increase_location_display_name_allowed_length
+		'add_title_to_user_work_review' => [
+			'title' => 'Add Title To user Work Review',
+			'description' => 'Add title of reviewed work to table',
+			'sql' => [
+				"ALTER TABLE user_work_review ADD COLUMN title VARCHAR(512) DEFAULT ''",
+			]
+		], //add_title_to_user_work_review
 
 		//chloe - Open Fifth
 
@@ -111,6 +126,16 @@ function getUpdates25_09_00(): array {
 		//other
 
 		//Talpa Search
+
+		// Brendan Lawlor
+		'addLibraryEmailToCustomForm' => [
+			 'title' => 'Add library email to custom form',
+			 'description' => 'Add library email to custom form',
+			 'continueOnError' => false,
+			 'sql' => [
+				 'ALTER TABLE library_web_builder_custom_form ADD COLUMN emailResultsTo varchar(100) DEFAULT ""'
+			 ]
+		 ], //addLibraryEmailToCustomForm
 		
 	];
 }
