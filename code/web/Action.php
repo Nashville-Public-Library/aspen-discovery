@@ -37,9 +37,9 @@ abstract class Action
 
 		$printInterface = isset($_REQUEST['print']) ? (bool)$_REQUEST['print'] : false;
 		$interface->assign('printInterface', $printInterface);
-		$printLibraryName = isset($_REQUEST['printLibraryName']) ? (bool)$_REQUEST['printLibraryName'] : false;
+		$printLibraryName = isset($_REQUEST['printLibraryName']) ? filter_var($_REQUEST['printLibraryName'], FILTER_VALIDATE_BOOLEAN) : false;
 		$interface->assign('printLibraryName', $printLibraryName);
-		$printLibraryLogo = isset($_REQUEST['printLibraryLogo']) ? (bool)$_REQUEST['printLibraryLogo'] : false;
+		$printLibraryLogo = isset($_REQUEST['printLibraryLogo']) ? filter_var($_REQUEST['printLibraryLogo'], FILTER_VALIDATE_BOOLEAN) : false;
 		$interface->assign('printLibraryLogo', $printLibraryLogo);
 
 		global $isAJAX;
