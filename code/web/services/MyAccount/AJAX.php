@@ -10484,4 +10484,22 @@ class MyAccount_AJAX extends JSON_Action {
 		];
 	}
 
+	/** @noinspection PhpUnused */
+	function getListPrintOptions() {
+		global $interface;
+		$interface->assign('printListId', strip_tags($_REQUEST['listId']));
+
+		return [
+			'title' => translate([
+				'text' => 'Print Options',
+				'isAdminFacing' => 'true',
+			]),
+			'modalBody' => $interface->fetch('MyAccount/list-print-options.tpl'),
+			'modalButtons' => "<button class='tool btn btn-primary' onclick='AspenDiscovery.Lists.buildAndOpenPrintUrl()'>" . translate([
+					'text' => 'Print',
+					'isAdminFacing' => 'true',
+				]) . "</button>",
+		];
+	}
+
 }
