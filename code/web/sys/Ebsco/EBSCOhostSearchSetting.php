@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Ebsco/EBSCOhostDatabase.php';
 
 class EBSCOhostSearchSetting extends DataObject {
@@ -10,14 +10,18 @@ class EBSCOhostSearchSetting extends DataObject {
 	private $_locations;
 	private $_databases;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
 
 		require_once ROOT_DIR . '/sys/Ebsco/EBSCOhostDatabase.php';
 		$databaseSearchStructure = EBSCOhostDatabase::getObjectStructure($context);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -67,6 +71,9 @@ class EBSCOhostSearchSetting extends DataObject {
 				'values' => $locationList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -130,10 +137,7 @@ class EBSCOhostSearchSetting extends DataObject {
 		}
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -143,7 +147,7 @@ class EBSCOhostSearchSetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -154,7 +158,7 @@ class EBSCOhostSearchSetting extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		if (!$useWhere) {
 			$obj = new Library();
 			$obj->ebscohostSearchSettingId = $this->id;
@@ -183,7 +187,7 @@ class EBSCOhostSearchSetting extends DataObject {
 		return parent::delete($useWhere, $hardDelete);
 	}
 
-	public function updateDatabasesFromEBSCOhost() {
+	public function updateDatabasesFromEBSCOhost() : void {
 		$currentDatabases = $this->getDatabases();
 		/** @var SearchObject_EbscohostSearcher $ebscohostSearch */
 		$ebscohostSearch = SearchObjectFactory::initSearchObject('Ebscohost');
@@ -242,14 +246,14 @@ class EBSCOhostSearchSetting extends DataObject {
 		}
 	}
 
-	public function saveDatabases() {
+	public function saveDatabases() : void {
 		if (isset ($this->_databases) && is_array($this->_databases)) {
 			$this->saveOneToManyOptions($this->_databases, 'searchSettingId');
 			unset($this->_databases);
 		}
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -274,7 +278,7 @@ class EBSCOhostSearchSetting extends DataObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
 			/**
@@ -310,7 +314,8 @@ class EBSCOhostSearchSetting extends DataObject {
 		}
 	}
 
-	public function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/EBSCO/EBSCOhostSearchSettings?objectAction=edit&id=' . $this->id;
 
 	}

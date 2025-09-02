@@ -16,17 +16,7 @@ class UnsavedDataObject extends DataObject {
 		$this->_data[$name] = $value;
 	}
 
-	function serializeDataToJson($structure) {
-
-		$dataToEncode = [];
-		foreach ($this->_data as $fieldId => $value) {
-			$fieldLabel = $structure[$fieldId]['label'];
-			$dataToEncode[$fieldLabel] = $value;
-		}
-		return json_encode($dataToEncode);
-	}
-
-	function getPrintableHtmlData($structure) {
+	function getPrintableHtmlData($structure) : string {
 		$printableData = '';
 		foreach ($this->_data as $fieldId => $value) {
 			$fieldLabel = $structure[$fieldId]['label'];
@@ -35,20 +25,9 @@ class UnsavedDataObject extends DataObject {
 		return $printableData;
 	}
 
-	function getAllData($structure){
-		$formFields = [];
-		foreach ($this->_data as $fieldId => $value) {
-			$formFields[$fieldId] = $value;
-		}
-		return $formFields;
-	}
-
-	function getPrintableTextData($structure) {
-		$printableData = '';
-		foreach ($this->_data as $fieldId => $value) {
-			$fieldLabel = $structure[$fieldId]['label'];
-			$printableData .= "$fieldLabel\r\n$value\r\n\r\n";
-		}
-		return $printableData;
+	function getAllData() : array {
+		return array_map(function ($value) {
+			return $value;
+		}, $this->_data);
 	}
 }

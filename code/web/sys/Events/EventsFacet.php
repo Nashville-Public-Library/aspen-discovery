@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class EventsFacet extends FacetSetting {
 	public $__table = 'events_facet';
@@ -12,7 +11,7 @@ class EventsFacet extends FacetSetting {
 	}
 
 
-	public static function getAvailableFacets() {
+	public static function getAvailableFacets() : array {
 		$availableFacets = [
 			"age_group_facet" => "Age Group/Audience",
 			"program_type_facet" => "Program Type",
@@ -33,9 +32,12 @@ class EventsFacet extends FacetSetting {
 		return $availableFacets;
 	}
 
-	static function getObjectStructure($context = '') {
-
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -68,27 +70,6 @@ class EventsFacet extends FacetSetting {
 				'label' => 'Plural Display Name',
 				'description' => 'The full name pluralized of the facet for display to the user',
 			],
-//			'showAboveResults' => [
-//				'property' => 'showAboveResults',
-//				'type' => 'checkbox',
-//				'label' => 'Show Above Results',
-//				'description' => 'Whether or not the facets should be shown above the results',
-//				'default' => 0,
-//			],
-//			'showInResults' => [
-//				'property' => 'showInResults',
-//				'type' => 'checkbox',
-//				'label' => 'Show on Results Page',
-//				'description' => 'Whether or not the facets should be shown in regular search results',
-//				'default' => 1,
-//			],
-//			'showInAdvancedSearch' => [
-//				'property' => 'showInAdvancedSearch',
-//				'type' => 'checkbox',
-//				'label' => 'Show on Advanced Search',
-//				'description' => 'Whether or not the facet should be an option on the Advanced Search Page',
-//				'default' => 1,
-//			],
 			'multiSelect' => [
 				'property' => 'multiSelect',
 				'type' => 'checkbox',
@@ -117,13 +98,6 @@ class EventsFacet extends FacetSetting {
 				'description' => 'Whether or not more facet options are shown in a popup box.',
 				'default' => 1,
 			],
-//			'showAsDropDown' => [
-//				'property' => 'showAsDropDown',
-//				'type' => 'checkbox',
-//				'label' => 'Drop Down?',
-//				'description' => 'Whether or not the facets should be shown in a drop down list',
-//				'default' => '0',
-//			],
 			'translate' => [
 				'property' => 'translate',
 				'type' => 'checkbox',
@@ -150,5 +124,8 @@ class EventsFacet extends FacetSetting {
 				'default' => '5',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

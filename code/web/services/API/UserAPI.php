@@ -2270,9 +2270,43 @@ class UserAPI extends AbstractAPI {
 						$pickupLocations[] = $pickupLocationArray;
 					}
 				}
+				$catalogDriver = $patron->getCatalogDriver();
+				if ($catalogDriver->restrictValidPickupLocationsForRecordByILS() && (!empty($_REQUEST['groupedWorkId']) || !empty($_REQUEST['recordId']))) {
+					require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
+					if (!empty($_REQUEST['groupedWorkId'])) {
+						$groupedWorkDriver = new GroupedWorkDriver($_REQUEST['groupedWorkId']);
+						$relatedRecords = $groupedWorkDriver->getRelatedRecords();
+						if (count($relatedRecords) == 1) {
+							$recordId = array_key_first($relatedRecords);
+							if (str_starts_with($recordId, 'ils:')) {
+								$recordId = substr($recordId, 4);
+							}
+						}
+					} else {
+						$recordId = $_REQUEST['recordId'];
+					}
+					if (!empty($recordId)) {
+						$getPickupLocationsFromILS = $catalogDriver->getValidPickupLocationsForRecordFromILS($recordId, $patron);
+						if (!empty($getPickupLocationsFromILS['locationCodes']) && $getPickupLocationsFromILS['success']) {
+							$validLocationCodesFromILS = $getPickupLocationsFromILS['locationCodes'];
+							$pickupLocations = array_filter($pickupLocations, function ($location) use ($validLocationCodesFromILS) {
+								foreach ($validLocationCodesFromILS as $validCode) {
+									if (strpos($validCode, $location['locationCode']) === 0) {
+										return true;
+									}
+								}
+								return false;
+							});
+							$pickupLocations = array_values($pickupLocations);
+						} else {
+							$pickupLocations = [];
+						}
+					}
+				}
 				return [
 					'success' => true,
 					'pickupLocations' => $pickupLocations,
+					'pickupLocationsFromILS' => $validLocationCodesFromILS ?? [],
 				];
 			} else {
 				return [

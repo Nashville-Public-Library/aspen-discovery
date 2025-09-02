@@ -1,8 +1,6 @@
 <?php
 /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
-
 class MaterialsRequestFormat extends DataObject {
 	public $__table = 'materials_request_formats';
 	public $__displayNameColumn = 'formatLabel';
@@ -23,8 +21,12 @@ class MaterialsRequestFormat extends DataObject {
 		'Season',
 	];
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -72,6 +74,9 @@ class MaterialsRequestFormat extends DataObject {
 				'default' => 1,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	static function getDefaultMaterialRequestFormats($libraryId = -1) : array {
@@ -258,8 +263,7 @@ class MaterialsRequestFormat extends DataObject {
 		return $return;
 	}
 
-	/** @noinspection PhpMissingReturnTypeInspection */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if (is_array($this->specialFields)) {
 			$this->specialFields = implode(',', $this->specialFields);
 		} else {
@@ -268,8 +272,7 @@ class MaterialsRequestFormat extends DataObject {
 		return parent::insert();
 	}
 
-	/** @noinspection PhpMissingReturnTypeInspection */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		if (is_array($this->specialFields)) {
 			$this->specialFields = implode(',', $this->specialFields);
 		} else {
@@ -302,7 +305,7 @@ class MaterialsRequestFormat extends DataObject {
 		return false;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 
 		$materialRequest = new MaterialsRequest();
 		$materialRequest->formatId = $this->id;

@@ -1,6 +1,4 @@
-<?php
-
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class SlowPage extends DataObject {
 	public $__table = 'slow_page';
@@ -24,7 +22,7 @@ class SlowPage extends DataObject {
 		];
 	}
 
-	function setSlowness(float $elapsedTime) {
+	function setSlowness(float $elapsedTime) : void {
 		if ($elapsedTime < 0.5) {
 			$this->__set('timesFast', $this->timesFast++);
 		} elseif ($elapsedTime < 1) {

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class PalaceProjectStats extends DataObject {
@@ -10,11 +10,18 @@ class PalaceProjectStats extends DataObject {
 
 	public $numCheckouts;
 	public $numRenewals;
+	/** @noinspection PhpUnused */
 	public $numEarlyReturns;
+	/** @noinspection PhpUnused */
 	public $numHoldsPlaced;
+	/** @noinspection PhpUnused */
 	public $numHoldsCancelled;
+	/** @noinspection PhpUnused */
 	public $numHoldsFrozen;
+	/** @noinspection PhpUnused */
 	public $numHoldsThawed;
+	/** @noinspection PhpUnused */
 	public $numApiErrors;
+	/** @noinspection PhpUnused */
 	public $numConnectionFailures;
 }

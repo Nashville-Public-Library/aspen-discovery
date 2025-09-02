@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/EventsFacetGroup.php';
 
 class CalendarDisplaySetting extends DataObject {
@@ -8,9 +8,11 @@ class CalendarDisplaySetting extends DataObject {
 	public $cover;
 	public $altText;
 
-	public static function getObjectStructure($context = ''): array {
-		global $configArray;
-		$coverPath = $configArray['Site']['coverPath'];
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 
 		$structure = [
 			'id' => [
@@ -42,7 +44,9 @@ class CalendarDisplaySetting extends DataObject {
 				'description' => 'A header image description to use for alt-text',
 			]
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 }

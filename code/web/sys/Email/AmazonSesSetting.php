@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Email/AmazonSesRequest.php';
 
 /**
@@ -25,7 +25,11 @@ class AmazonSesSetting extends DataObject {
 		return ['accessKeySecret'];
 	}
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$regions = [
 			'us-east-2' => 'US East (Ohio)',
 			'us-east-1' => 'US East (N. Virginia)',
@@ -51,7 +55,7 @@ class AmazonSesSetting extends DataObject {
 			'me-south-1' => 'Middle East (Bahrain)',
 			'sa-east-1' => 'South America (São Paulo)',
 		];
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -107,56 +111,9 @@ class AmazonSesSetting extends DataObject {
 				'hideInLists' => true,
 			],
 		];
-	}
 
-	public function isFromAddressValid(): bool {
-		$ses_request = $this->getRequestHandler('GET');
-		$ses_request->setParameter('Action', 'ListVerifiedEmailAddresses');
-
-		$ses_response = $ses_request->getResponse();
-		if ($ses_response->error === false && $ses_response->code !== 200) {
-			$ses_response->error = [
-				'code' => $ses_response->code,
-				'message' => 'Unexpected HTTP status',
-			];
-		}
-		if ($ses_response->error !== false) {
-			AspenError::raiseError('listVerifiedEmailAddresses - ' . $ses_response->error->Error->Message);
-			return false;
-		}
-
-		if (!isset($ses_response->body)) {
-			return false;
-		}
-
-		foreach ($ses_response->body->ListVerifiedEmailAddressesResult->VerifiedEmailAddresses->member as $address) {
-			if ((string)$address == $this->fromAddress) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	public function verifyFromAddress() {
-		$ses_request = $this->getRequestHandler('POST');
-		$ses_request->setParameter('Action', 'VerifyEmailAddress');
-		$ses_request->setParameter('EmailAddress', $this->fromAddress);
-
-		$ses_response = $ses_request->getResponse();
-		if ($ses_response->error === false && $ses_response->code !== 200) {
-			$ses_response->error = [
-				'code' => $ses_response->code,
-				'message' => 'Unexpected HTTP status',
-			];
-		}
-		if ($ses_response->error !== false) {
-			AspenError::raiseError('verifyEmailAddress - ' . $ses_response->error->Error->Message);
-			return false;
-		}
-
-		$response['RequestId'] = (string)$ses_response->body->ResponseMetadata->RequestId;
-		return $response;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/** @var AmazonSesRequest */
@@ -179,7 +136,7 @@ class AmazonSesSetting extends DataObject {
 	}
 
 	public function getHost(): string {
-		return "email.{$this->region}.amazonaws.com";
+		return "email.$this->region.amazonaws.com";
 	}
 
 	/**
@@ -192,7 +149,7 @@ class AmazonSesSetting extends DataObject {
 	 *         Returns false if the provided message is missing any required fields.
 	 * @link(AWS SES Response formats, http://docs.aws.amazon.com/ses/latest/DeveloperGuide/query-interface-responses.html)
 	 */
-	public function sendEmail(AmazonSesMessage $sesMessage, bool $use_raw_request = false, ?bool $trigger_error = null) {
+	public function sendEmail(AmazonSesMessage $sesMessage, bool $use_raw_request = false, ?bool $trigger_error = null) : array|false {
 		$sesMessage->setFrom($this->fromAddress);
 		$sesMessage->setConfigurationSet($this->singleMailConfigSet);
 
@@ -238,8 +195,8 @@ class AmazonSesSetting extends DataObject {
 
 			if (is_array($sesMessage->replyto)) {
 				$i = 1;
-				foreach ($sesMessage->replyto as $replyto) {
-					$ses_request->setParameter('ReplyToAddresses.member.' . $i, $sesMessage->encodeRecipients($replyto));
+				foreach ($sesMessage->replyto as $replyTo) {
+					$ses_request->setParameter('ReplyToAddresses.member.' . $i, $sesMessage->encodeRecipients($replyTo));
 					$i++;
 				}
 			}
@@ -282,24 +239,23 @@ class AmazonSesSetting extends DataObject {
 
 		$ses_response = $ses_request->getResponse();
 		if ($ses_response->error === false && $ses_response->code !== 200) {
-			$response = [
+			return [
 				'code' => $ses_response->code,
 				'error' => ['Error' => ['message' => 'Unexpected HTTP status']],
 			];
-			return $response;
 		}
 		if ($ses_response->error !== false) {
 			if ($trigger_error) {
+				/** @noinspection PhpUndefinedFieldInspection */
 				AspenError::raiseError('sendEmail - ' . $ses_response->error->Error->Message);
 				return false;
 			}
 			return $ses_response;
 		}
 
-		$response = [
+		return [
 			'MessageId' => (string)$ses_response->body->{"{$action}Result"}->MessageId,
 			'RequestId' => (string)$ses_response->body->ResponseMetadata->RequestId,
 		];
-		return $response;
 	}
 }

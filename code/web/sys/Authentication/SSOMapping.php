@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/Authentication/SSOSetting.php';
 
 class SSOMapping extends DataObject {
@@ -11,8 +10,12 @@ class SSOMapping extends DataObject {
 	public $ssoSettingId;
 	public $fallbackValue;
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -39,9 +42,12 @@ class SSOMapping extends DataObject {
 				'description' => 'If the attribute is not given by the provider, give a fallback value to assign to users',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	static function getDefaults($ssoSettingId) {
+	static function getDefaults($ssoSettingId) : array {
 		$defaultFieldsToDisplay = [];
 
 		$defaultField = new SSOMapping();

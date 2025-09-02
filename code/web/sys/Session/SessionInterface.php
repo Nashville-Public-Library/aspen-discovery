@@ -6,11 +6,11 @@ if (file_exists(ROOT_DIR . '/sys/SearchEntry.php')) {
 
 class SessionInterface implements SessionHandlerInterface {
 
-	static public $lifetime = 3600; //one hour
-	static public $rememberMeLifetime = 1209600; //2 weeks
-	static public $masqueradeLifeTime = 900; //15 minutes
+	static public int $lifetime = 3600; //one hour
+	static public int $rememberMeLifetime = 1209600; //2 weeks
+	static public int $masqueradeLifeTime = 900; //15 minutes
 
-	static public $activeSessionObject = null;
+	static public ?Session $activeSessionObject = null;
 
 	public function init() {
 		session_set_save_handler($this);

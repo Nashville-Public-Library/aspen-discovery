@@ -492,6 +492,27 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 	}
 
 	/**
+	 * Retrieves valid pickup locations for this patron for this record.
+	 * @param string $recordId
+	 * @param User $patron
+	 * @return array An array containing success status and a message.
+	 */
+	public function getValidPickupLocationsForRecordFromILS($recordId, $patron): array {
+		return [
+			'success' => false,
+			'message' => 'This functionality has not been implemented for this ILS.',
+		];
+	}
+	/**
+	 * Checks whether this ILS restricts pickup locations for specific records.
+	 *
+	 * @return array An array containing success status and a message.
+	 */
+	public function restrictValidPickupLocationsForRecordByILS(): bool {
+		return false;
+	}
+
+	/**
 	 * @param string $patronBarcode
 	 * @param string $patronUsername
 	 * @return bool|User
@@ -998,6 +1019,10 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 	}
 
 	public function hasAdditionalFineFields(): bool {
+		return false;
+	}
+
+	public function isPatronAccountLocked(User $patron, $fine): bool {
 		return false;
 	}
 }

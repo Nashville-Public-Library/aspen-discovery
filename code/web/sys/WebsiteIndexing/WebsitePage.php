@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class WebsitePage extends DataObject {
 	public $__table = 'website_pages';
@@ -8,9 +7,15 @@ class WebsitePage extends DataObject {
 	public $websiteId;
 	public $url;
 	public $deleted;
+	/** @noinspection PhpUnused */
 	public $deleteReason;
 
-	public static function getObjectStructure($context = '') {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$websites = [];
 		$websiteSettings = new WebsiteIndexSetting();
 		$websiteSettings->orderBy('name');
@@ -18,7 +23,7 @@ class WebsitePage extends DataObject {
 		while ($websiteSettings->fetch()) {
 			$websites[$websiteSettings->id] = $websiteSettings->name;
 		}
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -61,6 +66,9 @@ class WebsitePage extends DataObject {
 				'readOnly' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getNumericColumnNames(): array {

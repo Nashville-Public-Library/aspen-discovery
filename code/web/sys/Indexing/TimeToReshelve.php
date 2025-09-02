@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class TimeToReshelve extends DataObject {
 	public $__table = 'time_to_reshelve';    // table name
@@ -13,7 +13,12 @@ class TimeToReshelve extends DataObject {
 	public /** @noinspection PhpUnused */
 		$groupedStatus;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$indexingProfiles = [];
 		require_once ROOT_DIR . '/sys/Indexing/IndexingProfile.php';
 		$indexingProfile = new IndexingProfile();
@@ -22,7 +27,7 @@ class TimeToReshelve extends DataObject {
 		while ($indexingProfile->fetch()) {
 			$indexingProfiles[$indexingProfile->id] = $indexingProfile->name;
 		}
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -83,5 +88,8 @@ class TimeToReshelve extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

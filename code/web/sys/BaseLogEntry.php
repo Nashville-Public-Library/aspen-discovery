@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 abstract class BaseLogEntry extends DataObject {
@@ -7,7 +7,8 @@ abstract class BaseLogEntry extends DataObject {
 	public $endTime;
 	public $lastUpdate;
 
-	function getElapsedTime() {
+	/** @noinspection PhpUnused */
+	function getElapsedTime() : string {
 		if (!isset($this->endTime) || is_null($this->endTime)) {
 			return "";
 		} else {

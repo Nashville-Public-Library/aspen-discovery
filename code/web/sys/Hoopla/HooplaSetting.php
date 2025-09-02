@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Hoopla/HooplaScope.php';
 
 class HooplaSetting extends DataObject {
@@ -10,23 +10,35 @@ class HooplaSetting extends DataObject {
 	public $apiPassword;
 	public $accessToken;
 	public $tokenExpirationTime;
+	/** @noinspection PhpUnused */
 	public $regroupAllRecords;
+	/** @noinspection PhpUnused */
 	public $runFullUpdateInstant;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfChangedRecordsInstant;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfAllRecordsInstant;
 	public $hooplaInstantEnabled;
+	/** @noinspection PhpUnused */
 	public $runFullUpdateFlex;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfChangedRecordsFlex;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfAllRecordsFlex;
 	public $hooplaFlexEnabled;
 
 	private $_scopes;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$hooplaScopeStructure = HooplaScope::getObjectStructure($context);
 		unset($hooplaScopeStructure['settingId']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -49,13 +61,13 @@ class HooplaSetting extends DataObject {
 				'property' => 'apiUsername',
 				'type' => 'text',
 				'label' => 'API Username',
-				'description' => 'The API Username provided by Hoopla when registering',
+				'description' => 'The API Username provided by your Aspen support vendor (or Hoopla when registering if not using third-party support or hosting)',
 			],
 			'apiPassword' => [
 				'property' => 'apiPassword',
 				'type' => 'storedPassword',
 				'label' => 'API Password',
-				'description' => 'The API Password provided by Hoopla when registering',
+				'description' => 'The API Password provided by your Aspen support vendor (or Hoopla when registering if not using third-party support or hosting)',
 				'hideInLists' => true,
 			],
 			'regroupAllRecords' => [
@@ -155,13 +167,16 @@ class HooplaSetting extends DataObject {
 				'additionalOneToManyActions' => [],
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __toString() {
 		return 'Library ' . $this->libraryId . ' (' . $this->apiUsername . ')';
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveScopes();
@@ -169,7 +184,7 @@ class HooplaSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			if (empty($this->_scopes)) {
@@ -195,7 +210,7 @@ class HooplaSetting extends DataObject {
 		return $ret;
 	}
 
-	public function saveScopes() {
+	public function saveScopes() : void {
 		if (isset ($this->_scopes) && is_array($this->_scopes)) {
 			$this->saveOneToManyOptions($this->_scopes, 'settingId');
 			unset($this->_scopes);

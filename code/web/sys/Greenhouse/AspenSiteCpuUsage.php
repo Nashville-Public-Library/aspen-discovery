@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class AspenSiteCpuUsage extends DataObject {
 	public $__table = 'aspen_site_cpu_usage';

@@ -5,6 +5,7 @@ class UsageByIPAddress extends DataObject {
 	protected $id;
 
 	protected $instance;
+	/** @noinspection PhpUnused */
 	protected $ipAddress;
 	protected $year;
 	protected $month;
@@ -45,26 +46,32 @@ class UsageByIPAddress extends DataObject {
 		return false;
 	}
 
+	/** @noinspection PhpUnused */
 	public function incrementNumRequests(): bool {
 		return $this->incrementField('numRequests');
 	}
 
+	/** @noinspection PhpUnused */
 	public function incrementNumBlockedRequests() : bool {
 		return $this->incrementField('numBlockedRequests');
 	}
 
+	/** @noinspection PhpUnused */
 	public function incrementNumBlockedApiRequests() : bool {
 		return $this->incrementField('numBlockedApiRequests');
 	}
 
+	/** @noinspection PhpUnused */
 	public function incrementNumSpammyRequests() : bool {
 		return $this->incrementField('numSpammyRequests');
 	}
 
+	/** @noinspection PhpUnused */
 	public function incrementNumLoginAttempts() : bool {
 		return $this->incrementField('numLoginAttempts');
 	}
 
+	/** @noinspection PhpUnused */
 	public function incrementNumFailedLoginAttempts() : bool {
 		return $this->incrementField('numFailedLoginAttempts');
 	}
@@ -73,6 +80,7 @@ class UsageByIPAddress extends DataObject {
 		return $this->id;
 	}
 
+	/** @noinspection PhpUnused */
 	public function getNumSpammyRequests() : int {
 		return $this->numSpammyRequests;
 	}
@@ -91,7 +99,7 @@ class UsageByIPAddress extends DataObject {
 			}else{
 				return true;
 			}
-		} catch (Exception $e) {
+		} catch (Exception) {
 			//Ignore this, the table has not been created yet
 			return true;
 		}

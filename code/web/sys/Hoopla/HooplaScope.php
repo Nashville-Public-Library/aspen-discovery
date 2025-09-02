@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Hoopla/HooplaSetting.php';
 
@@ -9,6 +9,7 @@ class HooplaScope extends DataObject {
 	public $settingId;
 	public /** @noinspection PhpUnused */
 		$excludeTitlesWithCopiesFromOtherVendors;
+	/** @noinspection PhpUnused */
 	public $includeInstant;
 	public $includeFlex;
 	public /** @noinspection PhpUnused */
@@ -39,8 +40,11 @@ class HooplaScope extends DataObject {
 		$includeBingePass;
 	public /** @noinspection PhpUnused */
 		$maxCostPerCheckoutBingePass;
+	/** @noinspection PhpUnused */
 	public $includeAdult;
+	/** @noinspection PhpUnused */
 	public $includeTeen;
+	/** @noinspection PhpUnused */
 	public $includeKids;
 	public /** @noinspection PhpUnused */
 		$ratingsToExclude;
@@ -56,7 +60,12 @@ class HooplaScope extends DataObject {
 	private $_libraries;
 	private $_locations;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$hooplaSettings = [];
 		$hooplaSetting = new HooplaSetting();
 		$hooplaSetting->find();
@@ -67,7 +76,7 @@ class HooplaScope extends DataObject {
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -320,10 +329,13 @@ class HooplaScope extends DataObject {
 				'forcesReindex' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	/** @noinspection PhpUnused */
-	public function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Hoopla/Scopes?objectAction=edit&id=' . $this->id;
 	}
 
@@ -365,7 +377,7 @@ class HooplaScope extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -374,7 +386,7 @@ class HooplaScope extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -383,7 +395,7 @@ class HooplaScope extends DataObject {
 		return $ret;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -408,7 +420,7 @@ class HooplaScope extends DataObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries') || UserAccount::userHasPermission('Administer Home Library Locations'));
 			/**

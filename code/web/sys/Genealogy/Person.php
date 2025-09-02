@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/SolrDataObject.php';
 require_once ROOT_DIR . '/sys/Genealogy/Marriage.php';
@@ -72,7 +72,7 @@ class Person extends SolrDataObject {
 	private $_obituaries = null;
 	private $_marriages = null;
 
-	function getCore() {
+	function getCore() : string {
 		return 'genealogy';
 	}
 
@@ -91,19 +91,19 @@ class Person extends SolrDataObject {
 		return $this->personId;
 	}
 
-	function recordtype() {
+	function recordtype() : string {
 		return 'person';
 	}
 
-	function displayName() {
+	function displayName() : string {
 		return $this->firstName . ' ' . $this->lastName;
 	}
 
-	function title() {
+	function title() : string {
 		return $this->firstName . ' ' . $this->lastName . ' ' . $this->middleName . ' ' . $this->otherName . ' ' . $this->maidenName;
 	}
 
-	function keywords() {
+	function keywords() : string {
 		$keywords = $this->firstName . ' ' . $this->lastName . ' ' . $this->middleName . ' ' . $this->otherName . ' ' . $this->nickName . ' ' . $this->maidenName . ' ';
 		$keywords .= $this->cemeteryName . ' ' . $this->cemeteryLocation . ' ' . $this->mortuaryName . ' ';
 		$keywords .= $this->comments . ' ';
@@ -117,15 +117,18 @@ class Person extends SolrDataObject {
 		return $keywords;
 	}
 
+	/** @noinspection PhpUnused */
 	function birthYear() {
 		return $this->birthDateYear;
 	}
 
+	/** @noinspection PhpUnused */
 	function deathYear() {
 		return $this->deathDateYear;
 	}
 
-	function spouseName() {
+	/** @noinspection PhpUnused */
+	function spouseName() : array {
 		$return = [];
 		//Make sure that marriages are loaded
 		$marriages = $this->getMarriages();
@@ -135,7 +138,8 @@ class Person extends SolrDataObject {
 		return $return;
 	}
 
-	function marriageDate() {
+	/** @noinspection PhpUnused */
+	function marriageDate() : array {
 		$return = [];
 		//Make sure that marriages are loaded
 		$marriages = $this->getMarriages();
@@ -149,7 +153,7 @@ class Person extends SolrDataObject {
 		return $return;
 	}
 
-	function marriageComments() {
+	function marriageComments() : array {
 		$return = [];
 		//Make sure that marriages are loaded
 		$marriages = $this->getMarriages();
@@ -159,7 +163,8 @@ class Person extends SolrDataObject {
 		return $return;
 	}
 
-	function obituaryDate() {
+	/** @noinspection PhpUnused */
+	function obituaryDate() : array {
 		$return = [];
 		//Make sure that obituaries are loaded
 		$obituaries = $this->getObituaries();
@@ -173,7 +178,8 @@ class Person extends SolrDataObject {
 		return $return;
 	}
 
-	function obituarySource() {
+	/** @noinspection PhpUnused */
+	function obituarySource() : array {
 		$return = [];
 		//Make sure that obituaries are loaded
 		$obituaries = $this->getObituaries();
@@ -183,7 +189,7 @@ class Person extends SolrDataObject {
 		return $return;
 	}
 
-	function obituaryText() {
+	function obituaryText() : array {
 		$return = [];
 		//Make sure that obituaries are loaded
 		$obituaries = $this->getObituaries();
@@ -193,7 +199,11 @@ class Person extends SolrDataObject {
 		return $return;
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			[
 				'property' => 'id',
@@ -636,7 +646,9 @@ class Person extends SolrDataObject {
 				'hideInLists' => true,
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	function __get($name) {
@@ -665,30 +677,30 @@ class Person extends SolrDataObject {
 		}
 	}
 
-	function deleteMarriages() {
+	function deleteMarriages() : void {
 		if (isset($this->personId)) {
 			$marriage = new Marriage();
-			$marriage->query("DELETE FROM marriage WHERE personId = {$this->personId}");
+			$marriage->query("DELETE FROM marriage WHERE personId = $this->personId");
 		}
 	}
 
-	function deleteObituaries() {
+	function deleteObituaries() : void {
 		if (isset($this->personId)) {
 			$obit = new Obituary();
-			$obit->query("DELETE FROM obituary WHERE personId = {$this->personId}");
+			$obit->query("DELETE FROM obituary WHERE personId = $this->personId");
 		}
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$this->deleteMarriages();
 		$this->deleteObituaries();
 		return parent::delete($useWhere, $hardDelete);
 	}
 
-	function saveMarriages() {
+	function saveMarriages() : void {
 		if (isset($this->personId)) {
 			$marriage = new Marriage();
-			$marriage->query("DELETE FROM marriage WHERE personId = {$this->personId}");
+			$marriage->query("DELETE FROM marriage WHERE personId = $this->personId");
 			if (is_array($this->_marriages)) {
 				foreach ($this->_marriages as $marriageData) {
 					$marriageData->personId = $this->personId;
@@ -698,10 +710,10 @@ class Person extends SolrDataObject {
 		}
 	}
 
-	function saveObituaries() {
+	function saveObituaries() : void {
 		if (isset($this->personId)) {
 			$obit = new Obituary();
-			$obit->query("DELETE FROM obituary WHERE personId = {$this->personId}");
+			$obit->query("DELETE FROM obituary WHERE personId = $this->personId");
 			if (is_array($this->_obituaries)) {
 				foreach ($this->_obituaries as $obitData) {
 					$obitData->personId = $this->personId;
@@ -711,7 +723,7 @@ class Person extends SolrDataObject {
 		}
 	}
 
-	function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		//Set the dateAdded and who added the record
 		$this->dateAdded = time();
 		$this->addedBy = UserAccount::getActiveUserId();
@@ -726,7 +738,7 @@ class Person extends SolrDataObject {
 		return $ret;
 	}
 
-	function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->modifiedBy = UserAccount::getActiveUserId();
 		$this->lastModified = time();
 		if (empty($this->dateAdded)) {
@@ -737,9 +749,10 @@ class Person extends SolrDataObject {
 			$this->saveMarriages();
 			$this->saveObituaries();
 		}
+		return $ret;
 	}
 
-	function formatPartialDate($day, $month, $year) {
+	function formatPartialDate($day, $month, $year) : string {
 		$months = [
 			1 => 'January',
 			2 => 'February',
@@ -774,28 +787,7 @@ class Person extends SolrDataObject {
 		return $formattedDate;
 	}
 
-	function formatPartialDateForArchive($day, $month, $year) {
-		$formattedDate = '';
-		if ($month > 0) {
-			$formattedDate = str_pad($month, 2, '0', STR_PAD_LEFT);
-		}
-		if ($day > 0) {
-			if (strlen($formattedDate) > 0) {
-				$formattedDate .= '/';
-			}
-			$formattedDate .= $day;
-
-		}
-		if ($year > 0) {
-			if (strlen($formattedDate) > 0) {
-				$formattedDate .= '/';
-			}
-			$formattedDate .= $year;
-		}
-		return $formattedDate;
-	}
-
-	public function getMarriages() {
+	public function getMarriages() : array {
 		global $timer;
 		if (is_null($this->_marriages)) {
 			$this->_marriages = [];
@@ -814,7 +806,7 @@ class Person extends SolrDataObject {
 		return $this->_marriages;
 	}
 
-	public function getObituaries() {
+	public function getObituaries() : array {
 		global $timer;
 		if (is_null($this->_obituaries)) {
 			$this->_obituaries = [];

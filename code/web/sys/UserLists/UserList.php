@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/UserLists/UserListEntry.php';
 
 class UserList extends DataObject {
@@ -66,9 +65,12 @@ class UserList extends DataObject {
 		'author' => '',
 	];
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -100,6 +102,9 @@ class UserList extends DataObject {
 				'storeSolr' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	function numValidListItems() {
@@ -121,7 +126,7 @@ class UserList extends DataObject {
 		return $listEntry->count();
 	}
 
-	function insert($context = ''): bool|int {
+	public function insert(string $context = '') : int|bool {
 		if (empty($this->created)) {
 			$this->created = time();
 		}
@@ -137,7 +142,7 @@ class UserList extends DataObject {
 		return parent::insert();
 	}
 
-	function update($context = '')  : bool|int {
+	public function update(string $context = '') : int|bool {
 		if ($this->created == 0) {
 			$this->created = time();
 		}
@@ -155,7 +160,7 @@ class UserList extends DataObject {
 		return $result;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		if ($hardDelete && !empty($this->id) && $this->id >= 1) {
 			// Hard delete by marking for index cleanup and updating deletion information.
 			$this->deleteFromIndex = 1;
@@ -393,6 +398,17 @@ class UserList extends DataObject {
 			$this->_cleanDescription = strip_tags($this->description, '<p><b><em><strong><i><br>');
 		}
 		return $this->_cleanDescription;
+	}
+
+	function getListAuthor(): ?string {
+		if ($this->user_id != null) {
+			$user = new User();
+			$user->id = $this->user_id;
+			if ($user->find(true)) {
+				return $user->getDisplayName();
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -1180,13 +1196,13 @@ class UserList extends DataObject {
 		return $links;
 	}
 
-	public function loadObjectPropertiesFromJSON($jsonData, $mappings) {
+	public function loadObjectPropertiesFromJSON($jsonData, $mappings) : void {
 		parent::loadObjectPropertiesFromJSON($jsonData, $mappings);
 		//Need to load ID for lists since we link to a list based on the id
 		$this->id = (int)$jsonData['id'];
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (isset($jsonData['user'])) {
 			$username = $jsonData['user'];
@@ -1198,7 +1214,7 @@ class UserList extends DataObject {
 		}
 	}
 
-	public function loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting'): bool {
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
 		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (array_key_exists('userListEntries', $jsonData)) {
 			//Remove any list entries that we already have for this list

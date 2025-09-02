@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class EventsUsage extends DataObject {
 	public $__table = 'events_usage';
@@ -21,13 +20,5 @@ class EventsUsage extends DataObject {
 			'year',
 			'month',
 		];
-	}
-
-	public function okToExport(array $selectedFilters): bool {
-		$okToExport = parent::okToExport($selectedFilters);
-		if (in_array($this->instance, $selectedFilters['instances'])) {
-			$okToExport = true;
-		}
-		return $okToExport;
 	}
 }
