@@ -27,6 +27,10 @@
 				</div>
 			</div>
 
+            {if !empty($showRatings) && $printInterface === true && $printEntryRating === true && $printEntryCovers === false}
+                {include file="GroupedWork/title-rating.tpl" id=$summId ratingData=$summRating showNotInterested=false}
+            {/if}
+
 			{if !empty($summAuthor)}
 				<div class="row">
 					<div class="result-label col-tn-3 col-xs-3">{translate text="Author" isPublicFacing=true} </div>
