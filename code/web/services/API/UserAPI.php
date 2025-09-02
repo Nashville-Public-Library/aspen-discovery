@@ -6185,7 +6185,8 @@ class UserAPI extends AbstractAPI {
 								'success' => $result['success'],
 								'title' => $result['api']['title'],
 								'message' => $result['api']['message'],
-								'itemData' => $result['itemData']
+								'itemData' => $result['itemData'],
+								'completionMessage' => $result['completionMessage'] ?? '',
 							];
 						} else {
 							return [
@@ -6273,7 +6274,7 @@ class UserAPI extends AbstractAPI {
 								'success' => $result['success'],
 								'title' => $result['api']['title'],
 								'message' => $result['api']['message'],
-								'itemData' => $result['itemData']
+								'itemData' => $result['itemData'] ?? []
 							];
 						} else {
 							return [

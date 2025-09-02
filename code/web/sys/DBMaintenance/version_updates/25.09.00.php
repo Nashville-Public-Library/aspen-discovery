@@ -1,7 +1,7 @@
 <?php
 
+/** @noinspection PhpUnused */
 function getUpdates25_09_00(): array {
-	$curTime = time();
 	return [
 		/*'name' => [
 			 'title' => '',
@@ -65,6 +65,19 @@ function getUpdates25_09_00(): array {
 				'ALTER TABLE grouped_work_display_settings ADD COLUMN formatDisplayStyle INT DEFAULT 1'
 			]
 		], //add_grouped_work_display_format_display
+		'add_self_check_completion_message' => [
+			'title' => 'Add Self Check Completion Message',
+			'description' => 'Add configuration table for self check completion messages',
+			'continueOnError' => false,
+			'sql' => [
+				'CREATE TABLE self_check_completion_message (
+					id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+					formats VARCHAR(500),
+					owningLocations VARCHAR(500),
+					checkoutLocations VARCHAR(500)
+				) ENGINE INNODB',
+			]
+		], //add_self_check_completion_message
 
 		//katherine - Grove
 
