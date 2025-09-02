@@ -847,7 +847,10 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$summLanguage = null;
 		$isFirst = true;
 		global $library;
-		$alwaysShowMainDetails = $library->getGroupedWorkDisplaySettings()->alwaysShowSearchResultsMainDetails;
+		$groupedWorkDisplaySettings = $library->getGroupedWorkDisplaySettings();
+		$alwaysShowMainDetails = $groupedWorkDisplaySettings->alwaysShowSearchResultsMainDetails;
+		$interface->assign('formatDisplayStyle', $groupedWorkDisplaySettings->formatDisplayStyle);
+
 		foreach ($relatedRecords as $relatedRecord) {
 			if ($isFirst) {
 				$summPublisher = $relatedRecord->publisher;
@@ -1390,9 +1393,10 @@ class GroupedWorkDriver extends IndexRecordDriver {
 	 *
 	 * @access  public
 	 * @param int $seriesId ID of the series that this work is contained on
+	 * @param array $instance Metadata about this specific list entry
 	 * @return  string              Name of Smarty template file to display.
 	 */
-	public function getSeriesEntry(?int $seriesId = null) {
+	public function getSeriesEntry(?int $seriesId = null, ?array $instance = null) {
 		global $interface;
 		global $timer;
 
@@ -1440,13 +1444,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		//Description
 		$interface->assign('summDescription', $this->getDescriptionFast());
 		$timer->logTime('Finished Loading Description');
-		if ($this->hasCachedSeries()) {
-			$interface->assign('ajaxSeries', false);
-			$interface->assign('summSeries', $this->getSeries(false, $seriesId));
-		} else {
-			$interface->assign('ajaxSeries', true);
-			$interface->assign('summSeries', '');
-		}
+		$interface->assign('summVolume', $instance['volume'] ?? '');
 
 		$interface->assign('summPubDate', $this->getEarliestPublicationDate());
 
@@ -1769,7 +1767,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 	 *
 	 * @return Grouping_Manifestation[]|null
 	 */
-	public function getRelatedManifestations() {
+	public function getRelatedManifestations() : ?array {
 		if ($this->_relatedManifestations == null) {
 			global $timer;
 			global $memoryWatcher;
@@ -1876,6 +1874,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				$this,
 				"compareRelatedManifestations",
 			]);
+
 			$timer->logTime("Finished loading related manifestations");
 			$memoryWatcher->logMemory("Finished loading related manifestations");
 		}
@@ -1974,7 +1973,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 	 *
 	 * @return  string              Name of Smarty template file to display.
 	 */
-	public function getSearchResult($view = 'list') {
+	public function getSearchResult($view = 'list') : string {
 		if ($view == 'covers') { // Displaying Results as bookcover tiles
 			return $this->getBrowseResult();
 		}
@@ -1989,7 +1988,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		$id = $this->getUniqueID();
 		$timer->logTime("Starting to load search result for grouped work $id");
 		$interface->assign('summId', $id);
-		if (substr($id, 0, 1) == '.') {
+		if (str_starts_with($id, '.')) {
 			$interface->assign('summShortId', substr($id, 1));
 		} else {
 			$interface->assign('summShortId', $id);
@@ -2131,6 +2130,8 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 		$timer->logTime("Finished assignment of data based on solr debug info");
 
+		$interface->assign('formatDisplayStyle', $library->getGroupedWorkDisplaySettings()->formatDisplayStyle);
+
 		//Get Rating
 		$interface->assign('summRating', $this->getRatingData());
 		$timer->logTime("Finished loading rating data");
@@ -2156,6 +2157,42 @@ class GroupedWorkDriver extends IndexRecordDriver {
 
 		$timer->logTime("Assigned all information to show search results");
 		return 'RecordDrivers/GroupedWork/result.tpl';
+	}
+
+	private bool $_requiredDataForActionsPreloaded = false;
+	private function preloadRequiredDataForActions(array $allRecordIdsBySource, array $allRecordIdsWithSource) : void {
+		if (!$this->_requiredDataForActionsPreloaded) {
+			$this->_requiredDataForActionsPreloaded = true;
+
+			foreach ($allRecordIdsBySource as $source => $recordIds) {
+				if ($source == 'overdrive') {
+					require_once ROOT_DIR . '/sys/OverDrive/OverDriveAPIProduct.php';
+					OverDriveAPIProduct::preloadProducts($recordIds);
+					require_once ROOT_DIR . '/sys/OverDrive/OverDriveAPIProductAvailability.php';
+					OverDriveAPIProductAvailability::preloadAvailability($recordIds);
+				}else if ($source == 'axis360') {
+					require_once ROOT_DIR . '/sys/Axis360/Axis360Title.php';
+					Axis360Title::preloadTitles($recordIds);
+				}else if ($source == 'hoopla') {
+					require_once ROOT_DIR . '/sys/Hoopla/HooplaExtract.php';
+					HooplaExtract::preloadTitles($recordIds);
+				}else{
+					require_once ROOT_DIR . '/sys/ILS/RecordFile.php';
+					require_once ROOT_DIR . '/sys/ILS/IlsHoldSummary.php';
+					require_once ROOT_DIR . '/sys/ILS/IlsVolumeInfo.php';
+					require_once ROOT_DIR . '/sys/Indexing/IlsRecord.php';
+
+					//Load all available file uploads
+					RecordFile::preloadFiles($source, $recordIds);
+					//Load all hold information
+					IlsHoldSummary::preloadHoldSummaries($source, $recordIds);
+					//Load all volume information
+					IlsVolumeInfo::preloadVolumeInfo($source, $allRecordIdsWithSource[$source]);
+					//Load ILSRecords
+					IlsRecord::preloadIlsRecords($source, $recordIds);
+				}
+			}
+		}
 	}
 
 	public function getSemanticData() {
@@ -2220,6 +2257,26 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		return $relatedWorkExamples;
 	}
 
+	private $_seriesMembers = null;
+
+	/**
+	 * @return SeriesMember[]
+	 */
+	private function getSeriesMembers() : array {
+		if ($this->_seriesMembers == null) {
+			require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
+			$seriesMember = new SeriesMember();
+			$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
+			if (!empty($seriesId)) {
+				$seriesMember->seriesId = $seriesId;
+			}
+			$seriesMember->excluded = 0;
+			$seriesMember->orderBy('priorityScore DESC');
+			$this->_seriesMembers = $seriesMember->fetchAll();
+		}
+		return $this->_seriesMembers;
+	}
+
 	private $seriesData;
 
 	public function getSeries($allowReload = true, ?int $seriesId = null) : ?array {
@@ -2232,18 +2289,22 @@ class GroupedWorkDriver extends IndexRecordDriver {
 			$searchSeries = array_key_exists('Series', $enabledModules) && $library->useSeriesSearchIndex == 1;
 			if ($searchSeries) {
 				require_once ROOT_DIR . '/sys/Series/Series.php';
-				require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
-				$seriesMember = new SeriesMember();
-				$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
+				$seriesMembers = $this->getSeriesMembers();
+
 				if (!empty($seriesId)) {
-					$seriesMember->seriesId = $seriesId;
+					$tmpSeriesMembers = [];
+					foreach ($seriesMembers as $seriesMember) {
+						if ($seriesMember->seriesId == $seriesId) {
+							$tmpSeriesMembers[] = $seriesMember;
+						}
+					}
+					$seriesMembers = $tmpSeriesMembers;
 				}
-				$seriesMember->excluded = 0;
-				$seriesInfo = null;
-				$seriesMember->orderBy('priorityScore DESC');
-				$seriesMember->find();
+
 				$first = true;
-				while ($seriesMember->fetch()) {
+				$seriesInfo = [];
+				$allHidden = true;
+				foreach ($seriesMembers as $seriesMember) {
 					$series = $seriesMember->getSeries();
 					if ($series != null) {
 						if ($first) {
@@ -2252,7 +2313,8 @@ class GroupedWorkDriver extends IndexRecordDriver {
 								'seriesId' => $series->id,
 								'volume' => $seriesMember->volume,
 								'fromNovelist' => false,
-								'fromSeriesIndex' => true
+								'fromSeriesIndex' => true,
+								'hidden' => !$series->isIndexed,
 							];
 							$first = false;
 						} else {
@@ -2261,11 +2323,16 @@ class GroupedWorkDriver extends IndexRecordDriver {
 								'seriesId' => $series->id,
 								'volume' => $seriesMember->volume,
 								'fromNovelist' => false,
-								'fromSeriesIndex' => true
+								'fromSeriesIndex' => true,
+								'hidden' => !$series->isIndexed,
 							];
+						}
+						if ($series->isIndexed) {
+							$allHidden = false;
 						}
 					}
 				}
+				$seriesInfo['allHidden'] = $allHidden;
 				$this->seriesData = $seriesInfo;
 			} else {
 				//Get a list of isbns from the record and existing display info if any
@@ -2655,9 +2722,9 @@ class GroupedWorkDriver extends IndexRecordDriver {
 				/** @var GroupedWorkSubDriver $driver */
 				$recordTOC = $driver->getTableOfContents();
 				if ($recordTOC != null && count($recordTOC) > 0) {
-					$editionDescription = "{$record->format}";
+					$editionDescription = "$record->format";
 					if ($record->edition) {
-						$editionDescription .= " - {$record->edition}";
+						$editionDescription .= " - $record->edition";
 					}
 					$tableOfContents = array_merge($tableOfContents, ["<h4>From the $editionDescription</h4>"], $recordTOC);
 				}
@@ -2755,12 +2822,8 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		global $library;
 		$searchSeries = array_key_exists('Series', $enabledModules) && $library->useSeriesSearchIndex == 1;
 		if ($searchSeries) {
-			require_once ROOT_DIR . '/sys/Series/Series.php';
 			require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
-			$seriesMember = new SeriesMember();
-			$seriesMember->groupedWorkPermanentId = $this->getPermanentId();
-			$seriesMember->excluded = 0;
-			if ($seriesMember->find(true)) {
+			if (count($this->getSeriesMembers()) > 0) {
 				return true;
 			}
 		}
@@ -2950,17 +3013,15 @@ class GroupedWorkDriver extends IndexRecordDriver {
 					//Check for the main location for the library
 					require_once ROOT_DIR . '/sys/Grouping/Scope.php';
 					//Get the scope for the main location for the library
-					$mainLocation = new Location();
-					$mainLocation->libraryId = $library->libraryId;
-					$mainLocation->isMainBranch = 1;
-
-					if ($mainLocation->find(true)) {
-						$scope = new Grouping_Scope();
-						$mainLibraryScopeName = str_replace('-', '', strtolower(!empty($mainLocation->subdomain) ? $mainLocation->subdomain : $mainLocation->code));
-						$scope->name = $mainLibraryScopeName;
-						$scope->isLocationScope = 1;
-						if ($scope->find(true)) {
-							GroupedWorkDriver::$mainLocationScopeId = $scope->id;
+					foreach ($library->getLocations() as $mainLocation) {
+						if ($mainLocation->isMainBranch) {
+							$scope = new Grouping_Scope();
+							$mainLibraryScopeName = str_replace('-', '', strtolower(!empty($mainLocation->subdomain) ? $mainLocation->subdomain : $mainLocation->code));
+							$scope->name = $mainLibraryScopeName;
+							$scope->isLocationScope = 1;
+							if ($scope->find(true)) {
+								GroupedWorkDriver::$mainLocationScopeId = $scope->id;
+							}
 						}
 					}
 					global $locationSingleton;
@@ -3079,6 +3140,18 @@ class GroupedWorkDriver extends IndexRecordDriver {
 					}
 
 					$records = $this->getRawRecordDataFromDB($databaseIds['uniqueRecordIds']);
+					$allRecordIdsBySource = [];
+					$allRecordIdsWithSource = [];
+					foreach ($records as $record) {
+						if (!isset($allRecordIdsBySource[$record['source']])) {
+							$allRecordIdsBySource[$record['source']] = [];
+							$allRecordIdsWithSource[$record['source']] = [];
+						}
+						$allRecordIdsBySource[$record['source']][] = $record['recordIdentifier'];
+						$allRecordIdsWithSource[$record['source']][] = $record['source'] . ':' . $record['recordIdentifier'];
+					}
+
+					$this->preloadRequiredDataForActions($allRecordIdsBySource, $allRecordIdsWithSource);
 
 					//Load all records
 					/** @var Grouping_Record[] $allRecords */
@@ -3111,7 +3184,7 @@ class GroupedWorkDriver extends IndexRecordDriver {
 
 							//Do not add invalid records
 							if ($recordDriver != null) {
-								$volumeData = $this->getVolumeDataForRecord($recordId);
+								$volumeData = $this->getVolumeDataForRecord($record['source'], $recordId);
 								$relatedRecord = new Grouping_Record($recordId, $record, $recordDriver, $volumeData, $record['source'], true, $variation);
 								$relatedRecord->recordVariations = $recordVariations;
 
@@ -3368,12 +3441,14 @@ class GroupedWorkDriver extends IndexRecordDriver {
 	 */
 	protected function setupRelatedRecordDetails($recordDetails, $groupedWork, $timer, $scopingInfo, $searchLocation, $library, $forCovers = false) {
 		global $memoryWatcher;
-		//Check to see if we have any volume data for the record
-		$volumeData = $this->getVolumeDataForRecord($recordDetails[0]);
 
 		//		list($source) = explode(':', $recordDetails[0], 1); // this does not work for 'overdrive:27770ba9-9e68-410c-902b-de2de8e2b7fe', returns 'overdrive:27770ba9-9e68-410c-902b-de2de8e2b7fe'
 		// when loading book covers.
 		[$source] = explode(':', $recordDetails[0], 2);
+
+		//Check to see if we have any volume data for the record
+		$volumeData = $this->getVolumeDataForRecord($source, $recordDetails[0]);
+
 		/** GroupedWorkSubDriver $recordDriver */
 		require_once ROOT_DIR . '/RecordDrivers/RecordDriverFactory.php';
 		$recordDriver = RecordDriverFactory::initRecordDriverById($recordDetails[0], $groupedWork);
@@ -3584,32 +3659,28 @@ class GroupedWorkDriver extends IndexRecordDriver {
 		}
 	}
 
-	function getWhileYouWait() : array {
+	function getWhileYouWait($selectedFormat = null) : array {
 		global $library;
-		global $interface;
 		if (!$library->showWhileYouWait) {
 			return [];
+		}
+		if ($selectedFormat == null && !empty($_REQUEST['activeFormat'])){
+			$selectedFormat = $_REQUEST['activeFormat'];
 		}
 		//Load Similar titles (from Solr)
 		global $configArray;
 		global $interface;
 		require_once ROOT_DIR . '/sys/SolrConnector/GroupedWorksSolrConnector.php';
-		/** @var SearchObject_AbstractGroupedWorkSearcher $db */
+		/** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */
 		$searchObject = SearchObjectFactory::initSearchObject();
 		$searchObject->init();
-		if ($library->showWhileYouWait == 1) {
-			$searchObject->init();
-			$searchObject->disableScoping();
-			$interface->assign('activeSearchSource', 'global');
-		} else {
-			$searchObject->init('local');
-			$interface->assign('activeSearchSource', 'local');
-		}
-		if ($library->showWhileYouWait == 2 && !empty($_REQUEST['activeFormat'])) {
-			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, true, 3, $_REQUEST['activeFormat']);
-			$interface->assign('activeFormat', $_REQUEST['activeFormat']);
+		$selectedAvailabilityToggle = 'local';
+		$interface->assign('activeSearchSource', $selectedAvailabilityToggle);
+		if ($library->showWhileYouWait == 2 && !empty($selectedFormat)) {
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, true, 3, $selectedFormat);
+			$interface->assign('activeFormat', $selectedFormat);
 		} else{
-			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), true, false, 3);
+			$similar = $searchObject->getMoreLikeThis($this->getPermanentId(), $selectedAvailabilityToggle, true, false, 3);
 		}
 
 		// Send the similar items to the template; if there is only one, we need
@@ -3677,35 +3748,9 @@ class GroupedWorkDriver extends IndexRecordDriver {
 	 * @param $recordDetails
 	 * @return array
 	 */
-	private function getVolumeDataForRecord($recordId): array {
+	private function getVolumeDataForRecord(string $source, string $recordId): array {
 		require_once ROOT_DIR . '/sys/ILS/IlsVolumeInfo.php';
-		$volumeData = [];
-		$volumeDataDB = new IlsVolumeInfo();
-		$volumeDataDB->recordId = $recordId;
-		$volumeDataDB->orderBy('displayOrder ASC, displayLabel ASC');
-		//D-81 show volume information even if there aren't related items
-		//$volumeDataDB->whereAdd('length(relatedItems) > 0');
-		if ($volumeDataDB->find()) {
-			while ($volumeDataDB->fetch()) {
-				// Manually copy only the data fields into a fresh object to avoid
-				// DataObject cloning and its consequent memory issues.
-				$info = new IlsVolumeInfo();
-				$info->id = $volumeDataDB->id;
-				$info->recordId = $volumeDataDB->recordId;
-				$info->displayLabel = $volumeDataDB->displayLabel;
-				$info->relatedItems = $volumeDataDB->relatedItems;
-				$info->volumeId = $volumeDataDB->volumeId;
-				$info->displayOrder = $volumeDataDB->displayOrder;
-				$info->setHasLocalItems($volumeDataDB->hasLocalItems());
-				$info->setNeedsIllRequest($volumeDataDB->needsIllRequest());
-				$info->_allItems = $volumeDataDB->getItems();
-				$volumeData[] = $info;
-			}
-		}
-		$volumeDataDB->__destruct();
-		$volumeDataDB = null;
-		unset($volumeDataDB);
-		return $volumeData;
+		return IlsVolumeInfo::getVolumesForRecord($source, $recordId);
 	}
 
 	public function getValidPickupLocations($pickupAtRule): array {

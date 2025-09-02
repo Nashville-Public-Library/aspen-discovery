@@ -330,7 +330,8 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 					unset($current['explain']);
 					unset($current['score']);
 				}
-				$interface->assign('recordIndex', $x + 1);
+				// Use absolute positioning for navigation links to display on grouped works spanning across pages.
+				$interface->assign('recordIndex', $x + 1 + (($this->page - 1) * $this->limit));
 				$interface->assign('resultIndex', $x + 1 + (($this->page - 1) * $this->limit));
 				if ($isSaved || $alwaysFlagNewTitles) {
 					if (isset($current["local_time_since_added_$solrScope"])) {
@@ -932,8 +933,8 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 		return $this->facetConfig;
 	}
 
-	function getMoreLikeThis($id, $availableOnly = false, $limitFormat = true, $limit = null, $format = null) {
-		return $this->indexEngine->getMoreLikeThis($id, $availableOnly, $limitFormat, $limit, $format, $this->getFieldsToReturn());
+	function getMoreLikeThis($id, $selectedAvailabilityToggle = 'global', $availableOnly = false, $limitFormat = true, $limit = null, $format = null) {
+		return $this->indexEngine->getMoreLikeThis($id, $selectedAvailabilityToggle, $availableOnly, $limitFormat, $limit, $format, $this->getFieldsToReturn());
 	}
 
 	public function getEngineName() {

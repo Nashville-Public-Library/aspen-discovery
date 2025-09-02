@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class ArchiveRequest extends DataObject {
 	public $__table = 'archive_requests';
@@ -18,7 +18,11 @@ class ArchiveRequest extends DataObject {
 	public $pid;
 	public $dateRequested;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			[
 				'property' => 'name',
@@ -132,10 +136,12 @@ class ArchiveRequest extends DataObject {
 			],
 
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->dateRequested = time();
 		return parent::insert();
 	}

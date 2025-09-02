@@ -230,11 +230,10 @@ global $enabledModules;
 $enabledModules = [];
 try {
 	$aspenModule = new Module();
+	$aspenModule->selectAdd();
+	$aspenModule->selectAdd('name');
 	$aspenModule->enabled = true;
-	$aspenModule->find();
-	while ($aspenModule->fetch()) {
-		$enabledModules[$aspenModule->name] = clone $aspenModule;
-	}
+	$enabledModules = $aspenModule->fetchAll('name', 'name');
 } catch (Exception $e) {
 	//Modules are not installed yet
 }

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class EventsIndexingLogEntry extends BaseLogEntry {
@@ -9,6 +9,7 @@ class EventsIndexingLogEntry extends BaseLogEntry {
 	public $lastUpdate;
 	public $name;
 	public $notes;
+	/** @noinspection PhpUnused */
 	public $numEvents;
 	public $numErrors;
 	public $numAdded;

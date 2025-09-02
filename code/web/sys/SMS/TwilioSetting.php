@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class TwilioSetting extends DataObject {
 	public $__table = 'twilio_settings';
@@ -17,9 +17,14 @@ class TwilioSetting extends DataObject {
 		return ['authToken'];
 	}
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -68,6 +73,9 @@ class TwilioSetting extends DataObject {
 				'values' => $libraryList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -95,7 +103,7 @@ class TwilioSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -103,7 +111,7 @@ class TwilioSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -111,7 +119,7 @@ class TwilioSetting extends DataObject {
 		return $ret;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -136,23 +144,28 @@ class TwilioSetting extends DataObject {
 		}
 	}
 
-	public function validatePhoneNumber($phoneNumber) {
+	public function validatePhoneNumber($phoneNumber): bool {
 		$curlWrapper = new CurlWrapper();
 		$headers = [
-			"Authorization: Basic " . base64_encode($this->accountSid . ':' . $this->authToken),
-			"Accept: application/xml"
+			"Authorization: Basic " . base64_encode($this->accountSid . ':' . $this->authToken)
 		];
 		$curlWrapper->addCustomHeaders($headers, false);
 		$result = $curlWrapper->curlGetPage("https://lookups.twilio.com/v2/PhoneNumbers/" . urlencode($phoneNumber));
-		$xmlResponse = new SimpleXMLElement($result);
-		if ($curlWrapper->getResponseCode() == 200) {
-			return (bool)$xmlResponse->valid;
+		if ($curlWrapper->getResponseCode() == 200 && !empty($result)) {
+			$jsonResponse = json_decode($result, true);
+			global $logger;
+			$logger->log("[TWILIO] Validate Phone Response: " . print_r($jsonResponse, true), Logger::LOG_DEBUG);
+			if ($jsonResponse !== null && isset($jsonResponse['valid'])) {
+				return (bool)$jsonResponse['valid'];
+			} else {
+				return false;
+			}
 		} else {
 			return false;
 		}
 	}
 
-	public function sendMessage($messageBody, $phoneNumber){
+	public function sendMessage($messageBody, $phoneNumber): array {
 		require_once ROOT_DIR . '/sys/CurlWrapper.php';
 		$curlWrapper = new CurlWrapper();
 		$headers = [
@@ -167,15 +180,17 @@ class TwilioSetting extends DataObject {
 		];
 		$result = $curlWrapper->curlPostPage("https://api.twilio.com/2010-04-01/Accounts/$this->accountSid/Messages.json", $postVariables);
 		$jsonResponse = json_decode($result);
+		global $logger;
+		$logger->log("[TWILIO] SMS Response Code: " . $curlWrapper->getResponseCode() . ", Response: " . print_r($jsonResponse, true), Logger::LOG_DEBUG);
 		if ($curlWrapper->getResponseCode() == 201) {
 			return [
 				'success' => true,
-				'message' => 'The message was sent successfully'
+				'message' => 'The message was sent successfully.'
 			];
 		} else {
 			return [
 				'success' => false,
-				'message' => $jsonResponse->message
+				'message' => $jsonResponse->message ?? 'Unknown error occurred.'
 			];
 		}
 	}

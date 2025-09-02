@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class TaskSprintLink extends DataObject {
 	public $__table = 'development_task_sprint_link';
@@ -9,7 +9,11 @@ class TaskSprintLink extends DataObject {
 
 	private $_task;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$taskList = [];
 		require_once ROOT_DIR . '/sys/Development/DevelopmentTask.php';
 		$task = new DevelopmentTask();
@@ -29,7 +33,7 @@ class TaskSprintLink extends DataObject {
 			$sprintList[$sprint->id] = $sprint->name;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -60,6 +64,9 @@ class TaskSprintLink extends DataObject {
 				'required' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getTask(): ?DevelopmentTask {
@@ -72,7 +79,8 @@ class TaskSprintLink extends DataObject {
 		return $this->_task;
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Development/Tasks?objectAction=edit&id=' . $this->taskId;
 	}
 }

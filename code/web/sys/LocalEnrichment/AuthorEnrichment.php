@@ -1,4 +1,5 @@
 <?php
+/** @noinspection PhpMissingFieldTypeInspection */
 
 class AuthorEnrichment extends DataObject {
 	public $__table = 'author_enrichment';
@@ -7,8 +8,13 @@ class AuthorEnrichment extends DataObject {
 	public $hideWikipedia;
 	public $wikipediaUrl;
 
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+		$structure = [
 			[
 				'property' => 'id',
 				'type' => 'label',
@@ -23,7 +29,7 @@ class AuthorEnrichment extends DataObject {
 				'maxLength' => 255,
 				'label' => 'Author Name',
 				'description' => 'The exact author name used for Wikipedia lookup.',
-				'note' => 'This must match the author\'s name as cleaned and formatted for the Wikipedia API, with any parentheses and their contents removed. When debug mode is enabled for your <a href="/Admin/IPAddresses" target="_blank">IP Address</a>, you can view the exact search term used on the Author page via the displayed debug message.',
+				'note' => 'This must match the author\'s hyperlinked name on the grouped work. When debug mode is enabled for your <a href="/Admin/IPAddresses" target="_blank">IP Address</a> and the Wikipedia lookup has failed, you can view the exact search term used on the Author page via the displayed debug message.',
 				'storeDb' => true,
 				'required' => true,
 			],
@@ -46,5 +52,8 @@ class AuthorEnrichment extends DataObject {
 				'required' => false,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

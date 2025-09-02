@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class LocationSetting extends DataObject {
 	public $__table = 'aspen_lida_location_settings';
@@ -9,7 +9,11 @@ class LocationSetting extends DataObject {
 
 	private $_locations;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$releaseChannels = [
 			0 => 'Beta (Testing)',
 			1 => 'Production (Public)',
@@ -56,7 +60,8 @@ class LocationSetting extends DataObject {
 
 		];
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -84,7 +89,7 @@ class LocationSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLocations();
@@ -92,7 +97,7 @@ class LocationSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLocations();
@@ -100,7 +105,7 @@ class LocationSetting extends DataObject {
 		return $ret;
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationList = Location::getLocationList(false);
 			foreach ($locationList as $locationId => $displayName) {
@@ -125,7 +130,8 @@ class LocationSetting extends DataObject {
 		}
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/AspenLiDA/LocationSettings?objectAction=edit&id=' . $this->id;
 	}
 
@@ -148,7 +154,7 @@ class LocationSetting extends DataObject {
 		];
 	}
 
-	static function getDeepLinkByName($name, $id = null) {
+	static function getDeepLinkByName($name, $id = null) : string {
 		$scheme = 'aspen-lida';
 		$title = 'Unknown';
 		$fullPath = '';
@@ -182,22 +188,11 @@ class LocationSetting extends DataObject {
 			}
 		}
 
-		switch ($name) {
-			case "search":
-			case "search/author":
-				$fullPath = $scheme . '://' . $name . '?term=' . $id;
-				break;
-			case "search/grouped_work":
-				$fullPath = $scheme . '://' . $name . '?id=' . $id;
-				break;
-			case "search/browse_category":
-			case "search/list":
-				$fullPath = $scheme . '://' . $name . '?id=' . $id . '&title=' . $title;
-				break;
-			default:
-				$fullPath = $scheme . '://' . $name;
-		}
-
-		return $fullPath;
+		return match ($name) {
+			"search", "search/author" => $scheme . '://' . $name . '?term=' . $id,
+			"search/grouped_work" => $scheme . '://' . $name . '?id=' . $id,
+			"search/browse_category", "search/list" => $scheme . '://' . $name . '?id=' . $id . '&title=' . $title,
+			default => $scheme . '://' . $name,
+		};
 	}
 }

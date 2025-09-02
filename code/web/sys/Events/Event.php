@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/EventType.php';
 require_once ROOT_DIR . '/sys/Events/EventTypeLibrary.php';
 require_once ROOT_DIR . '/sys/Events/EventTypeLocation.php';
@@ -45,7 +44,11 @@ class Event extends DataObject {
 
 
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		global $configArray;
 		$coverPath = $configArray['Site']['coverPath'];
 		if ($context == 'addNew') {
@@ -429,10 +432,12 @@ class Event extends DataObject {
 			$sublocations = Location::getEventSublocations(null);
 			$structure['sublocationId']['values'] = $sublocations;
 		}
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->dateUpdated = time();
 		$this->setStartDate();
 		if (isset($this->weekDays) && is_array($this->weekDays)) {
@@ -452,7 +457,7 @@ class Event extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if (empty($this->dateUpdated)) {
 			$this->dateUpdated = time(); // Set to 0 for new events
 		}
@@ -471,7 +476,7 @@ class Event extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		if (!$useWhere) {
 			$this->deleted = 1;
 			$this->dateUpdated = time();
@@ -603,7 +608,7 @@ class Event extends DataObject {
 		$this->_locations = $value;
 	}
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new EventTypeLibrary();
@@ -616,7 +621,7 @@ class Event extends DataObject {
 		return $this->_libraries;
 	}
 
-	public function getLocations() {
+	public function getLocations() : ?array {
 		if (!isset($this->_locations) && $this->id) {
 			$this->_locations = [];
 			$location = new EventTypeLocation();
@@ -629,7 +634,7 @@ class Event extends DataObject {
 		return $this->_locations;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -643,7 +648,7 @@ class Event extends DataObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset($this->_locations) && is_array($this->_locations)) {
 			$this->clearLocations();
 
@@ -723,7 +728,7 @@ class Event extends DataObject {
 	}
 
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Unset existing library associations
 		$eventTypeLibrary = new EventTypeLibrary();
 		$eventTypeLibrary->eventTypeId = $this->id;
@@ -733,7 +738,7 @@ class Event extends DataObject {
 		}
 	}
 
-	private function clearLocations() {
+	private function clearLocations() : void {
 		//Unset existing library associations
 		$eventTypeLocation = new EventTypeLocation();
 		$eventTypeLocation->eventTypeId = $this->id;
@@ -866,6 +871,7 @@ class Event extends DataObject {
 				return $eventType;
 			}
 		}
+		return null;
 	}
 
 	public function calculateEnd($fieldName) {

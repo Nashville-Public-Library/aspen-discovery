@@ -8,7 +8,7 @@ require_once ROOT_DIR . '/sys/Pager.php';
 
 class Search_Results extends ResultsAction {
 
-	function launch() {
+	function launch() : void {
 		global $interface;
 		global $timer;
 		global $memoryWatcher;
@@ -104,9 +104,11 @@ class Search_Results extends ResultsAction {
 		// Set Show in Search Results Main Details Section options for template
 		// (needs to be set before moreDetailsOptions)
 		global $library;
-		foreach ($library->getGroupedWorkDisplaySettings()->showInSearchResultsMainDetails as $detailOption) {
+		$groupedWorkDisplaySettings = $library->getGroupedWorkDisplaySettings();
+		foreach ($groupedWorkDisplaySettings->showInSearchResultsMainDetails as $detailOption) {
 			$interface->assign($detailOption, true);
 		}
+		$interface->assign('formatDisplayStyle', $groupedWorkDisplaySettings->formatDisplayStyle);
 
 
 		// Include Search Engine Class
@@ -727,45 +729,11 @@ class Search_Results extends ResultsAction {
 			require_once ROOT_DIR . '/sys/LocalEnrichment/Placard.php';
 			require_once ROOT_DIR . '/sys/LocalEnrichment/PlacardTrigger.php';
 
-			$trigger = new PlacardTrigger();
-			$trigger->whereAdd($trigger->escape($_REQUEST['lookfor']) . " like concat('%', triggerWord, '%')");
-			$trigger->find();
-			while ($trigger->fetch()) {
-				if ($trigger->exactMatch == 0 || (strcasecmp($trigger->triggerWord, $_REQUEST['lookfor']) === 0)) {
-					$placardToDisplay = new Placard();
-					$placardToDisplay->id = $trigger->placardId;
-					if ($placardToDisplay->find(true)) {
-						if (!$placardToDisplay->isValidForDisplay()) {
-							$placardToDisplay = null;
-						}
-					} else {
-						$placardToDisplay = null;
-					}
-					if ($placardToDisplay != null) {
-						break;
-					}
-				}
-			}
+			$placardToDisplay = Placard::getPlacardForTriggerWord($_REQUEST['lookfor']);
+
 			if ($placardToDisplay == null && !empty($_REQUEST['replacementTerm'])) {
-				$trigger = new PlacardTrigger();
-				$trigger->whereAdd($trigger->escape($_REQUEST['replacementTerm']) . " like concat('%', triggerWord, '%')");
-				//$trigger->triggerWord = $_REQUEST['replacementTerm'];
-				$trigger->find();
-				while ($trigger->fetch()) {
-					if ($trigger->exactMatch == 0 || (strcasecmp($trigger->triggerWord, $_REQUEST['replacementTerm']) === 0)) {
-						$placardToDisplay = new Placard();
-						$placardToDisplay->id = $trigger->placardId;
-						$placardToDisplay->find(true);
-						if (!$placardToDisplay->isValidForDisplay()) {
-							$placardToDisplay = null;
-						}
-						if ($placardToDisplay != null) {
-							break;
-						}
-					}
-				}
+				$placardToDisplay = Placard::getPlacardForTriggerWord($_REQUEST['replacementTerm']);
 			}
-			//TODO: Additional fuzzy matches of the search terms
 
 			if ($placardToDisplay != null) {
 				global $interface;
@@ -788,22 +756,17 @@ class Search_Results extends ResultsAction {
 		$searchLocation = Location::getSearchLocation(null);
 
 		if ($searchLocation) {
-			$superScopeLabel = $searchLocation->getGroupedWorkDisplaySettings()->availabilityToggleLabelSuperScope;
-			$localLabel = $searchLocation->getGroupedWorkDisplaySettings()->availabilityToggleLabelLocal;
-			$localLabel = str_ireplace('{display name}', $searchLocation->displayName, $localLabel);
-			$availableLabel = $searchLocation->getGroupedWorkDisplaySettings()->availabilityToggleLabelAvailable;
-			$availableLabel = str_ireplace('{display name}', $searchLocation->displayName, $availableLabel);
-			$availableOnlineLabel = $searchLocation->getGroupedWorkDisplaySettings()->availabilityToggleLabelAvailableOnline;
-			$availableOnlineLabel = str_ireplace('{display name}', $searchLocation->displayName, $availableOnlineLabel);
+			$groupedWorkDisplaySettings = $searchLocation->getGroupedWorkDisplaySettings();
 		} else {
-			$superScopeLabel = $searchLibrary->getGroupedWorkDisplaySettings()->availabilityToggleLabelSuperScope;
-			$localLabel = $searchLibrary->getGroupedWorkDisplaySettings()->availabilityToggleLabelLocal;
-			$localLabel = str_ireplace('{display name}', $searchLibrary->displayName, $localLabel);
-			$availableLabel = $searchLibrary->getGroupedWorkDisplaySettings()->availabilityToggleLabelAvailable;
-			$availableLabel = str_ireplace('{display name}', $searchLibrary->displayName, $availableLabel);
-			$availableOnlineLabel = $searchLibrary->getGroupedWorkDisplaySettings()->availabilityToggleLabelAvailableOnline;
-			$availableOnlineLabel = str_ireplace('{display name}', $searchLibrary->displayName, $availableOnlineLabel);
+			$groupedWorkDisplaySettings = $searchLibrary->getGroupedWorkDisplaySettings();
 		}
+		$superScopeLabel = $groupedWorkDisplaySettings->availabilityToggleLabelSuperScope;
+		$localLabel = $groupedWorkDisplaySettings->availabilityToggleLabelLocal;
+		$localLabel = str_ireplace('{display name}', $searchLocation->displayName, $localLabel);
+		$availableLabel = $groupedWorkDisplaySettings->availabilityToggleLabelAvailable;
+		$availableLabel = str_ireplace('{display name}', $searchLocation->displayName, $availableLabel);
+		$availableOnlineLabel = $groupedWorkDisplaySettings->availabilityToggleLabelAvailableOnline;
+		$availableOnlineLabel = str_ireplace('{display name}', $searchLocation->displayName, $availableOnlineLabel);
 		return [
 			$superScopeLabel,
 			$localLabel,

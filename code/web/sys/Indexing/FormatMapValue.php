@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class FormatMapValue extends DataObject {
 	public $__table = 'format_map_values';    // table name
@@ -24,7 +24,12 @@ class FormatMapValue extends DataObject {
 	public $holdType;
 	public $pickupAt;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$formatCategories = [
 			'Audio Books' => 'Audio Books',
 			'Books' => 'Books',
@@ -33,7 +38,7 @@ class FormatMapValue extends DataObject {
 			'Music' => 'Music',
 			'Other' => 'Other',
 		];
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -212,6 +217,9 @@ class FormatMapValue extends DataObject {
 				'forcesReindex' => false,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -237,11 +245,8 @@ class FormatMapValue extends DataObject {
 	 * Override delete to ensure format map deletions trigger regrouping because
 	 * the forcesRegroup flag exists on properties inside FormatMapValue objects,
 	 * not on the parent relationship in IndexingProfile, which the standard deletion process cannot detect.
-	 *
-	 * @param bool $useWhere
-	 * @return int
 	 */
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		// Check if we're deleting a specific record (i.e., not a bulk delete).
 		if (!$useWhere && !empty($this->id)) {
 			// Trigger regrouping if a format value is being deleted.

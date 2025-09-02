@@ -614,7 +614,7 @@ class Record_AJAX extends Action {
 						$groupedWorkId = $recordDriver->getPermanentId();
 						require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 						$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
-						$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait();
+						$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait($recordDriver->getPrimaryFormat());
 
 						$interface->assign('whileYouWaitTitles', $whileYouWaitTitles);
 
@@ -1160,7 +1160,7 @@ class Record_AJAX extends Action {
 								require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 								$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
 								if ($groupedWorkDriver->isValid()) {
-									$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait();
+									$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait($recordDriver->getPrimaryFormat());
 
 									$interface->assign('whileYouWaitTitles', $whileYouWaitTitles);
 								} else {
@@ -1257,7 +1257,7 @@ class Record_AJAX extends Action {
 					$groupedWorkId = $recordDriver->getPermanentId();
 					require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
 					$groupedWorkDriver = new GroupedWorkDriver($groupedWorkId);
-					$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait();
+					$whileYouWaitTitles = $groupedWorkDriver->getWhileYouWait($recordDriver->getPrimaryFormat());
 
 					$interface->assign('whileYouWaitTitles', $whileYouWaitTitles);
 				}
@@ -1857,6 +1857,27 @@ class Record_AJAX extends Action {
 			$interface->assign('holdNotificationTemplate', $user->getCatalogDriver()->getHoldNotificationTemplate($user));
 		}
 
+		$catalogDriver = $user->getCatalogDriver();
+		if (!empty($catalogDriver) && $catalogDriver->restrictValidPickupLocationsForRecordByILS()) {
+			$getPickupLocationsFromILS = $catalogDriver->getValidPickupLocationsForRecordFromILS($marcRecord->getUniqueID(), $user);
+			if (!empty($getPickupLocationsFromILS['locationCodes']) && $getPickupLocationsFromILS['success']) {
+				$validLocationCodesFromILS = $getPickupLocationsFromILS['locationCodes'];
+				$locations = array_filter($locations, function($location) use ($validLocationCodesFromILS) {
+					if (!is_object($location)) {
+						return true;
+					}
+					foreach ($validLocationCodesFromILS as $validCode) {
+						if (strpos($validCode, $location->code) === 0) {
+							return true;
+						}
+					}
+					return false;
+				});
+			} else {
+				$locations = [];
+			}
+		}
+
 		global $library;
 		//Check to see if we can bypass the holds popup and just place the hold
 		if (!$multipleAccountPickupLocations && !$promptForHoldNotifications && $library->allowRememberPickupLocation) {
@@ -1900,7 +1921,14 @@ class Record_AJAX extends Action {
 				$rememberHoldPickupLocation = $user->rememberHoldPickupLocation;
 			} else {
 				$rememberHoldPickupLocation = false;
-				if (!$preferredPickupLocationIsValid) {
+				$locationKeys = array_keys($locations);
+				if (!$preferredPickupLocationIsValid && count($locations) == 2 && !empty($locations[$locationKeys[1]])) {
+					$onlyValidPickupLocation = $locations[$locationKeys[1]]->code;
+					$interface->assign('pickupLocationInvalidMessage', translate([
+						'text' => 'Your preferred pickup location is not available for this item, as it is restricted by item location rules. The item must be picked up at the following location.',
+						'isPublicFacing' => true,
+					]));
+				} elseif (!$preferredPickupLocationIsValid) {
 					$interface->assign('pickupLocationInvalidMessage', translate([
 						'text' => 'Your preferred pickup location is not available for this item, as it is restricted by item location rules. Please select a pickup location.',
 						'isPublicFacing' => true,
@@ -1929,6 +1957,7 @@ class Record_AJAX extends Action {
 			// then no need to display a message because the patron cannot choose a preferred pickup location anyway.
 		}
 		$interface->assign('rememberHoldPickupLocation', $rememberHoldPickupLocation);
+		$interface->assign('onlyValidPickupLocation', $onlyValidPickupLocation ?? null);
 
 		$interface->assign('pickupLocations', $locations);
 		$interface->assign('pickupSublocations', $pickupSublocations);

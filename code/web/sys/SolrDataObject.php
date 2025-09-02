@@ -1,27 +1,26 @@
 <?php
 require_once ROOT_DIR . '/sys/SolrConnector/Solr.php';
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 abstract class SolrDataObject extends DataObject {
 	/**
 	 * Return an array describing the structure of the object fields, etc.
 	 */
-	abstract static function getObjectStructure($context = '');
+	abstract static function getObjectStructure(string $context = ''): array ;
 
-	function update($context = '') {
-		return $this->updateDetailed(true);
+	public function update(string $context = '') : int|bool {
+		return $this->updateDetailed($context );
 	}
 
-	private $updateStarted = false;
+	private bool $updateStarted = false;
 
-	function updateDetailed($insertInSolr = true) {
+	function updateDetailed(string $context = '', $insertInSolr = true) : int|bool {
 		if ($this->updateStarted) {
 			return true;
 		}
 		$this->updateStarted = true;
 
 		global $logger;
-		$result = parent::update();
+		$result = parent::update($context);
 		if (!$insertInSolr) {
 			$logger->log("updateDetailed, not inserting in solr because insertInSolr was false", Logger::LOG_DEBUG);
 			$this->updateStarted = false;
@@ -45,12 +44,12 @@ abstract class SolrDataObject extends DataObject {
 		}
 	}
 
-	function insert($context = '') {
-		return $this->insertDetailed(true);
+	public function insert(string $context = '') : int|bool {
+		return $this->insertDetailed($context);
 	}
 
-	function insertDetailed($insertInSolr = true) {
-		$result = parent::insert();
+	function insertDetailed(string $context = '', $insertInSolr = true) : bool|int {
+		$result = parent::insert($context);
 		if (!$insertInSolr) {
 			return $result;
 		} else {
@@ -66,9 +65,9 @@ abstract class SolrDataObject extends DataObject {
 		}
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$result = parent::delete();
-		if ($result != FALSE) {
+		if ($result !== FALSE) {
 			$this->removeFromSolr();
 		}
 		return $result;
@@ -84,7 +83,7 @@ abstract class SolrDataObject extends DataObject {
 	 */
 	abstract function solrId();
 
-	function removeFromSolr() {
+	function removeFromSolr() : bool|AspenError {
 		require_once ROOT_DIR . '/sys/SolrConnector/Solr.php';
 		global $logger;
 		$logger->log("Deleting Record {$this->solrId()}", Logger::LOG_NOTICE);
@@ -101,10 +100,10 @@ abstract class SolrDataObject extends DataObject {
 		return true;
 	}
 
-	protected $_quickReindex = false;
-	private $saveStarted = false;
+	protected bool $_quickReindex = false;
+	private bool $saveStarted = false;
 
-	function saveToSolr($quick = false) {
+	function saveToSolr($quick = false) : bool|AspenError {
 		if ($this->saveStarted) {
 			return true;
 		}
@@ -150,7 +149,7 @@ abstract class SolrDataObject extends DataObject {
 		if (isset($property['storeSolr']) && $property['storeSolr']) {
 			$propertyName = $property['property'];
 			if ($property['type'] == 'method') {
-				$methodName = isset($property['methodName']) ? $property['methodName'] : $property['property'];
+				$methodName = $property['methodName'] ?? $property['property'];
 				$doc[$propertyName] = $this->$methodName();
 			} elseif ($property['type'] == 'crSeparated') {
 				if (strlen($this->$propertyName)) {
@@ -180,7 +179,7 @@ abstract class SolrDataObject extends DataObject {
 		return $doc;
 	}
 
-	function optimize() {
+	function optimize() : bool {
 		require_once ROOT_DIR . '/sys/SolrConnector/Solr.php';
 		$coreName = $this->getCore();
 		global $logger;

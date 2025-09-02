@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class ReadingHistoryEntry extends DataObject {
 	public $__table = 'user_reading_history_work';   // table name
@@ -65,14 +64,14 @@ class ReadingHistoryEntry extends DataObject {
 		return $links;
 	}
 
-	public function loadFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting'): bool {
+	public function loadFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
 		if (array_key_exists($jsonData['sourceId'], $mappings['bibs'])) {
 			$jsonData['sourceId'] = $mappings['bibs'][$this->sourceId];
 		}
 		return parent::loadFromJSON($jsonData, $mappings, $overrideExisting);
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (isset($jsonData['user'])) {
 			$username = $jsonData['user'];

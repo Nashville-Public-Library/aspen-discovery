@@ -1,7 +1,6 @@
 <?php
 /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 /**
  * Virtual DataObject used by the Object Restoration admin tool.
@@ -24,8 +23,12 @@ class ObjectRestoration extends DataObject {
 	public $deletedBy = '';
 	public $daysRemaining = 0;
 
-	public static function getObjectStructure($context = '') : array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'compositeId' => [
 				'property' => 'compositeId',
 				'type' => 'label',
@@ -68,14 +71,17 @@ class ObjectRestoration extends DataObject {
 				'label' => 'Days Remaining',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getUniquenessFields(): array { return ['compositeId']; }
 	public function find($fetchFirst = false, $requireOneMatchToReturn = false): bool { return false; }
 	public function fetch(): bool|DataObject|null { return null; }
-	public function insert($context = ''): bool { return false; }
-	public function update($context = ''): bool { return false; }
-	public function delete($useWhere = false, $hardDelete = false) : int { return 0; }
+	public function insert(string $context = ''): bool { return false; }
+	public function update(string $context = ''): bool { return false; }
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int { return 0; }
 	public function canActiveUserEdit() : bool { return false; }
 	public function canActiveUserDelete() : bool { return false; }
 

@@ -496,7 +496,15 @@ class Koha extends AbstractIlsDriver {
 		$allIssueIds = [];
 		$allItemNumbers = [];
 		$circulationRulesForCheckouts = [];
-		while ($curRow = $results->fetch_assoc()) {
+		$allRows = $results->fetch_all(MYSQLI_ASSOC);
+		$allBibNumbers = [];
+		foreach ($allRows as $curRow) {
+			$allBibNumbers[] = $curRow['biblionumber'];
+		}
+		require_once ROOT_DIR . '/sys/Indexing/IlsRecord.php';
+		IlsRecord::preloadIlsRecords($this->getIndexingProfile()->name, $allBibNumbers);
+
+		foreach ($allRows as $curRow) {
 			$curCheckout = new Checkout();
 			$curCheckout->type = 'ils';
 			$curCheckout->source = $this->getIndexingProfile()->name;
@@ -2314,7 +2322,15 @@ class Koha extends AbstractIlsDriver {
 		/** @noinspection SqlResolve */
 		$sql = "SELECT reserves.*, biblio.title, biblio.author, items.itemcallnumber, items.enumchron, items.itype, reserves.branchcode FROM reserves inner join biblio on biblio.biblionumber = reserves.biblionumber left join items on items.itemnumber = reserves.itemnumber where borrowernumber = '" . mysqli_escape_string($this->dbConnection, $patron->unique_ils_id) . "';";
 		$results = mysqli_query($this->dbConnection, $sql);
-		while ($curRow = $results->fetch_assoc()) {
+		$allRows = $results->fetch_all(MYSQLI_ASSOC);
+		$allBibNumbers = [];
+		foreach ($allRows as $curRow) {
+			$allBibNumbers[] = $curRow['biblionumber'];
+		}
+		require_once ROOT_DIR . '/sys/Indexing/IlsRecord.php';
+		IlsRecord::preloadIlsRecords($this->getIndexingProfile()->name, $allBibNumbers);
+
+		foreach ($allRows as $curRow) {
 			//Each row in the table represents a hold
 			$curHold = new Hold();
 			$curHold->userId = $patron->id;
@@ -4080,6 +4096,11 @@ class Koha extends AbstractIlsDriver {
 			'required' => true,
 			'autocomplete' => false,
 		];
+		// Check if there is a maximum age for Self registration
+		$maxAgeForSelfReg = $kohaPreferences['PatronSelfRegistrationAgeRestriction'] ?? null;
+		if(is_numeric($maxAgeForSelfReg) && (int) $maxAgeForSelfReg > 0) {
+			$fields['identitySection']['properties']['borrower_dateofbirth']['maxAgeForSelfReg'] = $maxAgeForSelfReg;
+		}
 
 		$fields['identitySection']['properties']['borrower_initials'] = [
 			'property' => 'borrower_initials',
@@ -7742,6 +7763,8 @@ class Koha extends AbstractIlsDriver {
 			$message .= 'Item is an onsite checkout';
 		} elseif ($code == "has_fine") {
 			$message .= 'Item has an outstanding fine';
+		} elseif ($code == "overdue") {
+			$message .= "Renewal is blocked by an overdue item";
 		} elseif (!empty($code)) {
 			$message = 'Unknown error:' . $code;
 		} else {
@@ -8585,8 +8608,8 @@ class Koha extends AbstractIlsDriver {
 			must be kept up to date in the background; otherwise, patrons will report gaps in their reading history. */
 			//$lastReadingHistoryUpdate = $patron->lastReadingHistoryUpdate;
 			//if ($lastSeenDate <= $lastReadingHistoryUpdate) {}
-			// Bypass reading history update if the patron hasn't been seen in the last 2 weeks (inactive patron).
-			if ($lastSeenDate <= (time() - 2 * 7 * 24 * 60 * 60)) {
+			// Bypass reading history update if the patron hasn't been seen in the last 23 hours (inactive patron for the day).
+			if ($lastSeenDate <= (time() - 82800)) {
 				return true;
 			}
 		}

@@ -1,12 +1,15 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/WebBuilder/PortalCell.php';
 
 class PortalRow extends DataObject {
 	public $__table = 'web_builder_portal_row';
 	public $weight;
 	public $id;
+	/** @noinspection PhpUnused */
 	public $makeAccordion;
+	/** @noinspection PhpUnused */
 	public $colorScheme;
+	/** @noinspection PhpUnused */
 	public $invertColor;
 	public $portalPageId;
 	public /** @noinspection PhpUnused */
@@ -21,7 +24,12 @@ class PortalRow extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$portalCellStructure = PortalCell::getObjectStructure($context);
 
 		$colorOptions = [
@@ -31,7 +39,7 @@ class PortalRow extends DataObject {
 			'tertiary' => 'tertiary',
 		];
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -104,10 +112,13 @@ class PortalRow extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	/** @noinspection PhpUnused */
-	public function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/WebBuilder/PortalRows?objectAction=edit&id=' . $this->id;
 	}
 
@@ -127,7 +138,7 @@ class PortalRow extends DataObject {
 		}
 	}
 
-	public function setCells($value) {
+	public function setCells($value) : void {
 		$this->_cells = $value;
 	}
 
@@ -136,7 +147,7 @@ class PortalRow extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		//Updates to properly update settings based on the ILS
 		$ret = parent::update();
 		if ($ret !== FALSE) {
@@ -151,7 +162,7 @@ class PortalRow extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			if ($context != 'finishCopy') {
@@ -172,8 +183,8 @@ class PortalRow extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
-		if ($useWhere == false) {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
+		if (!$useWhere) {
 			foreach ($this->getCells() as $cell) {
 				$cell->delete();
 			}
@@ -196,7 +207,7 @@ class PortalRow extends DataObject {
 		return $ret;
 	}
 
-	public function saveCells() {
+	public function saveCells() : void {
 		if (isset ($this->_cells) && is_array($this->_cells)) {
 			$this->saveOneToManyOptions($this->_cells, 'portalRowId');
 			unset($this->_cells);
@@ -204,9 +215,9 @@ class PortalRow extends DataObject {
 	}
 
 	/**
-	 * @return PortalCell[]
+	 * @return ?PortalCell[]
 	 */
-	public function getCells($forceRefresh = false) {
+	public function getCells($forceRefresh = false) : ?array {
 		if ((!isset($this->_cells) || $forceRefresh) && $this->id) {
 			$this->_cells = [];
 			require_once ROOT_DIR . '/sys/WebBuilder/PortalCell.php';
@@ -222,7 +233,7 @@ class PortalRow extends DataObject {
 	}
 
 	/** @noinspection PhpUnused */
-	public function isLastRow() {
+	public function isLastRow() : bool {
 		require_once ROOT_DIR . '/sys/WebBuilder/PortalPage.php';
 		$myPage = new PortalPage();
 		$myPage->id = $this->portalPageId;
@@ -232,7 +243,7 @@ class PortalRow extends DataObject {
 		return false;
 	}
 
-	public function resizeColumnWidths() {
+	public function resizeColumnWidths() : void {
 		$cells = $this->getCells(true);
 		if (count($cells) == 1) {
 			foreach ($cells as $cell) {
@@ -288,7 +299,7 @@ class PortalRow extends DataObject {
 		return $links;
 	}
 
-	public function loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting'): bool {
+	public function loadRelatedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting'): bool {
 		$result = parent::loadRelatedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (array_key_exists('cells', $jsonData)) {
 			$cells = [];

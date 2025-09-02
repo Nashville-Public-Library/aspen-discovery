@@ -1,6 +1,4 @@
-<?php
-
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class UserWorkReview extends DataObject {
 	public $__table = 'user_work_review';
@@ -11,20 +9,21 @@ class UserWorkReview extends DataObject {
 	public $review;
 	public $dateRated;
 	public $importedFrom;
+	public $title;
 
 	private $_displayName;
 
 	/**
-	 * @return mixed
+	 * @return ?string
 	 */
-	public function getDisplayName() {
+	public function getDisplayName() : ?string {
 		return $this->_displayName;
 	}
 
 	/**
-	 * @param mixed $displayName
+	 * @param ?string $displayName
 	 */
-	public function setDisplayName($displayName): void {
+	public function setDisplayName(?string $displayName): void {
 		$this->_displayName = $displayName;
 	}
 
@@ -63,7 +62,7 @@ class UserWorkReview extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (isset($jsonData['user'])) {
 			$username = $jsonData['user'];

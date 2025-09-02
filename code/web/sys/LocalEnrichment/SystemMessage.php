@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/DB/LibraryLocationLinkedObject.php';
 require_once ROOT_DIR . '/sys/LocalEnrichment/SystemMessageLibrary.php';
@@ -27,10 +27,16 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return ['title'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All System Messages'));
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All System Messages'));
-		return [
+		/** @noinspection HtmlRequiredAltAttribute */
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -132,6 +138,9 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getNumericColumnNames(): array {
@@ -194,7 +203,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -203,7 +212,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -212,7 +221,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$systemMessageLibrary = new SystemMessageLibrary();
@@ -226,7 +235,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return $ret;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All System Messages'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -246,7 +255,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset ($this->_locations) && is_array($this->_locations)) {
 			$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All System Messages'));
 			foreach ($locationList as $locationId => $displayName) {
@@ -266,14 +275,14 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function isDismissed(?User $user) {
+	public function isDismissed(?User $user = null) : bool {
 		require_once ROOT_DIR . '/sys/LocalEnrichment/SystemMessageDismissal.php';
 		//Make sure the user has not dismissed the system message
 		if (UserAccount::isLoggedIn()) {
 			$systemMessageDismissal = new SystemMessageDismissal();
 			$systemMessageDismissal->systemMessageId = $this->id;
 			$systemMessageDismissal->userId = UserAccount::getActiveUserId();
-			if ($systemMessageDismissal->find(true)) {
+			if ($systemMessageDismissal->count() > 0) {
 				//The system message has been dismissed
 				return true;
 			}
@@ -281,7 +290,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 			$systemMessageDismissal = new SystemMessageDismissal();
 			$systemMessageDismissal->systemMessageId = $this->id;
 			$systemMessageDismissal->userId = $user->id;
-			if ($systemMessageDismissal->find(true)) {
+			if ($systemMessageDismissal->count() > 0) {
 				//The system message has been dismissed
 				return true;
 			}
@@ -289,7 +298,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return false;
 	}
 
-	public function isValidForScope() {
+	public function isValidForScope() : bool {
 		global $library;
 		global $locationSingleton;
 		$location = $locationSingleton->getActiveLocation();
@@ -307,7 +316,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function isValidForDisplay() {
+	public function isValidForDisplay() : bool {
 		$curTime = time();
 		if ($this->startDate != 0 && $this->startDate > $curTime) {
 			return false;
@@ -315,7 +324,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		if ($this->endDate != 0 && $this->endDate < $curTime) {
 			return false;
 		}
-		if ($this->isDismissed(null)) {
+		if ($this->isDismissed()) {
 			return false;
 		}
 		if (!$this->isValidForScope()) {
@@ -327,7 +336,7 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return true;
 	}
 
-	public function isValidForDisplayInApp(User $user, $locationId = null, $libraryId = null) {
+	public function isValidForDisplayInApp(User $user, $locationId = null, $libraryId = null) : bool {
 		if($this->pushToApp != 1) {
 			return false;
 		}
@@ -364,7 +373,8 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		return true;
 	}
 
-	public function getFormattedMessage() {
+	/** @noinspection PhpUnused */
+	public function getFormattedMessage() : string {
 		if (empty($this->_preFormattedMessage)) {
 			require_once ROOT_DIR . '/sys/Parsedown/AspenParsedown.php';
 			$parsedown = AspenParsedown::instance();
@@ -383,11 +393,35 @@ class SystemMessage extends DB_LibraryLocationLinkedObject {
 		}
 	}
 
-	public function setPreFormattedMessage($message) {
+	public function setPreFormattedMessage($message) : void {
 		$this->_preFormattedMessage = $message;
 	}
 
-	public function okToExport(array $selectedFilters): bool {
-		return parent::okToExport($selectedFilters);
+	public static function getActiveSystemMessages() : array {
+		$customSystemMessage = new SystemMessage();
+		$now = time();
+		$customSystemMessage->showOn = 0;
+		$customSystemMessage->whereAdd("startDate = 0 OR startDate <= $now");
+		$customSystemMessage->whereAdd("endDate = 0 OR endDate > $now");
+		global $locationSingleton;
+		global $library;
+		$location = $locationSingleton->getActiveLocation();
+		if ($location != null) {
+			$systemMessageLocation = new SystemMessageLocation();
+			$systemMessageLocation->locationId = $locationSingleton->locationId;
+			$customSystemMessage->joinAdd($systemMessageLocation, 'INNER', 'messageLocation', 'id', 'systemMessageId');
+		}else{
+			$systemMessageLibrary = new SystemMessageLibrary();
+			$systemMessageLibrary->libraryId = $library->libraryId;
+			$customSystemMessage->joinAdd($systemMessageLibrary, 'INNER', 'messageLibrary', 'id', 'systemMessageId');
+		}
+		$customSystemMessage->find();
+		$systemMessages = [];
+		while ($customSystemMessage->fetch()) {
+			if (!$customSystemMessage->isDismissed()) {
+				$systemMessages[] = clone $customSystemMessage;
+			}
+		}
+		return $systemMessages;
 	}
 }

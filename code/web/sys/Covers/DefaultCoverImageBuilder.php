@@ -172,7 +172,7 @@ class DefaultCoverImageBuilder {
 		$width = $this->imageWidth - (20);
 
 		$titleTrimmed = StringUtils::trimStringToLengthAtWordBoundary($title, 60, true);
-		if (mb_strlen(trim($titleTrimmed, "..."), 'UTF-8') === 0) {
+		if (mb_strlen(trim(str_replace('...', '', $titleTrimmed)), 'UTF-8') === 0) {
 			// From observation, some characters in certain scripts are large enough to overlap with the artwork,
 			// so truncate at 40 characters.
 			$titleTrimmed = mb_substr($title, 0, 40, 'UTF-8') . '...';

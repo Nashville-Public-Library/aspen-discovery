@@ -15,6 +15,7 @@ class Admin_CronRunner extends Admin_Admin {
 			'fetchNotificationReceipts' => 'Fetch Notification Receipts',
 			'generateMaterialRequestHoldCandidates' => 'Generate Material Request Hold Candidates',
 			'loadInitialReadingHistory' => 'Load Initial Reading History',
+			'purgeSoftDeleted' => 'Purge Soft-Deleted Objects',
 			'sendCampaignEmails' => 'Send Campaign Emails',
 			'sendCampaignEndingEmails' => 'Send Campaign Ending Emails',
 			'sendILSMessages' => 'Send ILS Messages',
@@ -22,6 +23,7 @@ class Admin_CronRunner extends Admin_Admin {
 			'talpaRecalculationCron' => 'Talpa Recalculation',
 			'talpaWorksCron' => 'Talpa Works',
 			'updateCommunityTranslations' => 'Update Community Translations',
+			'updateNYTLists' => 'Update New York Times Lists',
 			'updateSuggesters' => 'Update Suggesters',
 		];
 		$interface->assign('availableCronProcesses', $availableCronProcesses);
@@ -53,5 +55,15 @@ class Admin_CronRunner extends Admin_Admin {
 
 	function getActiveAdminSection(): string {
 		return 'system_admin';
+	}
+
+	/**
+	 * Get list of cron jobs that are considered "frequent" (e.g., run every few minutes).
+	 * These jobs can be controlled by the logFrequentCrons system variable.
+	 */
+	public static function getFrequentCronJobs(): array {
+		return [
+			'Load Initial Reading History',
+		];
 	}
 }

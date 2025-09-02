@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class ExpiredPasswordError extends AspenError {
 	public $userId;
@@ -6,7 +6,7 @@ class ExpiredPasswordError extends AspenError {
 	public $resetToken;
 
 	public function __construct($userId, $expirationDate, $resetToken) {
-		parent::__construct('Your PIN has expired.', null);
+		parent::__construct('Your PIN has expired.');
 		$this->userId = $userId;
 		$this->expirationDate = $expirationDate;
 		$this->resetToken = $resetToken;

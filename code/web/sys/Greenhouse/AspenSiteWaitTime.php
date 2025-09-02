@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class AspenSiteWaitTime extends DataObject {
 	public $__table = 'aspen_site_wait_time';

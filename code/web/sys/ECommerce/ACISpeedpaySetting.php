@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 /**
  * Class ACISpeedpaySetting - Store settings for ACI Speedpay
@@ -16,10 +16,15 @@ class ACISpeedpaySetting extends DataObject {
 	public $sdkApiAuthKey;
 	public $billerId;
 	public $billerAccountId;
+	/** @noinspection PhpUnused */
 	public $forceDebugLog;
 	private $_libraries;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
 		$billerAccount_options = [
@@ -129,7 +134,9 @@ class ACISpeedpaySetting extends DataObject {
 		if (!UserAccount::userHasPermission('Library eCommerce Options')) {
 			unset($structure['libraries']);
 		}
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	function getNumericColumnNames(): array {
@@ -161,7 +168,7 @@ class ACISpeedpaySetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -169,7 +176,7 @@ class ACISpeedpaySetting extends DataObject {
 		return true;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset ($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 			foreach ($libraryList as $libraryId => $displayName) {
@@ -198,7 +205,7 @@ class ACISpeedpaySetting extends DataObject {
 		}
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
@@ -246,7 +253,7 @@ class ACISpeedpaySetting extends DataObject {
 	/*
 	 * @return array|bool
 	 */
-	public function createAuthCode(): mixed {
+	public function createAuthCode(): bool|array {
 		$state = random_bytes(6);
 		$state = bin2hex($state);
 		$codeVerifier = $this->generateCodeVerifier();
@@ -273,11 +280,7 @@ class ACISpeedpaySetting extends DataObject {
 		$authCodeResults = json_decode($authorizationResults, true);
 		if (empty($authCodeResults['code'])) {
 			if(!empty($authCodeResults['error'])) {
-				if (isset($authCodeResults['error']['message']['default'])) {
-					$message = $authCodeResults['error']['message']['default'];
-				} else {
-					$message = $authCodeResults['error']['message'];
-				}
+				$message = $authCodeResults['error']['message']['default'] ?? $authCodeResults['error']['message'];
 				return [
 					'success' => false,
 					'message' => $message,
@@ -329,7 +332,7 @@ class ACISpeedpaySetting extends DataObject {
 	/*
 	 * @return array|bool
 	 */
-	public function submitTransaction($patron, $payment, $fundingToken, $billerAccount): mixed {
+	public function submitTransaction($patron, $payment, $fundingToken, $billerAccount): array {
 		$result = ['success' => false];
 
 		$authCode = $this->createAuthCode();
@@ -449,11 +452,7 @@ class ACISpeedpaySetting extends DataObject {
 				$result['message'] = $paymentResponse['message']['default'];
 			}
 		} else {
-			if(isset($paymentResponse['error']['message']['default'])) {
-				$message = $paymentResponse['error']['message']['default'];
-			} else {
-				$message = $paymentResponse['error']['message'];
-			}
+			$message = $paymentResponse['error']['message']['default'] ?? $paymentResponse['error']['message'];
 			$error = $paymentResponse['error']['status'] . ': ' . $message;
 			$payment->error = 1;
 			$payment->message = $error;
@@ -464,7 +463,7 @@ class ACISpeedpaySetting extends DataObject {
 		return $result;
 	}
 
-	public function getApiUrl() {
+	public function getApiUrl() : string {
 		$baseUrl = 'https://api.acispeedpay.com';
 		if ($this->sandboxMode == 1) {
 			$baseUrl = 'https://sandbox-api.acispeedpay.com';
@@ -480,18 +479,18 @@ class ACISpeedpaySetting extends DataObject {
 		$query = trim($query, '?&');
 
 		if ($query) {
-			$glue = strstr($url, '?') === false ? '?' : '&';
+			$glue = !str_contains($url, '?') ? '?' : '&';
 			return $url . $glue . $query;
 		}
 
 		return $url;
 	}
 
-	protected function generateCodeVerifier() {
+	protected function generateCodeVerifier() : string {
 		$verifier_bytes = random_bytes(64);
 		return rtrim(strtr(base64_encode($verifier_bytes), '+/', '-_'), '=');
 	}
-	protected function generateCodeChallenge($verifier) {
+	protected function generateCodeChallenge($verifier) : string {
 		$challenge_bytes = hash('sha256', $verifier, true);
 		return rtrim(strtr(base64_encode($challenge_bytes), '+/', '-_'), '=');
 	}

@@ -1,8 +1,6 @@
 <?php
 /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
-
 class MaterialsRequestFormFields extends DataObject {
 	public $__table = 'materials_request_form_fields';
 	public $__displayNameColumn = 'fieldLabel';
@@ -47,9 +45,12 @@ class MaterialsRequestFormFields extends DataObject {
 	];
 
 
-	/** @noinspection PhpUnusedParameterInspection */
-	static function getObjectStructure($context = ''): array {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -84,6 +85,9 @@ class MaterialsRequestFormFields extends DataObject {
 				'default' => 0,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/**

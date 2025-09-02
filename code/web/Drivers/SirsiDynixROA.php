@@ -560,6 +560,7 @@ class SirsiDynixROA extends HorizonAPI {
 			$selfRegistrationForm = null;
 			$formFields = null;
 			if ($library->selfRegistrationFormId > 0){
+				require_once ROOT_DIR . '/sys/SelfRegistrationForms/SelfRegistrationForm.php';
 				$selfRegistrationForm = new SelfRegistrationForm();
 				$selfRegistrationForm->id = $library->selfRegistrationFormId;
 				if ($selfRegistrationForm->find(true)) {
@@ -600,7 +601,6 @@ class SirsiDynixROA extends HorizonAPI {
 				'resource' => '/policy/userProfile',
 				'key' => $selfRegistrationForm->selfRegistrationUserProfile,
 			];
-			//$formFields = (new SelfRegistrationFormValues)->getFormFieldsInOrder($library->selfRegistrationFormId);
 
 			if ($formFields != null) {
 				foreach ($formFields as $fieldObj){
@@ -3884,11 +3884,16 @@ class SirsiDynixROA extends HorizonAPI {
 		}
 
 		//For patrons that have fines, but that are not at the fine threshold, we need to add an override.
-		$totalFines = $patron->getTotalFines(false);
+		$this->getFines($patron);
+		$totalFines = $patron->getAccountSummary()->totalFines;
+		global $logger;
+		$logger->log('User fines are ' . $totalFines, Logger::LOG_DEBUG);
+		$userProfileResponse = $this->getWebServiceResponse('getUserProfile', $webServiceURL . '/policy/userProfile/key/' . $patron->patronType, null, $sessionToken);
 		if ($totalFines > 0) {
-			$userProfileResponse = $this->getWebServiceResponse('getUserProfile', $webServiceURL . '/policy/userProfile/key/' . $patron->patronType, null, $sessionToken);
 			if ($userProfileResponse) {
+				$logger->log('Billing threshold is ' . $userProfileResponse->fields->billThreshold->amount, Logger::LOG_DEBUG);
 				if ($totalFines < $userProfileResponse->fields->billThreshold->amount) {
+					$logger->log('User fines are under billing threshold', Logger::LOG_DEBUG);
 					$addOverrideCode = true;
 				}else{
 					$result['message'] = translate([
@@ -3901,6 +3906,38 @@ class SirsiDynixROA extends HorizonAPI {
 					]);
 					$doCheckout = false;
 				}
+			}else{
+				$logger->log('Could not get user profile', Logger::LOG_DEBUG);
+			}
+		}else{
+			$logger->log('User fines are less than or equal to 0', Logger::LOG_DEBUG);
+		}
+		//For patrons that have overdue titles, but are not at the limit we need to add an override
+		$numOverdue = 0;
+		$checkouts = $this->getCheckouts($patron);
+		foreach ($checkouts as $checkout) {
+			if ($checkout->isOverdue()) {
+				$numOverdue++;
+			}
+		}
+		if ($numOverdue > 0) {
+			if ($userProfileResponse) {
+				if ($numOverdue >= $userProfileResponse->fields->overdueThreshold) {
+					$result['message'] = translate([
+						'text' => 'Your account has too many overdue titles to check out this title.',
+						'isPublicFacing' => true,
+					]);
+					$result['api']['message'] = translate([
+						'text' => 'Your account has too many overdue titles to check out this title.',
+						'isPublicFacing' => true,
+					]);
+					$doCheckout = false;
+				}else{
+					$logger->log('User number of overdue items are under threshold', Logger::LOG_DEBUG);
+					$addOverrideCode = true;
+				}
+			}else{
+				$logger->log('Could not get user profile', Logger::LOG_DEBUG);
 			}
 		}
 

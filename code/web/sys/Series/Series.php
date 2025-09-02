@@ -1,17 +1,18 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 
 class Series extends DataObject {
 	public $__table = 'series';
 	public $id;
 	public $displayName;
+	/** @noinspection PhpUnused */
 	public $groupedWorkSeriesTitle;
 	public $description;
 	public $cover;
 	public $audience;
 	public $author;
+	/** @noinspection PhpUnused */
 	public $isIndexed;
 	public $dateUpdated;
 	public $created;
@@ -19,7 +20,11 @@ class Series extends DataObject {
 
 	public $_seriesMembers; // grouped works and placeholders
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 
 		$seriesMemberStructure = SeriesMember::getObjectStructure($context);
 		global $configArray;
@@ -105,10 +110,12 @@ class Series extends DataObject {
 				],
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->dateUpdated = time();
 		$ret = parent::update();
 		if ($ret !== FALSE) {
@@ -120,7 +127,7 @@ class Series extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if (empty($this->dateUpdated)) {
 			$this->dateUpdated = time();
 		}
@@ -134,7 +141,7 @@ class Series extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		if (!$useWhere) {
 			$this->deleted = 1;
 			$this->dateUpdated = time();
@@ -145,7 +152,7 @@ class Series extends DataObject {
 				$member->seriesId = $this->id;
 				$member->find();
 				while ($member->fetch()) {
-					$member->delete(false);
+					$member->delete();
 				}
 				return true;
 			}
@@ -166,7 +173,7 @@ class Series extends DataObject {
 	public function __get($name) {
 		if ($name == 'seriesMembers') {
 			if (!empty($_REQUEST['showExcluded'])) {
-				return $this->getSeriesMembers(true);
+				return $this->getSeriesMembers();
 			}
 			return $this->getSeriesMembers(false);
 		} else {
@@ -174,11 +181,11 @@ class Series extends DataObject {
 		}
 	}
 
-	public function setSeriesMembers($value) {
+	public function setSeriesMembers($value) : void {
 		$this->_seriesMembers = $value;
 	}
 
-	public function saveSeriesMembers() {
+	public function saveSeriesMembers() : void {
 		if (isset ($this->_seriesMembers) && is_array($this->_seriesMembers)) {
 			$this->saveOneToManyOptions($this->_seriesMembers, 'seriesId');
 			unset($this->_seriesMembers);
@@ -196,7 +203,7 @@ class Series extends DataObject {
 	/**
 	 * @return array      of list entries
 	 */
-	function getTitles($sortName = "volume asc", $includePlaceholders = true) {
+	function getTitles($sortName = "volume asc", $includePlaceholders = true) : array {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		$seriesMember = new SeriesMember();
 		$seriesMember->seriesId = $this->id;
@@ -254,7 +261,7 @@ class Series extends DataObject {
 	/**
 	 * @return array      of series members
 	 */
-	function getSeriesMembers($showExcluded = true) {
+	function getSeriesMembers($showExcluded = true) : array {
 		require_once ROOT_DIR . '/sys/Series/SeriesMember.php';
 		if (empty($this->id)) {
 			return [];
@@ -279,12 +286,12 @@ class Series extends DataObject {
 	/**
 	 * @param int $start position of first list item to fetch (0 based)
 	 * @param int $numItems Number of items to fetch for this result
-	 * @param string $format The format of the records, valid values are html, summary, recordDrivers, citation
+	 * @param string $format The format of the records, valid values are html, recordDrivers
 	 * @param string $sortName How the records should be sorted when pulled from the database
 	 * @param boolean $includePlaceholders Default true, whether to include placeholder records
 	 * @return array     Array of HTML to display to the user
 	 */
-	public function getSeriesRecords($start, $numItems, $format, $sortName, $includePlaceholders = true) {
+	public function getSeriesRecords(int $start, int $numItems, string $format, string $sortName, bool $includePlaceholders = true) : array {
 		//Get all entries for the list
 		$seriesMemberInfo = $this->getTitles($sortName, $includePlaceholders);
 
@@ -314,8 +321,6 @@ class Series extends DataObject {
 				$records = $searchObject->getRecords($sourceIds);
 				if ($format == 'html') {
 					$listResults = $listResults + $this->getResultListHTML($records, $filteredSeriesMembers, $start);
-				} elseif ($format == 'summary') {
-					$listResults = $listResults + $this->getResultListSummary($records, $filteredSeriesMembers);
 				} elseif ($format == 'recordDrivers') {
 					$listResults = $listResults + $this->getResultListRecordDrivers($records, $filteredSeriesMembers);
 				} else {
@@ -355,7 +360,7 @@ class Series extends DataObject {
 	 * @param int $startRecord The first record being displayed
 	 * @return array Array of HTML chunks for individual records.
 	 */
-	private function getResultListHTML($records, $allListEntryIds, $startRecord = 0) {
+	private function getResultListHTML(array $records, array $allListEntryIds, int $startRecord = 0) : array {
 		global $interface;
 		$html = [];
 		//Reorder the documents based on the list of id's
@@ -364,7 +369,7 @@ class Series extends DataObject {
 			/** @var GroupedWorkDriver|null $current */
 			$current = null; // empty out in case we don't find the matching record
 			reset($records);
-			foreach ($records as $docIndex => $recordDriver) {
+			foreach ($records as $recordDriver) {
 				if ($recordDriver->getId() == $currentId['sourceId']) {
 					$recordDriver->setListEntryId($currentId['seriesMemberId']);
 					$current = $recordDriver;
@@ -380,38 +385,13 @@ class Series extends DataObject {
 				$interface->assign('seriesMemberId', $current->getListEntryId());
 
 				$interface->assign('recordDriver', $current);
-				$html[$listPosition] = $interface->fetch($current->getSeriesEntry($this->id));
+				$html[$listPosition] = $interface->fetch($current->getSeriesEntry($this->id, $currentId));
 			}
 		}
 		return $html;
 	}
 
-	private function getResultListSummary($records, $allListEntryIds) {
-		$results = [];
-		//Reorder the documents based on the list of id's
-		foreach ($allListEntryIds as $listPosition => $currentId) {
-			// use $IDList as the order guide for the html
-			/** @var CourseReservesRecordDriver|null $current */
-			$current = null; // empty out in case we don't find the matching record
-			reset($records);
-			/**
-			 * @var int $docIndex
-			 * @var CourseReservesRecordDriver $recordDriver
-			 */
-			foreach ($records as $docIndex => $recordDriver) {
-				if ($recordDriver->getId() == $currentId['sourceId']) {
-					$current = $recordDriver;
-					break;
-				}
-			}
-			if (!empty($current)) {
-				$results[$listPosition] = $current->getSummaryInformation();
-			}
-		}
-		return $results;
-	}
-
-	private function getResultListRecordDrivers($records, $allListEntryIds) {
+	private function getResultListRecordDrivers($records, $allListEntryIds) : array {
 		$results = [];
 		//Reorder the documents based on the list of id's
 		foreach ($allListEntryIds as $listPosition => $currentId) {
@@ -419,10 +399,9 @@ class Series extends DataObject {
 			$current = null; // empty out in case we don't find the matching record
 			reset($records);
 			/**
-			 * @var int $docIndex
 			 * @var IndexRecordDriver $recordDriver
 			 */
-			foreach ($records as $docIndex => $recordDriver) {
+			foreach ($records as $recordDriver) {
 				if ($recordDriver->getId() == $currentId['sourceId']) {
 					$current = $recordDriver;
 					break;
@@ -435,16 +414,16 @@ class Series extends DataObject {
 		return $results;
 	}
 
-	private function reloadCover() {
+	private function reloadCover() : void {
 		require_once ROOT_DIR . '/sys/Covers/BookCoverInfo.php';
 		$bookCoverInfo = new BookCoverInfo();
-		$bookCoverInfo->recordType = 'series';
-		$bookCoverInfo->recordId = $this->id;
+		$bookCoverInfo->setRecordType('series');
+		$bookCoverInfo->setRecordId($this->id);
 		if ($bookCoverInfo->find(true)) {
-			$bookCoverInfo->imageSource = 'upload';
-			$bookCoverInfo->thumbnailLoaded = 0;
-			$bookCoverInfo->mediumLoaded = 0;
-			$bookCoverInfo->largeLoaded = 0;
+			$bookCoverInfo->setImageSource('upload');
+			$bookCoverInfo->setThumbnailLoaded(0);
+			$bookCoverInfo->setMediumLoaded(0);
+			$bookCoverInfo->setLargeLoaded(0);
 			$bookCoverInfo->update();
 		}
 	}

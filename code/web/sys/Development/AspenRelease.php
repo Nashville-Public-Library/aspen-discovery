@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class AspenRelease extends DataObject {
 	public $__table = 'aspen_release';
@@ -9,11 +9,15 @@ class AspenRelease extends DataObject {
 	public $_relatedTasks;
 	public $_totalStoryPoints;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		require_once ROOT_DIR . '/sys/Development/DevelopmentTask.php';
 		$developmentTaskStructure = DevelopmentTask::getObjectStructure($context);
 		unset($developmentTaskStructure['releaseId']);
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -66,6 +70,9 @@ class AspenRelease extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -93,10 +100,7 @@ class AspenRelease extends DataObject {
 		}
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveRelatedTasks();
@@ -104,7 +108,7 @@ class AspenRelease extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveRelatedTasks();
@@ -112,7 +116,7 @@ class AspenRelease extends DataObject {
 		return $ret;
 	}
 
-	public function saveRelatedTasks() {
+	public function saveRelatedTasks() : void {
 		if (isset ($this->_relatedTasks) && is_array($this->_relatedTasks)) {
 			$this->saveOneToManyOptions($this->_relatedTasks, 'releaseId');
 			unset($this->_relatedTasks);
@@ -120,7 +124,7 @@ class AspenRelease extends DataObject {
 	}
 
 	/**
-	 * @return DevelopmentTask[]
+	 * @return ?DevelopmentTask[]
 	 */
 	private function getRelatedTasks(): ?array {
 		if (!isset($this->_relatedTasks) && $this->id) {
@@ -136,7 +140,7 @@ class AspenRelease extends DataObject {
 		return $this->_relatedTasks;
 	}
 
-	static function getReleasesList() {
+	static function getReleasesList() : array {
 		$today = new DateTime('now');
 		$today = $today->format('Y-m-d');
 		$activeVersion = false;

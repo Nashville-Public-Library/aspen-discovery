@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectScope.php';
 require_once ROOT_DIR . '/sys/PalaceProject/PalaceProjectCollection.php';
 
@@ -8,21 +8,29 @@ class PalaceProjectSetting extends DataObject {
 	public $apiUrl;
 	public $libraryId;
 	public $runFullUpdate;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfChangedRecords;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfAllRecords;
 
 	private $_scopes;
 	private $_collections;
+	/** @noinspection PhpUnused */
 	protected $_instructionsForUsage;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$palaceProjectScopeStructure = PalaceProjectScope::getObjectStructure($context);
 		unset($palaceProjectScopeStructure['settingId']);
 
 		$palaceProjectCollectionStructure = PalaceProjectCollection::getObjectStructure($context);
 		unset($palaceProjectCollectionStructure['settingId']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -108,13 +116,16 @@ class PalaceProjectSetting extends DataObject {
 				'additionalOneToManyActions' => [],
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __toString() {
 		return "$this->id ($this->apiUrl)";
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveScopes();
@@ -124,7 +135,7 @@ class PalaceProjectSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			if (empty($this->_scopes)) {
@@ -141,14 +152,14 @@ class PalaceProjectSetting extends DataObject {
 		return $ret;
 	}
 
-	public function saveScopes() {
+	public function saveScopes() : void {
 		if (isset ($this->_scopes) && is_array($this->_scopes)) {
 			$this->saveOneToManyOptions($this->_scopes, 'settingId');
 			unset($this->_scopes);
 		}
 	}
 
-	public function saveCollections() {
+	public function saveCollections() : void {
 		if (isset ($this->_collections) && is_array($this->_collections)) {
 			$this->saveOneToManyOptions($this->_collections, 'settingId');
 			unset($this->_collections);
