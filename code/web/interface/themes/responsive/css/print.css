@@ -7,7 +7,7 @@
 }
 [data-context="print-layout"] .ui-rater-starsOff,
 [data-context="print-layout"] .ui-rater-starsOn {
-  background: url(/interface/themes/responsive/images/star/stars.png) repeat-x 0 0 !important;
+  background: url('/interface/themes/responsive/images/star/stars.png') repeat-x 0 0 !important;
 }
 [data-context="print-layout"] .ui-rater-starsOn {
   background-position: 0 -36px !important;
