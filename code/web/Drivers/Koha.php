@@ -4096,6 +4096,11 @@ class Koha extends AbstractIlsDriver {
 			'required' => true,
 			'autocomplete' => false,
 		];
+		// Check if there is a maximum age for Self registration
+		$maxAgeForSelfReg = $kohaPreferences['PatronSelfRegistrationAgeRestriction'] ?? null;
+		if(is_numeric($maxAgeForSelfReg) && (int) $maxAgeForSelfReg > 0) {
+			$fields['identitySection']['properties']['borrower_dateofbirth']['maxAgeForSelfReg'] = $maxAgeForSelfReg;
+		}
 
 		$fields['identitySection']['properties']['borrower_initials'] = [
 			'property' => 'borrower_initials',

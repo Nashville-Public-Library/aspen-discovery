@@ -1021,4 +1021,8 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 	public function hasAdditionalFineFields(): bool {
 		return false;
 	}
+
+	public function isPatronAccountLocked(User $patron, $fine): bool {
+		return false;
+	}
 }
