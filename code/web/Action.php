@@ -35,7 +35,7 @@ abstract class Action
 		$minimalInterface = $_REQUEST['minimalInterface'] ?? false;
 		$interface->assign('minimalInterface', $minimalInterface);
 
-		$printInterface = isset($_REQUEST['print']) ? (bool)$_REQUEST['print'] : false;
+		$printInterface = isset($_REQUEST['print']) ? filter_var($_REQUEST['print'], FILTER_VALIDATE_BOOLEAN) : false;
 		$interface->assign('printInterface', $printInterface);
 		$printLibraryName = isset($_REQUEST['printLibraryName']) ? filter_var($_REQUEST['printLibraryName'], FILTER_VALIDATE_BOOLEAN) : false;
 		$interface->assign('printLibraryName', $printLibraryName);
