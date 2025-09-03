@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class PinResetToken extends DataObject {
@@ -8,7 +8,7 @@ class PinResetToken extends DataObject {
 	public $token;
 	public $dateIssued;
 
-	public function generateToken() {
+	public function generateToken() : void {
 		/** @noinspection SpellCheckingInspection */
 		$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		$tokenString = '';

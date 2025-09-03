@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/CommunityEngagement/Reward.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/ExtraCredit.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignExtraCreditActivityUsersProgress.php';
@@ -19,7 +19,11 @@ class CampaignExtraCredit extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = '') {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		require_once ROOT_DIR . '/sys/CommunityEngagement/ExtraCredit.php';
 		$extraCredit = new ExtraCredit();
 		$availableExtraCreditActivities = [];
@@ -31,7 +35,7 @@ class CampaignExtraCredit extends DataObject {
 		$goalRange = range(1, 100);
 		$rewardList = Reward::getRewardList();
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -74,9 +78,12 @@ class CampaignExtraCredit extends DataObject {
 				'values' => $rewardList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public static function getExtraCreditByCampaign($campaignId) {
+	public static function getExtraCreditByCampaign($campaignId, $userId = null) {
 		$extraCreditActivities = [];
 		$campaignExtraCredit = new CampaignExtraCredit();
 		$campaignExtraCredit->whereAdd('campaignId = ' . $campaignId);
@@ -84,9 +91,12 @@ class CampaignExtraCredit extends DataObject {
 
 		$extraCreditIds = [];
 		$rewardMapping = [];
+		$goalMappaing = [];
+
 		while ($campaignExtraCredit->fetch()) {
 			$extraCreditIds[] = $campaignExtraCredit->extraCreditId;
 			$rewardMapping[$campaignExtraCredit->extraCreditId] = $campaignExtraCredit->reward;
+			$goalMapping[$campaignExtraCredit->extraCreditId] = $campaignExtraCredit->goal;
 		}
 
 		if (!empty($extraCreditIds)) {
@@ -96,6 +106,14 @@ class CampaignExtraCredit extends DataObject {
 
 			while ($extraCredit->fetch()) {
 				$extraCreditObj = clone $extraCredit;
+
+				if ($userId) {
+					$userProgress = CampaignExtraCreditActivityUsersProgress::getProgressByExtraCreditId($extraCredit->id, $campaignId, $userId);
+					$rewardGiven = CampaignExtraCreditActivityUsersProgress::getRewardGivenForExtraCreditActivity($extraCredit->id, $userId, $campaignId);
+					$extraCreditObj->completedGoals = $userProgress;
+					$extraCreditObj->totalGoals = $goalMapping[$extraCredit->id] ?? 1;
+					$extraCreditObj->rewardGiven = $rewardGiven;
+				}
 
 				$rewardId = $rewardMapping[$extraCredit->id] ?? null;
 				if ($rewardId) {

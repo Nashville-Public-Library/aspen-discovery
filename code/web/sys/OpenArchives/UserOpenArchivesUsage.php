@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class UserOpenArchivesUsage extends DataObject {
 	public $__table = 'user_open_archives_usage';
@@ -56,7 +55,7 @@ class UserOpenArchivesUsage extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') {
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
 		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 		if (isset($jsonData['user'])) {
 			$username = $jsonData['user'];

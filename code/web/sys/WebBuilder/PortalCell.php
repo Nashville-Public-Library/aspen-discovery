@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class PortalCell extends DataObject {
@@ -37,7 +37,9 @@ class PortalCell extends DataObject {
 	public $pdfView;
 	public $imgAction;
 	public $imgAlt;
+	/** @noinspection PhpUnused */
 	public $colorScheme;
+	/** @noinspection PhpUnused */
 	public $invertColor;
 	public $staticLocationId;
 
@@ -52,7 +54,12 @@ class PortalCell extends DataObject {
 		return ['frameHeight', 'invertColor', 'staticLocationId'];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$verticalAlignmentOptions = [
 			'flex-start' => 'Top of Row',
 			'flex-end' => 'Bottom of Row',
@@ -105,7 +112,7 @@ class PortalCell extends DataObject {
 			$locationOptions[$tmpLocation->locationId] = $tmpLocation->displayName;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -315,15 +322,19 @@ class PortalCell extends DataObject {
 				'hideInLists' => true,
 			]
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	function getContents($inPageEditor) {
+	/** @noinspection PhpUnused */
+	function getContents($inPageEditor) : string {
 		global $interface;
 		global $activeLanguage;
 		global $configArray;
 		$contents = '';
 		if (!empty($this->title) && $this->makeCellAccordion != '1') {
-			$contents .= "<h2>{$this->title}</h2>";
+			$contents .= "<h2>$this->title</h2>";
 		}
 		if ($this->makeCellAccordion == '1') {
 			$contents .= "<div class='panel customAccordionCell' id='Cell-$this->id-Panel'>";
@@ -421,11 +432,11 @@ class PortalCell extends DataObject {
 					} else {
 						$target = "_self";
 					}
-					$contents .= "<a href='{$imageLinkURL}' target='{$target}'><img src='/WebBuilder/ViewImage?id={$imageUpload->id}{$size}' class='img-responsive' alt='{$imageAlt}'></a>";
+					$contents .= "<a href='$imageLinkURL' target='$target'><img src='/WebBuilder/ViewImage?id=$imageUpload->id$size' class='img-responsive' alt='$imageAlt'></a>";
 				} elseif ($imageAction == "3") {
-					$contents .= "<img src='/WebBuilder/ViewImage?id={$imageUpload->id}{$size}' class='img-responsive' onclick=\"AspenDiscovery.WebBuilder.showImageInPopup('{$imageUpload->title}', '{$imageUpload->id}')\" alt='{$imageAlt}'>";
+					$contents .= "<img src='/WebBuilder/ViewImage?id=$imageUpload->id$size' class='img-responsive' onclick=\"AspenDiscovery.WebBuilder.showImageInPopup('$imageUpload->title', '$imageUpload->id')\" alt='$imageAlt'>";
 				} else {
-					$contents .= "<img src='/WebBuilder/ViewImage?id={$imageUpload->id}{$size}' class='img-responsive' alt='{$imageAlt}'>";
+					$contents .= "<img src='/WebBuilder/ViewImage?id=$imageUpload->id$size' class='img-responsive' alt='$imageAlt'>";
 				}
 			}
 		} elseif ($this->sourceType == 'pdf') {
@@ -435,7 +446,7 @@ class PortalCell extends DataObject {
 			$pdf->id = $this->sourceId;
 			if ($pdf->find(true)) {
 				if ($this->pdfView == 'thumbnail') {
-					$contents .= "<a href='/Files/{$pdf->id}/ViewPDF'><img src='/WebBuilder/ViewThumbnail?id={$pdf->id}' class='img-responsive img-thumbnail' alt='{$pdf->title}'></a>";
+					$contents .= "<a href='/Files/$pdf->id/ViewPDF'><img src='/WebBuilder/ViewThumbnail?id=$pdf->id' class='img-responsive img-thumbnail' alt='$pdf->title'></a>";
 				} elseif ($this->pdfView == 'embedded') {
 					$interface->assign('pdfPath', $configArray['Site']['url'] . '/Files/' . $pdf->id . '/Contents');
 					$contents .= $interface->fetch('WebBuilder/pdfViewer.tpl');
@@ -481,7 +492,7 @@ class PortalCell extends DataObject {
 				if (!empty( $this->customImage)){
 					$interface->assign('logo', '/files/original/' . $this->customImage);
 				}else{
-					$interface->assign('logo', null);
+					$interface->assign('logo');
 				}
 				$contents .= $interface->fetch('WebBuilder/resource.tpl');
 			}
@@ -612,7 +623,7 @@ class PortalCell extends DataObject {
 				];
 
 				if (!empty($mapsKey)) {
-					$libraryLocation['map_link'] = "http://maps.google.com/maps?f=q&hl=en&geocode=&q=$mapAddress&ie=UTF8&z=15&iwloc=addr&om=1&t=m&key=$mapsKey";
+					$libraryLocation['map_link'] = "https://maps.google.com/maps?f=q&hl=en&geocode=&q=$mapAddress&ie=UTF8&z=15&iwloc=addr&om=1&t=m&key=$mapsKey";
 				}
 				$libraryLocations[$locationToProcess->locationId] = $libraryLocation;
 			}
@@ -634,7 +645,7 @@ class PortalCell extends DataObject {
 		}
 	}
 
-	function getPortalRow() {
+	function getPortalRow() :?PortalRow {
 		$portalRow = new PortalRow();
 		$portalRow->id = $this->portalRowId;
 		if ($portalRow->find(true)) {
@@ -645,7 +656,7 @@ class PortalCell extends DataObject {
 	}
 
 	/** @noinspection PhpUnused */
-	public function isLastCell() {
+	public function isLastCell() : bool {
 		$myRow = new PortalRow();
 		$myRow->id = $this->portalRowId;
 		if ($myRow->find(true)) {
@@ -654,7 +665,7 @@ class PortalCell extends DataObject {
 		return false;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret) {
 			//Reorder the rows on the page to remove the gap

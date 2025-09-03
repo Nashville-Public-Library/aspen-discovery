@@ -126,56 +126,8 @@ class Record_Home extends GroupedWorkSubRecordHomeAction {
 			}
 
 			// Get ISBN for cover and review use
-			$mainIsbnSet = false;
-			/** @var File_MARC_Data_Field[] $isbnFields */
-			if ($isbnFields = $this->marcRecord->getFields('020')) {
-				$isbns = [];
-				//Use the first good ISBN we find.
-				foreach ($isbnFields as $isbnField) {
-					/** @var File_MARC_Subfield $isbnSubfieldA */
-					if ($isbnSubfieldA = $isbnField->getSubfield('a')) {
-						$tmpIsbn = trim($isbnSubfieldA->getData());
-						if (strlen($tmpIsbn) > 0) {
-
-							$isbns[] = $isbnSubfieldA->getData();
-							$pos = strpos($tmpIsbn, ' ');
-							if ($pos > 0) {
-								$tmpIsbn = substr($tmpIsbn, 0, $pos);
-							}
-							$tmpIsbn = trim($tmpIsbn);
-							if (strlen($tmpIsbn) > 0) {
-								if (strlen($tmpIsbn) < 10) {
-									$tmpIsbn = str_pad($tmpIsbn, 10, "0", STR_PAD_LEFT);
-								}
-								if (!$mainIsbnSet) {
-									$this->isbn = $tmpIsbn;
-									$interface->assign('isbn', $tmpIsbn);
-									$mainIsbnSet = true;
-								}
-							}
-						}
-					}
-				}
-				if (isset($this->isbn)) {
-					if (strlen($this->isbn) == 13) {
-						require_once(ROOT_DIR . '/Drivers/marmot_inc/ISBNConverter.php');
-						$this->isbn10 = ISBNConverter::convertISBN13to10($this->isbn);
-					} else {
-						$this->isbn10 = $this->isbn;
-					}
-					$interface->assign('isbn10', $this->isbn10);
-				}
-				$interface->assign('isbns', $isbns);
-			}
-
-			if ($upcField = $this->marcRecord->getField('024')) {
-				/** @var File_MARC_Data_Field $upcField */
-				if ($upcSubField = $upcField->getSubfield('a')) {
-					$this->upc = trim($upcSubField->getData());
-					$interface->assign('upc', $this->upc);
-				}
-			}
-
+			$interface->assign('isbn', $this->recordDriver->getCleanISBN());
+			$interface->assign('upc', $this->recordDriver->getCleanUPC());
 
 			if ($issnField = $this->marcRecord->getField('022')) {
 				/** @var File_MARC_Data_Field $issnField */
@@ -268,7 +220,8 @@ class Record_Home extends GroupedWorkSubRecordHomeAction {
 		// Set Show in Main Details Section options for templates
 		// (needs to be set before moreDetailsOptions)
 		global $library;
-		foreach ($library->getGroupedWorkDisplaySettings()->showInMainDetails as $detailOption) {
+		$groupedWorkDisplaySettings = $library->getGroupedWorkDisplaySettings();
+		foreach ($groupedWorkDisplaySettings->showInSearchResultsMainDetails as $detailOption) {
 			$interface->assign($detailOption, true);
 		}
 

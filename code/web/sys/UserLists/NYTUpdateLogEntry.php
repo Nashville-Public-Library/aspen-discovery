@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/BaseLogEntry.php';
 
 class NYTUpdateLogEntry extends BaseLogEntry {
@@ -10,7 +10,7 @@ class NYTUpdateLogEntry extends BaseLogEntry {
 	public $numUpdated;
 	public $numSkipped;
 
-	public function addNote(string $note) {
+	public function addNote(string $note) : void {
 		if (empty($this->notes)) {
 			$this->notes = "<ol class='cronNotes'>";
 		}
@@ -19,7 +19,7 @@ class NYTUpdateLogEntry extends BaseLogEntry {
 		$this->notes .= '</ol>';
 	}
 
-	public function addError(string $error) {
+	public function addError(string $error) : void {
 		$this->numErrors++;
 		$this->addNote($error);
 		$this->update();

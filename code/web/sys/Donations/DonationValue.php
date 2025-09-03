@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class DonationValue extends DataObject {
 	public $__table = 'donations_value';
@@ -10,7 +9,11 @@ class DonationValue extends DataObject {
 	public $value;
 	public $isDefault;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -40,10 +43,12 @@ class DonationValue extends DataObject {
 				'description' => 'The sort order',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	static function getDefaults($donationSettingId) {
+	static function getDefaults($donationSettingId) : array {
 		$defaultDonationValuesToDisplay = [];
 
 		$defaultDonationValue = new DonationValue();
@@ -76,9 +81,5 @@ class DonationValue extends DataObject {
 		$defaultDonationValuesToDisplay[] = $defaultDonationValue;
 
 		return $defaultDonationValuesToDisplay;
-	}
-
-	public static function getValues(): array {
-		return [];
 	}
 }

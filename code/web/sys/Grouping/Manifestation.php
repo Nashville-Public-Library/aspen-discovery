@@ -4,28 +4,28 @@ require_once ROOT_DIR . '/sys/Grouping/Variation.php';
 require_once ROOT_DIR . '/sys/Grouping/StatusInformation.php';
 
 class Grouping_Manifestation {
-	public $format;
-	public $formatCategory;
+	public string $format;
+	public string $formatCategory;
 
-	/** @var Grouping_StatusInformation */
-	private $_statusInformation = null;
+	/** @var ?Grouping_StatusInformation */
+	private ?Grouping_StatusInformation $_statusInformation;
 
 	//Information calculated at runtime
-	private $_isEContent = false;
+	private bool $_isEContent = false;
 
-	private $_hideByDefault = false;
+	private bool $_hideByDefault = false;
 
 	/** @var Grouping_Variation[] */
-	private $_variations = [];
+	private array $_variations = [];
 	//TODO: This should be contained within variations
 	/** @var Grouping_Record[] */
-	private $_relatedRecords = [];
+	private array $_relatedRecords = [];
 
 	/**
 	 * Grouping_Manifestation constructor.
 	 * @param Grouping_Record|array $record
 	 */
-	function __construct($record) {
+	function __construct(Grouping_Record|array $record) {
 		$this->_statusInformation = new Grouping_StatusInformation();
 		if (is_array($record)) {
 			$this->format = $record['format'];
@@ -37,16 +37,16 @@ class Grouping_Manifestation {
 		}
 	}
 
-	function addVariation(Grouping_Variation $variation) {
+	function addVariation(Grouping_Variation $variation) : void {
 		$variation->manifestation = $this;
 		$this->_variations[] = $variation;
 	}
 
-	function removeVariation($variationKey) {
+	function removeVariation($variationKey) : void {
 		unset($this->_variations[$variationKey]);
 	}
 
-	function addRecord(Grouping_Record $record) {
+	function addRecord(Grouping_Record $record) : void {
 		//Check our variations to see if we need to create a new one
 		$hasExistingVariation = false;
 		foreach ($this->_variations as $variation) {
@@ -70,23 +70,24 @@ class Grouping_Manifestation {
 		$this->_relatedRecords[] = $record;
 	}
 
-	function setSortedRelatedRecords($relatedRecords) {
+	function setSortedRelatedRecords($relatedRecords) : void {
 		$this->_relatedRecords = $relatedRecords;
 	}
 
 	/**
 	 * @return Grouping_Variation[]
 	 */
-	function getVariations() {
+	function getVariations() : array {
 		return $this->_variations;
 	}
 
-	function getNumVariations() {
+	/** @noinspection PhpUnused */
+	function getNumVariations() : int {
 		return count($this->_variations);
 	}
 
-	protected $_isHideByDefault = null;
-	protected $_hasHiddenFormats = null;
+	protected ?bool $_isHideByDefault = null;
+	protected ?bool $_hasHiddenFormats = null;
 
 	/**
 	 * @return bool
@@ -96,6 +97,7 @@ class Grouping_Manifestation {
 		return $this->_isHideByDefault;
 	}
 
+	/** @noinspection PhpUnused */
 	function showActionButton(): bool {
 		$firstRecord = reset($this->_relatedRecords);
 		if ($firstRecord->isHoldable() || $firstRecord->isEContent()){
@@ -104,7 +106,7 @@ class Grouping_Manifestation {
 		return false;
 	}
 
-	function loadHiddenInformation() {
+	function loadHiddenInformation() : void {
 		if ($this->_isHideByDefault == null) {
 			$this->_hasHiddenFormats = false;
 			if (!$this->_hideByDefault) {
@@ -124,6 +126,7 @@ class Grouping_Manifestation {
 		}
 	}
 
+	/** @noinspection PhpUnused */
 	function hasHiddenFormats(): bool {
 		$this->loadHiddenInformation();
 		return $this->_hasHiddenFormats;
@@ -165,7 +168,7 @@ class Grouping_Manifestation {
 				$this->_hideByDefault = true;
 			}
 		}
-		if (($this->getStatusInformation()->isAvailableOnline())) {
+		if ($this->getStatusInformation()->isAvailableOnline()) {
 			$hide = !empty($selectedAvailability);
 			if (in_array('available_online', $selectedAvailability) || (in_array('available', $selectedAvailability) && $addOnlineMaterialsToAvailableNow)) {
 				$hide = false;
@@ -181,11 +184,7 @@ class Grouping_Manifestation {
 			} else {
 				if (in_array('available', $selectedAvailability)) {
 					if ($this->isEContent()) {
-						if (!$this->getStatusInformation()->isAvailableOnline()) {
-							$this->_hideByDefault = true;
-						} elseif (!$addOnlineMaterialsToAvailableNow) {
-							$this->_hideByDefault = true;
-						}
+						$this->_hideByDefault = true;
 					} elseif ($isSuperScope) {
 						if (!$this->getStatusInformation()->isAvailable()) {
 							$this->_hideByDefault = true;
@@ -255,11 +254,7 @@ class Grouping_Manifestation {
 				} else {
 					if (in_array('available', $selectedAvailability)) {
 						if ($variation->isEContent()) {
-							if (!$variation->getStatusInformation()->isAvailableOnline()) {
-								$variation->setHideByDefault(true);
-							} elseif (!$addOnlineMaterialsToAvailableNow) {
-								$variation->setHideByDefault(true);
-							}
+							$variation->setHideByDefault(true);
 						} elseif ($isSuperScope) {
 							if (!$variation->getStatusInformation()->isAvailable()) {
 								$variation->setHideByDefault(true);
@@ -282,11 +277,11 @@ class Grouping_Manifestation {
 		return $this->_relatedRecords;
 	}
 
-	function getNumRelatedRecords() {
+	function getNumRelatedRecords() : int {
 		return count($this->_relatedRecords);
 	}
 
-	function getFirstRecord() {
+	function getFirstRecord() : Grouping_Record {
 		return reset($this->_relatedRecords);
 	}
 
@@ -297,6 +292,7 @@ class Grouping_Manifestation {
 		return $this->_isEContent;
 	}
 
+	/** @noinspection PhpUnused */
 	public function showCopySummary() : bool {
 		if (!$this->_isEContent) {
 			return true;
@@ -314,7 +310,7 @@ class Grouping_Manifestation {
 	/**
 	 * @return string
 	 */
-	function getUrl() {
+	function getUrl() : string {
 		$firstVariation = reset($this->_variations);
 		return $firstVariation->getUrl();
 	}
@@ -327,7 +323,7 @@ class Grouping_Manifestation {
 		return $firstVariation->getActions();
 	}
 
-	protected $_itemSummary = null;
+	protected ?array $_itemSummary = null;
 
 	/**
 	 * @return array
@@ -360,10 +356,10 @@ class Grouping_Manifestation {
 		return $this->_itemSummary;
 	}
 
-	protected $_itemsDisplayedByDefault = null;
+	protected ?array $_itemsDisplayedByDefault = null;
 
 	/** @noinspection PhpUnused */
-	function getItemsDisplayedByDefault() {
+	function getItemsDisplayedByDefault() : array {
 		if ($this->_itemsDisplayedByDefault == null) {
 			require_once ROOT_DIR . '/sys/Utils/GroupingUtils.php';
 			$itemsDisplayedByDefault = [];
@@ -392,7 +388,7 @@ class Grouping_Manifestation {
 		return $this->_itemsDisplayedByDefault;
 	}
 
-	function isPeriodical() {
+	function isPeriodical(): bool {
 		global $library;
 		$ils = 'Unknown';
 		if ($library->getAccountProfile() != null) {
@@ -425,34 +421,54 @@ class Grouping_Manifestation {
 		return $this->_statusInformation;
 	}
 
-	function isAvailable() {
+	function isAvailable() : bool {
 		return $this->_statusInformation->isAvailable();
 	}
 
-	function isAvailableOnline() {
+	function isAvailableOnline() : bool {
 		return $this->_statusInformation->isAvailableOnline();
 	}
 
-	public function getCopies() {
+	public function getCopies() : int {
 		return $this->_statusInformation->getCopies();
 	}
 
-	public function getNumAvailableCopies() {
+	/** @noinspection PhpUnused */
+	public function getNumAvailableCopies() : bool {
 		return $this->_statusInformation->getAvailableCopies();
 	}
 
 
-	function getNumberOfCopiesMessage() {
+	function getNumberOfCopiesMessage() : string {
 		return $this->_statusInformation->getNumberOfCopiesMessage();
 	}
 
 
-	function getVariationInformation() {
+	function getVariationInformation() : array {
 		return $this->_variations;
 	}
 
-	function getFirstVariation() {
+	/** @noinspection PhpUnused */
+	function getFirstVariation() : Grouping_Variation {
 		return reset($this->_variations);
+	}
+
+	/**
+	 * Returns information for use when displaying grouped work manifestations using the horizontal display
+	 *
+	 * @return string
+	 * @noinspection PhpUnused
+	 */
+	function getHorizontalFormatDisplayInfo() : string {
+		$variationsData = [];
+		foreach ($this->_variations as $variation) {
+			$variationsData[$variation->databaseId] = $variation->getHorizontalFormatDisplayInfo();
+		}
+		$data = [
+			'numVariations' => $this->getNumVariations(),
+			'variations' => $variationsData
+		];
+		return json_encode($data);
 	}
 
 }

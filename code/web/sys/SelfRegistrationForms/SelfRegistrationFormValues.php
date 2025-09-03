@@ -1,5 +1,6 @@
 <?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+/** @noinspection SpellCheckingInspection */
+/** @noinspection PhpMissingFieldTypeInspection */
 
 class SelfRegistrationFormValues extends DataObject {
 	public $__table = 'self_reg_form_values';
@@ -22,7 +23,7 @@ class SelfRegistrationFormValues extends DataObject {
 		];
 	}
 
-	public static function getFieldValues() {
+	public static function getFieldValues() : array {
 		//Determine ILS profile to return correct values
 		$ils = '';
 		$fieldValues = [];
@@ -110,8 +111,12 @@ class SelfRegistrationFormValues extends DataObject {
 		return $fieldValues;
 	}
 
-	static function getObjectStructure($fieldValues = null) {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -190,18 +195,8 @@ class SelfRegistrationFormValues extends DataObject {
 				'description' => 'Note for the patron to see under field',
 			],
 		];
-	}
 
-	public function getFormFieldsInOrder($selfRegFormId) {
-		$fields = new SelfRegistrationFormValues();
-		$fields->selfRegistrationFormId = $selfRegFormId;
-		$fields->orderBy('weight');
-		$fields->find();
-		$fieldNames = [];
-		while ($fields->fetch()) {
-			$fieldNames[] = $fields->ilsName;
-		}
-
-		return $fieldNames;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

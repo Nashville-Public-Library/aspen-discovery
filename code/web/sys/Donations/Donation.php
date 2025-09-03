@@ -1,6 +1,5 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/Donations/DonationValue.php';
 require_once ROOT_DIR . '/sys/Donations/DonationFormFields.php';
 require_once ROOT_DIR . '/sys/Donations/DonationEarmark.php';
@@ -37,8 +36,12 @@ class Donation extends DataObject {
 	public $notificationState;
 	public $notificationZip;
 
-	public static function getObjectStructure($context = '') {
-		return [
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -230,6 +233,9 @@ class Donation extends DataObject {
 				'hideInLists' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	function __get($name) {

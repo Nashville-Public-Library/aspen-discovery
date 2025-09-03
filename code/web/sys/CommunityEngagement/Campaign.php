@@ -1,14 +1,13 @@
 <?php
+/** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/CommunityEngagement/Milestone.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignMilestone.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/UserCampaign.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/Reward.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignPatronTypeAccess.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignLibraryAccess.php';
-require_once ROOT_DIR . '/sys/Account/User.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignExtraCredit.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/CampaignLocationAccess.php';
-
 
 class Campaign extends DataObject {
 	public $__table = 'ce_campaign';
@@ -28,17 +27,21 @@ class Campaign extends DataObject {
 	public $extraCreditActivities;
 	public $addExtraCreditActivities;
 
-	/** @var AvailableMilestones[] */
+	/** @var CampaignMilestone[] */
 	private $_availableMilestones;
 
-	/** @var AvailableExtraCreditActivities[] */
+	/** @var CampaignExtraCredit[] */
 	private $_availableExtraCreditActivities;
 
 	protected $_allowPatronTypeAccess;
 	protected $_allowLibraryAccess;
 	protected $_allowLocationAccess;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$milestoneList = Milestone::getMilestoneList();
 		$milestoneStructure = CampaignMilestone::getObjectStructure($context);
 		unset($milestoneStructure['campaignId']);
@@ -52,7 +55,7 @@ class Campaign extends DataObject {
 		$patronTypeList = PType::getPatronTypeList();
 		$rewardList = Reward::getRewardList();
 		$locationList = Location::getLocationList(false);
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -189,6 +192,9 @@ class Campaign extends DataObject {
 				'hideInLists' => false,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getPatronTypeAccess() {
@@ -426,7 +432,7 @@ class Campaign extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->savePatronTypeAccess();
@@ -444,7 +450,7 @@ class Campaign extends DataObject {
 	 * 
 	 * @see DB/DB_Data_Object::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->savePatronTypeAccess();
@@ -457,7 +463,7 @@ class Campaign extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !empty($this->id)) {
 			$this->clearPatronTypeAccess();
@@ -597,8 +603,7 @@ class Campaign extends DataObject {
 			$userCampaign->campaignId = $campaignId;
 
 			if ($userCampaign->find(true)) {
-				$milestoneProgress = CampaignMilestoneUsersProgress::getProgressByMilestoneId($milestone->id, $campaignId, $userId);
-				$rewardGiven = (int)$milestoneProgress->rewardGiven;
+				$rewardGiven = CampaignMilestoneUsersProgress::getRewardGivenForMilestone($milestone->id, $campaignId, $userId);
 			}
 
 			$milestoneRewards[$milestone->id] = [
@@ -709,7 +714,6 @@ class Campaign extends DataObject {
 							$milestone->rewardGiven = CampaignMilestoneUsersProgress::getRewardGivenForMilestone($milestone->id, $userId, $campaign->id);
 							$milestone->progress = $milestoneProgress['progress'];
 							$milestone->extraProgress = $milestoneProgress['extraProgress'];
-							$milestone->progressBeyondOneHundredPercent = $milestone->progressBeyondOneHundredPercent;
 						}
 					}
 				}
@@ -1140,8 +1144,30 @@ class Campaign extends DataObject {
 					//Calculate milestone progress
 					$milestoneProgress = CampaignMilestone::getMilestoneProgress($campaignId, $userId, $milestone->id);
 					$progressData = CampaignMilestoneProgressEntry::getUserProgressDataByMilestoneId($userId, $milestoneId, $campaignId);
+					require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
+					require_once ROOT_DIR . '/sys/LocalEnrichment/UserWorkReview.php';
+					foreach ($progressData as &$entry) {
+					if (empty($entry['title']) && !empty($entry['groupedRecordPermanentId'])) {
+							$driver = new GroupedWorkDriver($entry['groupedRecordPermanentId']);
+							if ($driver && $driver->isValid()) {
+								$entry['title'] = $driver->getTitle();
+
+								$review = new UserWorkReview();
+								$review->groupedRecordPermanentId = $entry['groupedRecordPermanentId'];
+								$review->userId = $entry['userId'];
+								if ($review->find(true)) {
+									$review->title = $entry['title'];
+									$review->update();
+								}
+							}
+						}
+					}
+					unset($entry);
+
 					usort($progressData, function ($a, $b) {
-						return $a['checkoutDate'] <=> $b['checkoutDate'];
+						$aDate = $a['checkoutDate'] ?? '';
+						$bDate = $b['checkoutDate'] ?? '';
+						return $aDate <=> $bDate;
 					});
 					$milestone->progress = $milestoneProgress['progress'];
 					$milestone->extraProgress = $milestoneProgress['extraProgress'];
@@ -1170,7 +1196,8 @@ class Campaign extends DataObject {
 				$currentDate = date('Y-m-d');
 				$canEnroll = (
 					(!$campaign->enrollmentStartDate || $currentDate >= $campaign->enrollmentStartDate) &&
-					(!$campaign->enrollmentEndDate || $currentDate <= $campaign->enrollmentEndDate)
+					(!$campaign->enrollmentEndDate || $currentDate <= $campaign->enrollmentEndDate) &&
+					($currentDate <= $campaign->endDate)
 				);
 				$campaign->canEnroll = $canEnroll;
 				$userCampaign = new UserCampaign();
@@ -1271,8 +1298,30 @@ class Campaign extends DataObject {
 						$completedGoals = $milestoneProgress['completed'];
 						$totalGoals = CampaignMilestone::getMilestoneGoalCountByCampaign($campaign->id, $milestone->id);
 						$progressData = CampaignMilestoneProgressEntry::getUserProgressDataByMilestoneId($linkedUser->id, $milestone->id, $campaign->id);
+						require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
+						require_once ROOT_DIR . '/sys/LocalEnrichment/UserWorkReview.php';
+						foreach ($progressData as &$entry) {
+							if (empty($entry['title']) && !empty($entry['groupedRecordPermanentId'])) {
+								$driver = new GroupedWorkDriver($entry['groupedRecordPermanentId']);
+								if ($driver && $driver->isValid()) {
+									$entry['title'] = $driver->getTitle();
+
+									$review = new UserWorkReview();
+									$review->groupedRecordPermanentId = $entry['groupedRecordPermanentId'];
+									$review->userId = $entry['userId'];
+									if ($review->find(true)) {
+										$review->title = $entry['title'];
+										$review->update();
+									}
+								}
+							}
+						}
+						unset($entry);
+
 						usort($progressData, function ($a, $b) {
-							return $a['checkoutDate'] <=> $b['checkoutDate'];
+							$aDate = $a['checkoutDate'] ?? '';
+							$bDate = $b['checkoutDate'] ?? '';
+							return $aDate <=> $bDate;
 						});
 
 						$milestoneRewardGiven = CampaignMilestoneUsersProgress::getRewardGivenForMilestone($milestone->id, $linkedUser->id, $campaign->id);
@@ -1407,6 +1456,7 @@ class Campaign extends DataObject {
 		$progress = $progressData['progress'] ?? 0;
 
 		return [
+			'type' => 'activity',
 			'id' => $extraCreditActivity->id,
 			'name' => $extraCreditActivity->name,
 			'displayName' => $extraCreditActivity->displayName,
@@ -1467,4 +1517,53 @@ class Campaign extends DataObject {
 		return $filteredCampaigns;
 	}
 
+	public static function getImageDisplaySettings($user, $library) {
+		global $logger;
+		$homeLibrary = $user->getHomeLibrary();
+		if (!empty($homeLibrary)) {
+
+			return [
+				'displayPlaceholderImage' => $homeLibrary->displayDigitalRewardOnlyWhenAwarded,
+				'placeholderImage' => $homeLibrary->digitalRewardPlaceholderImage
+			];
+		} else {
+			return [
+				'displayPlaceholderImage' => $library->displayDigitalRewardOnlyWhenAwarded,
+				'placeholderImage' => $library->digitalRewardPlaceholderImage
+			];
+		}
+	}
+
+	public static function setDisplayImageForArray(&$item, $settings, $rewardGiven, $awardAutomatically, $isComplete) {
+		$itemType = isset($item['campaignId']) ? 'CAMPAIGN' : 
+			(isset($item['id']) && isset($item['type']) && $item['type'] === 'milestone' ? 'MILESTONE' :
+			(isset($item['id']) && isset($item['type']) && $item['type'] === 'activity' ? 'EXTRACREDIT' : 'UNKNOWN'));
+		$itemId = $item['campaignId'] ?? $item['id'] ?? 'NO_ID';
+
+		$rewardGivenBool = (bool)$rewardGiven;
+		$awardAutomaticallyBool = (bool)$awardAutomatically;
+		$isCompleteBool = (bool)$isComplete;
+
+		$condition1 = !$settings['displayPlaceholderImage'];
+		$condition2 = $rewardGivenBool;
+		$condition3 = ($awardAutomaticallyBool && $isCompleteBool);
+
+
+		$shouldShowActual = $condition1 || $condition2 || $condition3;
+
+
+		if (!$shouldShowActual) {
+			if ($settings['placeholderImage']) {
+				$item['badgeImage'] = '/files/original/' . $settings['placeholderImage'];
+				$item['useTplPlaceholder'] = false;
+			} else {
+				$item['badgeImage'] = '';
+				$item['useTplPlaceholder'] = true;
+			}
+			$item['isPlaceholderImage'] = true;
+		} else {
+			$item['isPlaceholderImage'] = false;
+			$item['useTplPlaceholder'] = false;
+		}
+	}
 }

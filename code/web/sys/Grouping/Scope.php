@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class Grouping_Scope extends DataObject {
 	public $__table = 'scope';

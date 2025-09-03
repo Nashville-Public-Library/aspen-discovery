@@ -26,8 +26,13 @@ class Sublocation extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
-		//Load locations for lookup values
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+			//Load locations for lookup values
 		$allLocationsList = Location::getLocationList(false);
 		$locationList = Location::getLocationList(!UserAccount::userHasPermission('Administer All Libraries'));
 
@@ -40,7 +45,7 @@ class Sublocation extends DataObject {
 
 		$patronTypeList = PType::getPatronTypeList();
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -108,13 +113,17 @@ class Sublocation extends DataObject {
 				'hideInLists' => false,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->savePatronTypes();
 		}
+		return $ret;
 	}
 
 	public function __get($name) {
@@ -133,7 +142,7 @@ class Sublocation extends DataObject {
 		}
 	}
 
-	public function delete($useWhere = false, $hardDelete = false): int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret !== FALSE) {
 			$this->clearPatronTypes();
@@ -145,7 +154,7 @@ class Sublocation extends DataObject {
 		return $ret;
 	}
 
-	public function getPatronTypes() {
+	public function getPatronTypes() : ?array {
 		if (!isset($this->_patronTypes) && $this->id) {
 			$this->_patronTypes = [];
 			$patronTypeLink = new SublocationPatronType();
@@ -158,7 +167,7 @@ class Sublocation extends DataObject {
 		return $this->_patronTypes;
 	}
 
-	public function savePatronTypes() {
+	public function savePatronTypes() : void {
 		if (isset($this->_patronTypes) && is_array($this->_patronTypes)) {
 			$this->clearPatronTypes();
 
@@ -173,14 +182,15 @@ class Sublocation extends DataObject {
 		}
 	}
 
-	public function clearPatronTypes() {
+	public function clearPatronTypes() : void {
 		//Delete sublocations to the patron types
 		$link = new SublocationPatronType();
 		$link->sublocationId = $this->id;
-		return $link->delete(true);
+		$link->delete(true);
 	}
 
-	function getEditLink($context): string {
+	/** @noinspection PhpUnusedParameterInspection */
+	public function getEditLink(string $context): string {
 		return '/Admin/Sublocations?objectAction=edit&id=' . $this->id;
 	}
 }

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/BaseLogEntry.php';
 
@@ -11,8 +11,12 @@ class CloudLibraryExportLogEntry extends BaseLogEntry {
 	public $numAdded;
 	public $numDeleted;
 	public $numUpdated;
+	/** @noinspection PhpUnused */
 	public $numAvailabilityChanges;
+	/** @noinspection PhpUnused */
 	public $numMetadataChanges;
+	/** @noinspection PhpUnused */
 	public $numRegrouped;
+	/** @noinspection PhpUnused */
 	public $numInvalidRecords;
 }

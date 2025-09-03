@@ -1,21 +1,32 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class RosenLevelUPSetting extends DataObject {
 	public $__table = 'rosen_levelup_settings';
 	public $id;
+	/** @noinspection PhpUnused */
 	public $lu_api_host;
+	/** @noinspection PhpUnused */
 	public $lu_api_pw;
+	/** @noinspection PhpUnused */
 	public $lu_api_un;
+	/** @noinspection PhpUnused */
 	public $lu_district_name;
 	public $lu_eligible_ptypes;
+	/** @noinspection PhpUnused */
 	public $lu_multi_district_name;
+	/** @noinspection PhpUnused */
 	public $lu_school_name;
 	public $lu_ptypes_k;
 	public $lu_ptypes_1;
 	public $lu_ptypes_2;
+	/** @noinspection PhpUnused */
 	public $lu_location_code_prefix;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -102,6 +113,8 @@ class RosenLevelUPSetting extends DataObject {
 				'description' => 'Rosen LevelUP requires school values be not just numbers. Coordinate with Rosen to add a text prefix, e.g., Amqui Elementary location code "105" becomes "Nashville 105"',
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

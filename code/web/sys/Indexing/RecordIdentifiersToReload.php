@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class RecordIdentifiersToReload extends DataObject {
 	public $__table = 'record_identifiers_to_reload';

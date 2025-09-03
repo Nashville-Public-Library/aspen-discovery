@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 
 class MaterialsRequest extends DataObject {
 	public $__table = 'materials_request';   // table name
@@ -58,7 +57,12 @@ class MaterialsRequest extends DataObject {
 	protected $_holdCandidateRecords;
 	protected $_selectedHoldCandidate;
 
-	public static function getObjectStructure(string $context) : array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		global $library;
 		if ($context == 'requestsNeedingHolds') {
 			$objectStructure = [
@@ -133,7 +137,9 @@ class MaterialsRequest extends DataObject {
 					'canSort' => false,
 				]
 			];
-			return $objectStructure;
+
+			self::$_objectStructure[$context] = $objectStructure;
+			return self::$_objectStructure[$context];
 		}else{
 			//This needs to be implemented and needs to be responsive to fields the library has set up
 			return [];
@@ -793,8 +799,8 @@ class MaterialsRequest extends DataObject {
 		return $links;
 	}
 
-	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting') : void {
-		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting = 'keepExisting');
+	public function loadEmbeddedLinksFromJSON($jsonData, $mappings, string $overrideExisting = 'keepExisting') : void {
+		parent::loadEmbeddedLinksFromJSON($jsonData, $mappings, $overrideExisting);
 
 		if (isset($jsonData['library'])) {
 			$allLibraries = Library::getLibraryListAsObjects(false);
@@ -909,7 +915,7 @@ class MaterialsRequest extends DataObject {
 		return ((time() - $this->lastCheckForExistingRecord) > 60 * 60) && !$this->hasExistingRecord;
 	}
 
-	public function insert($context = '') : int|bool {
+	public function insert(string $context = '') : int|bool {
 		if (empty($this->source)) {
 			$this->source = 1;
 		}

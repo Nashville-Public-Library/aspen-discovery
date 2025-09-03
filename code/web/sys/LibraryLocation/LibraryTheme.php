@@ -4,7 +4,7 @@
 class LibraryTheme extends DataObject {
 	public $__table = 'library_themes';
 	public $__displayNameColumn = 'themeName';
-	public $themeName;
+	public $_themeName;
 	public $id;
 	public $libraryId;
 	public $themeId;
@@ -18,8 +18,13 @@ class LibraryTheme extends DataObject {
 		];
 	}
 
-	static function getObjectStructure($context = ''): array {
-		//Load Libraries for lookup values
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
+			//Load Libraries for lookup values
 		$allLibraryList = Library::getLibraryList(false);
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
@@ -32,7 +37,7 @@ class LibraryTheme extends DataObject {
 			$availableThemes[$theme->id] = $theme->themeName;
 		}
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -56,6 +61,9 @@ class LibraryTheme extends DataObject {
 				'permissions' => ['Library Theme Configuration'],
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function canActiveUserEdit() : bool {
@@ -71,20 +79,24 @@ class LibraryTheme extends DataObject {
 		}
 	}
 
-	public function fetch(): bool|DataObject|null {
-		$result = parent::fetch();
-		require_once ROOT_DIR . '/sys/Theming/Theme.php';
-		$theme = new Theme();
-		$theme->id = $this->themeId;
-		if ($theme->find(true)) {
-			$this->themeName = $theme->themeName;
-		} else {
-			$this->themeName = '';
+	public function __get($name) {
+		if ($name == 'themeName') {
+			if ($this->_themeName == null) {
+				require_once ROOT_DIR . '/sys/Theming/Theme.php';
+				$theme = new Theme();
+				$theme->id = $this->themeId;
+				if ($theme->find(true)) {
+					$this->_themeName = $theme->themeName;
+				} else {
+					$this->_themeName = '';
+				}
+			}
+			return $this->_themeName;
 		}
-		return $result;
+		return parent::__get($name);
 	}
 
-	function getEditLink($context): string {
+	public function getEditLink(string $context): string {
 		if ($context == 'libraries') {
 			return '/Admin/Libraries?objectAction=edit&id=' . $this->libraryId;
 		} else {

@@ -24,7 +24,9 @@ class OverDriveSetting extends DataObject {
 	public $numRetriesOnError;
 	/** @noinspection PhpUnused */
 	public $productsToUpdate;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfChangedRecords;
+	/** @noinspection PhpUnused */
 	public $lastUpdateOfAllRecords;
 	/** @noinspection PhpUnused */
 	public $enableRequestLogging;
@@ -36,7 +38,12 @@ class OverDriveSetting extends DataObject {
 		return ['clientSecret'];
 	}
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$overdriveScopeStructure = OverDriveScope::getObjectStructure($context);
 		unset($overdriveScopeStructure['settingId']);
 
@@ -246,14 +253,16 @@ class OverDriveSetting extends DataObject {
 		if (!(UserAccount::getActiveUserObj()->isAspenAdminUser())) {
 			unset($objectStructure['enableRequestLogging']);
 		}
-		return $objectStructure;
+
+		self::$_objectStructure[$context] = $objectStructure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __toString() {
 		return "$this->name ($this->url)";
 	}
 
-	public function update($context = '') : bool|int {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveScopes();
@@ -262,7 +271,7 @@ class OverDriveSetting extends DataObject {
 		return true;
 	}
 
-	public function insert($context = '') : int {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			if (empty($this->_scopes)) {

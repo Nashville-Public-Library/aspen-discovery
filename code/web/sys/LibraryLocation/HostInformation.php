@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 class HostInformation extends DataObject {
@@ -9,14 +9,19 @@ class HostInformation extends DataObject {
 	public $locationId;
 	public $defaultPath;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer Host Information'));
 		$locationList = [
 			-1,
 			'Default, no location specified',
 		];
 		$locationList = array_merge($locationList, Location::getLocationList(!UserAccount::userHasPermission('Administer Host Information')));
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -55,5 +60,8 @@ class HostInformation extends DataObject {
 				'default' => '/Search/Home',
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

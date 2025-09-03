@@ -1,7 +1,5 @@
 <?php /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
-
 class ILSNotificationSetting extends DataObject {
 
 	public $__table = 'ils_notification_setting';
@@ -18,90 +16,91 @@ class ILSNotificationSetting extends DataObject {
 		];
 	}
 
-	static ?array $objectStructure = null;
-	static function getObjectStructure($context = ''): array {
-		if (self::$objectStructure == null) {
-			$notificationSettings = [];
-			$notificationSetting = new NotificationSetting();
-			$notificationSetting->find();
-			while ($notificationSetting->fetch()) {
-				$notificationSettings[$notificationSetting->id] = $notificationSetting->name;
-			}
-
-			$accountProfiles = [];
-			require_once ROOT_DIR . '/sys/Account/AccountProfile.php';
-			$accountProfile = new AccountProfile();
-			$accountProfile->whereAdd("name <> 'admin' AND name <> 'admin_sso'");
-			$accountProfile->whereAdd("recordSource <> ''");
-			$accountProfile->orderBy('name');
-			$accountProfile->find();
-			$accountProfiles = $accountProfile->fetchAll('id', 'name');
-			unset($accountProfile);
-
-			require_once ROOT_DIR . '/sys/AspenLiDA/ILSMessageType.php';
-			$messageTypeStructure = ILSMessageType::getObjectStructure($context);
-
-			self::$objectStructure = [
-				'id' => [
-					'property' => 'id',
-					'type' => 'label',
-					'label' => 'Id',
-					'description' => 'The unique id within the database',
-				],
-				'name' => [
-					'property' => 'name',
-					'type' => 'text',
-					'label' => 'Name',
-					'maxLength' => 50,
-					'description' => 'A name for these settings',
-					'required' => true,
-				],
-				'accountProfileId' => [
-					'property' => 'accountProfileId',
-					'type' => 'enum',
-					'label' => 'Account Profile',
-					'values' => $accountProfiles,
-					'description' => 'Select the Account Profile linked to these notification settings.',
-					'required' => true,
-				],
-				'messageTypes' => [
-					'property' => 'messageTypes',
-					'type' => 'oneToMany',
-					'label' => 'Message Types',
-					'description' => 'Message types available for the ILS',
-					'keyThis' => 'id',
-					'keyOther' => 'ilsNotificationSettingId',
-					'subObjectType' => 'ILSMessageType',
-					'structure' => $messageTypeStructure,
-					'sortable' => false,
-					'storeDb' => true,
-					'allowEdit' => true,
-					'canEdit' => true,
-					'canAddNew' => false,
-					'canDelete' => false,
-				],
-				'notificationSettings' => [
-					'property' => 'notificationSettings',
-					'type' => 'multiSelect',
-					'listStyle' => 'checkboxSimple',
-					'label' => 'Applies to Aspen LiDA Notification Settings',
-					'description' => 'Define Aspen LiDA Notification Settings that use this setting',
-					'values' => $notificationSettings,
-				]
-			];
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
 		}
+
+		$notificationSettings = [];
+		$notificationSetting = new NotificationSetting();
+		$notificationSetting->find();
+		while ($notificationSetting->fetch()) {
+			$notificationSettings[$notificationSetting->id] = $notificationSetting->name;
+		}
+
+		$accountProfiles = [];
+		require_once ROOT_DIR . '/sys/Account/AccountProfile.php';
+		$accountProfile = new AccountProfile();
+		$accountProfile->whereAdd("name <> 'admin' AND name <> 'admin_sso'");
+		$accountProfile->whereAdd("recordSource <> ''");
+		$accountProfile->orderBy('name');
+		$accountProfile->find();
+		$accountProfiles = $accountProfile->fetchAll('id', 'name');
+		unset($accountProfile);
+
+		require_once ROOT_DIR . '/sys/AspenLiDA/ILSMessageType.php';
+		$messageTypeStructure = ILSMessageType::getObjectStructure($context);
+
+		$structure = [
+			'id' => [
+				'property' => 'id',
+				'type' => 'label',
+				'label' => 'Id',
+				'description' => 'The unique id within the database',
+			],
+			'name' => [
+				'property' => 'name',
+				'type' => 'text',
+				'label' => 'Name',
+				'maxLength' => 50,
+				'description' => 'A name for these settings',
+				'required' => true,
+			],
+			'accountProfileId' => [
+				'property' => 'accountProfileId',
+				'type' => 'enum',
+				'label' => 'Account Profile',
+				'values' => $accountProfiles,
+				'description' => 'Select the Account Profile linked to these notification settings.',
+				'required' => true,
+			],
+			'messageTypes' => [
+				'property' => 'messageTypes',
+				'type' => 'oneToMany',
+				'label' => 'Message Types',
+				'description' => 'Message types available for the ILS',
+				'keyThis' => 'id',
+				'keyOther' => 'ilsNotificationSettingId',
+				'subObjectType' => 'ILSMessageType',
+				'structure' => $messageTypeStructure,
+				'sortable' => false,
+				'storeDb' => true,
+				'allowEdit' => true,
+				'canEdit' => true,
+				'canAddNew' => false,
+				'canDelete' => false,
+			],
+			'notificationSettings' => [
+				'property' => 'notificationSettings',
+				'type' => 'multiSelect',
+				'listStyle' => 'checkboxSimple',
+				'label' => 'Applies to Aspen LiDA Notification Settings',
+				'description' => 'Define Aspen LiDA Notification Settings that use this setting',
+				'values' => $notificationSettings,
+			]
+		];
 
 		if ($context == 'addNew') {
-			$structureCopy = self::$objectStructure;
-			unset($structureCopy['messageTypes']);
-			return $structureCopy;
-		}else{
-			return self::$objectStructure;
+			unset($structure['messageTypes']);
 		}
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/** @noinspection PhpUnusedParameterInspection */
-	public function getEditLink($context): string {
+	public function getEditLink(string $context): string {
 		return '/AspenLiDA/ILSNotificationSettings?objectAction=edit&id=' . $this->id;
 	}
 
@@ -134,7 +133,7 @@ class ILSNotificationSetting extends DataObject {
 		}
 	}
 
-	public function update($context = '') : bool|int {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveMessageTypes();
@@ -143,7 +142,7 @@ class ILSNotificationSetting extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') : int|bool {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->updateMessageTypes();

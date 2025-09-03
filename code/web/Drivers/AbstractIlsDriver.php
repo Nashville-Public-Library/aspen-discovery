@@ -492,6 +492,27 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 	}
 
 	/**
+	 * Retrieves valid pickup locations for this patron for this record.
+	 * @param string $recordId
+	 * @param User $patron
+	 * @return array An array containing success status and a message.
+	 */
+	public function getValidPickupLocationsForRecordFromILS($recordId, $patron): array {
+		return [
+			'success' => false,
+			'message' => 'This functionality has not been implemented for this ILS.',
+		];
+	}
+	/**
+	 * Checks whether this ILS restricts pickup locations for specific records.
+	 *
+	 * @return array An array containing success status and a message.
+	 */
+	public function restrictValidPickupLocationsForRecordByILS(): bool {
+		return false;
+	}
+
+	/**
 	 * @param string $patronBarcode
 	 * @param string $patronUsername
 	 * @return bool|User
@@ -804,7 +825,7 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return false;
 	}
 
-	public function checkoutBySip(User $patron, $barcode, $currentLocationId) {
+	public function checkoutBySip(User $patron, string $barcode, $currentLocationId) : array {
 		$checkout_result = [];
 		$success = false;
 		$title = translate([
@@ -920,13 +941,33 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 		return [
 			'success' => false,
 			'message' => 'This functionality has not been implemented for this ILS',
+			'api' => [
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => 'This functionality has not been implemented for this ILS',
+					'isPublicFacing' => true,
+				]),
+			],
 		];
 	}
 
-	public function checkInBySIP(User $patron, $barcode, Location $currentLocation): array {
+	public function checkInBySIP(User $patron, string $barcode, Location $currentLocation): array {
 		return [
 			'success' => false,
 			'message' => 'This functionality has not been implemented for this ILS',
+			'api' => [
+				'title' => translate([
+					'text' => 'Error',
+					'isPublicFacing' => true,
+				]),
+				'message' => translate([
+					'text' => 'This functionality has not been implemented for this ILS',
+					'isPublicFacing' => true,
+				]),
+			],
 		];
 	}
 
@@ -998,6 +1039,10 @@ abstract class AbstractIlsDriver extends AbstractDriver {
 	}
 
 	public function hasAdditionalFineFields(): bool {
+		return false;
+	}
+
+	public function isPatronAccountLocked(User $patron, $fine): bool {
 		return false;
 	}
 }

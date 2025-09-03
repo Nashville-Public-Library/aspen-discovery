@@ -1,12 +1,15 @@
-<?php
-
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class DPLASetting extends DataObject {
 	public $__table = 'dpla_api_settings';    // table name
 	public $id;
 	public $apiKey;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		$structure = [
 			'id' => [
 				'property' => 'id',
@@ -23,6 +26,8 @@ class DPLASetting extends DataObject {
 				'hideInLists' => true,
 			],
 		];
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 }

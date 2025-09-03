@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 abstract class FacetSetting extends DataObject {
 	public $__displayNameColumn = 'displayName';
@@ -34,9 +33,16 @@ abstract class FacetSetting extends DataObject {
 	}
 
 	/** @return string[] */
-	public abstract static function getAvailableFacets();
+	public abstract static function getAvailableFacets() : array ;
 
-	static function getObjectStructure(array $availableFacets = null) {
+	/**
+	 * Get generic facet setting information, do not cache statically since it is cached in the child class
+	 * @param string $context
+	 * @param array|null $availableFacets
+	 * @return array
+	 * @noinspection PhpUnusedParameterInspection
+	 */
+	static function getBaseObjectStructure(string $context = '', array $availableFacets = null): array {
 		if (empty($availableFacets)) {
 			AspenError::raiseError("The list of available facets must be provided");
 		}
@@ -157,42 +163,7 @@ abstract class FacetSetting extends DataObject {
 		];
 	}
 
-	function setupTopFacet($facetName, $displayName) {
-		$this->facetName = $facetName;
-		$this->displayName = $displayName;
-		$this->showAsDropDown = false;
-		$this->sortMode = 'num_results';
-		$this->showAboveResults = true;
-		$this->showInResults = true;
-		$this->showInAdvancedSearch = true;
-		$this->numEntriesToShowByDefault = 0;
-	}
-
-	function setupSideFacet($facetName, $displayName, $collapseByDefault) {
-		$this->facetName = $facetName;
-		$this->displayName = $displayName;
-		$this->showAsDropDown = false;
-		$this->sortMode = 'num_results';
-		$this->showAboveResults = false;
-		$this->showInResults = true;
-		$this->showInAdvancedSearch = true;
-		$this->collapseByDefault = $collapseByDefault;
-		$this->useMoreFacetPopup = true;
-	}
-
-	function setupAdvancedFacet($facetName, $displayName) {
-		$this->facetName = $facetName;
-		$this->displayName = $displayName;
-		$this->showAsDropDown = false;
-		$this->sortMode = 'num_results';
-		$this->showAboveResults = false;
-		$this->showInResults = false;
-		$this->showInAdvancedSearch = true;
-		$this->collapseByDefault = true;
-		$this->useMoreFacetPopup = true;
-	}
-
-	function getFacetName($searchVersion) {
+	function getFacetName($searchVersion) : string {
 		if ($searchVersion == 2 && $this->facetName == 'collection_group') {
 			return 'collection';
 		} else {

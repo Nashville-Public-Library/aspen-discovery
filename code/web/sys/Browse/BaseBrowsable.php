@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 
 abstract class BaseBrowsable extends DataObject {
@@ -73,17 +73,7 @@ abstract class BaseBrowsable extends DataObject {
 		//Search terms
 		$searchTerms = $searchObj->getSearchTerms();
 		if (is_array($searchTerms)) {
-			if (count($searchTerms) > 1) {
-				return false;
-			} else {
-				if (!isset($searchTerms[0]['index'])) {
-					$this->searchTerm = $searchObj->displayQuery();
-				} elseif ($searchTerms[0]['index'] == $searchObj->getDefaultIndex()) {
-					$this->searchTerm = $searchTerms[0]['lookfor'];
-				} else {
-					$this->searchTerm = $searchTerms[0]['index'] . ':' . $searchTerms[0]['lookfor'];
-				}
-			}
+			$this->searchTerm = $searchObj->displayQuery();
 		} else {
 			$this->searchTerm = $searchTerms;
 		}
@@ -126,7 +116,7 @@ abstract class BaseBrowsable extends DataObject {
 		} elseif ($solrSort == 'title') {
 			$this->defaultSort = 'title';
 		} elseif ($solrSort == 'rating desc' || $solrSort == 'rating asc') {
-			// Although it is counter intuitive that choosing "User Rating (Ascending)" defaults
+			// Although it is counterintuitive that choosing "User Rating (Ascending)" defaults
 			// to a descending sort, the user expects a rating sort regardless, and most users
 			// probably want highest-rated items first anyway, mainly for browse categories.
 			$this->defaultSort = 'user_rating';
@@ -144,7 +134,7 @@ abstract class BaseBrowsable extends DataObject {
 		return true;
 	}
 
-	public static function getBrowseSources() {
+	public static function getBrowseSources() : array {
 		$spotlightSources = [
 			'GroupedWork' => 'Grouped Work Search',
 		];

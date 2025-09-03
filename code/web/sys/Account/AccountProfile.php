@@ -48,7 +48,12 @@ class AccountProfile extends DataObject {
 
 	private $_libraries;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
 		$ssoIsEnabled = false;
@@ -492,7 +497,8 @@ class AccountProfile extends DataObject {
 			unset($structure['ilsConnectionSection']['properties']['accountMessagesSection']);
 		}
 
-		return $structure;
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function __get($name) {
@@ -520,7 +526,7 @@ class AccountProfile extends DataObject {
 		}
 	}
 
-	function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		global $memCache;
 		global $instanceName;
 		$memCache->delete('account_profiles_' . $instanceName);
@@ -531,7 +537,7 @@ class AccountProfile extends DataObject {
 		return $ret;
 	}
 
-	function update($context = '') : bool|int {
+	public function update(string $context = '') : int|bool {
 		global $memCache;
 		global $instanceName;
 		$memCache->delete('account_profiles_' . $instanceName);
@@ -542,7 +548,7 @@ class AccountProfile extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		/** @var Memcache $memCache */ global $memCache;
 		global $instanceName;
 		$memCache->delete('account_profiles_' . $instanceName);

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class Reward extends DataObject {
 	public $__table = 'ce_reward';
@@ -10,10 +10,14 @@ class Reward extends DataObject {
 	public $badgeImage;
 	public $awardAutomatically;
 
-	public static function getObjectStructure($context = ''):array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		global $serverName;
 		$rewardType = self::getRewardType();
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -69,6 +73,9 @@ class Reward extends DataObject {
 				'required' => false,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	public function getDisplayUrl(): string {
@@ -92,14 +99,14 @@ class Reward extends DataObject {
 		}
 	}
 
-	function insert($context = ' ') {
+	public function insert(string $context = '') : int|bool {
 			$this->uploadImage();
 			$this->saveTextBlockTranslations('description');
 		
 		return parent::insert();
 	}
 
-	function update($context = ' ') {
+	public function update(string $context = '') : bool|int {
 			$this->uploadImage();
 			$this->saveTextBlockTranslations('description');
 		

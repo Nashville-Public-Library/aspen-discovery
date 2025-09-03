@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/SelfRegistrationForms/SelfRegistrationFormValues.php';
 require_once ROOT_DIR . '/sys/SelfRegistrationForms/SelfRegistrationTerms.php';
 require_once ROOT_DIR . '/sys/SelfRegistrationForms/SierraSelfRegistrationMunicipalityValues.php';
@@ -7,6 +7,7 @@ class SierraSelfRegistrationForm extends DataObject {
 	public $__table = 'self_registration_form_sierra';
 	public $id;
 	public $name;
+	/** @noinspection PhpUnused */
 	public $selfRegistrationTemplate;
 	public $termsOfServiceSetting;
 	public $selfRegBarcodePrefix;
@@ -27,13 +28,19 @@ class SierraSelfRegistrationForm extends DataObject {
 	public $selfRegUseAgency;
 	public $selfRegUsePatronIdBarcode;
 	public $selfRegNoticePrefOptions;
+	public $addSelfRegNote;
 
 
 	private $_fields;
 	private $_libraries;
 	private $_municipalities;
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
 		$selfRegistrationTerms = [];
@@ -49,7 +56,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		unset($fieldValuesStructure['weight']);
 		unset($fieldValuesStructure['selfRegistrationFormId']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -239,6 +246,14 @@ class SierraSelfRegistrationForm extends DataObject {
 				'hideInLists' => true,
 				'default' => 0,
 			],
+			'addSelfRegNote' => [
+				'property' => 'addSelfRegNote',
+				'type' => 'checkbox',
+				'label' => 'Add Self-Registration Note',
+				'description' => 'Automatically add a dated Circ Note in Sierra when patrons self register.',
+				'hideInLists' => true,
+				'default' => 1,
+			],
 			'municipalities' => [
 				'property' => 'municipalities',
 				'type' => 'oneToMany',
@@ -267,9 +282,12 @@ class SierraSelfRegistrationForm extends DataObject {
 				'values' => $libraryList,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveFields();
@@ -279,7 +297,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveFields();
@@ -315,7 +333,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		}
 	}
 
-	/** @return SelfRegistrationFormValues[] */
+	/** @return ?SelfRegistrationFormValues[] */
 	public function getFields(): ?array {
 		if (!isset($this->_fields) && $this->id) {
 			$this->_fields = [];
@@ -330,6 +348,9 @@ class SierraSelfRegistrationForm extends DataObject {
 		return $this->_fields;
 	}
 
+	/**
+	 * @return SierraSelfRegistrationMunicipalityValues[]|null
+	 */
 	public function getMunicipalities(): ?array {
 		if (!isset($this->_municipalities) && $this->id) {
 			$this->_municipalities = [];
@@ -344,7 +365,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		return $this->_municipalities;
 	}
 
-	public function getMunicipalitySettingsByNameAndType($name, $type = null) {
+	public function getMunicipalitySettingsByNameAndType($name, $type = null) : ?int {
 		$municipalities = new SierraSelfRegistrationMunicipalityValues();
 		$municipalities->selfRegistrationFormId = $this->id;
 		$municipalities->municipality = $name;
@@ -357,19 +378,13 @@ class SierraSelfRegistrationForm extends DataObject {
 		return null;
 	}
 
-	public function clearFields() {
-		$this->clearOneToManyOptions('SelfRegistrationFormValues', 'selfRegistrationFormId');
-		/** @noinspection PhpUndefinedFieldInspection */
-		$this->fields = [];
-	}
-
-	public function saveFields() {
+	public function saveFields() : void {
 		if (isset ($this->_fields) && is_array($this->_fields)) {
 			$this->saveOneToManyOptions($this->_fields, 'selfRegistrationFormId');
 			unset($this->fields);
 		}
 	}
-	public function saveMunicipalities() {
+	public function saveMunicipalities() : void {
 		if (isset ($this->_municipalities) && is_array($this->_municipalities)) {
 			$this->saveOneToManyOptions($this->_municipalities, 'selfRegistrationFormId');
 			unset($this->_municipalities);
@@ -377,7 +392,7 @@ class SierraSelfRegistrationForm extends DataObject {
 	}
 
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new Library();
@@ -390,7 +405,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		return $this->_libraries;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$libraryList = Library::getLibraryList(!UserAccount::userHasPermission('Administer All Libraries'));
 
@@ -415,7 +430,7 @@ class SierraSelfRegistrationForm extends DataObject {
 		}
 	}
 
-	public function loadCopyableSubObjects() {
+	public function loadCopyableSubObjects() : void {
 		$this->getFields();
 		$index = -1;
 		foreach ($this->_fields as $subObject) {

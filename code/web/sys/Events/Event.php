@@ -1,5 +1,4 @@
-<?php
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 require_once ROOT_DIR . '/sys/Events/EventType.php';
 require_once ROOT_DIR . '/sys/Events/EventTypeLibrary.php';
 require_once ROOT_DIR . '/sys/Events/EventTypeLocation.php';
@@ -45,7 +44,11 @@ class Event extends DataObject {
 
 
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
 		global $configArray;
 		$coverPath = $configArray['Site']['coverPath'];
 		if ($context == 'addNew') {
@@ -85,7 +88,13 @@ class Event extends DataObject {
 				'values' => [],
 				'hiddenByDefault' => true,
 			],
-			'eventTypeId' => [],
+			'eventTypeId' => [
+				'property' => 'eventTypeId',
+				'type' => 'enum',
+				'label' => 'Event Type',
+				'description' => 'The type of event',
+				'values' => [],
+			],
 			'title' => [
 				'property' => 'title',
 				'type' => 'text',
@@ -402,16 +411,10 @@ class Event extends DataObject {
 			} else {
 				$eventTypes = ["Choose an event type"] + $eventTypes;
 			}
-			$structure['eventTypeId'] = [
-				'property' => 'eventTypeId',
-				'type' => 'enum',
-				'label' => 'Event Type',
-				'required' => true,
-				'description' => 'The type of event',
-				'placeholder' => 'Choose an event type',
-				'values' => $eventTypes,
-				'onchange' => "return AspenDiscovery.Events.getEventTypeFields(this.value);",
-			];
+			$structure['eventTypeId']['required'] = true;
+			$structure['eventTypeId']['placeholder'] = 'Choose an event type';
+			$structure['eventTypeId']['values'] = $eventTypes;
+			$structure['eventTypeId']['onchange'] = "return AspenDiscovery.Events.getEventTypeFields(this.value);";
 			$structure['title']['hiddenByDefault'] = true;
 			$structure['infoSection']['hiddenByDefault'] = true;
 			$structure['scheduleSection']['hiddenByDefault'] = true;
@@ -421,41 +424,40 @@ class Event extends DataObject {
 			$structure['infoSection']['properties']['fieldSetFieldSection']['hiddenByDefault'] = true;
 		} else {
 			$eventTypes = EventType::getEventTypeList();
-			$structure['eventTypeId'] = [
-				'property' => 'eventTypeId',
-				'type' => 'enum',
-				'label' => 'Event Type',
-				'description' => 'The type of event',
-				'values' => $eventTypes,
-				'readOnly' => true,
-			];
+			$structure['eventTypeId']['values'] = $eventTypes;
+			$structure['eventTypeId']['readOnly'] = true;
 			$structure['locationId']['readOnly'] = true;
 			$structure['infoSection']['expandByDefault'] = false;
 			$structure['scheduleSection']['hiddenByDefault'] = false;
 			$sublocations = Location::getEventSublocations(null);
 			$structure['sublocationId']['values'] = $sublocations;
 		}
-		return $structure;
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$this->dateUpdated = time();
 		$this->setStartDate();
 		if (isset($this->weekDays) && is_array($this->weekDays)) {
 			// convert the array to string before storing in the database
 			$this->weekDays = implode(",", $this->weekDays);
 		}
+		// Save changed fields before parent::update() clears them.
+		$changedFields = $this->_changedFields;
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveLibraries();
 			$this->saveLocations();
 			$this->saveFields();
+			$this->_changedFields = $changedFields;
 			$this->generateInstances();
 		}
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		if (empty($this->dateUpdated)) {
 			$this->dateUpdated = time(); // Set to 0 for new events
 		}
@@ -474,7 +476,7 @@ class Event extends DataObject {
 		return $ret;
 	}
 
-	function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		if (!$useWhere) {
 			$this->deleted = 1;
 			$this->dateUpdated = time();
@@ -606,7 +608,7 @@ class Event extends DataObject {
 		$this->_locations = $value;
 	}
 
-	public function getLibraries() {
+	public function getLibraries() : ?array {
 		if (!isset($this->_libraries) && $this->id) {
 			$this->_libraries = [];
 			$library = new EventTypeLibrary();
@@ -619,7 +621,7 @@ class Event extends DataObject {
 		return $this->_libraries;
 	}
 
-	public function getLocations() {
+	public function getLocations() : ?array {
 		if (!isset($this->_locations) && $this->id) {
 			$this->_locations = [];
 			$location = new EventTypeLocation();
@@ -632,7 +634,7 @@ class Event extends DataObject {
 		return $this->_locations;
 	}
 
-	public function saveLibraries() {
+	public function saveLibraries() : void {
 		if (isset($this->_libraries) && is_array($this->_libraries)) {
 			$this->clearLibraries();
 
@@ -646,7 +648,7 @@ class Event extends DataObject {
 		}
 	}
 
-	public function saveLocations() {
+	public function saveLocations() : void {
 		if (isset($this->_locations) && is_array($this->_locations)) {
 			$this->clearLocations();
 
@@ -726,7 +728,7 @@ class Event extends DataObject {
 	}
 
 
-	private function clearLibraries() {
+	private function clearLibraries() : void {
 		//Unset existing library associations
 		$eventTypeLibrary = new EventTypeLibrary();
 		$eventTypeLibrary->eventTypeId = $this->id;
@@ -736,7 +738,7 @@ class Event extends DataObject {
 		}
 	}
 
-	private function clearLocations() {
+	private function clearLocations() : void {
 		//Unset existing library associations
 		$eventTypeLocation = new EventTypeLocation();
 		$eventTypeLocation->eventTypeId = $this->id;
@@ -790,12 +792,14 @@ class Event extends DataObject {
 			$instance->eventId = $this->id;
 			$instance->deleted = 0;
 			$instance->find();
+			$dates = [];
 			while ($instance->fetch()) {
 				$date = strtotime($instance->date);
 				if ($date) {
-					$this->_datesPreview .= date("l, F jS, Y", $date) . "; ";
+					$dates[] = date("l, F jS, Y", $date);
 				}
 			}
+			$this->_datesPreview = implode("; ", $dates);
 		}
 		return $this->_datesPreview ?? '';
 	}
@@ -867,6 +871,7 @@ class Event extends DataObject {
 				return $eventType;
 			}
 		}
+		return null;
 	}
 
 	public function calculateEnd($fieldName) {

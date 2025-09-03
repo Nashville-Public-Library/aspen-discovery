@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 class Ticket extends DataObject {
 	public $__table = 'ticket';
@@ -30,7 +30,12 @@ class Ticket extends DataObject {
 		];
 	}
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		//Get a list of statuses
 		require_once ROOT_DIR . '/sys/Support/TicketStatusFeed.php';
 		$ticketStatusFeed = new TicketStatusFeed();
@@ -71,7 +76,7 @@ class Ticket extends DataObject {
 		$componentTicketLink = ComponentTicketLink::getObjectStructure($context);
 		unset($componentTicketLink['ticketId']);
 
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -219,6 +224,9 @@ class Ticket extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	function getAdditionalObjectActions($existingObject): array {
@@ -290,10 +298,7 @@ class Ticket extends DataObject {
 		}
 	}
 
-	/**
-	 * @return int|bool
-	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveRelatedComponents();
@@ -302,7 +307,7 @@ class Ticket extends DataObject {
 		return $ret;
 	}
 
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveRelatedComponents();
@@ -311,14 +316,14 @@ class Ticket extends DataObject {
 		return $ret;
 	}
 
-	public function saveRelatedTasks() {
+	public function saveRelatedTasks() : void {
 		if (isset ($this->_relatedTasks) && is_array($this->_relatedTasks)) {
 			$this->saveOneToManyOptions($this->_relatedTasks, 'ticketId');
 			unset($this->_relatedTasks);
 		}
 	}
 
-	public function saveRelatedComponents() {
+	public function saveRelatedComponents() : void {
 		if (isset ($this->_relatedComponents) && is_array($this->_relatedComponents)) {
 			$this->saveOneToManyOptions($this->_relatedComponents, 'ticketId');
 			unset($this->_relatedComponents);
@@ -326,7 +331,7 @@ class Ticket extends DataObject {
 	}
 
 	/**
-	 * @return TaskTicketLink[]
+	 * @return ?TaskTicketLink[]
 	 */
 	public function getRelatedTasks(): ?array {
 		if (!isset($this->_relatedTasks) && $this->id) {
@@ -343,7 +348,7 @@ class Ticket extends DataObject {
 	}
 
 	/**
-	 * @return ComponentTicketLink[]
+	 * @return ?ComponentTicketLink[]
 	 */
 	public function getRelatedComponents(): ?array {
 		if (!isset($this->_relatedComponents) && $this->id) {
@@ -363,7 +368,7 @@ class Ticket extends DataObject {
 	 * @param ComponentTicketLink[] $relatedComponents
 	 * @return void
 	 */
-	public function setRelatedComponents(array $relatedComponents) {
+	public function setRelatedComponents(array $relatedComponents) : void {
 		$this->_relatedComponents = $relatedComponents;
 	}
 

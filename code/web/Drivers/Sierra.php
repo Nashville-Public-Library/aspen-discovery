@@ -498,6 +498,59 @@ class Sierra extends Millennium {
 		return $return;
 	}
 
+	/**
+	 * Retrieves valid pickup locations for this patron for this record.
+	 * @param string $recordId
+	 * @param User $patron
+	 * @return array An array containing valid pickup locations
+	 */
+	public function getValidPickupLocationsForRecordFromILS($recordId, $patron): array {
+		if ($recordId == null || $patron == null) {
+			return [
+				'success' => false,
+				'message' => 'Missing record or patron; unable to retrieve valid pickup locations',
+			];
+		}
+		$patronId = $patron->unique_ils_id;
+		$recordId = substr(str_replace('.b', '', $recordId), 0, -1);
+		$sierraUrl = $this->accountProfile->vendorOpacUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId . "/holds/requests/form?";
+		$params = ['recordNumber' => $recordId];
+		$sierraUrl .= http_build_query($params);
+
+		$pickupLocationsResponse = $this->_callUrl('sierra.getPickupLocationsForRecord', $sierraUrl);
+
+		if (!empty($pickupLocationsResponse) && !empty($pickupLocationsResponse->holdshelf)) {
+			$locationCodes = [];
+			if (!empty($pickupLocationsResponse->holdshelf->selected)) {
+				$locationCodes[] = $pickupLocationsResponse->holdshelf->selected->code;
+			}
+			foreach ($pickupLocationsResponse->holdshelf->locations as $location) {
+				$locationCodes[] = trim($location->code);
+			}
+			return [
+				'success' => true,
+				'message' => 'Pickup locations found',
+				'locationCodes' => $locationCodes,
+			];
+		} else {
+			$message = 'Unable to retrieve valid pickup locations from Sierra. ';
+			$message .= $pickupLocationsResponse->name ?? '';
+			$message .= $pickupLocationsResponse->description ? ': ' . $pickupLocationsResponse->description : '';
+			return [
+				'success' => false,
+				'message' => $message,
+			];
+		}
+	}
+	/**
+	 * Checks whether this ILS restricts pickup locations for specific records.
+	 *
+	 * @return bool
+	 */
+	public function restrictValidPickupLocationsForRecordByILS(): bool {
+		return true;
+	}
+
 	public function getReadingHistory($patron, $page = 1, $recordsPerPage = -1, $sortOption = "checkedOut") {
 		$readingHistoryEnabled = false;
 		$patronId = $patron->unique_ils_id;
@@ -2070,14 +2123,16 @@ class Sierra extends Millennium {
 					'value' => $selfRegistrationForm->selfRegAgency
 				];
 			}
-			$params['varFields'][] = [
-				'fieldTag' => 'x',
-				'content' => translate([
-					'text' => 'Patron self-registered on %1%.',
-					1 => date('m/d/Y'),
-					'isPublicFacing' => 'false'
-				]),
-			];
+			if ($selfRegistrationForm->addSelfRegNote) {
+				$params['varFields'][] = [
+					'fieldTag' => 'x',
+					'content' => translate([
+						'text' => 'Patron self-registered on %1%.',
+						1 => date('m/d/Y'),
+						'isPublicFacing' => 'false'
+					]),
+				];
+			}
 
 			// Override with any municipality-specific settings
 			if (!empty($municipalities)) {
@@ -2599,6 +2654,28 @@ class Sierra extends Millennium {
 
 		$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);
 		return $result;
+	}
+
+	public function isPatronAccountLocked(User $patron, $fine) : bool {
+		// Try paying $0 towards the fine - if patron record is locked API will return 500: Patron Record is Busy
+		$payment = new stdClass();
+		$payment->amount = 0;
+		$payment->paymentType = 1;
+		$payment->invoiceNumber = (string)$fine['invoiceNumber'];
+		$payment->initials = 'aspen';
+		$paymentParams['payments'][] = $payment;
+
+		$patronId = $patron->unique_ils_id;
+		$sierraUrl = $this->accountProfile->vendorOpacUrl;
+		$sierraUrl = $sierraUrl . "/iii/sierra-api/v{$this->accountProfile->apiVersion}/patrons/" . $patronId . "/fines/payment";
+
+		$makePaymentResponse = $this->_sendPage('sierra.addPayment', 'PUT', $sierraUrl, json_encode($paymentParams));
+
+		if ($this->lastResponseCode == 200 || $this->lastResponseCode == 204) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 	/** @noinspection PhpRedundantMethodOverrideInspection */

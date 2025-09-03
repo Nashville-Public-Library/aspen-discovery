@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingFieldTypeInspection */
 
 require_once ROOT_DIR . '/sys/Grouping/AuthorAuthorityAlternative.php';
 
@@ -10,9 +10,14 @@ class AuthorAuthority extends DataObject {
 	public $dateAdded;
 	private $_alternatives;
 
-	public static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		$alternativesStructure = AuthorAuthorityAlternative::getObjectStructure($context);
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -57,6 +62,9 @@ class AuthorAuthority extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	function __get($name) {
@@ -78,7 +86,7 @@ class AuthorAuthority extends DataObject {
 	/**
 	 * @return array|null
 	 */
-	public function getAlternatives() {
+	public function getAlternatives() : ?array {
 		if (!isset($this->_alternatives) && $this->id) {
 			$this->_alternatives = [];
 			$alternativeAuthor = new AuthorAuthorityAlternative();
@@ -98,7 +106,7 @@ class AuthorAuthority extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::update()
 	 */
-	public function update($context = '') {
+	public function update(string $context = '') : int|bool {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveAlternates();
@@ -111,7 +119,7 @@ class AuthorAuthority extends DataObject {
 	 *
 	 * @see DB/DB_DataObject::insert()
 	 */
-	public function insert($context = '') {
+	public function insert(string $context = '') : int|bool {
 		$this->dateAdded = time();
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
@@ -120,7 +128,7 @@ class AuthorAuthority extends DataObject {
 		return $ret;
 	}
 
-	public function delete($useWhere = false, $hardDelete = false) : int {
+	public function delete(bool $useWhere = false, bool $hardDelete = false) : bool|int {
 		$ret = parent::delete($useWhere, $hardDelete);
 		if ($ret && !$useWhere) {
 			//Delete alternatives
@@ -131,7 +139,7 @@ class AuthorAuthority extends DataObject {
 		return $ret;
 	}
 
-	public function saveAlternates() {
+	public function saveAlternates() : void {
 		if (isset ($this->_alternatives) && is_array($this->_alternatives)) {
 			$this->saveOneToManyOptions($this->_alternatives, 'authorId');
 			unset($this->_alternatives);

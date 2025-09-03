@@ -1,30 +1,29 @@
 <?php
-
 require_once ROOT_DIR . '/Action.php';
 require_once ROOT_DIR . '/services/Admin/ObjectEditor.php';
-require_once ROOT_DIR . '/sys/AspenLiDA/QuickSearchSetting.php';
+require_once ROOT_DIR . '/sys/AspenLiDA/SelfCheckCompletionMessage.php';
 
-class AspenLiDA_QuickSearchSettings extends ObjectEditor {
+class AspenLiDA_SelfCheckCompletionMessages extends ObjectEditor {
 	function getObjectType(): string {
-		return 'QuickSearchSetting';
-	}
-
-	function getToolName(): string {
-		return 'QuickSearchSettings';
+		return 'SelfCheckCompletionMessage';
 	}
 
 	function getModule(): string {
-		return 'AspenLiDA';
+		return "AspenLiDA";
+	}
+
+	function getToolName(): string {
+		return 'SelfCheckCompletionMessages';
 	}
 
 	function getPageTitle(): string {
-		return 'Quick Search Settings';
+		return 'Self Check Completion Messages';
 	}
 
 	function getAllObjects($page, $recordsPerPage): array {
 		$list = [];
 
-		$object = new QuickSearchSetting();
+		$object = new SelfCheckCompletionMessage();
 		$object->orderBy($this->getSort());
 		$this->applyFilters($object);
 		$object->limit(($page - 1) * $recordsPerPage, $recordsPerPage);
@@ -41,7 +40,7 @@ class AspenLiDA_QuickSearchSettings extends ObjectEditor {
 	}
 
 	function getObjectStructure($context = ''): array {
-		return QuickSearchSetting::getObjectStructure($context);
+		return SelfCheckCompletionMessage::getObjectStructure($context);
 	}
 
 	function getPrimaryKeyColumn(): string {
@@ -52,15 +51,11 @@ class AspenLiDA_QuickSearchSettings extends ObjectEditor {
 		return 'id';
 	}
 
-	function getInstructions(): string {
-		return '';
-	}
-
 	function getBreadcrumbs(): array {
 		$breadcrumbs = [];
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home', 'Administration Home');
 		$breadcrumbs[] = new Breadcrumb('/Admin/Home#aspen_lida', 'Aspen LiDA');
-		$breadcrumbs[] = new Breadcrumb('/AspenLiDA/QuickSearchSettings', 'Quick Search Settings');
+		$breadcrumbs[] = new Breadcrumb('/AspenLiDA/SelfCheckCompletionMessages', 'Self Check Completion Messages');
 		return $breadcrumbs;
 	}
 
@@ -69,6 +64,6 @@ class AspenLiDA_QuickSearchSettings extends ObjectEditor {
 	}
 
 	function canView(): bool {
-		return UserAccount::userHasPermission('Administer Aspen LiDA Settings');
+		return UserAccount::userHasPermission('Administer Aspen LiDA Self-Check Settings');
 	}
 }

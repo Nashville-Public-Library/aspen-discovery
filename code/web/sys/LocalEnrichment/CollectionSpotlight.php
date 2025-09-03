@@ -1,7 +1,6 @@
 <?php
 /** @noinspection PhpMissingFieldTypeInspection */
 
-require_once ROOT_DIR . '/sys/DB/DataObject.php';
 require_once ROOT_DIR . '/sys/LocalEnrichment/CollectionSpotlightList.php';
 
 class CollectionSpotlight extends DataObject {
@@ -63,7 +62,12 @@ class CollectionSpotlight extends DataObject {
 		return CollectionSpotlight::$displayTypes[$typeName];
 	}
 
-	static function getObjectStructure($context = ''): array {
+	static $_objectStructure = [];
+	static function getObjectStructure(string $context = ''): array {
+		if (isset(self::$_objectStructure[$context]) && self::$_objectStructure[$context] !== null) {
+			return self::$_objectStructure[$context];
+		}
+
 		// Load Libraries for lookup values.
 		$libraryList = [];
 		if (UserAccount::userHasPermission('Administer All Collection Spotlights')) {
@@ -85,7 +89,7 @@ class CollectionSpotlight extends DataObject {
 		unset($spotlightListStructure['sourceListId']);
 		unset($spotlightListStructure['sourceCourseReserveId']);
 		unset($spotlightListStructure['defaultSort']);
-		return [
+		$structure = [
 			'id' => [
 				'property' => 'id',
 				'type' => 'label',
@@ -270,6 +274,9 @@ class CollectionSpotlight extends DataObject {
 				'canDelete' => true,
 			],
 		];
+
+		self::$_objectStructure[$context] = $structure;
+		return self::$_objectStructure[$context];
 	}
 
 	/** @noinspection PhpUnused */
@@ -353,7 +360,7 @@ class CollectionSpotlight extends DataObject {
 		}
 	}
 
-	public function update($context = ''): bool {
+	public function update(string $context = ''): bool {
 		$ret = parent::update();
 		if ($ret === false) {
 			return false;
@@ -363,7 +370,7 @@ class CollectionSpotlight extends DataObject {
 		return true;
 	}
 
-	public function insert($context = ''): bool {
+	public function insert(string $context = ''): bool {
 		$ret = parent::insert();
 		if ($ret === false) {
 			return false;
@@ -405,7 +412,7 @@ class CollectionSpotlight extends DataObject {
 				if (!$list->_deleteOnSave) {
 					// Check to make sure that all list names are unique.
 					if (in_array($list->name, $listNames)) {
-						$validationResults['errors'][] = "This name {$list->name} was used multiple times. Please make sure that each name is unique.";
+						$validationResults['errors'][] = "This name $list->name was used multiple times. Please make sure that each name is unique.";
 					}
 					$listNames[] = $list->name;
 				}
