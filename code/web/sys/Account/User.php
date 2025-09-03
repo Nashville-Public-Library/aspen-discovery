@@ -4809,6 +4809,7 @@ class User extends DataObject {
 				$sections['aspen_lida']->addAction(new AdminAction('Branded App Settings', 'Define settings for branded versions of Aspen LiDA.', '/AspenLiDA/BrandedAppSettings'), 'Administer Aspen LiDA Settings');
 			}
 			$sections['aspen_lida']->addAction(new AdminAction('Self-Check Settings', 'Define settings for self-check in Aspen LiDA.', '/AspenLiDA/SelfCheckSettings'), 'Administer Aspen LiDA Self-Check Settings');
+			$sections['aspen_lida']->addAction(new AdminAction('Self-Check Completion Messages', 'Define messages to show when self-check checkouts are completed in Aspen LiDA.', '/AspenLiDA/SelfCheckCompletionMessages'), 'Administer Aspen LiDA Self-Check Settings');
 		}
 		if (array_key_exists('Series', $enabledModules)) {
 			$sections['series'] = new AdminSection("Series Search");
@@ -5846,7 +5847,7 @@ class User extends DataObject {
 		return 0;
 	}
 
-	function checkoutItem($barcode, Location $currentLocation): array {
+	function checkoutItem(string $barcode, Location $currentLocation): array {
 		if ($this->getCatalogDriver()->hasAPICheckout()) {
 			$result = $this->getCatalogDriver()->checkoutByAPI($this, $barcode, $currentLocation);
 		} else {
@@ -5854,6 +5855,39 @@ class User extends DataObject {
 		}
 
 		if ($result['success']) {
+			$format = '';
+			//Get the item for the barcode
+			/** @var SearchObject_AbstractGroupedWorkSearcher $searcher */
+			$searcher = SearchObjectFactory::initSearchObject();
+			$groupedWorkForBarcode = $searcher->getRecordByBarcode($barcode);
+			if ($groupedWorkForBarcode != null) {
+				require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
+				$groupedWorkDriver = new GroupedWorkDriver($groupedWorkForBarcode);
+				// Get all the related records, use for covers since we don't need actions
+				foreach ($groupedWorkDriver->getRelatedRecords(true) as $record) {
+					foreach ($record->getItems() as $item) {
+						if ($item->itemId == $result['itemData']['itemId']) {
+							$format = $record->getFormat();
+							break;
+						}
+					}
+				}
+			}
+
+			//Determine if we need to show a message
+			require_once ROOT_DIR . '/sys/AspenLIDA/SelfCheckCompletionMessage.php';
+			$selfCheckCompletionMessage = new SelfCheckCompletionMessage();
+			$escapedFormat = $selfCheckCompletionMessage->escape($format);
+			$escapedOwningLocationCode = $result['itemData']['owningLocationCode'];
+			$escapedCheckoutLocationCode = $result['itemData']['checkoutLocationCode'];
+			$selfCheckCompletionMessage->whereAdd("$escapedFormat REGEXP formats");
+			$selfCheckCompletionMessage->whereAdd("$escapedOwningLocationCode REGEXP owningLocations");
+			$selfCheckCompletionMessage->whereAdd("$escapedCheckoutLocationCode REGEXP checkoutLocations");
+			$result['completionMessage'] = '';
+			if ($selfCheckCompletionMessage->find(true)) {
+				$result['completionMessage'] = $selfCheckCompletionMessage->getTextBlockTranslation('completionMessage', $this->interfaceLanguage);
+			}
+
 			$this->forceReloadOfCheckouts();
 		}
 		$this->clearCache();
@@ -5868,7 +5902,7 @@ class User extends DataObject {
 		if ($this->getCatalogDriver()->hasAPICheckin()) {
 			$result = $this->getCatalogDriver()->checkInByAPI($this, $barcode, $currentLocation);
 		} else {
-			$result = $this->getCatalogDriver()->checkInBySip($this, $barcode, $currentLocation->code);
+			$result = $this->getCatalogDriver()->checkInBySip($this, $barcode, $currentLocation);
 		}
 
 		if ($result['success']) {

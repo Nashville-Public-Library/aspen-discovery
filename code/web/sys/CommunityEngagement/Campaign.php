@@ -1196,7 +1196,8 @@ class Campaign extends DataObject {
 				$currentDate = date('Y-m-d');
 				$canEnroll = (
 					(!$campaign->enrollmentStartDate || $currentDate >= $campaign->enrollmentStartDate) &&
-					(!$campaign->enrollmentEndDate || $currentDate <= $campaign->enrollmentEndDate)
+					(!$campaign->enrollmentEndDate || $currentDate <= $campaign->enrollmentEndDate) &&
+					($currentDate <= $campaign->endDate)
 				);
 				$campaign->canEnroll = $canEnroll;
 				$userCampaign = new UserCampaign();
@@ -1455,6 +1456,7 @@ class Campaign extends DataObject {
 		$progress = $progressData['progress'] ?? 0;
 
 		return [
+			'type' => 'activity',
 			'id' => $extraCreditActivity->id,
 			'name' => $extraCreditActivity->name,
 			'displayName' => $extraCreditActivity->displayName,
@@ -1515,4 +1517,53 @@ class Campaign extends DataObject {
 		return $filteredCampaigns;
 	}
 
+	public static function getImageDisplaySettings($user, $library) {
+		global $logger;
+		$homeLibrary = $user->getHomeLibrary();
+		if (!empty($homeLibrary)) {
+
+			return [
+				'displayPlaceholderImage' => $homeLibrary->displayDigitalRewardOnlyWhenAwarded,
+				'placeholderImage' => $homeLibrary->digitalRewardPlaceholderImage
+			];
+		} else {
+			return [
+				'displayPlaceholderImage' => $library->displayDigitalRewardOnlyWhenAwarded,
+				'placeholderImage' => $library->digitalRewardPlaceholderImage
+			];
+		}
+	}
+
+	public static function setDisplayImageForArray(&$item, $settings, $rewardGiven, $awardAutomatically, $isComplete) {
+		$itemType = isset($item['campaignId']) ? 'CAMPAIGN' : 
+			(isset($item['id']) && isset($item['type']) && $item['type'] === 'milestone' ? 'MILESTONE' :
+			(isset($item['id']) && isset($item['type']) && $item['type'] === 'activity' ? 'EXTRACREDIT' : 'UNKNOWN'));
+		$itemId = $item['campaignId'] ?? $item['id'] ?? 'NO_ID';
+
+		$rewardGivenBool = (bool)$rewardGiven;
+		$awardAutomaticallyBool = (bool)$awardAutomatically;
+		$isCompleteBool = (bool)$isComplete;
+
+		$condition1 = !$settings['displayPlaceholderImage'];
+		$condition2 = $rewardGivenBool;
+		$condition3 = ($awardAutomaticallyBool && $isCompleteBool);
+
+
+		$shouldShowActual = $condition1 || $condition2 || $condition3;
+
+
+		if (!$shouldShowActual) {
+			if ($settings['placeholderImage']) {
+				$item['badgeImage'] = '/files/original/' . $settings['placeholderImage'];
+				$item['useTplPlaceholder'] = false;
+			} else {
+				$item['badgeImage'] = '';
+				$item['useTplPlaceholder'] = true;
+			}
+			$item['isPlaceholderImage'] = true;
+		} else {
+			$item['isPlaceholderImage'] = false;
+			$item['useTplPlaceholder'] = false;
+		}
+	}
 }

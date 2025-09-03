@@ -8733,6 +8733,9 @@ class Koha extends AbstractIlsDriver {
 							'title' => $title,
 							'due' => $response->due_date ?? null,
 							'barcode' => $barcode,
+							'itemId' => $recordId,
+							'owningLocationCode' => $holdingBranch,
+							'checkoutLocationCode' => $checkoutLocation
 						];
 
 						$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);
