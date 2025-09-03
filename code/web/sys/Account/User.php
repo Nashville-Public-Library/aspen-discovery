@@ -5879,8 +5879,8 @@ class User extends DataObject {
 			require_once ROOT_DIR . '/sys/AspenLIDA/SelfCheckCompletionMessage.php';
 			$selfCheckCompletionMessage = new SelfCheckCompletionMessage();
 			$escapedFormat = $selfCheckCompletionMessage->escape($format);
-			$escapedOwningLocationCode = $result['itemData']['owningLocationCode'];
-			$escapedCheckoutLocationCode = $result['itemData']['checkoutLocationCode'];
+			$escapedOwningLocationCode = $selfCheckCompletionMessage->escape($result['itemData']['owningLocationCode']);
+			$escapedCheckoutLocationCode = $selfCheckCompletionMessage->escape($result['itemData']['checkoutLocationCode']);
 			$selfCheckCompletionMessage->whereAdd("$escapedFormat REGEXP formats");
 			$selfCheckCompletionMessage->whereAdd("$escapedOwningLocationCode REGEXP owningLocations");
 			$selfCheckCompletionMessage->whereAdd("$escapedCheckoutLocationCode REGEXP checkoutLocations");
