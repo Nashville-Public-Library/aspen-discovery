@@ -61,8 +61,9 @@ class ReadingHistory extends MyAccount {
 				$readingHistoryAction = $_REQUEST['readingHistoryAction'];
 				$result = $patron->doReadingHistoryAction($readingHistoryAction, $selectedTitles);
 				if (isset($result['message'])) {
-					$_SESSION['readingHistoryMessage'] = $result['message'];
-					$_SESSION['readingHistoryMessageIsError'] = !$result['success'];
+					$patron->updateMessage = $result['message'];
+					$patron->updateMessageIsError = !$result['success'];
+					$patron->update();
 				}
 
 				//redirect back to the current location without the action.
@@ -81,11 +82,12 @@ class ReadingHistory extends MyAccount {
 				die();
 			}
 
-			if (isset($_SESSION['readingHistoryMessage'])) {
-				$interface->assign('updateMessage', $_SESSION['readingHistoryMessage']);
-				$interface->assign('updateMessageIsError', $_SESSION['readingHistoryMessageIsError']);
-				unset($_SESSION['readingHistoryMessage']);
-				unset($_SESSION['readingHistoryMessageIsError']);
+			if (!empty($patron->updateMessage)) {
+				$interface->assign('updateMessage', $patron->updateMessage);
+				$interface->assign('updateMessageIsError', $patron->updateMessageIsError);
+				$patron->updateMessage = '';
+				$patron->updateMessageIsError = 0;
+				$patron->update();
 			}
 		}
 

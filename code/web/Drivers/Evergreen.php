@@ -1899,11 +1899,10 @@ class Evergreen extends AbstractIlsDriver {
 	}
 
 	/**
-	 * Synchronize reading history settings between Aspen and Evergreen
+	 * Synchronize reading history settings between Aspen and Evergreen.
 	 *
-	 * @param User $user The user to synchronize settings for
-	 * @param bool $isNewUser Whether this is a new user being created
-	 * @return void
+	 * @param User $user The user for which to synchronize settings.
+	 * @param bool $isNewUser Whether this is a new user being created.
 	 */
 	private function synchronizeReadingHistorySettings(User $user, bool $isNewUser): void {
 		$homeLibrary = $user->getHomeLibrary();
@@ -2066,7 +2065,7 @@ class Evergreen extends AbstractIlsDriver {
 	 * @param User $patron The user performing the action.
 	 * @param string $action The action to perform ('optIn', 'optOut', etc.).
 	 * @param array $selectedTitles Array of selected titles (not used for opt-in/out).
-	 * @return null|array Null for no result, or array with 'success' boolean and 'message' string.
+	 * @return ?array Null for no result, or array with 'success' boolean and 'message' string.
 	 */
 	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		$result = ['success' => false, 'message' => ''];
