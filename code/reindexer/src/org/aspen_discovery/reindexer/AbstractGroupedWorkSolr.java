@@ -420,7 +420,7 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 	}
 
 	private final static Pattern removeBracketsPattern = Pattern.compile("\\[.*?]");
-	private final static Pattern commonSubtitlePattern = Pattern.compile("(?i)([(]?(?:\\s?a\\s?|\\s?the\\s?)?graphic novel|audio cd|book club kit|large print[)]?)$");
+	private final static Pattern commonSubtitlePattern = Pattern.compile("(?i)([(]?(?:\\s?a\\s?|\\s?the\\s?)?audio cd|book club kit|large print[)]?)$");
 	private final static Pattern punctuationPattern = Pattern.compile("[.\\\\/()\\[\\]:;]");
 
 	void setTitle(String shortTitle, String subTitle, String displayTitle, String sortableTitle, String recordFormat, String formatCategory) {
