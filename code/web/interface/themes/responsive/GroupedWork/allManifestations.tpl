@@ -33,7 +33,7 @@
 	<div class="col-xs-12 formatDisplayHorizontal" id="relatedManfiestations{$summId|escape}" style="margin-top: 3px;margin-bottom: 5px;">
 		<div class="row horizontalFormatSelector">
 			<div class="col-xs-12">
-				<div class="swiper-button-prev swiper-button-manifestations-prev" id="swiper-button-manifestation-prev-{$summId|escape}"></div>
+				<div class="swiper-button-prev swiper-button-manifestations-prev swiper-button-manifestations-prev-{$summId|escape}" id="swiper-button-manifestation-prev-{$summId|escape}"></div>
 				<div class="swiper swiper-manifestations swiper-manifestations-{$summId|escape}" id="swiper-{$summId|escape}">
 					<div class="swiper-wrapper" id="swiper-manifestations-{$summId|escape}">
 						{assign var=firstFormat value=""}
@@ -42,15 +42,16 @@
 								{assign var=firstFormat value=$manifestation->format}
 							{/if}
 							<div class="swiper-slide horizontal-format-button" data-workId="{$summId|escape}" data-format="{$manifestation->format}" data-cleanedWorkId="{$summId|regex_replace:"/-/" : ""}">
-{*								<a onclick="return AspenDiscovery.GroupedWork.showManifestation('{$summId|escape}', '{$manifestation->format}', '{$summId|regex_replace:"/-/" : ""}');">*}
+								<a onclick="return AspenDiscovery.GroupedWork.showManifestation('{$summId|escape}', '{$manifestation->format}', '{$summId|regex_replace:"/-/" : ""}');">
 								<div class="horizontal-format-button-format">{$manifestation->format}</div>
 								{include file='GroupedWork/statusIndicator.tpl' statusInformation=$manifestation->getStatusInformation() viewingIndividualRecord=0 applyColors=false}
-{*								</a>*}
+								</a>
 							</div>
 						{/foreach}
 					</div>
 				</div>
-				<div class="swiper-button-next swiper-button-manifestations-next" id="swiper-button-manifestation-next-{$summId|escape}"></div>
+				<div class="swiper-button-next swiper-button-manifestations-next swiper-button-manifestations-next-{$summId|escape}" id="swiper-button-manifestation-next-{$summId|escape}">
+				</div>
 				<script>
 					$(document).ready(function(){ldelim}
 						AspenDiscovery.GroupedWork.initializeHorizontalFormatSwipers('{$summId}');
