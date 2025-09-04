@@ -233,6 +233,62 @@ AspenDiscovery.Lists = (function(){
 				}
 			});
 			return false;
+		},
+
+		getPrintListOptions: function (listId) {
+			AspenDiscovery.Account.ajaxLightbox(Globals.path + '/MyAccount/AJAX?method=getListPrintOptions&listId=' + listId);
+			return false;
+		},
+
+		buildAndOpenPrintUrl: function () {
+			const print = document.getElementById('print').value;
+			const listId = document.getElementById('listId').value;
+
+			const baseUrl = Globals.path + '/MyAccount/MyList/' + listId;
+
+
+			// Checkbox names (in order as in the form)
+			const checkboxIds = [
+				'printLibraryName',
+				'printLibraryLogo',
+				'listAuthor',
+				'listDescription',
+				'covers',
+				'series',
+				'formats',
+				'description',
+				'notes',
+				'rating',
+				'holdings'
+			];
+
+			// Build URL params object
+			const params = {
+				print
+			};
+
+			checkboxIds.forEach(id => {
+				const el = document.getElementById(id);
+				if (el) {
+					// Only include if checked, send value "true" (or customize as needed)
+					params[id] = el.checked ? 'true' : 'false';
+				}
+			});
+
+			// Build search string
+			const urlSearchParams = new URLSearchParams(params).toString();
+
+			// Final URL
+			const printUrl = `${baseUrl}?${urlSearchParams}`;
+
+			// Open print window and prompt print dialog once loaded
+			const win = window.open(printUrl, '_blank', 'width=900,height=900');
+			if (win) {
+				// Wait for the new window to load content, then trigger print
+				win.onload = function () {
+					win.print();
+				};
+			}
 		}
 	};
 }(AspenDiscovery.Lists || {}));

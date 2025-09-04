@@ -791,7 +791,7 @@ class CatalogConnection {
 			$patron->update();
 			$result['success'] = true;
 			$result['message'] = translate([
-				'text' => 'You have been opted out of tracking Reading History',
+				'text' => 'You have opted out of tracking Reading History.',
 				'isPublicFacing' => true,
 			]);
 		} elseif ($action == 'optIn') {
@@ -801,7 +801,7 @@ class CatalogConnection {
 
 			$result['success'] = true;
 			$result['message'] = translate([
-				'text' => 'You have been opted out in to tracking Reading History',
+				'text' => 'You have opted in to tracking Reading History.',
 				'isPublicFacing' => true,
 			]);
 		}
@@ -814,7 +814,17 @@ class CatalogConnection {
 				$performIlsAction = $homeLibrary->optOutOfReadingHistoryUpdatesILS;
 			}
 			if ($performIlsAction) {
-				$this->driver->doReadingHistoryAction($patron, $action, $selectedTitles);
+				$ilsResult = $this->driver->doReadingHistoryAction($patron, $action, $selectedTitles);
+				if (is_array($ilsResult)) {
+					if (!$ilsResult['success']) {
+						$result['success'] = false;
+						$result['message'] = $ilsResult['message'];
+					} else {
+						if ($result['success'] && !empty($ilsResult['message'])) {
+							$result['message'] .= ' ' . $ilsResult['message'];
+						}
+					}
+				}
 			}
 		}
 		return $result;
@@ -1895,7 +1905,7 @@ class CatalogConnection {
 		}
 	}
 
-	public function checkoutBySip(User $patron, $barcode, $currentLocationId): array {
+	public function checkoutBySip(User $patron, string $barcode, $currentLocationId): array {
 		return $this->driver->checkoutBySip($patron, $barcode, $currentLocationId);
 	}
 
@@ -1905,6 +1915,18 @@ class CatalogConnection {
 
 	public function checkoutByAPI(User $patron, $barcode, Location $currentLocation): array {
 		return $this->driver->checkoutByAPI($patron, $barcode, $currentLocation);
+	}
+
+	public function hasAPICheckin() : bool {
+		return $this->driver->hasAPICheckin();
+	}
+
+	public function checkInByAPI(User $patron, string $barcode, Location $currentLocation): array {
+		return $this->driver->checkInByAPI($patron, $barcode, $currentLocation);
+	}
+
+	public function checkInBySip(User $patron, string $barcode, Location $currentLocation): array {
+		return $this->driver->checkInBySip($patron, $barcode, $currentLocation);
 	}
 
 	public function allowUpdatesOfPreferredName(User $patron): bool {

@@ -2150,15 +2150,46 @@ class User extends DataObject {
 			uasort($holdsToReturn['available'], $holdSort);
 		}
 		if (!empty($holdsToReturn['unavailable'])) {
-			$indexToSortBy = match ($unavailableSort) {
-				'author', 'position', 'status', 'format' => $unavailableSort,
-				'placed' => 'createDate',
-				'cancelDate' => 'automaticCancellationDate',
-				'libraryAccount' => 'user',
-				'location' => 'pickupLocationName',
-				default => 'sortTitle',
-			};
-			uasort($holdsToReturn['unavailable'], $holdSort);
+			if ($unavailableSort === 'reactivate') {
+				$reactivateDateSort = function (Hold $a, Hold $b) {
+					$titleA = $a->getSortTitle();
+					$titleB = $b->getSortTitle();
+
+					// Get reactivation dates, treating null/0 as "no date set" (i.e., indefinitely frozen or not frozen).
+					$dateA = (!empty($a->reactivateDate) && $a->reactivateDate > 0) ? $a->reactivateDate : null;
+					$dateB = (!empty($b->reactivateDate) && $b->reactivateDate > 0) ? $b->reactivateDate : null;
+
+					// Both have reactivation dates, so sort by date (earliest first).
+					if ($dateA !== null && $dateB !== null) {
+						if ($dateA == $dateB) {
+							return strnatcasecmp($titleA, $titleB);
+						}
+						return $dateA <=> $dateB;
+					}
+
+					// Sort those with reactivation date first.
+					if ($dateA !== null && $dateB === null) {
+						return -1;
+					}
+					if ($dateA === null && $dateB !== null) {
+						return 1;
+					}
+
+					// Neither has a reactivation date, so sort by title.
+					return strnatcasecmp($titleA, $titleB);
+				};
+				uasort($holdsToReturn['unavailable'], $reactivateDateSort);
+			} else {
+				$indexToSortBy = match ($unavailableSort) {
+					'author', 'position', 'status', 'format' => $unavailableSort,
+					'placed' => 'createDate',
+					'cancelDate' => 'automaticCancellationDate',
+					'libraryAccount' => 'user',
+					'location' => 'pickupLocationName',
+					default => 'sortTitle',
+				};
+				uasort($holdsToReturn['unavailable'], $holdSort);
+			}
 		}
 
 		if ($source == 'interlibrary_loan') {
@@ -3105,7 +3136,7 @@ class User extends DataObject {
 		}
 	}
 
-	public function doReadingHistoryAction(string $readingHistoryAction, array $selectedTitles) {
+	public function doReadingHistoryAction(string $readingHistoryAction, array $selectedTitles): array {
 		if ($this->isReadingHistoryEnabled()) {
 			$catalogDriver = $this->getCatalogDriver();
 			$results = $catalogDriver->doReadingHistoryAction($this, $readingHistoryAction, $selectedTitles);
@@ -4809,6 +4840,7 @@ class User extends DataObject {
 				$sections['aspen_lida']->addAction(new AdminAction('Branded App Settings', 'Define settings for branded versions of Aspen LiDA.', '/AspenLiDA/BrandedAppSettings'), 'Administer Aspen LiDA Settings');
 			}
 			$sections['aspen_lida']->addAction(new AdminAction('Self-Check Settings', 'Define settings for self-check in Aspen LiDA.', '/AspenLiDA/SelfCheckSettings'), 'Administer Aspen LiDA Self-Check Settings');
+			$sections['aspen_lida']->addAction(new AdminAction('Self-Check Completion Messages', 'Define messages to show when self-check checkouts are completed in Aspen LiDA.', '/AspenLiDA/SelfCheckCompletionMessages'), 'Administer Aspen LiDA Self-Check Settings');
 		}
 		if (array_key_exists('Series', $enabledModules)) {
 			$sections['series'] = new AdminSection("Series Search");
@@ -4851,6 +4883,7 @@ class User extends DataObject {
 			//This happens before tables are created, ignore
 		}
 		$sections['support']->addAction(new AdminAction('Help Center', 'View the Help Center for Aspen Discovery.', 'https://help.aspendiscovery.org'), true);
+		$sections['support']->addAction(new AdminAction('API Documentation', 'View available OpenAPI specifications for Aspen Discovery APIs.', '/API/Documentation'), true);
 		$sections['support']->addAction(new AdminAction('Release Notes', 'View release notes for Aspen Discovery which contain information about new functionality and fixes for each release.', '/Admin/ReleaseNotes'), true);
 
 		$sorter = function (AdminSection $a, AdminSection $b) {
@@ -5846,7 +5879,7 @@ class User extends DataObject {
 		return 0;
 	}
 
-	function checkoutItem($barcode, Location $currentLocation): array {
+	function checkoutItem(string $barcode, Location $currentLocation): array {
 		if ($this->getCatalogDriver()->hasAPICheckout()) {
 			$result = $this->getCatalogDriver()->checkoutByAPI($this, $barcode, $currentLocation);
 		} else {
@@ -5854,6 +5887,39 @@ class User extends DataObject {
 		}
 
 		if ($result['success']) {
+			$format = '';
+			//Get the item for the barcode
+			/** @var SearchObject_AbstractGroupedWorkSearcher $searcher */
+			$searcher = SearchObjectFactory::initSearchObject();
+			$groupedWorkForBarcode = $searcher->getRecordByBarcode($barcode);
+			if ($groupedWorkForBarcode != null) {
+				require_once ROOT_DIR . '/RecordDrivers/GroupedWorkDriver.php';
+				$groupedWorkDriver = new GroupedWorkDriver($groupedWorkForBarcode);
+				// Get all the related records, use for covers since we don't need actions
+				foreach ($groupedWorkDriver->getRelatedRecords(true) as $record) {
+					foreach ($record->getItems() as $item) {
+						if ($item->itemId == $result['itemData']['itemId']) {
+							$format = $record->getFormat();
+							break;
+						}
+					}
+				}
+			}
+
+			//Determine if we need to show a message
+			require_once ROOT_DIR . '/sys/AspenLIDA/SelfCheckCompletionMessage.php';
+			$selfCheckCompletionMessage = new SelfCheckCompletionMessage();
+			$escapedFormat = $selfCheckCompletionMessage->escape($format);
+			$escapedOwningLocationCode = $selfCheckCompletionMessage->escape($result['itemData']['owningLocationCode']);
+			$escapedCheckoutLocationCode = $selfCheckCompletionMessage->escape($result['itemData']['checkoutLocationCode']);
+			$selfCheckCompletionMessage->whereAdd("$escapedFormat REGEXP formats");
+			$selfCheckCompletionMessage->whereAdd("$escapedOwningLocationCode REGEXP owningLocations");
+			$selfCheckCompletionMessage->whereAdd("$escapedCheckoutLocationCode REGEXP checkoutLocations");
+			$result['completionMessage'] = '';
+			if ($selfCheckCompletionMessage->find(true)) {
+				$result['completionMessage'] = $selfCheckCompletionMessage->getTextBlockTranslation('completionMessage', $this->interfaceLanguage);
+			}
+
 			$this->forceReloadOfCheckouts();
 		}
 		$this->clearCache();
@@ -5868,7 +5934,7 @@ class User extends DataObject {
 		if ($this->getCatalogDriver()->hasAPICheckin()) {
 			$result = $this->getCatalogDriver()->checkInByAPI($this, $barcode, $currentLocation);
 		} else {
-			$result = $this->getCatalogDriver()->checkInBySip($this, $barcode, $currentLocation->code);
+			$result = $this->getCatalogDriver()->checkInBySip($this, $barcode, $currentLocation);
 		}
 
 		if ($result['success']) {

@@ -1509,14 +1509,14 @@ class Koha extends AbstractIlsDriver {
 		return true;
 	}
 
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles) : void {
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		$doUpdate = false;
 		if ($action == 'optIn') {
 			$doUpdate = true;
 			$newPrivacySetting = 0; // Keep reading history forever
 		}elseif ($action == 'optOut') {
 			$doUpdate = true;
-			$newPrivacySetting = 2; // Never keey reading history
+			$newPrivacySetting = 2; // Never keep reading history
 		}
 		if ($doUpdate) {
 			$this->initDatabaseConnection();
@@ -1535,7 +1535,7 @@ class Koha extends AbstractIlsDriver {
 				//We could not connect to the database, don't update, so we don't corrupt the DB
 				global $logger;
 				$logger->log("Could not load existing user information from the DB during doReadingHistoryAction", Logger::LOG_ERROR);
-				return;
+				return null;
 			}
 
 			$postVariables = [
@@ -1575,6 +1575,7 @@ class Koha extends AbstractIlsDriver {
 				}
 			}
 		}
+		return null;
 	}
 
 	/**
@@ -4096,6 +4097,11 @@ class Koha extends AbstractIlsDriver {
 			'required' => true,
 			'autocomplete' => false,
 		];
+		// Check if there is a maximum age for Self registration
+		$maxAgeForSelfReg = $kohaPreferences['PatronSelfRegistrationAgeRestriction'] ?? null;
+		if(is_numeric($maxAgeForSelfReg) && (int) $maxAgeForSelfReg > 0) {
+			$fields['identitySection']['properties']['borrower_dateofbirth']['maxAgeForSelfReg'] = $maxAgeForSelfReg;
+		}
 
 		$fields['identitySection']['properties']['borrower_initials'] = [
 			'property' => 'borrower_initials',
@@ -8728,6 +8734,9 @@ class Koha extends AbstractIlsDriver {
 							'title' => $title,
 							'due' => $response->due_date ?? null,
 							'barcode' => $barcode,
+							'itemId' => $recordId,
+							'owningLocationCode' => $holdingBranch,
+							'checkoutLocationCode' => $checkoutLocation
 						];
 
 						$patron->clearCachedAccountSummaryForSource($this->getIndexingProfile()->name);

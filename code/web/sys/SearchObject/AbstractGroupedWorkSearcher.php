@@ -330,7 +330,8 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 					unset($current['explain']);
 					unset($current['score']);
 				}
-				$interface->assign('recordIndex', $x + 1);
+				// Use absolute positioning for navigation links to display on grouped works spanning across pages.
+				$interface->assign('recordIndex', $x + 1 + (($this->page - 1) * $this->limit));
 				$interface->assign('resultIndex', $x + 1 + (($this->page - 1) * $this->limit));
 				if ($isSaved || $alwaysFlagNewTitles) {
 					if (isset($current["local_time_since_added_$solrScope"])) {
@@ -480,12 +481,11 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 	 * Get an array of strings to attach to a base URL in order to reproduce the
 	 * current search.
 	 *
-	 * Note: Can't store this for future use since it gets rewritten by spelling suggestions etc.
+	 * Note: Can't store this for future use because it is rewritten by spelling suggestions, etc.
 	 *
-	 * @access  protected
-	 * @return  array    Array of URL parameters (key=url_encoded_value format)
+	 * @return array Array of URL parameters (key=url_encoded_value format).
 	 */
-	protected function getSearchParams() {
+	protected function getSearchParams(): array {
 		$params = [];
 		switch ($this->searchType) {
 			// Author Home screen
@@ -797,12 +797,15 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 	 * Retrieves a document specified by the item barcode.
 	 *
 	 * @param string $barcode A barcode of an item in the document to retrieve from Solr
-	 * @access  public
-	 * @return  string              The requested resource
+	 * @return  ?array               The requested resource
 	 * @throws  AspenError
 	 */
-	function getRecordByBarcode($barcode) {
-		return $this->indexEngine->getRecordByBarcode($barcode);
+	function getRecordByBarcode(string $barcode) : ?array {
+		if ($this->indexEngine instanceof GroupedWorksSolrConnector || $this->indexEngine instanceof GroupedWorksSolrConnector2) {
+			return $this->indexEngine->getRecordByBarcode($barcode);
+		}else{
+			return null;
+		}
 	}
 
 	/**

@@ -114,8 +114,9 @@ class MillenniumReadingHistory {
 	 * @param User $patron
 	 * @param string $action The action to perform
 	 * @param array $selectedTitles The titles to do the action on if applicable
+	 * @return array|null
 	 */
-	function doReadingHistoryAction(User $patron, string $action, array $selectedTitles) : void {
+	function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		//Load the reading history page
 		$scope = $this->driver->getDefaultScope();
 		$curl_url = $this->driver->getVendorOpacUrl() . "/patroninfo~S{$scope}/" . $patron->unique_ils_id . "/readinghistory";
@@ -159,7 +160,7 @@ class MillenniumReadingHistory {
 		if ($action == 'deleteMarked') {
 			//Load patron page readinghistory/rsh with selected titles marked
 			if (!isset($selectedTitles) || count($selectedTitles) == 0) {
-				return;
+				return null;
 			}
 			$titles = [];
 			foreach ($selectedTitles as $titleId) {
@@ -200,6 +201,7 @@ class MillenniumReadingHistory {
 		}
 		curl_close($curl_connection);
 		unlink($cookie);
+		return null;
 	}
 
 	private function parseReadingHistoryPage($pageContents, $patron, $sortOption, $recordsRead) {
