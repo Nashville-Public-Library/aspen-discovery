@@ -3190,9 +3190,11 @@ class Theme extends DataObject {
 					if ($theme->find(true)) {
 						$allAppliedThemes[$theme->themeName] = clone $theme;
 						$extendsName = $theme->extendsTheme;
+					} else {
+						// Parent theme not found, so break the loop.
+						$extendsName = '';
 					}
 				} else {
-					//We have a recursive situation
 					break;
 				}
 			}
