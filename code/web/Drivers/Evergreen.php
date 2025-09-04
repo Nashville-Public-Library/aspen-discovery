@@ -868,7 +868,7 @@ class Evergreen extends AbstractIlsDriver {
 
 
 	public function performsReadingHistoryUpdatesOfILS(): bool {
-		return false;
+		return true;
 	}
 
 	/**
@@ -1884,6 +1884,8 @@ class Evergreen extends AbstractIlsDriver {
 			}
 		}
 
+		$this->synchronizeReadingHistorySettings($user, $insert);
+
 		if ($insert) {
 			$user->created = date('Y-m-d');
 			if (!$user->insert()) {
@@ -1894,6 +1896,193 @@ class Evergreen extends AbstractIlsDriver {
 		}
 
 		return $user;
+	}
+
+	/**
+	 * Synchronize reading history settings between Aspen and Evergreen.
+	 *
+	 * @param User $user The user for which to synchronize settings.
+	 * @param bool $isNewUser Whether this is a new user being created.
+	 */
+	private function synchronizeReadingHistorySettings(User $user, bool $isNewUser): void {
+		$homeLibrary = $user->getHomeLibrary();
+		if ($homeLibrary == null) {
+			return;
+		}
+
+		// Only synchronize if both opt-in and opt-out settings are enabled for home library.
+		if (!$homeLibrary->optInToReadingHistoryUpdatesILS || !$homeLibrary->optOutOfReadingHistoryUpdatesILS) {
+			return;
+		}
+
+		$authToken = $this->getAPIAuthToken($user, true);
+		if ($authToken == null) {
+			return;
+		}
+
+		$evergreenUrl = $this->accountProfile->patronApiUrl . '/osrf-gateway-v1';
+		$headers = [
+			'Content-Type: application/x-www-form-urlencoded',
+		];
+		$this->apiCurlWrapper->addCustomHeaders($headers, false);
+
+		$request = 'service=open-ils.actor&method=open-ils.actor.patron.settings.retrieve';
+		$request .= '&param=' . json_encode($authToken);
+		$request .= '&param=' . json_encode($user->unique_ils_id);
+		$request .= '&param=' . json_encode(['history.circ.retention_start']);
+
+		$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request);
+		ExternalRequestLogEntry::logRequest('evergreen.getReadingHistoryStatus', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $request, $this->apiCurlWrapper->getResponseCode(), $apiResponse, []);
+
+		$evergreenReadingHistoryEnabled = null;
+		if ($this->apiCurlWrapper->getResponseCode() == 200) {
+			$apiResponse = json_decode($apiResponse);
+			if (isset($apiResponse->payload[0]->{'history.circ.retention_start'})) {
+				// If the setting exists and has a value, reading history is enabled.
+				$evergreenReadingHistoryEnabled = !empty($apiResponse->payload[0]->{'history.circ.retention_start'});
+			} else {
+				// If setting doesn't exist, assume disabled.
+				$evergreenReadingHistoryEnabled = false;
+			}
+		}
+
+		// For new users, sync from Evergreen.
+		if ($isNewUser && $evergreenReadingHistoryEnabled !== null) {
+			$user->trackReadingHistory = $evergreenReadingHistoryEnabled ? 1 : 0;
+		}
+		// For existing users, check if there's a mismatch and sync from Evergreen.
+		elseif (!$isNewUser && $evergreenReadingHistoryEnabled !== null) {
+			$aspenReadingHistoryEnabled = (bool)$user->trackReadingHistory;
+			if ($aspenReadingHistoryEnabled !== $evergreenReadingHistoryEnabled) {
+				$user->trackReadingHistory = $evergreenReadingHistoryEnabled ? 1 : 0;
+			}
+		}
+	}
+
+	/**
+	 * Enable reading history in Evergreen ILS.
+	 *
+	 * @param User $user The user for which to enable reading history.
+	 * @return array Array with 'success' boolean and 'message' string.
+	 */
+	public function optInToReadingHistoryILS(User $user): array {
+		$result = ['success' => false,];
+
+		$authToken = $this->getAPIAuthToken($user, true);
+		if ($authToken == null) {
+			$result['message'] = 'Unable to authenticate with the ILS.';
+			return $result;
+		}
+
+		$evergreenUrl = $this->accountProfile->patronApiUrl . '/osrf-gateway-v1';
+		$headers = [
+			'Content-Type: application/x-www-form-urlencoded',
+		];
+		$this->apiCurlWrapper->addCustomHeaders($headers, false);
+
+		// Set history.circ.retention_start to current date to enable reading history.
+		$now = date('Y-m-d');
+		$request = 'service=open-ils.actor&method=open-ils.actor.patron.settings.update';
+		$request .= '&param=' . json_encode($authToken);
+		$request .= '&param=' . json_encode($user->unique_ils_id);
+		$request .= '&param=' . json_encode(['history.circ.retention_start' => '"' . $now . '"']);
+
+		$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request);
+		ExternalRequestLogEntry::logRequest('evergreen.optInToReadingHistory', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $request, $this->apiCurlWrapper->getResponseCode(), $apiResponse, []);
+
+		if ($this->apiCurlWrapper->getResponseCode() == 200) {
+			$apiResponse = json_decode($apiResponse);
+			if (isset($apiResponse->payload[0]) && $apiResponse->payload[0] == 1) {
+				$result['success'] = true;
+				$result['message'] = 'Reading history has been enabled in the ILS.';
+			} else {
+				$result['message'] = 'Failed to enable reading history in the ILS.';
+			}
+		} else {
+			$result['message'] = 'Failed to communicate with the ILS.';
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Disable reading history in Evergreen ILS and optionally clear existing history.
+	 *
+	 * @param User $user The user for which to disable reading history.
+	 * @param bool $clearHistory Whether to clear existing reading history (default: true).
+	 * @return array Array with 'success' boolean and 'message' string.
+	 */
+	public function optOutOfReadingHistoryILS(User $user, bool $clearHistory = true): array {
+		$result = ['success' => false,];
+
+		$authToken = $this->getAPIAuthToken($user, true);
+		if ($authToken == null) {
+			$result['message'] = 'Unable to authenticate with the ILS.';
+			return $result;
+		}
+
+		$evergreenUrl = $this->accountProfile->patronApiUrl . '/osrf-gateway-v1';
+		$headers = [
+			'Content-Type: application/x-www-form-urlencoded',
+		];
+		$this->apiCurlWrapper->addCustomHeaders($headers, false);
+
+		if ($clearHistory) {
+			$clearRequest = 'service=open-ils.actor&method=open-ils.actor.history.circ.clear';
+			$clearRequest .= '&param=' . json_encode($authToken);
+
+			$clearResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $clearRequest);
+			ExternalRequestLogEntry::logRequest('evergreen.clearReadingHistory', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $clearRequest, $this->apiCurlWrapper->getResponseCode(), $clearResponse, []);
+		}
+
+		// Unset history.circ.retention_start to disable reading history.
+		$request = 'service=open-ils.actor&method=open-ils.actor.patron.settings.update';
+		$request .= '&param=' . json_encode($authToken);
+		$request .= '&param=' . json_encode($user->unique_ils_id);
+		$request .= '&param=' . json_encode(['history.circ.retention_start' => null]);
+
+		$apiResponse = $this->apiCurlWrapper->curlPostPage($evergreenUrl, $request);
+		ExternalRequestLogEntry::logRequest('evergreen.optOutOfReadingHistory', 'POST', $evergreenUrl, $this->apiCurlWrapper->getHeaders(), $request, $this->apiCurlWrapper->getResponseCode(), $apiResponse, []);
+
+		if ($this->apiCurlWrapper->getResponseCode() == 200) {
+			$apiResponse = json_decode($apiResponse);
+			if (isset($apiResponse->payload[0]) && $apiResponse->payload[0] == 1) {
+				$result['success'] = true;
+				$result['message'] = 'Reading history has been disabled in the ILS.' . ($clearHistory ? ' Existing history has been cleared.' : '');
+			} else {
+				$result['message'] = 'Failed to disable reading history in the ILS.';
+			}
+		} else {
+			$result['message'] = 'Failed to communicate with the ILS.';
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Handle reading history actions in the Evergreen ILS.
+	 *
+	 * @param User $patron The user performing the action.
+	 * @param string $action The action to perform ('optIn', 'optOut', etc.).
+	 * @param array $selectedTitles Array of selected titles (not used for opt-in/out).
+	 * @return ?array Null for no result, or array with 'success' boolean and 'message' string.
+	 */
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
+		$result = ['success' => false, 'message' => ''];
+
+		switch ($action) {
+			case 'optIn':
+				$result = $this->optInToReadingHistoryILS($patron);
+				break;
+			case 'optOut':
+				$result = $this->optOutOfReadingHistoryILS($patron);
+				break;
+			default:
+				$result['message'] = 'Unknown reading history action: ' . $action;
+				break;
+		}
+
+		return $result;
 	}
 
 	private function validatePatronAndGetAuthToken(string $username, string $password) {

@@ -20,8 +20,8 @@ abstract class AbstractDriver {
 		];
 	}
 
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles) : void {
-
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
+		return null;
 	}
 
 	/**
