@@ -4084,6 +4084,9 @@ class MyAccount_AJAX extends JSON_Action {
 				if ($library->showHoldCancelDate) {
 					$unavailableHoldSortOptions['cancelDate'] = 'Hold Cancellation Date';
 				}
+				if ($user->suspendRequiresReactivationDate()) {
+					$unavailableHoldSortOptions['reactivate'] = 'Reactivation Date';
+				}
 
 				$availableHoldSortOptions = [
 					'title' => 'Title',
