@@ -871,7 +871,9 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 		series = series.replaceAll(",\\s+(the|an)$", "");
 		series = series.replaceAll("[:,]\\s", " ");
 		//Remove the word series at the end since this gets cataloged inconsistently
-		series = series.replaceAll("(?i)\\s+series$", "");
+		if (groupedWorkIndexer.isRemoveTheWordSeriesFromEndOfSeries()) {
+			series = series.replaceAll("(?i)\\s+series$", "");
+		}
 
 		return AspenStringUtils.trimTrailingPunctuation(series).trim();
 	}

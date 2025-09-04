@@ -378,7 +378,9 @@ abstract class MarcRecordProcessor {
 			//Remove anything in parentheses since it's normally just the format
 			//series = series.replaceAll("\\s+\\(.*?\\)", "");
 			//Remove the word series at the end since this gets cataloged inconsistently
-			series = series.replaceAll("(?i)\\s+series$", "");
+			if (indexer.isRemoveTheWordSeriesFromEndOfSeries()) {
+				series = series.replaceAll("(?i)\\s+series$", "");
+			}
 			String seriesLanguage = AspenStringUtils.trimTrailingPunctuation(MarcUtil.getSpecifiedSubfieldsAsString(seriesField, "l","")).toString();
 			if (!seriesLanguage.isEmpty()) {
 				series = series + " (" + seriesLanguage + ")";
@@ -408,7 +410,9 @@ abstract class MarcRecordProcessor {
 			//No longer remove parentheses to better differentiate series
 			//series = series.replaceAll("\\s+\\(.*?\\)", "");
 			//Remove the word series at the end since this gets cataloged inconsistently
-			series = series.replaceAll("(?i)\\s+series$", "");
+			if (indexer.isRemoveTheWordSeriesFromEndOfSeries()) {
+				series = series.replaceAll("(?i)\\s+series$", "");
+			}
 
 			String volume = "";
 			if (seriesField.getSubfield('v') != null){
@@ -427,7 +431,9 @@ abstract class MarcRecordProcessor {
 				//Remove anything in parentheses since it's normally just the format
 				//series = series.replaceAll("\\s+\\(.*?\\)", "");
 				//Remove the word series at the end since this gets cataloged inconsistently
-				series = series.replaceAll("(?i)\\s+series$", "");
+				if (indexer.isRemoveTheWordSeriesFromEndOfSeries()) {
+					series = series.replaceAll("(?i)\\s+series$", "");
+				}
 
 				String volume = "";
 				if (seriesField.getSubfield('v') != null) {

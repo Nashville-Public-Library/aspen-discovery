@@ -37,6 +37,7 @@ public class GroupedWorkIndexer {
 	private final Long indexStartTime;
 	private int deletionCommitInterval = 1000;
 	private boolean waitAfterDeleteCommit = false;
+	private boolean removeTheWordSeriesFromEndOfSeries;
 	private int totalRecordsHandled = 0;
 	private ConcurrentUpdateHttp2SolrClient updateServer;
 	private RecordGroupingProcessor recordGroupingProcessor;
@@ -231,7 +232,7 @@ public class GroupedWorkIndexer {
 
 		//Check to see if we should store record details in Solr
 		try{
-			PreparedStatement systemVariablesStmt = dbConn.prepareStatement("SELECT storeRecordDetailsInSolr, storeRecordDetailsInDatabase, indexVersion, searchVersion, processEmptyGroupedWorks, enableNovelistSeriesIntegration, deletionCommitInterval, waitAfterDeleteCommit from system_variables");
+			PreparedStatement systemVariablesStmt = dbConn.prepareStatement("SELECT storeRecordDetailsInSolr, storeRecordDetailsInDatabase, indexVersion, searchVersion, processEmptyGroupedWorks, enableNovelistSeriesIntegration, deletionCommitInterval, waitAfterDeleteCommit, removeTheWordSeriesFromEndOfSeries from system_variables");
 			ResultSet systemVariablesRS = systemVariablesStmt.executeQuery();
 			if (systemVariablesRS.next()){
 				this.storeRecordDetailsInSolr = systemVariablesRS.getBoolean("storeRecordDetailsInSolr");
@@ -244,6 +245,7 @@ public class GroupedWorkIndexer {
 				if (fullReindex) {
 					this.processEmptyGroupedWorks = systemVariablesRS.getBoolean("processEmptyGroupedWorks");
 				}
+				this.removeTheWordSeriesFromEndOfSeries = systemVariablesRS.getBoolean("removeTheWordSeriesFromEndOfSeries");
 			}
 			systemVariablesRS.close();
 			systemVariablesStmt.close();
@@ -2963,6 +2965,10 @@ public class GroupedWorkIndexer {
 
 	public void setRegroupAllRecords(boolean regroupAllRecords) {
 		this.regroupAllRecords = regroupAllRecords;
+	}
+
+	public boolean isRemoveTheWordSeriesFromEndOfSeries() {
+		return removeTheWordSeriesFromEndOfSeries;
 	}
 
 	public enum MarcStatus {
