@@ -22,7 +22,7 @@
 							<script type="text/javascript">
 								{literal}
 								$(document).ready(function () {
-									$("#searchAdminBar").keydown("keydown", function (e) {
+									$("#searchAdminBar").on('keydown', function (e) {
 										if (e.which === 13) {
 											e.preventDefault();
 										}

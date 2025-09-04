@@ -24,10 +24,10 @@
 			</div>
 		</div>
 	{/if}
-	<button class="tool btn btn-primary" onclick="$('#masqueradeForm').submit()">{translate text="Start" isAdminFacing=true}</button>
+	<button class="tool btn btn-primary" onclick="$('#masqueradeForm').trigger('submit')">{translate text="Start" isAdminFacing=true}</button>
 </form>
 	<script type="text/javascript">
-		$('#cardNumber').focus().select();
+		$('#cardNumber').trigger('focus').trigger('select');
 		{literal}
 		$("#masqueradeForm").validate({
 			submitHandler: function(){

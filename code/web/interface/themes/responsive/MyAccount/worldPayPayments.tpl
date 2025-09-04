@@ -36,14 +36,14 @@
 	</script>
 	<script>
 		$(document).ready(function () {ldelim}
-			$('formattedTotal{$userId}').change(function(){ldelim}
+			$('formattedTotal{$userId}').on('change', function(){ldelim}
 				document.getElementById("{$userId}FineAmount").value = document.getElementById("formattedTotal{$userId}").text;
 			{rdelim})
 		{rdelim});
 	</script>
 	{if $finesToPay == 1}
 		<script>
-			$('#fines{$userId}').submit(function() {ldelim}
+			$('#fines{$userId}').on('submit', function() {ldelim}
 				var totalFineAmt = 0;
 				var totalOutstandingAmt = 0;
 				var lineItems = "";
@@ -85,7 +85,7 @@
 	{/if}
 	{if $finesToPay == 2}
 	<script>
-		$('#fines{$userId}').submit(function() {ldelim}
+		$('#fines{$userId}').on('submit', function() {ldelim}
 			var totalFineAmt = 0;
 			var totalOutstandingAmt = 0;
 			var lineItems = "";

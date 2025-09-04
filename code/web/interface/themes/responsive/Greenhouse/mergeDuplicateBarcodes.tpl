@@ -169,7 +169,7 @@
 
 		function mergeBarcodes() {
 			$("#startMergeButton").attr("disabled", "disabled");
-			$("#stopMergeButton").removeAttr("disabled")
+			$("#stopMergeButton").prop("disabled", false);
 			var allBarcodeRows = document.getElementsByClassName('barcodeRow');
 			for (var i = 0; i < allBarcodeRows.length; i++) {
 				var barcodeRow = allBarcodeRows[i];
@@ -191,7 +191,7 @@
 		function stopBarcodeMerge() {
 			stopProcessing = 1;
 			$("#stopMergeButton").attr("disabled", "disabled");
-			$("#startMergeButton").removeAttr("disabled")
+			$("#startMergeButton").prop("disabled", false);
 		}
 
 		function mergeBarcode(barcodeRow) {

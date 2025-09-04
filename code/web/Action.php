@@ -35,8 +35,6 @@ abstract class Action
 		$minimalInterface = $_REQUEST['minimalInterface'] ?? false;
 		$interface->assign('minimalInterface', $minimalInterface);
 
-		$printInterface = isset($_REQUEST['print']) ? filter_var($_REQUEST['print'], FILTER_VALIDATE_BOOLEAN) : false;
-		$interface->assign('printInterface', $printInterface);
 		$printLibraryName = isset($_REQUEST['printLibraryName']) ? filter_var($_REQUEST['printLibraryName'], FILTER_VALIDATE_BOOLEAN) : false;
 		$interface->assign('printLibraryName', $printLibraryName);
 		$printLibraryLogo = isset($_REQUEST['printLibraryLogo']) ? filter_var($_REQUEST['printLibraryLogo'], FILTER_VALIDATE_BOOLEAN) : false;
@@ -54,7 +52,7 @@ abstract class Action
 		}
 		if ($this->isStandalonePage) {
 			$interface->display('standalone-layout.tpl');
-		} elseif ($printInterface) {
+		} elseif ($interface->getVariable('printInterface')) {
 			$interface->display('print-layout.tpl');
 		} else {
 			$interface->display('layout.tpl');

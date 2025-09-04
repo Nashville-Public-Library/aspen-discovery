@@ -1459,7 +1459,7 @@ class CarlX extends AbstractIlsDriver {
 		return true;
 	}
 
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): void {
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		if ($action == 'optIn' || $action == 'optOut') {
 			$request = $this->getSearchbyPatronIdRequest($patron);
 			if (!isset ($request->Patron)) {
@@ -1479,6 +1479,7 @@ class CarlX extends AbstractIlsDriver {
 				$logger->log('Unable to read XML from CarlX response when attempting to update Patron Information.', Logger::LOG_ERROR);
 			}
 		}
+		return null;
 	}
 
 	public function getFines(User $patron, $includeMessages = false): array {

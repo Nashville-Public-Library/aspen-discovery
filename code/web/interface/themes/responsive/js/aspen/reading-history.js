@@ -37,7 +37,7 @@ AspenDiscovery.Account.ReadingHistory = (function(){
 		deleteAllAction: function (){
 			if (confirm('Your entire reading history will be irreversibly deleted.  Proceed?')){
 				$('#readingHistoryAction').val('deleteAll');
-				$('#readingListForm').submit();
+				$('#readingListForm').trigger('submit');
 			}
 			return false;
 		},
@@ -45,14 +45,14 @@ AspenDiscovery.Account.ReadingHistory = (function(){
 		optOutAction: function (){
 			if (confirm('Opting out of Reading History will also delete your entire reading history irreversibly.  Proceed?')){
 				$('#readingHistoryAction').val('optOut');
-				$('#readingListForm').submit();
+				$('#readingListForm').trigger('submit');
 			}
 			return false;
 		},
 
 		optInAction: function (){
 			$('#readingHistoryAction').val('optIn');
-			$('#readingListForm').submit();
+			$('#readingListForm').trigger('submit');
 			return false;
 		},
 

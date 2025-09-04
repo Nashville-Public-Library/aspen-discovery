@@ -20,7 +20,7 @@
 	{rdelim});
 	</script>
 	<script>
-		$('#fines{$userId}').submit(function() {ldelim}
+		$('#fines{$userId}').on('submit', function() {ldelim}
 			/*var itemBarcodes = "";
 			var billReasons = "";
 			var itemTitles = "";

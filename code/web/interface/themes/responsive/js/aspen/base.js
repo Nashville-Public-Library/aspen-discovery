@@ -250,7 +250,7 @@ var AspenDiscovery = (function(){
 
 		initializeModalDialogs: function() {
 			aspenJQ(".modalDialogTrigger").each(function(){
-				aspenJQ(this).click(function(){
+				aspenJQ(this).on('click', function(){
 					var trigger = aspenJQ(this);
 					var dialogTitle = trigger.attr("title") ? trigger.attr("title") : trigger.data("title");
 					var dialogDestination = trigger.attr("href");
@@ -360,7 +360,7 @@ var AspenDiscovery = (function(){
 			aspenJQ('legend.collapsible').each(function(){
 				aspenJQ(this).siblings().hide()
 				.addClass("collapsed")
-				.click(function() {
+				.on('click', function() {
 					aspenJQ(this).toggleClass("expanded collapsed")
 					.siblings().slideToggle();
 					return false;
@@ -370,7 +370,7 @@ var AspenDiscovery = (function(){
 			aspenJQ('fieldset.fieldset-collapsible').each(function() {
 				var collapsible = aspenJQ(this);
 				var legend = collapsible.find('legend:first');
-				legend.addClass('fieldset-collapsible-label').bind('click', {collapsible: collapsible}, function(event) {
+				legend.addClass('fieldset-collapsible-label').on('click', {collapsible: collapsible}, function(event) {
 					var collapsible = event.data.collapsible;
 					if (collapsible.hasClass('fieldset-collapsed')) {
 						collapsible.removeClass('fieldset-collapsed');
@@ -473,7 +473,7 @@ var AspenDiscovery = (function(){
 			aspenJQ('.modal-buttons').html(buttons);
 			if (closeDestination !== undefined) {
 				Globals.modalCloseDestination = closeDestination;
-				aspenJQ(".modalClose").click(function () {
+				aspenJQ(".modalClose").on('click', function () {
 					if (Globals.modalCloseDestination.length > 0) {
 						document.location.href = Globals.modalCloseDestination
 						return false;
@@ -566,7 +566,7 @@ var AspenDiscovery = (function(){
 
 		submitOnEnter: function(event, formToSubmit){
 			if (event.keyCode === 13){
-				aspenJQ(formToSubmit).submit();
+				aspenJQ(formToSubmit).trigger('submit');
 			}
 		},
 

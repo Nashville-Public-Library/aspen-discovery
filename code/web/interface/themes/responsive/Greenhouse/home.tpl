@@ -15,7 +15,7 @@
 				<script type="text/javascript">
 					{literal}
 					$(document).ready(function() {
-						$("#settingsSearch").keydown("keydown", function (e) {
+						$("#settingsSearch").on('keydown', function (e) {
 							if (e.which === 13) {
 								e.preventDefault();
 							}
@@ -501,30 +501,6 @@
 							</div>
 							<div class="col-tn-10 col-xs-11 col-sm-10 col-md-11">
 								<div class="adminActionLabel"><a href="/Development/AspenReleases">{translate text="Aspen Releases"  isAdminFacing=true}</a></div>
-							</div>
-						</div>
-						<div class="adminAction row">
-							<div class="col-tn-2 col-xs-1 col-sm-2 col-md-1 adminActionLabel">
-								<a href="/Development/Sprints" title="{translate text="Aspen Sprints" inAttribute="true" isAdminFacing=true}"><i class="fas fa-chevron-circle-right fa"></i></a>
-							</div>
-							<div class="col-tn-10 col-xs-11 col-sm-10 col-md-11">
-								<div class="adminActionLabel"><a href="/Development/Sprints">{translate text="Aspen Sprints" isAdminFacing=true}</a></div>
-							</div>
-						</div>
-						<div class="adminAction row">
-							<div class="col-tn-2 col-xs-1 col-sm-2 col-md-1 adminActionLabel">
-								<a href="/Development/Epics" title="{translate text="Epics" inAttribute="true" isAdminFacing=true}"><i class="fas fa-chevron-circle-right fa"></i></a>
-							</div>
-							<div class="col-tn-10 col-xs-11 col-sm-10 col-md-11">
-								<div class="adminActionLabel"><a href="/Development/Epics">{translate text="Epics" isAdminFacing=true}</a></div>
-							</div>
-						</div>
-						<div class="adminAction row">
-							<div class="col-tn-2 col-xs-1 col-sm-2 col-md-1 adminActionLabel">
-								<a href="/Development/Tasks" title="{translate text="Development Tasks" inAttribute="true" isAdminFacing=true}"><i class="fas fa-chevron-circle-right fa"></i></a>
-							</div>
-							<div class="col-tn-10 col-xs-11 col-sm-10 col-md-11">
-								<div class="adminActionLabel"><a href="/Development/Tasks">{translate text="Development Tasks" isAdminFacing=true}</a></div>
 							</div>
 						</div>
 					</div>

@@ -16,7 +16,6 @@ class Ticket extends DataObject {
 	public $partnerPriorityChangeDate;
 	public $dateClosed;
 
-	public $_relatedTasks;
 	public $_relatedComponents;
 
 	public function getNumericColumnNames(): array {
@@ -26,7 +25,6 @@ class Ticket extends DataObject {
 			'partnerPriority',
 			'partnerPriorityChangeDate',
 			'dateClosed',
-			'developmentTaskId',
 		];
 	}
 
@@ -67,10 +65,6 @@ class Ticket extends DataObject {
 		$aspenSite->orderBy('name');
 		$aspenSites = $aspenSite->fetchAll('id', 'name');
 		$aspenSites[null] = 'None';
-
-		require_once ROOT_DIR . '/sys/Development/TaskTicketLink.php';
-		$taskTicketLinkStructure = TaskTicketLink::getObjectStructure($context);
-		unset($taskTicketLinkStructure['ticketId']);
 
 		require_once ROOT_DIR . '/sys/Development/ComponentTicketLink.php';
 		$componentTicketLink = ComponentTicketLink::getObjectStructure($context);
@@ -205,24 +199,6 @@ class Ticket extends DataObject {
 				'required' => false,
 				'readOnly' => true,
 			],
-			'relatedTasks' => [
-				'property' => 'relatedTasks',
-				'type' => 'oneToMany',
-				'label' => 'Related Tasks',
-				'description' => 'A list of all tasks assigned to this ticket',
-				'keyThis' => 'id',
-				'keyOther' => 'ticketId',
-				'subObjectType' => 'TaskTicketLink',
-				'structure' => $taskTicketLinkStructure,
-				'sortable' => false,
-				'storeDb' => true,
-				'allowEdit' => true,
-				'canEdit' => true,
-				'additionalOneToManyActions' => [],
-				'hideInLists' => false,
-				'canAddNew' => true,
-				'canDelete' => true,
-			],
 		];
 
 		self::$_objectStructure[$context] = $structure;
@@ -244,14 +220,6 @@ class Ticket extends DataObject {
 				];
 			}
 
-			//Check to see if this is already part of a task.  If not, add a button to create a task from it.
-			if (count($existingObject->getRelatedTasks()) == 0) {
-				$objectActions[] = [
-					'text' => 'Create Task',
-					'url' => '/Development/Tasks?objectAction=createTaskFromTicket&ticketId=' . $existingObject->ticketId,
-				];
-			}
-
 		}
 		return $objectActions;
 	}
@@ -268,20 +236,12 @@ class Ticket extends DataObject {
 				'url' => $rtConnection->baseUrl . '/Ticket/Display.html?id=' . $this->ticketId,
 				'target' => '_blank',
 			];
-			if (count($this->getRelatedTasks()) == 0) {
-				$objectActions[] = [
-					'text' => 'Create Task',
-					'url' => '/Development/Tasks?objectAction=createTaskFromTicket&ticketId=' . $this->id,
-				];
-			}
 		}
 		return $objectActions;
 	}
 
 	public function __get($name) {
-		if ($name == 'relatedTasks') {
-			return $this->getRelatedTasks();
-		} elseif ($name == 'relatedComponents') {
+		if ($name == 'relatedComponents') {
 			return $this->getRelatedComponents();
 		} else {
 			return parent::__get($name);
@@ -289,9 +249,7 @@ class Ticket extends DataObject {
 	}
 
 	public function __set($name, $value) {
-		if ($name == "relatedTasks") {
-			$this->_relatedTasks = $value;
-		} elseif ($name == "relatedComponents") {
+		if ($name == "relatedComponents") {
 			$this->_relatedComponents = $value;
 		} else {
 			parent::__set($name, $value);
@@ -302,7 +260,6 @@ class Ticket extends DataObject {
 		$ret = parent::update();
 		if ($ret !== FALSE) {
 			$this->saveRelatedComponents();
-			$this->saveRelatedTasks();
 		}
 		return $ret;
 	}
@@ -311,16 +268,8 @@ class Ticket extends DataObject {
 		$ret = parent::insert();
 		if ($ret !== FALSE) {
 			$this->saveRelatedComponents();
-			$this->saveRelatedTasks();
 		}
 		return $ret;
-	}
-
-	public function saveRelatedTasks() : void {
-		if (isset ($this->_relatedTasks) && is_array($this->_relatedTasks)) {
-			$this->saveOneToManyOptions($this->_relatedTasks, 'ticketId');
-			unset($this->_relatedTasks);
-		}
 	}
 
 	public function saveRelatedComponents() : void {
@@ -328,23 +277,6 @@ class Ticket extends DataObject {
 			$this->saveOneToManyOptions($this->_relatedComponents, 'ticketId');
 			unset($this->_relatedComponents);
 		}
-	}
-
-	/**
-	 * @return ?TaskTicketLink[]
-	 */
-	public function getRelatedTasks(): ?array {
-		if (!isset($this->_relatedTasks) && $this->id) {
-			require_once ROOT_DIR . '/sys/Development/TaskTicketLink.php';
-			$this->_relatedTasks = [];
-			$task = new TaskTicketLink();
-			$task->ticketId = $this->id;
-			$task->find();
-			while ($task->fetch()) {
-				$this->_relatedTasks[$task->id] = clone($task);
-			}
-		}
-		return $this->_relatedTasks;
 	}
 
 	/**

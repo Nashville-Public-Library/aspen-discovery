@@ -122,7 +122,7 @@
 				listScroller{$activeListId}.loadTitlesFrom('/Search/AJAX?method=getSpotlightTitles%26id={$activeListId}%26scrollerName={$activeListId}%26coverSize={$collectionSpotlight->coverSize}%26showRatings={$collectionSpotlight->showRatings}%26numTitlesToShow={$collectionSpotlight->numTitlesToShow}{if !empty($reload)}%26reload=true{/if}', false);
 			{rdelim});
 
-			$(window).bind('beforeunload', function(e) {ldelim}
+			$(window).on('beforeunload', function(e) {ldelim}
 				{if !isset($collectionSpotlight->listDisplayType) || $collectionSpotlight->listDisplayType == 'tabs'}
 
 				{else}

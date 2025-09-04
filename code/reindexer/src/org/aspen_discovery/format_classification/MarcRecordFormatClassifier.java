@@ -126,6 +126,9 @@ public class MarcRecordFormatClassifier {
 			if (Character.toUpperCase(leaderBit) == 'J') {
 				if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format MusicRecording based on leader", 2);}
 				printFormats.add("MusicRecording");
+			}else if (Character.toUpperCase(leaderBit) == 'O') {
+				if (groupedWork != null && groupedWork.isDebugEnabled()) {groupedWork.addDebugMessage("Adding bib level format Kit based on leader", 2);}
+				printFormats.add("Kit");
 			}
 		}
 		//Check for braille

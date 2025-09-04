@@ -196,7 +196,7 @@
 						);
 					}
 
-					if (!$.isFunction(instance[options]) || options.charAt(0) === '_') {
+					if (typeof instance[options] !== 'function' || options.charAt(0) === '_') {
 						return $.error(
 								'No such method "' + options + '" for ' + pluginName + ' instance'
 						);
@@ -360,7 +360,7 @@
 		list: function() {
 			if (this._list === null) {
 				var option = this.options('list');
-				this._list = $.isFunction(option) ? option.call(this) : this._element.find(option);
+				this._list = typeof option === 'function' ? option.call(this) : this._element.find(option);
 			}
 
 			return this._list;
@@ -368,7 +368,7 @@
 		items: function() {
 			if (this._items === null) {
 				var option = this.options('items');
-				this._items = ($.isFunction(option) ? option.call(this) : this.list().find(option)).not('[data-jcarousel-clone]');
+				this._items = (typeof option === 'function' ? option.call(this) : this.list().find(option)).not('[data-jcarousel-clone]');
 			}
 
 			return this._items;
@@ -468,7 +468,7 @@
 				return this;
 			}
 
-			if ($.isFunction(animate)) {
+			if (typeof animate === 'function') {
 				callback = animate;
 				animate  = true;
 			}
@@ -498,7 +498,7 @@
 							if (wrap === 'both' || wrap === 'last') {
 								this._scroll(0, animate, callback);
 							} else {
-								if ($.isFunction(callback)) {
+								if (typeof callback === 'function') {
 									callback.call(this, false);
 								}
 							}
@@ -681,7 +681,7 @@
 		},
 		_scroll: function(item, animate, callback) {
 			if (this.animating) {
-				if ($.isFunction(callback)) {
+				if (typeof callback === 'function') {
 					callback.call(this, false);
 				}
 
@@ -695,7 +695,7 @@
 			}
 
 			if (item.length === 0) {
-				if ($.isFunction(callback)) {
+				if (typeof callback === 'function') {
 					callback.call(this, false);
 				}
 
@@ -710,7 +710,7 @@
 					currPos = this.list().position()[this.lt];
 
 			if (pos === currPos) {
-				if ($.isFunction(callback)) {
+				if (typeof callback === 'function') {
 					callback.call(this, false);
 				}
 
@@ -726,7 +726,7 @@
 		},
 		_scrollTail: function(animate, callback) {
 			if (this.animating || !this.tail) {
-				if ($.isFunction(callback)) {
+				if (typeof callback === 'function') {
 					callback.call(this, false);
 				}
 
@@ -1040,7 +1040,7 @@
 		}
 
 		if (index >= first && index <= last) {
-			if ($.isFunction(callback)) {
+			if (typeof callback === 'function') {
 				callback.call(this, false);
 			}
 
@@ -1103,7 +1103,7 @@
 
 				var method = this.options('method');
 
-				if ($.isFunction(method)) {
+				if (typeof method === 'function') {
 					method.call(this);
 				} else {
 					this.carousel()
@@ -1202,7 +1202,7 @@
 			this._items = {};
 
 			// Calculate pages
-			if ($.isFunction(perPage)) {
+			if (typeof perPage === 'function') {
 				perPage = perPage.call(this);
 			}
 

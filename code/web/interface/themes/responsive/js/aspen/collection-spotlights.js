@@ -73,7 +73,7 @@ AspenDiscovery.CollectionSpotlights = (function(){
 				}
 
 				var replaceExisting = $('#replaceExisting');
-				$(replaceExisting).click(function() {
+				$(replaceExisting).on('click', function() {
 					if((replaceExisting.is(":checked")) && (listCount != 1)){
 						$("#existingSpotlightName").show();
 					}else{

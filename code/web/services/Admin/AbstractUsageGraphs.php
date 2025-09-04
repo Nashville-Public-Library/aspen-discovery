@@ -20,7 +20,7 @@ abstract class Admin_AbstractUsageGraphs extends Admin_Admin {
 		}
 
 		// includes dashboard subsection name in title if relevant
-		$subSectionName = $_REQUEST['subSection'];
+		$subSectionName = $_REQUEST['subSection'] ?? '';
 		$sectionTitle = $sectionName;
 		if (!empty($subSectionName)) {
 			$sectionTitle .= ': ' . $subSectionName;
@@ -61,7 +61,7 @@ abstract class Admin_AbstractUsageGraphs extends Admin_Admin {
 		$dataSeries = $interface->getVariable('dataSeries');
 
 		// ensures csv filename contains dashboard subsection name if relevant
-		$subSectionName = str_replace(' ', '_', $_REQUEST['subSection']);
+		$subSectionName = str_replace(' ', '_', $_REQUEST['subSection'] ?? '');
 		$filename = $section . '_';
 		if (!empty($subSectionName)) {
 			$filename .=  $subSectionName . '_'; 

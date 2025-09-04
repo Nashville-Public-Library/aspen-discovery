@@ -216,7 +216,7 @@
 {literal}
 <script type="text/javascript">
 
-	$("#shouldBeDedicated").change(function() {
+	$("#shouldBeDedicated").on('change', function() {
 		if ($(this).is(':checked')) {
 			$('#1').show();
 		} else {
@@ -226,7 +226,7 @@
 	});
 	$("#shouldBeDedicated").trigger("change");
 
-	$("#shouldBeNotified").change(function() {
+	$("#shouldBeNotified").on('change', function() {
 		if ($(this).is(':checked')) {
 			$('#2').show();
 		} else {
@@ -235,7 +235,7 @@
 	});
 	$("#shouldBeNotified").trigger("change");
 
-	$('#customAmount').click(function () {
+	$('#customAmount').on('click', function () {
 		$('.btn.btn-default.btn-lg.predefinedAmount').removeClass("active");
 		$('input[name="amount"]').attr("checked", false);
 	});

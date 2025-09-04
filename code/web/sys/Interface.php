@@ -938,6 +938,9 @@ class UInterface extends Smarty {
 			$loadRecaptcha = true;
 		}
 		$this->assign('loadRecaptcha', $loadRecaptcha);
+
+		$printInterface = isset($_REQUEST['print']) ? filter_var($_REQUEST['print'], FILTER_VALIDATE_BOOLEAN) : false;
+		$this->assign('printInterface', $printInterface);
 	}
 
 	/**

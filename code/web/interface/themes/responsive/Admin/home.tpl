@@ -16,7 +16,7 @@
 					<script type="text/javascript">
 						{literal}
 						$(document).ready(function() {
-							$("#settingsSearch").keydown("keydown", function (e) {
+							$("#settingsSearch").on('keydown', function (e) {
 								if (e.which === 13) {
 									e.preventDefault();
 								}

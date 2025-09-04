@@ -89,7 +89,7 @@
 			</div>
 		{else} {* Not Logged In *}
 			{if !empty($showLoginButton)}
-			<a href="/MyAccount/Home" id="loginLink" onclick="{if !empty($isLoginPage)}$('#username').focus();return false;{else}return AspenDiscovery.Account.followLinkIfLoggedIn(this);{/if}" onkeypress="{if !empty($isLoginPage)}$('#username').focus();return false;{else}return AspenDiscovery.Account.followLinkIfLoggedIn(this);{/if}" data-login="true" class="menu-icon menu-bar-option" title="{translate text='Login' inAttribute=true isPublicFacing=true}">
+			<a href="/MyAccount/Home" id="loginLink" onclick="{if !empty($isLoginPage)}$('#username').trigger('focus');return false;{else}return AspenDiscovery.Account.followLinkIfLoggedIn(this);{/if}" onkeypress="{if !empty($isLoginPage)}$('#username').trigger('focus');return false;{else}return AspenDiscovery.Account.followLinkIfLoggedIn(this);{/if}" data-login="true" class="menu-icon menu-bar-option" title="{translate text='Login' inAttribute=true isPublicFacing=true}">
 				<i class="fas fa-sign-in-alt fa-lg {if $userLang->isRTL()}fa-flip-horizontal{/if}" role="presentation"></i>
 				<span class="menu-bar-label hidden-inline-block-xs" id="login-button-label">{translate text="Sign in" isPublicFacing=true}</span>
 			</a>

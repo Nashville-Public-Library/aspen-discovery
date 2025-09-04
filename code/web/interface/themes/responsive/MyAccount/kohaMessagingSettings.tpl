@@ -184,15 +184,15 @@
 {literal}
 <script type="application/javascript">
 $(document).ready(function(){
-	$(".none").click(function(){
+	$(".none").on('click', function(){
 		if($(this).prop("checked")){
 			var rowId = $(this).attr("id");
 			var newId = Number(rowId.replace("none",""));
-			$("#sms"+newId).removeAttr("checked");
-			$("#phone"+newId).removeAttr("checked");
-			$("#email"+newId).removeAttr("checked");
-			$("#digest"+newId).removeAttr("checked");
-			$("#rss"+newId).removeAttr("checked");
+			$("#sms"+newId).prop("checked", false);
+			$("#phone"+newId).prop("checked", false);
+			$("#email"+newId).prop("checked", false);
+			$("#digest"+newId).prop("checked", false);
+			$("#rss"+newId).prop("checked", false);
 		}
 	});
 	AspenDiscovery.Account.toggleKohaDigestCheckbox();
