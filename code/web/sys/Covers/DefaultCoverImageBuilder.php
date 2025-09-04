@@ -527,8 +527,7 @@ class DefaultCoverImageBuilder {
 		if (preg_match('/\p{Armenian}/u', $text)) {
 			return 'armenian';
 		}
-		// Detect Hangul (Korean)
-		if (preg_match('/\p{Hangul}/u', $text)) {
+		if (preg_match('/\p{Hangul}/u', $text)) { // Korean
 			return 'hangul';
 		}
 		// First check for any Han (CJK ideographs); used in Chinese & Japanese Kanji.
@@ -554,6 +553,9 @@ class DefaultCoverImageBuilder {
 		}
 		if (preg_match('/\p{Georgian}/u', $text)) {
 			return 'georgian';
+		}
+		if (preg_match('/\p{Ethiopic}/u', $text)) { // Amharic
+			return 'ethiopic';
 		}
 		if (preg_match('/\p{Cyrillic}/u', $text) || preg_match('/\p{Greek}/u', $text)) {
 			return 'cyrillic';
@@ -581,6 +583,7 @@ class DefaultCoverImageBuilder {
 			'telugu'    =>  ['/fonts/NotoSansTelugu-Bold.ttf', '/fonts/NotoSansTelugu-Regular.ttf'],
 			'thai'      =>  ['/fonts/NotoSansThai-Bold.ttf', '/fonts/NotoSansThai-Regular.ttf'],
 			'georgian'  =>  ['/fonts/NotoSansGeorgian-Bold.ttf', '/fonts/NotoSansGeorgian-Regular.ttf'],
+			'ethiopic'  =>  ['/fonts/NotoSansEthiopic-Bold.ttf', '/fonts/NotoSansEthiopic-Regular.ttf'],
 			'latin'     =>  ['/fonts/NotoSans-Bold.ttf', '/fonts/NotoSans-Regular.ttf'],
 		];
 
