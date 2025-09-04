@@ -7092,7 +7092,7 @@ class UserAPI extends AbstractAPI {
 		$campaigns = array_filter($campaigns, function($campaign) use ($filter) {
 			switch ($filter) {
 				case 'enrolled':
-					return $campaign->enrolled;
+					return $campaign->enrolled && !$campaign->isPast;
 				case 'active':
 					return $campaign->isActive;
 				case 'upcoming': 
