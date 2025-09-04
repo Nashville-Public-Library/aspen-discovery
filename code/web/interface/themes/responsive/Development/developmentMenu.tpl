@@ -16,9 +16,6 @@
 					<div id="developmentGroup" class="panel-collapse collapse in">
 						<div class="panel-body">
 							<div class="adminMenuLink "><a href="/Development/AspenReleases">{translate text="Aspen Releases" isAdminFacing=true}</a></div>
-							<div class="adminMenuLink "><a href="/Development/Sprints">{translate text="Aspen Sprints" isAdminFacing=true}</a></div>
-							<div class="adminMenuLink "><a href="/Development/Epics">{translate text="Development Epics" isAdminFacing=true}</a></div>
-							<div class="adminMenuLink "><a href="/Development/Tasks">{translate text="Development Tasks" isAdminFacing=true}</a></div>
 						</div>
 					</div>
 				</div>
@@ -64,22 +61,6 @@
 {*							<div class="adminMenuLink "><a href="/Greenhouse/TicketsByComponentTrend">{translate text="Trend of Active Tickets by Component" isAdminFacing=true}</a></div>*}
 							<div class="adminMenuLink "><a href="/Greenhouse/PartnerPriorities">{translate text="Partner Priorities" isAdminFacing=true}</a></div>
 							<div class="adminMenuLink "><a href="/Greenhouse/PartnerTicketDashboard">{translate text="Partner Ticket Dashboard" isAdminFacing=true}</a></div>
-						</div>
-					</div>
-				</div>
-
-				<div class="panel active">
-					<a href="#partnersUsersGroup" data-toggle="collapse" data-parent="#adminMenuAccordion" aria-label="{translate text="Partners & Users Menu" inAttribute=true isAdminFacing=true}">
-						<div class="panel-heading">
-							<div class="panel-title">
-								{translate text="Partners & Users" isAdminFacing=true}
-							</div>
-						</div>
-					</a>
-					<div id="partnersUsersGroup" class="panel-collapse collapse in">
-						<div class="panel-body">
-							<div class="adminMenuLink "><a href="/Development/Partners">{translate text="Partners" isAdminFacing=true}</a></div>
-							<div class="adminMenuLink "><a href="/Development/Users">{translate text="Users" isAdminFacing=true}</a></div>
 						</div>
 					</div>
 				</div>
