@@ -60,7 +60,7 @@ $.fn.rater = function(options) {
 
 		if (!$this.hasClass('ui-rater-bindings-done')) {
 			$this.addClass('ui-rater-bindings-done');
-			$off.mousemove(function(e) {
+			$off.on('mousemove', function(e) {
 				var left = e.clientX - $off.offset().left,
 						width = $off.width() - ($off.width() - left);
 				width = Math.min(Math.ceil(width / (opts.size / opts.step)) * opts.size / opts.step, opts.size * opts.ratings.length);
@@ -69,15 +69,12 @@ $.fn.rater = function(options) {
 				//$this.attr('title', 'Click to Rate "' + (opts.ratings[r - 1] == undefined ? r : opts.ratings[r - 1]) + '"');
 				// TODO ratings label's are customized now.
 				$this.attr('title', 'Click to Rate "' +  r  + ' stars"');
-			}).hover(
-					function(e) { // Hover In
-						$on.addClass('ui-rater-starsHover');
-					},
-					function(e) { // Hover out
-						$on.removeClass('ui-rater-starsHover');
-						$on.width(initialRating * opts.size); // restore to original rating if none was selected.
-					}
-			).click(function(e) {
+			}).on('mouseenter', function(e) { // Hover In
+					$on.addClass('ui-rater-starsHover');
+				}).on('mouseleave', function(e) { // Hover out
+					$on.removeClass('ui-rater-starsHover');
+					$on.width(initialRating * opts.size); // restore to original rating if none was selected.
+				}).on('click', function(e) {
 						var r = Math.round($on.width() / $off.width() * (opts.ratings.length * opts.step)) / opts.step;
 						$.fn.rater.rate($this, opts, r);
 					}).css('cursor', 'pointer'); $on.css('cursor', 'pointer');

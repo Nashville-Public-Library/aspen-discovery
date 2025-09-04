@@ -39,13 +39,14 @@
 		{/foreach}
 	{rdelim}
 
-	$(function(){ldelim}
-		AspenDiscovery.Searches.reorderCombinedResults();
-		reloadCombinedResults();
+$(function(){ldelim}
+	AspenDiscovery.Searches.reorderCombinedResults();
+	reloadCombinedResults();
 
-		$(window).resize(function(){ldelim}
-			AspenDiscovery.Searches.reorderCombinedResults();
-		{rdelim});
+	$(window).on('resize', function(){ldelim}
+		AspenDiscovery.Searches.reorderCombinedResults();
 	{rdelim});
+
+{rdelim});
 </script>
 

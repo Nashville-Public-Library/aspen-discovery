@@ -36,7 +36,7 @@ AspenDiscovery.MaterialsRequest = (function(){
 			if (selectedRequests.length === 0){
 				return false;
 			}
-			$("#updateRequests").submit();
+			$("#updateRequests").trigger('submit');
 			return true;
 		},
 
@@ -49,7 +49,7 @@ AspenDiscovery.MaterialsRequest = (function(){
 			}
 			var selectedRequests = this.getSelectedRequests(false);
 			if (selectedRequests.length !== 0){
-				$("#updateRequests").submit();
+				$("#updateRequests").trigger('submit');
 			}
 			return false;
 		},

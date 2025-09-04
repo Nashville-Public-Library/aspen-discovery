@@ -70,7 +70,7 @@
 									</div>
 
 									<div class="col-tn-6 col-xs-6 text-right" style="padding-top: 10px; padding-bottom: 10px; right:10px;">
-										<button class="btn btn-default btn-sm" type="submit" id="applyFilterButton" onclick="$('#objectAction').val('list');$('#propertiesListForm').submit();"><i class="fas fa-filter"></i> {translate text="Apply Filters" isAdminFacing=true}</button>
+										<button class="btn btn-default btn-sm" type="submit" id="applyFilterButton" onclick="$('#objectAction').val('list');$('#propertiesListForm').trigger('submit');"><i class="fas fa-filter"></i> {translate text="Apply Filters" isAdminFacing=true}</button>
 									</div>
 								</div>
 							</div>

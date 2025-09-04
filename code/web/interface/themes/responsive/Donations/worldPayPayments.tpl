@@ -36,7 +36,7 @@
 	</script>
 	<script>
 		$(document).ready(function () {ldelim}
-			$('formattedTotal{$userId}').change(function(){ldelim}
+			$('formattedTotal{$userId}').on('change', function(){ldelim}
 				document.getElementById("{$userId}DonationAmount").value = document.getElementById("thisDonationValue").text;
 			{rdelim})
 		{rdelim});

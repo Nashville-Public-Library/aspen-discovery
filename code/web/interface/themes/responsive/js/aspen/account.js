@@ -1808,7 +1808,7 @@ AspenDiscovery.Account = (function () {
 				$.each(formData, function (key, value) {
 					form += '<input type="hidden" name="' + key + '" value="' + value + '">';
 				});
-				$('<form action="' + url + '" method="POST">' + form + '</form>').appendTo($(document.body)).submit();
+				$('<form action="' + url + '" method="POST">' + form + '</form>').appendTo($(document.body)).trigger('submit');
 			}
 		},
 

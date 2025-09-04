@@ -33,7 +33,7 @@ TitleScroller.prototype.loadTitlesFrom = function(jsonUrl) {
 	$(".scrollerLoadingContainer").show();
 	$.getJSON(jsonUrl, function(data) {
 		scroller.loadTitlesFromJsonData(data);
-	}).error(function(){
+	}).fail(function(){
 		scrollerBody.html("Unable to load titles. Please try again later.").show();
 		$(".scrollerLoadingContainer").hide();
 	});
@@ -122,9 +122,9 @@ TitleScroller.prototype.finishLoadingScroller = function() {
 	var curScroller = this;
 
 	// Whether we are hovering over an individual title or not.
-	$('.scrollerTitle').bind('mouseover', {scroller: curScroller}, function() {
+	$('.scrollerTitle').on('mouseover', {scroller: curScroller}, function() {
 		curScroller.hovered = true;
-	}).bind('mouseout', {scroller: curScroller}, function() {
+	}).on('mouseout', {scroller: curScroller}, function() {
 		curScroller.hovered = false;
 	});
 
@@ -309,7 +309,7 @@ TitleScroller.prototype.autoRotateScroll = function() {
 
 		eachCallback = eachCallback || function() {};
 
-		if ( ! $.isFunction(finishedCallback) || ! $.isFunction(eachCallback)) {
+		if ( ! (typeof finishedCallback === 'function') || ! (typeof eachCallback === 'function')) {
 			throw {
 				name: 'invalid_callback',
 				message: 'An invalid callback was supplied.'

@@ -91,7 +91,7 @@
 {/strip}
 {literal}
 <script type="text/javascript">
-	$('#username').focus().select();
+	$('#username').trigger('focus').trigger('select');
 	$(function () {
 		AspenDiscovery.Account.validateCookies();
 		var hasLocalStorage = AspenDiscovery.hasLocalStorage() || false;
@@ -115,7 +115,7 @@
 		}
 		{/literal}{* // Once Box is shown, focus on username input and Select the text;*}{literal}
 		$("#modalDialog").on('shown.bs.modal', function () {
-			$('#username').focus().select();
+			$('#username').trigger('focus').trigger('select');
 		})
 	});
 </script>

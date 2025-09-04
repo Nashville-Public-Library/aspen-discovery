@@ -1,41 +1,3 @@
-{capture name="resizingScript"}
-
-
-	&lt;!-- Horizontal Resizing : Based on iframe Content --&gt;
-	&lt;script type=&quot;text/javascript&quot; src=&quot;{$url}/js/iframeResizer/iframeResizer.min.js&quot;&gt;&lt;/script&gt;
-	&lt;script type=&quot;text/javascript&quot;&gt;
-	jQuery(&quot;#collectionSpotlight{$object->id}&quot;).iFrameResize();
-	&lt;/script&gt;
-
-	&lt;!-- Vertical Resizing : When iframe is larger than viewport width,
-	resize to 100% of browser width - 2 * padding (in px) --&gt;
-
-	&lt;script type=&quot;text/javascript&quot;&gt;
-	setSpotlightSizing = function(iframe, OutsidePadding){
-	originalWidth = jQuery(iframe).width();
-	wasResized = false;
-	jQuery(window).resize(function(){
-	resizeSpotlightWidth(iframe, OutsidePadding);
-	}).resize();
-	};
-
-	resizeSpotlightWidth = function(iframe, padding){
-	if (padding == undefined) padding = 4;
-	var viewPortWidth = jQuery(window).width(),
-	newWidth = viewPortWidth - 2*padding,
-	width = jQuery(iframe).width();
-	if (width > newWidth) {
-	wasResized = true;
-	return jQuery(iframe).width(newWidth);
-	}
-	if (wasResized && originalWidth + 2*padding < viewPortWidth){
-	wasResized = false;
-	return jQuery(iframe).width(originalWidth);
-	}
-	};
-	&lt;/script&gt;
-{/capture}
-
 <div id="main-content" class="col-md-12">
 	<h1>{translate text="View Collection Spotlight" isAdminFacing=true}</h1>
 	<div class="btn-group">
@@ -145,32 +107,50 @@
 
 {* Width Resizing Code *}
 <script type="text/javascript">
-	jQuery('#collectionSpotlight{$object->id}').iFrameResize();
+	$('#collectionSpotlight{$object->id}').iFrameResize();
 </script>
 
 {literal}
 	<script type="text/javascript">
-		setSpotlightSizing = function(iframe, OutsidePadding){
-			originalWidth = jQuery(iframe).width();
-			wasResized = false;
-			jQuery(window).resize(function(){
-				resizeSpotlightWidth(iframe, OutsidePadding);
-			}).resize();
-		};
+		function resizeSpotlightWidth(iframe, padding = 4) {
+			const $el = $(iframe);
+			if (!$el.length) return;
 
-		resizeSpotlightWidth = function(iframe, padding){
-			if (padding === undefined) padding = 4;
-			var viewPortWidth = jQuery(window).width(),
-					newWidth = viewPortWidth - 2*padding,
-					width = jQuery(iframe).width();
-			if (width > newWidth) {
-				wasResized = true;
-				return jQuery(iframe).width(newWidth);
+			const data = $el.data('spot') || { original: $el.width(), resized: false };
+			const vpw = $(window).width();
+			const max = Math.max(0, vpw - 2 * padding);
+			const cur = $el.width();
+
+			if (cur > max) {
+				$el.width(max);
+				data.resized = true;
+			} else if (data.resized && data.original + 2 * padding < vpw) {
+				$el.width(data.original);
+				data.resized = false;
 			}
-			if (wasResized && originalWidth + 2*padding < viewPortWidth){
-				wasResized = false;
-				return jQuery(iframe).width(originalWidth);
-			}
-		};
+
+			$el.data('spot', data);
+		}
+
+		function setSpotlightSizing(iframe, padding = 4) {
+			const $el = $(iframe);
+			if (!$el.length) return () => {};
+
+			$el.data('spot', { original: $el.width(), resized: false });
+			const prevNs = $el.data('spotNs');
+			if (prevNs) $(window).off(`resize${prevNs}`);
+			// Create a unique namespace for the resize event so just this handler can be unbound later.
+			const ns = `.spot${Math.random().toString(36).slice(2, 8)}`;
+			const onResize = () => resizeSpotlightWidth($el, padding);
+
+			$(window).on(`resize${ns}`, onResize);
+			$el.data('spotNs', ns);
+			onResize();
+
+			return () => $(window).off(`resize${ns}`);
+		}
+
+		window.resizeSpotlightWidth = resizeSpotlightWidth;
+		window.setSpotlightSizing = setSpotlightSizing;
 	</script>
 {/literal}

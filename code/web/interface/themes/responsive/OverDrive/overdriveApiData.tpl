@@ -5,7 +5,7 @@
 			<form name="selectSettings" id="selectSettings" class="form-inline row">
 				<div class="form-group col-tn-12">
 					<label for="settingId" class="control-label">{translate text="Instance to show stats for" isAdminFacing=true}</label>&nbsp;
-					<select id="settingId" name="settingId" class="form-control input-sm" onchange="$('#selectSettings').submit()">
+					<select id="settingId" name="settingId" class="form-control input-sm" onchange="$('#selectSettings').trigger('submit')">
 						{foreach from=$allSettings key=settingId item=setting}
 							<option value="{$settingId}" {if $settingId == $selectedSettingId}selected{/if}>{$setting->__toString()}</option>
 						{/foreach}

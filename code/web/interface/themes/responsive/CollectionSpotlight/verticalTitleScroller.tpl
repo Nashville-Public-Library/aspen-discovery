@@ -29,13 +29,13 @@
 	$(document).ready(function(){ldelim}
 		var scrollFactor = 10; {*// swipe size per item to scroll.*}
 		$('#titleScroller{$scrollerName} .scrollerBodyContainer')
-			.touchwipe({ldelim}
-				wipeUp : function(dy){ldelim}
-					var scrollInterval = Math.round(dy / scrollFactor);
+			.swipe({ldelim}
+				swipeUp : function(event, direction, distance){ldelim}
+					var scrollInterval = Math.round(distance / scrollFactor);
 					{$scrollerVariable}.swipeUp(scrollInterval);
 					{rdelim},
-				wipeDown: function(dy) {ldelim}
-					var scrollInterval = Math.round(dy / scrollFactor);
+				swipeDown: function(event, direction, distance) {ldelim}
+					var scrollInterval = Math.round(distance / scrollFactor);
 					{$scrollerVariable}.swipeDown(scrollInterval);
 					{rdelim}
 			{rdelim});

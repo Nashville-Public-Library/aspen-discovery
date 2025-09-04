@@ -1,19 +1,19 @@
 #A list of files to merge, can comment out lines with a #
-../../../../js/jquery-1.11.0.min.js
-lib/jquery-ui-1.10.4.custom.min.js
+# jQuery files tend to have their respective version at the top of their file.
+../../../../js/jquery-3.7.1.min.js
+#lib/jquery-migrate-3.5.2.js
+lib/jquery-ui.min.js
 lib/bootstrap.min.js
 lib/bootstrap-switch.min.js
 lib/jcarousel.min.js
 lib/jcarousel-swipe.js
 lib/colcade.js
-lib/jquery.tablesorter.js
+lib/jquery.tablesorter.min.js
 lib/jquery.tablesorter.pager.min.js
-lib/jquery.tablesorter.widgets.js
+lib/jquery.tablesorter.widgets.min.js
 lib/jquery.validate.min.js
 lib/jquery.touchwipe.min.js
-lib/jquery.rwdImageMaps.min.js
 lib/additional-methods.min.js
-lib/rater.min.js
 lib/recaptcha_ajax.min.js
 lib/simplemde.min.js
 lib/moment.min.js
