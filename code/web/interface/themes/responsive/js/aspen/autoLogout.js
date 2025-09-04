@@ -39,12 +39,12 @@
  $.idleTimer(10000);
 
 
- $(document).bind("idle.idleTimer", function(){
+ $(document).on("idle.idleTimer", function(){
     // function you want to fire when the user goes idle
  });
 
 
- $(document).bind("active.idleTimer", function(){
+ $(document).on("active.idleTimer", function(){
   // function you want to fire when the user becomes active again
  });
 
@@ -139,7 +139,7 @@
 					clearTimeout(obj.tId);
 
 					//detach the event handlers
-					$(elem).unbind('.idleTimer');
+					$(elem).off('.idleTimer');
 				},
 
 
@@ -198,7 +198,7 @@
 		}
 
 		//assign appropriate event handlers
-		$(elem).bind($.trim((events+' ').split(' ').join('.idleTimer ')),handleUserEvent);
+		$(elem).on((events+' ').split(' ').join('.idleTimer ').trim(),handleUserEvent);
 
 
 		obj.idle    = idle;

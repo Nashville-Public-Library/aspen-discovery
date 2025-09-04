@@ -453,16 +453,24 @@ div.striped > div:nth-child(odd), div.striped > div:nth-child(odd){ldelim}
     border-color: {$defaultButtonBorderColor};
 {rdelim}
 
-.btn-primary,.btn-primary:visited,a.btn-primary,a.btn-primary:visited{ldelim}
+.btn-primary,.btn-primary:visited,a.btn-primary,a.btn-primary:visited, .horizontal-format-button {ldelim}
     background-color: {$primaryButtonBackgroundColor} !important;
     color: {$primaryButtonForegroundColor} !important;
     border-color: {$primaryButtonBorderColor};
 {rdelim}
 
-.btn-primary:hover, a.btn-primary:hover, .btn-primary:focus, a.btn-primary:focus, .btn-primary:active, a.btn-primary:active, .btn-primary.active, .open .dropdown-toggle.btn-primary{ldelim}
+.horizontal-format-button a {ldelim}
+    color: {$primaryButtonForegroundColor} !important;
+{rdelim}
+
+.btn-primary:hover, a.btn-primary:hover, .btn-primary:focus, a.btn-primary:focus, .btn-primary:active, a.btn-primary:active, .btn-primary.active, .open .dropdown-toggle.btn-primary, .horizontal-format-button:hover, .horizontal-format-button.swiper-slide-active, .horizontal-format-button.swiper-slide-active:hover{ldelim}
     background-color: {$primaryButtonHoverBackgroundColor} !important;
     color: {$primaryButtonHoverForegroundColor} !important;
     border-color: {$primaryButtonHoverBorderColor};
+{rdelim}
+
+.horizontal-format-button.swiper-slide-active a, .horizontal-format-button:hover a{ldelim}
+    color: {$primaryButtonHoverForegroundColor} !important;
 {rdelim}
 
 .btn-action,.btn-action:visited,a.btn-action,a.btn-action:visited{ldelim}

@@ -7013,6 +7013,10 @@ class UserAPI extends AbstractAPI {
 					$campaign['canEnroll'] = $campaign['canEnroll'] ?? false;
 					$campaign['campaignRewardGiven'] = $campaign['rewardGiven'] ?? false;
 					$campaign['campaignIsComplete'] = $campaign['isComplete'] ?? false;
+
+					$today = date('Y-m-d');
+					$campaign['isPast'] = ($campaign['endDate'] && $campaign['endDate'] <= $today);
+					$campaign['isUpcoming'] = ($campaign['startDate'] && $campaign['startDate'] >= $today);
 					
 					if (isset($campaign['campaignReward'])) {
 						$campaign['rewardName'] = $campaign['campaignReward']['rewardName'];
@@ -7092,7 +7096,7 @@ class UserAPI extends AbstractAPI {
 		$campaigns = array_filter($campaigns, function($campaign) use ($filter) {
 			switch ($filter) {
 				case 'enrolled':
-					return $campaign->enrolled;
+					return $campaign->enrolled && !$campaign->isPast;
 				case 'active':
 					return $campaign->isActive;
 				case 'upcoming': 
@@ -7121,6 +7125,7 @@ class UserAPI extends AbstractAPI {
 				$base['awardAutomatically'] = $campaign->awardAutomatically ?? null;
 				$base['enrolled'] = $campaign->enrolled ?? false;
 				$base['isPast'] = $campaign->isPast ?? false;
+				$base['isUpcoming'] = $campaign->isUpcoming ?? false;
 				$base['canEnroll'] = $campaign->canEnroll ?? false;
 				$base['campaignRewardGiven'] = $campaign->campaignRewardGiven ?? false;
 				$base['campaignIsComplete'] = $campaign->isComplete ?? false;

@@ -78,7 +78,10 @@
                         self._addClones();
                         self._currentLT = self._getListPosition();
                         itemsOption = self._instance.options('items');
-                        lastItem = ($.isFunction(itemsOption) ? itemsOption.call(self._instance) : self._instance.list().find(itemsOption)).last();
+						lastItem = ((typeof itemsOption === 'function'
+								? itemsOption.call(self._instance)
+								: self._instance.list().find(itemsOption))
+						).last();
                         edgeLT = self._instance.rtl && !self._instance.vertical ?
                             (self._instance.dimension(self._instance.list()) - lastItem.position()[self._instance.lt] - self._instance.clipping()) :
                             (lastItem.position()[self._instance.lt] + self._instance.dimension(lastItem) - self._instance.clipping()) * -1;

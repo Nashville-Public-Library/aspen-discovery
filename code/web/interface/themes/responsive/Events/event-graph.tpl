@@ -172,7 +172,7 @@
 			}
 		}
 	});
-	$("#location").change(function () {
+	$("#location").on('change', function () {
 		var url = Globals.path + '/Events/AJAX';
 		var params = {
 			method: 'getEventTypesAndSublocationsForLocation',

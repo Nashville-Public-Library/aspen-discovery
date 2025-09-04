@@ -54,7 +54,7 @@
 						<script type="text/javascript">
 							{* Initiate any checkbox with a data attribute set to data-switch=""  as a bootstrap switch *}
 							{literal}
-							$("#facetToggle_{/literal}{$title}{literal}").click(function() {
+							$("#facetToggle_{/literal}{$title}{literal}").on('click', function() {
 								var toggleButton = $(this);
 								$(this).toggleClass('expanded');
 								$(this).toggleClass('collapsed');
@@ -67,7 +67,7 @@
 								}
 								return false;
 							})
-							$("#facetToggle_{/literal}{$title}{literal}").keypress(function() {
+							$("#facetToggle_{/literal}{$title}{literal}").on('keypress', function() {
 								var toggleButton = $(this);
 								$(this).toggleClass('expanded');
 								$(this).toggleClass('collapsed');

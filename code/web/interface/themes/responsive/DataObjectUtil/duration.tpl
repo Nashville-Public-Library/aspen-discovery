@@ -1,5 +1,5 @@
 {strip}
-{assign var=hours value= (int) ($propValue / 60)}
+{assign var=hours value=($propValue/60)|intval}
 {assign var=minutes value=$propValue % 60}
 <fieldset class="form-inline">
 	<div class="form-group col-sm-6">
@@ -17,11 +17,11 @@
 	</div>
 </fieldset>
 	<script>
-		$(".duration-input").change(function() {
+		$(".duration-input").on('change', function() {
 			var hours = Number($("#{$propName}_hours").val()) * 60;
 			var minutes = Number($("#{$propName}_minutes").val());
 			$("#{$propName}").val(hours + minutes);
-			$("#{$propName}").change();
+			$("#{$propName}").trigger('change');
 		});
 	</script>
 {/strip}

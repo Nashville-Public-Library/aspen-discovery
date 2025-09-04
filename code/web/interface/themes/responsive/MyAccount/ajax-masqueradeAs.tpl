@@ -23,20 +23,24 @@
 		{/if}
 	</form>
 	<script type="text/javascript">
-		$('#cardNumber').focus().select();
 		{literal}
 		$(document).ready(function () {
-			$("#masqueradeForm").validate({
-				submitHandler: function (form) {
+			const $masqForm = $("#masqueradeForm");
+			$("#modalDialog").on('shown.bs.modal', function () {
+				$('#cardNumber').trigger('focus').trigger('select');
+			});
+
+			$masqForm.validate({
+				submitHandler: function () {
 					AspenDiscovery.Account.initiateMasquerade();
 				}
 			});
 
-			$("#masqueradeForm").on("keydown", function (event) {
+			$masqForm.on("keydown", function (event) {
 				if (event.key === "Enter" && !$(event.target).is("textarea")) {
 					event.preventDefault();
-					if ($("#masqueradeForm").valid()) {
-						$("#masqueradeForm").submit();
+					if ($masqForm.valid()) {
+						$("#masqueradeForm").trigger('submit');
 					}
 				}
 			});

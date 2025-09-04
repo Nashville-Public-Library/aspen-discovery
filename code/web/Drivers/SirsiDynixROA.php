@@ -3265,7 +3265,7 @@ class SirsiDynixROA extends HorizonAPI {
 		return true;
 	}
 
-	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles) : void {
+	public function doReadingHistoryAction(User $patron, string $action, array $selectedTitles): ?array {
 		if ($action == 'optIn' || $action == 'optOut') {
 			$sessionToken = $this->getStaffSessionToken();
 			if ($sessionToken) {
@@ -3297,6 +3297,7 @@ class SirsiDynixROA extends HorizonAPI {
 				}
 			}
 		}
+		return null;
 	}
 
 	public function completeFinePayment(User $patron, UserPayment $payment) {

@@ -3,7 +3,7 @@ $(document).ready(function(){
 		if (event.which === 13 || event.which === 10){
 			event.preventDefault();
 			event.stopPropagation();
-			$("#searchForm").submit();
+			$("#searchForm").trigger('submit');
 			return false;
 		}
 	}).on( 'keypress', function (event ){

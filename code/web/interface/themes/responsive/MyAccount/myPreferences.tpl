@@ -495,7 +495,7 @@
 					{* Initiate any checkbox with a data attribute set to data-switch=""  as a bootstrap switch *}
 					{literal}
 					$(function(){ $('input[type="checkbox"][data-switch]').bootstrapSwitch()});
-					$("#usernameHelpButton").click(function() {
+					$("#usernameHelpButton").on('click', function() {
 						var helpButton = $(this);
 						if (helpButton.attr("aria-expanded") === "true") {
 							$("#usernameHelp").css('display', 'none');

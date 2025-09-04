@@ -32,11 +32,11 @@
 	{* touch swiping controls *}
 	$(document).ready(function(){ldelim}
 		$('#titleScroller{$scrollerName} .scrollerBodyContainer')
-			.touchwipe({ldelim}
-				wipeLeft : function(dx){ldelim}
+			.swipe({ldelim}
+				swipeLeft : function(event, direction, distance){ldelim}
 					{$scrollerVariable}.swipeToLeft(1); {*// scroll single item*}
 				{rdelim},
-				wipeRight: function(dx) {ldelim}
+				swipeRight: function(event, direction, distance) {ldelim}
 					{$scrollerVariable}.swipeToRight(1); {*// scroll single item*}
 				{rdelim}
 			{rdelim});
