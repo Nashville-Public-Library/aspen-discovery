@@ -66,6 +66,26 @@ function getUpdates25_09_00(): array {
 				'DROP TABLE claim_authorship_requests'
 			]
 		], //remove_archives_tables
+		'remove_development_tracking_tables' => [
+			'title' => 'Remove Development Tracking tables',
+			'description' => 'Remove Development Tracking Tables',
+			'continueOnError' => true,
+			'sql' => [
+				'DROP TABLE component_development_epic_link',
+				'DROP TABLE component_development_task_link',
+				'DROP TABLE development_epic',
+				'DROP TABLE development_sprint',
+				'DROP TABLE development_task',
+				'DROP TABLE development_epic_partner_link',
+				'DROP TABLE development_task_developer_link',
+				'DROP TABLE development_task_epic_link',
+				'DROP TABLE development_task_partner_link',
+				'DROP TABLE development_task_qa_link',
+				'DROP TABLE development_task_sprint_link',
+				'DROP TABLE development_task_ticket_link',
+				'ALTER TABLE ticket DROP COLUMN developmentTaskId'
+			]
+		], //remove_development_tracking_tables
 		'add_grouped_work_display_format_display' => [
 			'title' => 'Grouped Display Settings add Format Display Option',
 			'description' => 'Grouped Display Settings add Format Display Option',
