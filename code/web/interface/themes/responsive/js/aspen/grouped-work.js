@@ -742,40 +742,52 @@ AspenDiscovery.GroupedWork = (function(){
 				slidesPerView: 4,
 				spaceBetween: 5,
 				direction: 'horizontal',
+				slideToClickedSlide: true,
+				freeMode: true,
 
 				// Accessibility
 				a11y: {
 					enabled: true
-				},
-
-				// Navigation arrows
-				navigation: {
-					nextEl: '#swiper-button-manifestation-next-' + workId,
-					prevEl: '#swiper-button-manifestation-prev-' + workId
 				}
 			});
 			// Fix keyboard navigation
 			$(".swiper-manifestations-" + workId + " .swiper-wrapper > .swiper-slide:not(.swiper-slide-visible) a").prop("tabindex", "-1");
 			$(".swiper-manifestations-" + workId + " .swiper-wrapper > .swiper-slide-visible a").removeProp("tabindex");
-			this.manifestationSwipers[workId].on('slideChangeTransitionEnd', function () {
-				$("#browse-category-feed .swiper-wrapper > .swiper-slide:not(.swiper-slide-visible) a").prop("tabindex", "-1");
-				$("#browse-category-feed .swiper-wrapper > .swiper-slide-visible a").removeProp("tabindex");
-
-				const newSlideIndex = AspenDiscovery.GroupedWork.manifestationSwipers[workId].activeIndex;
-				// Get the element for the newly selected slide
-				const newSlideElement = AspenDiscovery.GroupedWork.manifestationSwipers[workId].slides[newSlideIndex];
-				AspenDiscovery.GroupedWork.showManifestation(newSlideElement.dataset.workid, newSlideElement.dataset.format, newSlideElement.dataset.cleanedworkid);
+			var swiper = AspenDiscovery.GroupedWork.manifestationSwipers[workId];
+			var prevBtn = $('#swiper-button-manifestation-prev-' + workId);
+			var nextBtn = $('#swiper-button-manifestation-next-' + workId);
+			$(prevBtn).on('click', function () {
+				AspenDiscovery.GroupedWork.customSwiperNavPrev(swiper, prevBtn, nextBtn);
 			});
+			$(nextBtn).on('click', function () {
+				AspenDiscovery.GroupedWork.customSwiperNavNext(swiper, prevBtn, nextBtn);
+			});
+			AspenDiscovery.GroupedWork.updateCustomSwiperNav(swiper, prevBtn, nextBtn);
 			this.manifestationSwipers[workId].on('click', function (swiper, event) {
 				if (swiper.clickedIndex !== undefined) {
-					// Navigate to the clicked slide
 					swiper.slideTo(swiper.clickedIndex);
+					$('.swiper-manifestations-' + workId + ' .swiper-slide').removeClass('swiper-slide-active');
+					const clickedSlide = swiper.slides[swiper.clickedIndex];
+					if (clickedSlide) {
+						const container = $(clickedSlide).closest('[data-workid="' + workId + '"]');
+						container.addClass('swiper-slide-active');
+						AspenDiscovery.GroupedWork.showManifestation(clickedSlide.dataset.workid, clickedSlide.dataset.format, clickedSlide.dataset.cleanedworkid);
+					}
 				}
+			});
+			this.manifestationSwipers[workId].on('slideChange', function (swiper, event) {
+				AspenDiscovery.GroupedWork.updateCustomSwiperNav(swiper, prevBtn, nextBtn);
+			});
+			this.manifestationSwipers[workId].on('setTranslate', function (translate) {
+				swiper._customOffset = Math.round(Math.abs(translate) / swiper.slides[0].offsetWidth) * swiper.slides[0].offsetWidth;
+				AspenDiscovery.GroupedWork.updateCustomSwiperNav(swiper, prevBtn, nextBtn);
 			});
 			this.variationSwipers[workId] = new Swiper('.swiper-variations-' + workId, {
 				slidesPerView: 4,
 				spaceBetween: 5,
+				slidesPerGroup: 4,
 				direction: 'horizontal',
+				slideToClickedSlide: true,
 
 				// Accessibility
 				a11y: {
@@ -859,7 +871,8 @@ AspenDiscovery.GroupedWork = (function(){
 		},
 
 		showAllEditionsForVariation: function(workId, format, variationId) {
-			$("#horizDisplayShowEditionsRow_" + workId).hide();
+			$("#horizDisplayShowEditionsRow_" + workId + ' .horizDisplayShowEditionsBtn').hide();
+			$("#horizDisplayShowEditionsRow_" + workId + ' .horizDisplayHideEditionsBtn').show();
 			var url = Globals.path + '/GroupedWork/' + workId + '/AJAX';
 			let params = {
 				'method': 'getAllEditionsForVariation',
@@ -875,6 +888,56 @@ AspenDiscovery.GroupedWork = (function(){
 			});
 
 			return false;
+		},
+		hideAllEditionsForVariation: function (workId, format, variationId) {
+			$("#horizDisplayShowEditionsRow_" + workId + ' .horizDisplayHideEditionsBtn').hide();
+			$("#horizDisplayShowEditionsRow_" + workId + ' .horizDisplayShowEditionsBtn').show();
+			$("#horizDisplayAllEditions_" + workId).html("");
+			return false;
+		},
+		updateCustomSwiperNav: function (swiper, prevBtnSelector, nextBtnSelector) {
+			var slideWidth = swiper.slides[0].offsetWidth;
+			var maxOffset = (swiper.slides.length - swiper.params.slidesPerView) * slideWidth;
+			if (typeof swiper._customOffset === 'undefined') swiper._customOffset = 0;
+
+			// Use Swiper's actual translate for accuracy
+			var currentOffset = Math.abs(swiper.getTranslate ? swiper.getTranslate() : swiper.translate);
+
+			var tolerance = 1; // px tolerance for floating point errors
+
+			// Disable prev if at beginning
+			if (currentOffset <= tolerance) {
+				$(prevBtnSelector).addClass('swiper-button-disabled');
+			} else {
+				$(prevBtnSelector).removeClass('swiper-button-disabled');
+			}
+			// Disable next if at end
+			if (currentOffset >= (maxOffset - tolerance)) {
+				$(nextBtnSelector).addClass('swiper-button-disabled');
+			} else {
+				$(nextBtnSelector).removeClass('swiper-button-disabled');
+			}
+		},
+		customSwiperNavPrev: function (swiper, prevBtnSelector, nextBtnSelector) {
+			var slideWidth = swiper.slides[0].offsetWidth;
+			// Sync customOffset with actual translate (round to nearest slide)
+			var currentOffset = Math.abs(swiper.getTranslate ? swiper.getTranslate() : swiper.translate);
+			var slidesScrolled = Math.round(currentOffset / slideWidth);
+			var newOffset = Math.max((slidesScrolled - 1) * slideWidth, 0);
+			swiper._customOffset = newOffset;
+			swiper.setTranslate(-swiper._customOffset);
+			this.updateCustomSwiperNav(swiper, prevBtnSelector, nextBtnSelector);
+		},
+		customSwiperNavNext: function (swiper, prevBtnSelector, nextBtnSelector) {
+			var slideWidth = swiper.slides[0].offsetWidth;
+			var maxOffset = (swiper.slides.length - swiper.params.slidesPerView) * slideWidth;
+			// Sync customOffset with actual translate (round to nearest slide)
+			var currentOffset = Math.abs(swiper.getTranslate ? swiper.getTranslate() : swiper.translate);
+			var slidesScrolled = Math.round(currentOffset / slideWidth);
+			var newOffset = Math.min((slidesScrolled + 1) * slideWidth, maxOffset);
+			swiper._customOffset = newOffset;
+			swiper.setTranslate(-swiper._customOffset);
+			this.updateCustomSwiperNav(swiper, prevBtnSelector, nextBtnSelector);
 		}
 	};
 }(AspenDiscovery.GroupedWork || {}));
