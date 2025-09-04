@@ -107,6 +107,14 @@ function getUpdates25_09_00(): array {
 				) ENGINE INNODB',
 			]
 		], //add_self_check_completion_message
+		'add_removeTheWordSeriesFromEndOfSeries' => [
+			'title' => 'Add Remove the word series from the end of series option',
+			'description' => 'Add Remove the word series from the end of series option',
+			'continueOnError' => false,
+			'sql' => [
+				'ALTER TABLE system_variables ADD COLUMN removeTheWordSeriesFromEndOfSeries TINYINT DEFAULT 1',
+			]
+		], //add_removeTheWordSeriesFromEndOfSeries
 
 		//katherine - Grove
 
