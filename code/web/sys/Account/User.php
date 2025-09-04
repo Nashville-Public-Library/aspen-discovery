@@ -3105,7 +3105,7 @@ class User extends DataObject {
 		}
 	}
 
-	public function doReadingHistoryAction(string $readingHistoryAction, array $selectedTitles) {
+	public function doReadingHistoryAction(string $readingHistoryAction, array $selectedTitles): array {
 		if ($this->isReadingHistoryEnabled()) {
 			$catalogDriver = $this->getCatalogDriver();
 			$results = $catalogDriver->doReadingHistoryAction($this, $readingHistoryAction, $selectedTitles);

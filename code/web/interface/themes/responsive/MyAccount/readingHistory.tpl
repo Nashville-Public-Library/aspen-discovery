@@ -12,6 +12,13 @@
 		{if !empty($ilsMessages)}
 			{include file='ilsMessages.tpl' messages=$ilsMessages}
 		{/if}
+		{if !empty($updateMessage)}
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="alert {if $updateMessageIsError}alert-danger{else}alert-success{/if}">{translate text=$updateMessage isPublicFacing=true isMetadata=true}</div>
+				</div>
+			</div>
+		{/if}
 
 		<h1>{translate text='My Reading History' isPublicFacing = true} {if $historyActive == true}
 				<small><a id="readingListWhatsThis" href="#" onclick="$('#readingListDisclaimer').toggle();return false;">({translate text="What's This?" isPublicFacing=true})</a></small>
