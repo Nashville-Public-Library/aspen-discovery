@@ -136,7 +136,7 @@
 			},
 			"{/literal}{translate text="Please check your input." isAdminFacing=true inAttribute=true}{literal}"
 		);
-		$(document).ready(function(){
+		$(() => {
 			let objectEditorObject = $('#objectEditor-{/literal}{if !empty($id)}{$id}{else}-1{/if}{literal}');
 
 			objectEditorObject.validate();
@@ -179,7 +179,23 @@
 							const currentState = objectEditorObject.serialize();
 							const originalState = objectEditorObject.data('serialize');
 
-							if (currentState !== originalState) {
+							// Also check SimpleMDE editors for changes.
+							let markdownChanged = false;
+							if (typeof AspenDiscovery !== 'undefined' && AspenDiscovery.WebBuilder && AspenDiscovery.WebBuilder.editors) {
+								Object.keys(AspenDiscovery.WebBuilder.editors).forEach(editorKey => {
+									const editor = AspenDiscovery.WebBuilder.editors[editorKey];
+									if (editor && editor.value) {
+										const currentMarkdown = editor.value();
+										const $editorKey = $('#' + editorKey);
+										const originalMarkdown = $editorKey.data('original-value') || $editorKey.val();
+										if (currentMarkdown !== originalMarkdown) {
+											markdownChanged = true;
+										}
+									}
+								});
+							}
+
+							if (currentState !== originalState || markdownChanged) {
 								// Modern browsers ignore custom text, but this is required to trigger the dialog.
 								e.preventDefault();
 								e.returnValue = '';
