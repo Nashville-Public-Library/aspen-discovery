@@ -57,6 +57,15 @@ function getUpdates25_09_00(): array {
 				'DROP TABLE redwood_user_contribution'
 			]
 		], //remove_redwood_tables
+		'remove_archives_tables' => [
+			'title' => 'Remove Archives tables',
+			'description' => 'Remove Unused Archives Tables',
+			'continueOnError' => false,
+			'sql' => [
+				'DROP TABLE archive_requests',
+				'DROP TABLE claim_authorship_requests'
+			]
+		], //remove_archives_tables
 		'add_grouped_work_display_format_display' => [
 			'title' => 'Grouped Display Settings add Format Display Option',
 			'description' => 'Grouped Display Settings add Format Display Option',
