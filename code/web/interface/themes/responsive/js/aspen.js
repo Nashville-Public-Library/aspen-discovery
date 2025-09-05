@@ -10801,7 +10801,33 @@ AspenDiscovery.GroupedWork = (function(){
 			var nextBtn = container.querySelector('.slider-button-next');
 			var slideWidth = wrapper.querySelector('.slider-slide').offsetWidth + 12;
 			var slides = wrapper.querySelectorAll('.slider-slide');
+			let currentIndex = 0;
+			// --- Accessibility ARIA setup ---
+			wrapper.setAttribute('role', 'listbox');
+			slides.forEach(function (slide, idx) {
+				slide.setAttribute('role', 'option');
+				slide.setAttribute('tabindex', '0');
+				slide.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
+				slide.id = slide.id || ('slide-' + container.id + '-' + idx);
+			});
+			wrapper.setAttribute('aria-activedescendant', slides[0].id);
 
+			function focusSlide(index, doFocus = false, doScroll = false) {
+				slides.forEach(function (slide, i) {
+					slide.setAttribute('aria-selected', i === index ? 'true' : 'false');
+					if (i === index) {
+						slide.classList.add('active');
+						if (doFocus) slide.focus();
+						if (doScroll) slides[index].scrollIntoView({block: 'nearest', inline: 'center'});
+					} else {
+						slide.classList.remove('active');
+					}
+				});
+				wrapper.setAttribute('aria-activedescendant', slides[index].id);
+				currentIndex = index;
+			}
+
+			// Only scroll on button click, do not select/focus next slide
 			prevBtn.addEventListener('click', function () {
 				wrapper.scrollLeft -= slideWidth;
 			});
@@ -10809,13 +10835,46 @@ AspenDiscovery.GroupedWork = (function(){
 				wrapper.scrollLeft += slideWidth;
 			});
 
-			slides.forEach(function (slide) {
+			// Keyboard support for prev/next buttons
+			prevBtn.addEventListener('keydown', function (e) {
+				if (e.key === 'ArrowLeft' || e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					prevBtn.click();
+				}
+			});
+			nextBtn.addEventListener('keydown', function (e) {
+				if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					nextBtn.click();
+				}
+			});
+
+			slides.forEach(function (slide, i) {
 				slide.addEventListener('click', function (e) {
 					slides.forEach(function (s) {
 						s.classList.remove('active');
+						s.setAttribute('aria-selected', 'false');
 					});
 					slide.classList.add('active');
+					slide.setAttribute('aria-selected', 'true');
+					wrapper.setAttribute('aria-activedescendant', slide.id);
+					currentIndex = i;
 					onSlideClick(slide);
+				});
+
+				// Keyboard navigation for slides
+				slide.addEventListener('keydown', function (e) {
+					if (e.key === 'ArrowRight') {
+						if (i < slides.length - 1) {
+							focusSlide(i + 1, true, true);
+						}
+					} else if (e.key === 'ArrowLeft') {
+						if (i > 0) {
+							focusSlide(i - 1, true, true);
+						}
+					} else if (e.key === 'Enter' || e.key === ' ') {
+						slide.click();
+					}
 				});
 			});
 
@@ -10834,7 +10893,7 @@ AspenDiscovery.GroupedWork = (function(){
 			window.addEventListener('resize', updateButtonState);
 			wrapper.addEventListener('scroll', updateButtonState);
 
-			// Touch/drag support
+			// --- Touch/drag support ---
 			let isDown = false;
 			let startX;
 			let scrollLeft;
@@ -10874,6 +10933,9 @@ AspenDiscovery.GroupedWork = (function(){
 				const walk = (x - startX) * 1.5;
 				wrapper.scrollLeft = scrollLeft - walk;
 			});
+
+			// Initialize focus and ARIA
+			focusSlide(currentIndex, false, false);
 		},
 
 		initializeHorizontalFormatSwipers: function (workId) {
@@ -10913,7 +10975,7 @@ AspenDiscovery.GroupedWork = (function(){
 				var i = 0;
 				$.each(activeManifestationInfo.variations, function (index, variations, test) {
 					var activeClass = (i === 0) ? ' active' : '';
-					var variationButton = '<div class="slider-slide horizontal-format-button slider-sm' + activeClass + '" data-workId="' + workId + '" data-variationid="' + this.databaseId + '" data-format="' + format + '" data-cleanedWorkId="' + cleanedWorkId + '">\n' +
+					var variationButton = '<div role="option" tabindex="0" class="slider-slide horizontal-format-button slider-sm' + activeClass + '" data-workId="' + workId + '" data-variationid="' + this.databaseId + '" data-format="' + format + '" data-cleanedWorkId="' + cleanedWorkId + '">\n' +
 						'<div>' +
 						this.label + '<br/>' + this.groupedStatus +
 						'</div>' +
