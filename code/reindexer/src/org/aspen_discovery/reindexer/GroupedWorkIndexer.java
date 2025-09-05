@@ -343,7 +343,7 @@ public class GroupedWorkIndexer {
 			removeVariationsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_variation where groupedWorkId = ?");
 			removeRecordsForWorkStmt = dbConn.prepareStatement("DELETE FROM grouped_work_records where groupedWorkId = ?");
 
-			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, sm.seriesId, sm.priorityScore FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			getSeriesMemberStmt = dbConn.prepareStatement("SELECT s.groupedWorkSeriesTitle, s.isIndexed, sm.seriesId, sm.priorityScore FROM series_member AS sm LEFT JOIN series AS s ON sm.seriesId = s.id WHERE groupedWorkPermanentId = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			getSeriesStmt = dbConn.prepareStatement("SELECT * FROM series WHERE groupedWorkSeriesTitle = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			addSeriesStmt = dbConn.prepareStatement("INSERT INTO series (displayName, audience, created, dateUpdated, author, groupedWorkSeriesTitle) VALUES (?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
 			addSeriesMemberStmt = dbConn.prepareStatement("INSERT INTO series_member (seriesId, isPlaceholder, groupedWorkPermanentId, volume, pubDate, displayName, author, description, weight, priorityScore) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -1430,6 +1430,8 @@ public class GroupedWorkIndexer {
 				HashMap<String, Integer> seriesInDb = new HashMap<>();
 				HashMap<String, Integer> seriesInProcess = new HashMap<>();
 				HashMap<String, Integer> seriesScore = new HashMap<>();
+				HashMap<String, Boolean> seriesIsIndexed = new HashMap<>();
+				HashMap<String, String> seriesToRemove = new HashMap<>();
 				while (seriesMemberRS.next()) {
 					// Strip diacritics and switch to lowercase for comparing series names to minimize duplicates
 					String seriesTitle = seriesMemberRS.getString("groupedWorkSeriesTitle");
@@ -1441,6 +1443,7 @@ public class GroupedWorkIndexer {
 					seriesInDb.put(normalizedSeriesName, seriesMemberRS.getInt("seriesId"));
 					seriesInProcess.put(normalizedSeriesName, seriesMemberRS.getInt("seriesId"));
 					seriesScore.put(normalizedSeriesName, seriesMemberRS.getInt("priorityScore"));
+					seriesIsIndexed.put(normalizedSeriesName, seriesMemberRS.getBoolean("isIndexed"));
 				}
 				seriesMemberRS.close();
 				for (String seriesNameWithVolume : groupedWork.seriesWithVolume.keySet()) {
@@ -1450,7 +1453,7 @@ public class GroupedWorkIndexer {
 					}
 					String normalizedSeriesName = Normalizer.normalize(series[0], Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
 					if (!seriesInDb.containsKey(normalizedSeriesName)) { // Skip if this work is already in the series
-						// Check if series exists
+						// Check if the series exists
 						getSeriesStmt.setString(1, series[0]);
 						ResultSet seriesRS = getSeriesStmt.executeQuery();
 						long timeNow = new Date().getTime() / 1000;
@@ -1535,9 +1538,19 @@ public class GroupedWorkIndexer {
 						}
 						seriesInProcess.remove(normalizedSeriesName); // Remove since we have accounted for it
 					}
+					if (seriesIsIndexed.get(normalizedSeriesName) != null && !seriesIsIndexed.get(normalizedSeriesName)) {
+						//This series should not be indexed, remove it from series, series with volume, and series with volume priority
+						seriesToRemove.put(series[0], seriesNameWithVolume);
+					}
+				}
+				for (String seriesName : seriesToRemove.keySet()) {
+					if (groupedWork.isDebugEnabled()) {
+						groupedWork.addDebugMessage("Removing series " + seriesName + " from grouped work because the series has indexing disabled", 1);
+					}
+					groupedWork.removeSeries(seriesName, seriesToRemove.get(seriesName));
 				}
 				if (!seriesInProcess.isEmpty()) {
-					// Remove entries from series_member table when this work is no longer part of the series
+					// Remove entries from the series_member table when this work is no longer part of the series
 					for (int seriesId : seriesInProcess.values()) {
 						deleteSeriesMemberStmt.setInt(1, seriesId);
 						deleteSeriesMemberStmt.setString(2, groupedWork.id);
@@ -3128,5 +3141,9 @@ public class GroupedWorkIndexer {
 		}catch (Exception e) {
 			logEntry.incErrors("Error forcing record reindex", e);
 		}
+	}
+
+	public boolean hasSeriesModuleEnabled() {
+		return seriesModuleEnabled;
 	}
 }

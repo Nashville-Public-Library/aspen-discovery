@@ -828,13 +828,16 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 			}
 			if (!seriesField.containsKey(normalizedSeriesLower)) {
 				boolean okToAdd = true;
-				for (String existingSeries2 : seriesField.keySet()) {
-					if (existingSeries2.contains(normalizedSeriesLower)) {
-						okToAdd = false;
-						break;
-					} else if (normalizedSeriesLower.contains(existingSeries2)) {
-						seriesField.remove(existingSeries2);
-						break;
+				//If we are not using the series module, attempt to keep only the longest series to eliminate near duplicates
+				if (!groupedWorkIndexer.hasSeriesModuleEnabled()) {
+					for (String existingSeries2 : seriesField.keySet()) {
+						if (existingSeries2.contains(normalizedSeriesLower)) {
+							okToAdd = false;
+							break;
+						} else if (normalizedSeriesLower.contains(existingSeries2)) {
+							seriesField.remove(existingSeries2);
+							break;
+						}
 					}
 				}
 				if (okToAdd) {
@@ -1641,5 +1644,11 @@ public abstract class AbstractGroupedWorkSolr implements DebugLogger {
 			debugInfo.append(debugMessage);
 		}
 		return debugInfo.toString();
+	}
+
+	public void removeSeries(String series, String seriesNameWithVolume) {
+		this.series.remove(series);
+		this.seriesWithVolume.remove(seriesNameWithVolume);
+		this.seriesWithVolumePriority.remove(seriesNameWithVolume);
 	}
 }
