@@ -84,7 +84,7 @@ class Series extends DataObject {
 				'type' => 'checkbox',
 				'label' => 'Include in search',
 				'default' => true,
-				'description' => 'Uncheck to exclude from series searches'
+				'description' => 'Uncheck to exclude from series searches, facets, and display in records'
 			],
 			'seriesMembers' => [
 				'property' => 'seriesMembers',
