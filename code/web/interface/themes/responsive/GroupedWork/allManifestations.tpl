@@ -33,16 +33,16 @@
 	<div class="col-xs-12 formatDisplayHorizontal" id="relatedManfiestations{$summId|escape}" style="margin-top: 3px;margin-bottom: 5px;">
 		<div class="horizontalSliders"><div class="row horizontalFormatSelector">
 			<div class="col-xs-12">
-				<div class="slider-container" id="slider-{$summId|escape}">
+				<div class="slider-container" role="region" id="slider-{$summId|escape}">
 					<div class="slider-button slider-button-prev" id="slider-prev-{$summId|escape}"></div>
-					<div class="slider-wrapper">
+					<div class="slider-wrapper" role="listbox" aria-activedescendant="slide-{$summId|escape}-0">
                         {assign var=firstFormat value=""}
                         {foreach from=$relatedManifestations item=$manifestation name=manifestations}
                             {if $smarty.foreach.manifestations.index ==0}
                                 {assign var=firstFormat value=$manifestation->format}
                             {/if}
-							<div class="slider-slide horizontal-format-button{if $smarty.foreach.manifestations.index == 0} active{/if}"
-							     data-workId="{$summId|escape}" data-format="{$manifestation->format}" data-cleanedWorkId="{$summId|regex_replace:"/-/" : ""}">
+							<div role="option" tabindex="0" class="slider-slide horizontal-format-button{if $smarty.foreach.manifestations.index == 0} active{/if}"
+							     data-workId="{$summId|escape}" data-format="{$manifestation->format}" data-cleanedWorkId="{$summId|regex_replace:"/-/" : ""}" aria-selected="{if $smarty.foreach.manifestations.index == 0}true{else}false{/if}">
 									<div class="horizontal-format-button-format">{$manifestation->format}</div>
                                     {include file='GroupedWork/statusIndicator.tpl' statusInformation=$manifestation->getStatusInformation() viewingIndividualRecord=0 applyColors=false}
 							</div>
@@ -66,9 +66,9 @@
 		</div>
 		<div class="row variationsInfo">
 			<div class="col-xs-12">
-				<div class="slider-container variations" id="variationsInfo_{$summId|escape}" style="display: none;">
+				<div role="region" class="slider-container variations" id="variationsInfo_{$summId|escape}" style="display: none;">
 					<div class="slider-button slider-button-prev" id="slider-prev-{$summId|escape}"></div>
-					<div class="slider-wrapper" id="slider-variations-{$summId|escape}">
+					<div role="listbox" class="slider-wrapper" id="slider-variations-{$summId|escape}" aria-activedescendant="slide-{$summId|escape}-0">
 
 					</div>
 					<div class="slider-button slider-button-next" id="slider-next-{$summId|escape}"></div>

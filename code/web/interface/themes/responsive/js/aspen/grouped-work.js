@@ -737,90 +737,9 @@ AspenDiscovery.GroupedWork = (function(){
 			return false;
 		},
 
-		initializeHorizontalSwiper: function (container, onSlideClick) {
-			var wrapper = container.querySelector('.slider-wrapper');
-			var prevBtn = container.querySelector('.slider-button-prev');
-			var nextBtn = container.querySelector('.slider-button-next');
-			var slideWidth = wrapper.querySelector('.slider-slide').offsetWidth + 12;
-			var slides = wrapper.querySelectorAll('.slider-slide');
-
-			prevBtn.addEventListener('click', function () {
-				wrapper.scrollLeft -= slideWidth;
-			});
-			nextBtn.addEventListener('click', function () {
-				wrapper.scrollLeft += slideWidth;
-			});
-
-			slides.forEach(function (slide) {
-				slide.addEventListener('click', function (e) {
-					slides.forEach(function (s) {
-						s.classList.remove('active');
-					});
-					slide.classList.add('active');
-					onSlideClick(slide);
-				});
-			});
-
-			function updateButtonState() {
-				const hasOverflow = wrapper.scrollWidth > wrapper.clientWidth;
-				const atStart = wrapper.scrollLeft <= 0;
-				const atEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 1;
-
-				prevBtn.disabled = !hasOverflow || atStart;
-				nextBtn.disabled = !hasOverflow || atEnd;
-
-				prevBtn.classList.toggle('slider-button-disabled', !hasOverflow || atStart);
-				nextBtn.classList.toggle('slider-button-disabled', !hasOverflow || atEnd);
-			}
-			updateButtonState();
-			window.addEventListener('resize', updateButtonState);
-			wrapper.addEventListener('scroll', updateButtonState);
-
-			// Touch/drag support
-			let isDown = false;
-			let startX;
-			let scrollLeft;
-
-			wrapper.addEventListener('mousedown', (e) => {
-				isDown = true;
-				wrapper.classList.add('active');
-				startX = e.pageX - wrapper.offsetLeft;
-				scrollLeft = wrapper.scrollLeft;
-			});
-			wrapper.addEventListener('mouseleave', () => {
-				isDown = false;
-				wrapper.classList.remove('active');
-			});
-			wrapper.addEventListener('mouseup', () => {
-				isDown = false;
-				wrapper.classList.remove('active');
-			});
-			wrapper.addEventListener('mousemove', (e) => {
-				if (!isDown) return;
-				e.preventDefault();
-				const x = e.pageX - wrapper.offsetLeft;
-				const walk = (x - startX) * 1.5;
-				wrapper.scrollLeft = scrollLeft - walk;
-			});
-			wrapper.addEventListener('touchstart', (e) => {
-				isDown = true;
-				startX = e.touches[0].pageX - wrapper.offsetLeft;
-				scrollLeft = wrapper.scrollLeft;
-			});
-			wrapper.addEventListener('touchend', () => {
-				isDown = false;
-			});
-			wrapper.addEventListener('touchmove', (e) => {
-				if (!isDown) return;
-				const x = e.touches[0].pageX - wrapper.offsetLeft;
-				const walk = (x - startX) * 1.5;
-				wrapper.scrollLeft = scrollLeft - walk;
-			});
-		},
-
 		initializeHorizontalFormatSwipers: function (workId) {
 			var container = document.getElementById('slider-' + workId);
-			this.initializeHorizontalSwiper(container, function (slide) {
+			AspenDiscovery.initializeHorizontalSwiper(container, function (slide) {
 				var workId = slide.getAttribute('data-workId');
 				var format = slide.getAttribute('data-format');
 				var cleanedWorkId = slide.getAttribute('data-cleanedWorkId');
@@ -830,7 +749,7 @@ AspenDiscovery.GroupedWork = (function(){
 
 		initializeHorizontalSourceSwipers: function (workId) {
 			var container = document.getElementById('variationsInfo_' + workId);
-			this.initializeHorizontalSwiper(container, function (slide) {
+			AspenDiscovery.initializeHorizontalSwiper(container, function (slide) {
 				var workId = slide.getAttribute('data-workId');
 				var format = slide.getAttribute('data-format');
 				var cleanedWorkId = slide.getAttribute('data-cleanedWorkId');
@@ -855,7 +774,7 @@ AspenDiscovery.GroupedWork = (function(){
 				var i = 0;
 				$.each(activeManifestationInfo.variations, function (index, variations, test) {
 					var activeClass = (i === 0) ? ' active' : '';
-					var variationButton = '<div class="slider-slide horizontal-format-button slider-sm' + activeClass + '" data-workId="' + workId + '" data-variationid="' + this.databaseId + '" data-format="' + format + '" data-cleanedWorkId="' + cleanedWorkId + '">\n' +
+					var variationButton = '<div role="option" tabindex="0" class="slider-slide horizontal-format-button slider-sm' + activeClass + '" data-workId="' + workId + '" data-variationid="' + this.databaseId + '" data-format="' + format + '" data-cleanedWorkId="' + cleanedWorkId + '">\n' +
 						'<div>' +
 						this.label + '<br/>' + this.groupedStatus +
 						'</div>' +
