@@ -91,6 +91,7 @@ if (!UserAccount::isLoggedIn() && isset($_COOKIE['searchPreferenceLanguage'])) {
 $interface->assign('showLanguagePreferencesBar', $showLanguagePreferencesBar);
 
 // Make sure language code is valid, reset to default if bad:
+require_once ROOT_DIR . '/sys/Translation/Language.php';
 $validLanguages = Language::getValidLanguages();
 
 if (!array_key_exists($language, $validLanguages)) {
