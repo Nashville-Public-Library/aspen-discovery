@@ -23,6 +23,7 @@ $searchObject->setLimit(1);
 $solrConnection = $searchObject->getIndexEngine();
 $result = $searchObject->processSearch();
 
+$recordsToDeleteFromSolr = [];
 $numRecordsDeleted = 0;
 if (!$result instanceof AspenError && empty($result['error'])) {
 	$numResults = $searchObject->getResultTotal();
@@ -58,16 +59,20 @@ if (!$result instanceof AspenError && empty($result['error'])) {
 				foreach ($recordsInBatch as $groupedWorkId) {
 					if (!isset($allResultsFromDB[$groupedWorkId])) {
 						$cronLogEntry->notes .= date('h:i:s') . " $groupedWorkId does not exist in the database and needs to be deleted.<br/>";
-						if (!$solrConnection->deleteRecord($groupedWorkId)) {
-							$cronLogEntry->notes .= date('h:i:s') . " ERROR $groupedWorkId could not be deleted.<br/>";
-							$cronLogEntry->numErrors++;
-						}else{
-							$numRecordsDeleted++;
-						}
+						$recordsToDeleteFromSolr[] = $groupedWorkId;
 						$cronLogEntry->update();
 					}
 				}
 			}
+		}
+	}
+
+	foreach ($recordsToDeleteFromSolr as $groupedWorkId) {
+		if (!$solrConnection->deleteRecord($groupedWorkId)) {
+			$cronLogEntry->notes .= date('h:i:s') . " ERROR $groupedWorkId could not be deleted.<br/>";
+			$cronLogEntry->numErrors++;
+		}else{
+			$numRecordsDeleted++;
 		}
 	}
 }else{
