@@ -13,7 +13,11 @@ $cronLogEntry->insert();
 /** @var SearchObject_AbstractGroupedWorkSearcher $searchObject */
 $searchObject = SearchObjectFactory::initSearchObject();
 $searchObject->init();
+$searchObject->disableSpelling();
 $searchObject->disableScoping();
+$searchObject->disableBoosting();
+$searchObject->disableDefaultAvailabilityToggle();
+$searchObject->disableEditionLimiters();
 $searchObject->setFieldsToReturn('id');
 $searchObject->setLimit(1);
 $solrConnection = $searchObject->getIndexEngine();
