@@ -3882,7 +3882,7 @@ AspenDiscovery.Account = (function () {
 				dataType: 'json',
 				async: false,
 				method: 'GET'
-			}).success(
+			}).done(
 				function (response) {
 					if (response.success === false) {
 						AspenDiscovery.showMessage("Error", response.message);
