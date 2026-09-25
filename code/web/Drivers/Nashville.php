@@ -732,10 +732,11 @@ EOT;
 		oci_free_statement($stid);
 		return $data;
 	}
-		public function getStudentBarcodeData($location, $homeroom): array {
+	public function getStudentBarcodeData($location, $homeroom): array {
 		$this->initDatabaseConnection();
 		// query students by school and homeroom
 		/** @noinspection SqlResolve */
+		$bty = null;
 		// If homeroom is ALLSTUDENTS, then we are looking for all students in the school
 		if ($homeroom == 'ALLSTUDENTS') {
 			$sql = <<<EOT
@@ -806,14 +807,14 @@ EOT;
 					left join branch_v2 patronbranch on patronbranch.branchnumber = p.defaultbranch
 					left join bty_v2 bty on p.bty = bty.btynumber
 				where
-					p.bty = '$bty'
+					p.bty = :bty
 					and p.bty in ('21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','46','47')
 					and upper(patronbranch.branchcode) = upper(:location)
 					and p.street2 is not null
 				order by
 					p.name
 EOT;
-// If homeroom is a specific homeroom, then we are looking for students -- and staff -- in that homeroom
+			// If homeroom is a specific homeroom, then we are looking for students -- and staff -- in that homeroom
 		} else {
 			$sql = <<<EOT
 				select
@@ -874,9 +875,14 @@ EOT;
 					, p.name
 EOT;
 		}
+
 		$stid = oci_parse($this->dbConnection, $sql);
 		oci_bind_by_name($stid, ':location', $location);
-		oci_bind_by_name($stid, ':homeroom', $homeroom);
+		if ($bty !== null) {
+			oci_bind_by_name($stid, ':bty', $bty);
+		} elseif ($homeroom !== 'ALLSTUDENTS') {
+			oci_bind_by_name($stid, ':homeroom', $homeroom);
+		}
 		oci_execute($stid);
 		$data = [];
 		while (($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
