@@ -27,7 +27,11 @@ class Report_StudentBarcodes extends Admin_Admin {
 		}
 		$interface->assign('locationLookupList', $locationLookupList);
 		if (!empty($_REQUEST['location'])) {
+// Validate selected location against allowed lookup keys
 			$selectedLocation = $_REQUEST['location'];
+			if (!isset($locationLookupList[$selectedLocation])) {
+				$selectedLocation = '';
+			}
 		} else {
 			$selectedLocation = array_key_first($locationLookupList);
 		}

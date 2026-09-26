@@ -23,11 +23,18 @@ class Report_CollectionReport extends Admin_Admin {
 		}
 		asort($locationLookupList);
 		$interface->assign('locationLookupList', $locationLookupList);
-		$selectedLocation = isset($_REQUEST['location']) ? $_REQUEST['location'] : '';
+// Validate selected location against allowed lookup keys
+		$selectedLocation = $_REQUEST['location'] ?? '';
+		if (!isset($locationLookupList[$selectedLocation])) {
+			$selectedLocation = '';
+		}
 		$interface->assign('selectedLocation', $selectedLocation);
-// OTHER FORM VARIABLES
-		$now = time();
-		$data = CatalogFactory::getCatalogConnectionInstance()->getCollectionReportData($selectedLocation, $now);
+// Only fetch report data if a valid location was selected
+		$data = [];
+		if (!empty($selectedLocation)) {
+			$now = time();
+			$data = CatalogFactory::getCatalogConnectionInstance()->getCollectionReportData($selectedLocation, $now);
+		}
 		$interface->assign('reportData', $data);
 		$interface->assign('reportDateTime', date("Y-m-d\TH:i:sO", $now));
 

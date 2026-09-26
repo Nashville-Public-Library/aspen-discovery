@@ -18,7 +18,11 @@ class Report_HoldsReport extends Admin_Admin {
 		asort($locationLookupList);
 		$interface->assign('locationLookupList', $locationLookupList);
 		if (isset($_REQUEST['location'])) {
+// Validate selected location against allowed lookup keys
 			$selectedLocation = $_REQUEST['location'];
+			if (!isset($locationLookupList[$selectedLocation])) {
+				$selectedLocation = '';
+			}
 		} elseif (count($locationLookupList) === 1) {
 			$selectedLocation = array_key_first($locationLookupList);
 		} else {

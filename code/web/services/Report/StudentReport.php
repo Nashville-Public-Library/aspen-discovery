@@ -23,7 +23,13 @@ class Report_StudentReport extends Admin_Admin {
 		}
 		asort($locationLookupList);
 		$interface->assign('locationLookupList', $locationLookupList);
-		$selectedLocation = isset($_REQUEST['location']) ? $_REQUEST['location'] : '';
+		 if (isset($_REQUEST['location'])) {
+			 // Validate selected location against allowed lookup keys
+			 $selectedLocation = $_REQUEST['location'];
+			 if (!isset($locationLookupList[$selectedLocation])) {
+				 $selectedLocation = '';
+			 }
+		 }
 		$interface->assign('selectedLocation', $selectedLocation);
 // OTHER FORM VARIABLES
 		$showOverdueOnly = isset($_REQUEST['showOverdueOnly']) ? $_REQUEST['showOverdueOnly'] : 'overdue';
